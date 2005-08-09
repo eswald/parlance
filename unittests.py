@@ -137,6 +137,7 @@ class Judge_Basics(datc.DiplomacyAdjudicatorTestCase):
     def ptest_disordered_draws(self):
         "Draws with different order still the same"
         #self.judge.verbosity = 20
+        self.judge.game_opts.PDA = True
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
             [ENG, FLT, LON],
