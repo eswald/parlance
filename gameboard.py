@@ -836,9 +836,9 @@ def _test():
 		For convenience and time, standard_map and its tokens
 		are added to the global dictionary.
 	'''#'''
-	import doctest, board
-	globs = config.extend_globals(board.__dict__)
-	return doctest.testmod(board, globs=globs)
+	import doctest, gameboard
+	globs = config.extend_globals(gameboard.__dict__)
+	return doctest.testmod(gameboard, globs=globs)
 if __name__ == "__main__": _test()
 
 # vim: ts=4 sw=4 noet

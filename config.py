@@ -198,7 +198,7 @@ class variant_options:
         self.start_now   = self.read_file('now')
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
     def new_judge(self):
-        from board import Map
+        from gameboard import Map
         return self.judge_class(Map(options=self), game_options())
     def get_representation(self):
         filename = find_variant_file(self.variant, 'rem')
@@ -446,8 +446,8 @@ def extend_globals(globs):
         
         This takes several seconds, so only do it if necessary.
     '''#'''
-    import board, language
-    standard_map = board.Map(options=variant_options('standard'))
+    import gameboard, language
+    standard_map = gameboard.Map(options=variant_options('standard'))
     extension = {
         'standard_map': standard_map,
         'standard_sco': standard_map.opts.start_sco,

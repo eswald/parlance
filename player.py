@@ -188,7 +188,7 @@ class Player(Verbose_Object):
             Sends MDF for unknown maps, YES for valid.
         '''#'''
         if self.use_map:
-            from board     import Map
+            from gameboard import Map
             self.map = Map(message.fold()[1][0], self.rep)
             if self.map.valid: self.accept(message)
             else:              self.send(MDF())
@@ -394,7 +394,7 @@ class HoldBot(Player):
         '''#'''
         self.submitted = False
         if self.in_game and self.power:
-            from board import Turn
+            from gameboard import Turn
             self.send(DRW())
             orders = OrderSet(self.power)
             phase = self.map.current_turn.phase()

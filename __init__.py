@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ''' Diplomacy Artificial Intelligence Development Environment
 	Contains modules for Diplomacy client and server programs:
-		board       -- Classes for game elements: Map, Unit, Province, Power.
+		gameboard   -- Classes for game elements: Map, Unit, Province, Power.
 		config      -- Loads constants from various configuration files.
 		dumbbot     -- A client ported from David Norman's DumbBot code
 		human       -- Clients that interact with real people.
@@ -20,7 +20,7 @@ import config
 
 # List of available modules
 __all__ = [
-	'board',
+	'gameboard',
 	'config',
 	'dumbbot',
 	'human',
@@ -37,7 +37,7 @@ __all__ = [
 def _test():
 	import doctest, sys
 	
-	import board
+	import gameboard
 	import dumbbot
 	import human
 	import judge
@@ -51,7 +51,7 @@ def _test():
 	
 	# List of modules to test
 	modules = [
-		board,
+		gameboard,
 		config,
 		dumbbot,
 		human,

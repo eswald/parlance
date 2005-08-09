@@ -1,7 +1,7 @@
 import config, re
 from random    import randint, shuffle
 from time      import time, sleep
-from board     import Turn
+from gameboard import Turn
 from iaq       import DefaultDict
 from functions import any, s, expand_list, Verbose_Object
 from language  import *

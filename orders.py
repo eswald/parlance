@@ -6,7 +6,7 @@ import config
 from operator    import lt, gt
 from functions   import any, all, autosuper, Comparable
 from iaq         import DefaultDict
-from board       import Turn, Power, Unit
+from gameboard   import Turn, Power, Unit
 from language    import *
 #from language    import Message, \
 #MIS, SUB, WVE, REM, BLD, DSB, RTO, CTO, CVY, SUP, MTO, HLD, VIA, \

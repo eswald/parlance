@@ -10,7 +10,7 @@
 '''#'''
 
 import unittest
-import config, board
+import config, gameboard
 from language import *
 from xtended import *
 

@@ -19,7 +19,7 @@
 from random       import random, randrange, shuffle
 from time         import ctime
 from player       import Player
-from board        import location_key
+from gameboard    import location_key
 from functions    import expand_list, all
 from orders       import *
 
