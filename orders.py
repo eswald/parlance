@@ -354,7 +354,9 @@ class WaiveOrder(BuildPhaseOrder):
 		if power: self.key = (power.key, WVE)
 		else: self.key = WVE
 		self.nation = power
-	def __str__(self): return '%s WVE' % (self.power,)
+	def __str__(self):
+		if self.nation: return '%s WVE' % (self.nation,)
+		else: return 'WVE'
 	def order_note(self, power, phase, past_orders=None):
 		note = MBV
 		if not (self.order_type.value() & phase):   note = NRS
