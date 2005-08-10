@@ -10,7 +10,7 @@
 '''#'''
 
 import unittest
-import config, gameboard
+import config
 from language import *
 from xtended import *
 
@@ -1367,11 +1367,16 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
     ''' 6.D.  SUPPORTING ILLEGAL MOVES
         These tests are subject to issue 4.E.1 (quasi_legal).
     '''#'''
+    def setUp(self):
+        ''' Initializes class variables for test cases.'''
+        super(DATC_6_D_Quasi, self).setUp()
+        self.judge.game_opts.AOA = True
+        self.illegalOrder = self.legalOrder
     
     # With Quasi-Legal orders
-    def ftest_6D28_quasi(self):
-        "6.D.28.b  IMPOSSIBLE MOVE AND SUPPORT"
-        self.judge.datc.quasi_legal = True
+    def ptest_6D28_quasi(self):
+        "6.D.28.a  IMPOSSIBLE MOVE AND SUPPORT"
+        self.judge.datc.datc_4e1 = 'a'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1390,10 +1395,10 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, BUL],
         ])
     def ftest_6D29_quasi_change(self):
-        ''' 6.D.29.b.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
+        ''' 6.D.29.a.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
-        self.judge.datc.quasi_legal = True
+        self.judge.datc.datc_4e1 = 'a'
         self.judge.datc.change_coast = True
         start_state = [
             [AUS, AMY, BUD],
@@ -1412,11 +1417,11 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ftest_6D29_quasi_fail(self):
-        ''' 6.D.29.b.b  MOVE TO IMPOSSIBLE COAST AND SUPPORT
+    def ptest_6D29_quasi_fail(self):
+        ''' 6.D.29.a.b  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
-        self.judge.datc.quasi_legal = True
+        self.judge.datc.datc_4e1 = 'a'
         self.judge.datc.change_coast = False
         start_state = [
             [AUS, AMY, BUD],
@@ -1435,11 +1440,11 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ftest_6D30_quasi_fail(self):
-        ''' 6.D.30.b.a  MOVE WITHOUT COAST AND SUPPORT
+    def ptest_6D30_quasi_fail(self):
+        ''' 6.D.30.a.a  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
-        self.judge.datc.quasi_legal = True
+        self.judge.datc.datc_4e1 = 'a'
         self.judge.datc.default_coast = False
         start_state = [
             [ITA, FLT, AEG],
@@ -1458,11 +1463,11 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, BUL],
         ])
-    def ftest_6D30_quasi_default(self):
-        ''' 6.D.30.b.b  MOVE WITHOUT COAST AND SUPPORT
+    def ptest_6D30_quasi_default(self):
+        ''' 6.D.30.a.b  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
-        self.judge.datc.quasi_legal = True
+        self.judge.datc.datc_4e1 = 'a'
         self.judge.datc.default_coast = True
         start_state = [
             [ITA, FLT, AEG],
@@ -1481,9 +1486,9 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, BUL],
         ])
-    def ftest_6D31_quasi(self):
-        "6.D.31.b  A TRICKY IMPOSSIBLE SUPPORT"
-        self.judge.datc.quasi_legal = True
+    def ptest_6D31_quasi(self):
+        "6.D.31.a  A TRICKY IMPOSSIBLE SUPPORT"
+        self.judge.datc.datc_4e1 = 'a'
         start_state = [
             [AUS, AMY, RUM],
             [TUR, FLT, BLA],
@@ -1492,9 +1497,9 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, RUM), CTO, ARM, VIA, [BLA]])
         self.legalOrder(TUR, [(TUR, FLT, BLA), SUP, (AUS, AMY, RUM), MTO, ARM])
         self.assertMapState(start_state)
-    def ftest_6D32_quasi(self):
-        "6.D.32.b  A MISSING FLEET"
-        self.judge.datc.quasi_legal = True
+    def ptest_6D32_quasi(self):
+        "6.D.32.a  A MISSING FLEET"
+        self.judge.datc.datc_4e1 = 'a'
         start_state = [
             [ENG, FLT, EDI],
             [ENG, AMY, LVP],
@@ -1516,7 +1521,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
     # Without Quasi-Legal orders
     def ptest_6D28_illegal(self):
         "6.D.28.d  IMPOSSIBLE MOVE AND SUPPORT"
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1533,7 +1538,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ''' 6.D.29.d.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         self.judge.datc.change_coast = True
         start_state = [
             [AUS, AMY, BUD],
@@ -1556,7 +1561,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ''' 6.D.29.d.b  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         self.judge.datc.change_coast = False
         start_state = [
             [AUS, AMY, BUD],
@@ -1574,7 +1579,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ''' 6.D.30.d.a  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         self.judge.datc.default_coast = False
         start_state = [
             [ITA, FLT, AEG],
@@ -1592,7 +1597,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ''' 6.D.30.d.b  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         self.judge.datc.default_coast = True
         start_state = [
             [ITA, FLT, AEG],
@@ -1613,7 +1618,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6D31_illegal(self):
         "6.D.31.d  A TRICKY IMPOSSIBLE SUPPORT"
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         start_state = [
             [AUS, AMY, RUM],
             [TUR, FLT, BLA],
@@ -1624,7 +1629,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.assertMapState(start_state)
     def ptest_6D32_illegal(self):
         "6.D.32.d  A MISSING FLEET"
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4e1 = 'd'
         start_state = [
             [ENG, FLT, EDI],
             [ENG, AMY, LVP],
@@ -4027,7 +4032,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, BER],
         ])
         self.assertMapState(steady_state)
-    def test_6J6(self):
+    def ftest_6J6(self):
         "6.J.6.  CIVIL DISORDER TWO FLEETS WITH EQUAL DISTANCE"
         steady_state = [
             [RUS, FLT, HEL],

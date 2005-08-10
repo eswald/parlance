@@ -28,7 +28,7 @@ class datc_options(config.option_class):
     def __init__(self):
         self.datc_4a1 = self.getdatc('multi-route convoy disruption',                                          'ab',    'b')
         self.datc_4a2 = self.getdatc('convoy disruption paradoxes',                                            'bdef',  'd')
-        self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef', 'f')
+        self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef','f')
         self.datc_4a4 = self.getdatc('support cut on attack on itself via convoy',                             'ab',    'a')
         self.datc_4a5 = self.getdatc('retreat when dislodged by convoy',                                       'ab',    'b')
         self.datc_4a6 = self.getdatc('convoy path specification',                                              'abc',   'b')
@@ -82,7 +82,6 @@ class judge_options(config.option_class):
         self.full_DRW   = self.getboolean('list draw parties in DIAS',    False)
         self.send_SET   = self.getboolean('publish order sets',           False)
         self.send_ORD   = self.getboolean('publish individual orders',    True)
-        self.quasi      = self.getboolean('illegal moves still move',     True)
 
 class Standard_Judge(Judge):
     ''' Implementation of the Judge interface, for DAIDE rules.'''
@@ -133,6 +132,10 @@ class Standard_Judge(Judge):
                     order.__result = None
                     orders.add(order, country)
                 elif self.game_opts.AOA:
+                    if order.is_moving() and self.illegal(order):
+                        # Make it act like it's holding
+                        self.log_debug(13, ' Changing behavior of "%s" (%s) to hold', order, order.__note)
+                        order.is_moving = lambda: False
                     order.__result = note
                     orders.add(order, country)
                     note = MBV
@@ -402,55 +405,27 @@ class Standard_Judge(Judge):
             Returns a list of ORD messages.
         '''#'''
         # 0) Initialize arrays
-        hold_decisions     = []
-        attack_decisions   = []
-        prevent_decisions  = []
-        defend_decisions   = []
-        move_decisions     = []
-        support_decisions  = []
-        dislodge_decisions = []
-        path_decisions     = []
-        convoyers          = {}
+        decisions = Decision_Set()
+        convoyers = {}
         for province in self.map.spaces.itervalues(): province.entering = []
         
         # 1) Run through the units, collecting orders and checking validity.
         # Each unit gets a Dislodge decision.
+        # Each moving unit gets Path, Move, Attack, and Prevent decisions.
         # Each valid supporting unit gets a Support decision.
-        # Each legally moving unit gets Path, Move, Attack, and Prevent decisions.
-        # Each unit in a head-to-head conflict gets a Defend decision.
         # Each province moved into gets a Hold decision.
         for unit in self.map.units:
             order = unit.current_order = self.unit_order(unit, HoldOrder)
             self.log_debug(13, 'Using "%s" for %s', order, unit)
             unit.supports = []
             unit.decisions = {}
-            dislodge_decisions.append(Dislodge_Decision(order))
-            if order.__result: pass
-            elif order.is_moving():
-                path_decisions.append(Path_Decision(order))
-                move_decisions.append(Move_Decision(order))
-                attack_decisions.append(Attack_Decision(order))
-                prevent_decisions.append(Prevent_Decision(order))
-                
-                # Check for head-to-head battles
-                if not order.is_convoyed():
-                    for other in order.destination.province.units:
-                        other_order = self.unit_order(other, HoldOrder)
-                        if (other_order.moving_to(unit.coast.province)
-                                and not other_order.is_convoyed()):
-                            defend_decisions.append(Defend_Decision(order))
-                            for choice in unit.decisions.itervalues():
-                                choice.head = other
-                
-                into = order.destination.province
-                if not into.entering:
-                    hold = Hold_Decision(into)
-                    hold_decisions.append(hold)
-                    into.hold = hold
-                into.entering.append(unit)
+            decisions.add(Dislodge_Decision(order))
+            if order.is_moving():
+                self.add_movement_decisions(order, unit, decisions)
+            elif order.__result: pass
             elif order.is_supporting():
                 if order.matches(self.next_orders):
-                    support_decisions.append(Support_Decision(order))
+                    decisions.add(Support_Decision(order))
                 else: order.__result = NSO
             elif order.is_convoying():
                 if order.matches(self.next_orders):
@@ -460,56 +435,67 @@ class Standard_Judge(Judge):
         # 2) Clean up order inter-dependencies.
         # Find available routes for convoyed units.
         # Tell supported units about their supports.
-        for choice in path_decisions:
+        # Each unit in a head-to-head conflict gets a Defend decision.
+        for choice in decisions[Decision.PATH]:
             choice.get_routes(convoyers)
-        for choice in support_decisions:
+        for choice in decisions[Decision.SUPPORT]:
             choice.order.supported.supports.append(choice)
+        for choice in decisions[Decision.MOVE]:
+            other = self.find_head(choice.order)
+            if other:
+                decisions.add(Defend_Decision(choice.order))
+                for decision in choice.order.unit.decisions.itervalues():
+                    decision.head = other
         
         # 3) Initialize the dependencies in each decision.
-        # This order attempts to maximize decisions made in the first pass.
-        # (But it could be better by alternating attack and support...)
-        decisions = []
-        decisions.extend(path_decisions)
-        decisions.extend(attack_decisions)
-        decisions.extend(support_decisions)
-        decisions.extend(defend_decisions)
-        decisions.extend(prevent_decisions)
-        decisions.extend(hold_decisions)
-        decisions.extend(move_decisions)
-        decisions.extend(dislodge_decisions)
+        decision_list = decisions.sorted()
         for choice in decisions: choice.init_deps()
         
         # 4) Run through the decisions until they are all made.
-        while decisions:
-            self.log_debug(11, '%d decisions to make...', len(decisions))
-            for choice in decisions:
+        while decision_list:
+            self.log_debug(11, '%d decisions to make...', len(decision_list))
+            for choice in decision_list:
                 self.log_debug(14, choice)
                 for dep in choice.depends: self.log_debug(15, '- ' + str(dep))
-            remaining = [choice for choice in decisions if not choice.calculate()]
-            if len(remaining) == len(decisions):
-                decisions = self.resolve_paradox(remaining)
-            else: decisions = remaining
+            remaining = [choice for choice in decision_list
+                    if not choice.calculate()]
+            if len(remaining) == len(decision_list):
+                decision_list = self.resolve_paradox(remaining)
+            else: decision_list = remaining
         
         # 5) Move units around
-        orders = []
         turn = self.map.current_turn
-        for unit in self.map.units:
-            result = self.process_results(unit)
-            orders.append(ORD(turn, unit.current_order, result))
+        orders = [ORD(turn, unit.current_order, self.process_results(unit))
+                for unit in self.map.units]
         
         # 6) Clean up all of the circular references
-        for choice in hold_decisions:     del choice.depends
-        for choice in attack_decisions:   del choice.depends
-        for choice in prevent_decisions:  del choice.depends
-        for choice in defend_decisions:   del choice.depends
-        for choice in move_decisions:     del choice.depends
-        for choice in support_decisions:  del choice.depends
-        for choice in path_decisions:     del choice.depends
-        for choice in dislodge_decisions:
-            del choice.depends
-            del choice.order.unit.decisions
+        for choice in decisions: del choice.depends
+        for unit in self.map.units: del unit.decisions
+        
+        # 7) Return the ORD messages
         return orders
     
+    def find_head(self, order):
+        if not order.is_convoyed():
+            unit_list = order.unit.coast.province.entering
+            for other in order.destination.province.units:
+                if other in unit_list and not other.current_order.is_convoyed():
+                    return other
+        return None
+    def add_movement_decisions(self, order, unit, decisions):
+        path = Path_Decision(order)
+        if order.__result: path.failed = True
+        else: decisions.add(path)
+        decisions.add(Move_Decision(order))
+        decisions.add(Attack_Decision(order))
+        decisions.add(Prevent_Decision(order))
+        
+        into = order.destination.province
+        if not into.entering:
+            hold = Hold_Decision(into)
+            decisions.add(hold)
+            into.hold = hold
+        into.entering.append(unit)
     def unit_order(self, unit, order_class):
         ''' Returns the last order given by the unit's owner.
             Depends on handle_SUB() to weed out invalid orders.
@@ -519,14 +505,19 @@ class Standard_Judge(Judge):
             result = order_class(unit)
             result.__result = None
         return result
-    def quasi_legal(self, country, order):
-        return bool(self.options.quasi
-                and self.game_opts.AOA
-                and order.unit
-                and order.unit.exists()
-                and country == order.unit.nation
-                #and not results.has_key(order.unit.coast.key)
-        )
+    def illegal(self, order):
+        ''' Called for movement orders, to determine quasi-legality.
+            If this returns True, then the unit should act like it's holding;
+            False, like it's attempting to move.
+        '''#'''
+        # Todo: Improve the algorithm for option C;
+        # in particular, FAR for convoy paths with missing fleets is okay
+        option = self.datc.datc_4e1
+        if   option == 'a': return False
+        elif option == 'b': return order.__note == NSP
+        elif option == 'c': return order.__note in (NSP, FAR, NAS, CST)
+        elif option == 'd': return order.__note != MBV
+        else: raise NotImplementedError
     def resolve_paradox(self, decisions):
         ''' Resolve the paradox, somehow.
             This may involve circular motion, convoy paradox,
@@ -545,7 +536,9 @@ class Standard_Judge(Judge):
                 moving_to.add(choice.into.key)
                 moving_from.add(choice.order.destination.province.key)
                 for unit in choice.into.units:
-                    if unit.current_order.is_convoying(): convoy = True
+                    order = unit.current_order
+                    if order.is_convoying() and not order.__result:
+                        convoy = True
         
         resolved = None
         if convoy: resolved = self.Szykman(core)
@@ -672,7 +665,29 @@ class Standard_Judge(Judge):
                 if unit.current_order.unit.decisions[Decision.PREVENT].max_value > 0:
                     return False
         return True
- 
+
+class Decision_Set(DefaultDict):
+    ''' Holds a set of Decisions, separating them by type.
+        As a list, they are returned in the following order:
+        PATH decisions, ATTACK decisions, SUPPORT decisions, DEFEND decisions,
+        PREVENT decisions, HOLD decisions, MOVE decisions, DISLODGE decisions.
+        This order attempts to maximize decisions made in the first pass.
+        (But it could be better by alternating attack and support...)
+    '''#'''
+    def __init__(self): super(Decision_Set, self).__init__([])
+    def add(self, decision): self[decision.type].append(decision)
+    def __iter__(self):
+        from itertools import chain
+        return chain(*self.itervalues())
+    def sorted(self):
+        return (self[Decision.PATH] +
+                self[Decision.ATTACK] +
+                self[Decision.SUPPORT] +
+                self[Decision.DEFEND] +
+                self[Decision.PREVENT] +
+                self[Decision.HOLD] +
+                self[Decision.MOVE] +
+                self[Decision.DISLODGE])
 
 class Decision(object):
     # Tristate decisions
@@ -794,7 +809,8 @@ class Dislodge_Decision(Tristate_Decision):
     __slots__ = ()
     type = Decision.DISLODGE
     def init_deps(self):
-        if self.order.is_moving(): my_move = self.order.unit.decisions[Decision.MOVE]
+        if self.order.is_moving():
+            my_move = self.order.unit.decisions[Decision.MOVE]
         else: my_move = None
         self.depends = [my_move] + [unit.decisions[Decision.MOVE]
             for unit in self.order.unit.coast.province.entering]
