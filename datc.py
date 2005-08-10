@@ -381,13 +381,12 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, MAO],
             [FRA, FLT, MAO, MRT],
         ])
-    def ftest_6B7_required(self):
+    def ptest_6B7_required(self):
         ''' 6.B.7.a  SUPPORTING WITH UNSPECIFIED COAST"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are required and must match.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = True
+        self.judge.datc.datc_4b4 = 'a'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, MAO],
@@ -411,8 +410,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, coasts are optional, but must match if specified.
             This is the preferred solution for DATC.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = False
+        self.judge.datc.datc_4b4 = 'd'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, MAO],
@@ -425,14 +423,13 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, WES), MTO, (SPA, SCS)])
         self.legalOrder(ITA, [(ITA, FLT, GOL), SUP, (ITA, FLT, WES), MTO, (SPA, SCS)])
         self.assertMapState(start_state)
-    def ftest_6B7_illegal(self):
+    def ptest_6B7_illegal(self):
         ''' 6.B.7.e  SUPPORTING WITH UNSPECIFIED COAST"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are not allowed in support orders.
             This is the preferred solution for DPTG and DAIDE.
         '''#'''
-        self.judge.datc.support_coast = False
-        self.judge.datc.require_coast = False
+        self.judge.datc.datc_4b4 = 'e'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, MAO],
@@ -450,13 +447,12 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, WES],
         ])
-    def ftest_6B8_required(self):
+    def ptest_6B8_required(self):
         ''' 6.B.8.a  SUPPORTING WITH UNSPECIFIED COAST WHEN ONLY ONE COAST IS POSSIBLE"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are required and must match.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = True
+        self.judge.datc.datc_4b4 = 'a'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, GAS],
@@ -480,8 +476,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, coasts are optional, but must match if specified.
             This is the preferred solution for DATC.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = False
+        self.judge.datc.datc_4b4 = 'd'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, GAS],
@@ -494,14 +489,13 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, WES), MTO, (SPA, SCS)])
         self.legalOrder(ITA, [(ITA, FLT, GOL), SUP, (ITA, FLT, WES), MTO, (SPA, SCS)])
         self.assertMapState(start_state)
-    def ftest_6B8_illegal(self):
+    def ptest_6B8_illegal(self):
         ''' 6.B.8.e  SUPPORTING WITH UNSPECIFIED COAST WHEN ONLY ONE COAST IS POSSIBLE"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are not allowed in support orders.
             This is the preferred solution for DPTG and DAIDE.
         '''#'''
-        self.judge.datc.support_coast = False
-        self.judge.datc.require_coast = False
+        self.judge.datc.datc_4b4 = 'e'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, GAS],
@@ -525,8 +519,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, coasts must match.
             This server does not support allowing mismatched support orders.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = True
+        self.judge.datc.datc_4b4 = 'a'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, MAO],
@@ -551,8 +544,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             This is the preferred solution for DATC.
             This server does not support allowing mismatched support orders.
         '''#'''
-        self.judge.datc.support_coast = True
-        self.judge.datc.require_coast = False
+        self.judge.datc.datc_4b4 = 'd'
         start_state = [
             [FRA, FLT, POR],
             [FRA, FLT, MAO],

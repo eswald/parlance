@@ -6,7 +6,7 @@ import config
 from operator    import lt, gt
 from functions   import any, all, autosuper, Comparable
 from iaq         import DefaultDict
-from gameboard   import Turn, Power, Unit
+from gameboard   import Turn, Power, Coast, Unit
 from language    import *
 #from language    import Message, \
 #MIS, SUB, WVE, REM, BLD, DSB, RTO, CTO, CVY, SUP, MTO, HLD, VIA, \
@@ -252,9 +252,17 @@ class SupportOrder(MovementPhaseOrder):
 		supported = board.ordered_unit(nation, order[2])
 		if len(order) > 4:
 			dest = board.ordered_coast(supported, order[4], datc)
-			result = SupportMoveOrder(unit, supported, dest)
-			if not supported.can_move_to(dest):
-				supported.coast.collect_convoy_routes(dest.province.key, board)
+			legal_dest = True
+			if supported.can_move_to(dest):
+				if datc.datc_4b4 in 'abc' and not dest.exists():
+					# Coastline specifications are required
+					# Todo: Implement 'b' and 'c' fully.
+					legal_dest = False
+				elif datc.datc_4b4 == 'e' and dest.coastline:
+					# Coastline specifications are ignored
+					dest = Coast(dest.unit_type, dest.province, None, [])
+			else: supported.coast.collect_convoy_routes(dest.province.key, board)
+			result = SupportMoveOrder(unit, supported, dest, legal_dest)
 		else: result = SupportHoldOrder(unit, supported)
 		result.order = order
 		return result
@@ -275,13 +283,14 @@ class SupportHoldOrder(SupportOrder):
 				and not order_set.is_moving(self.supported)
 				and self.supported.coast.province != self.unit.coast.province)
 class SupportMoveOrder(SupportOrder):
-	def __init__(self, unit, mover, destination):
+	def __init__(self, unit, mover, destination, legal_coast=True):
 		# Note: destination.maybe_coast would be better,
 		# but is disallowed by the language.
 		self.key = (unit.key, SUP, mover.key, MTO, destination.province.key)
 		self.unit = unit
 		self.supported = mover
 		self.destination = destination
+		self.legal = legal_coast
 	def __str__(self):
 		return '%s %s S %s - %s' % (
 				self.unit.coast.unit_type, self.unit.coast.province,
@@ -296,11 +305,14 @@ class SupportMoveOrder(SupportOrder):
 		# a coastline of None for a fleet moving to bicoastal.  However,
 		# the province must exist, and both units must be able to move there.
 		note = self.__super.order_note(power, phase, past_orders)
-		if note == MBV and not self.supported.can_move_to(self.destination):
-			def has_not(route, prov=self.unit.coast.province.key):
-				return prov not in route
-			result = self.convoy_note(self.supported, self.destination, has_not)
-			if result != MBV: note = FAR
+		if note == MBV:
+			if self.supported.can_move_to(self.destination):
+				if not self.legal: note = CST
+			else:
+				def has_not(route, prov=self.unit.coast.province.key):
+					return prov not in route
+				result = self.convoy_note(self.supported, self.destination, has_not)
+				if result != MBV: note = FAR
 		return note
 
 class RetreatPhaseOrder(UnitOrder):

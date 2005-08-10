@@ -36,7 +36,7 @@ class datc_options(config.option_class):
         self.datc_4b1 = self.getdatc('omitted coast specification in move order when two coasts are possible', 'ab',    'a') # Done!
         self.datc_4b2 = self.getdatc('omitted coast specification in move order when one coast is possible',   'abc',   'c') # Done!
         self.datc_4b3 = self.getdatc('move order to impossible coast',                                         'ab',    'b') # Done!
-        self.datc_4b4 = self.getdatc('coast specification in support order',                                   'acde',  'd')
+        self.datc_4b4 = self.getdatc('coast specification in support order',                                   'ade',   'd') # Done, except for b and c
         self.datc_4b5 = self.getdatc('wrong coast of ordered unit',                                            'ab',    'a')
         self.datc_4b6 = self.getdatc('unknown coasts or irrelevant coasts',                                    'ab',    'a')
         self.datc_4b7 = self.getdatc('coast specification in build order',                                     'a',     'a')
