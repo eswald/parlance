@@ -26,7 +26,7 @@ class datc_options(config.option_class):
     '''#'''
     section = 'datc'
     def __init__(self):
-        self.datc_4a1 = self.getdatc('multi-route convoy disruption',                                          'ab',    'b')
+        self.datc_4a1 = self.getdatc('multi-route convoy disruption',                                          'ab',    'b') # Done!
         self.datc_4a2 = self.getdatc('convoy disruption paradoxes',                                            'bdef',  'd')
         self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef','f')
         self.datc_4a4 = self.getdatc('support cut on attack on itself via convoy',                             'ab',    'a')
@@ -483,7 +483,7 @@ class Standard_Judge(Judge):
                     return other
         return None
     def add_movement_decisions(self, order, unit, decisions):
-        path = Path_Decision(order)
+        path = Path_Decision(order, self.datc.datc_4a1 == 'b')
         if order.__result: path.failed = True
         else: decisions.add(path)
         decisions.add(Move_Decision(order))
@@ -820,24 +820,34 @@ class Dislodge_Decision(Tristate_Decision):
         self.failed = (my_move and    my_move.passed) or  all(self.depends[1:], lambda d: d.failed)
         return self.decided()
 class Path_Decision(Tristate_Decision):
-    __slots__ = ('convoyed', 'routes')
+    __slots__ = ('convoyed', 'routes', 'disrupt_all')
     type = Decision.PATH
-    def __init__(self, order):
+    def __init__(self, order, disrupt_all):
         Tristate_Decision.__init__(self, order)
+        self.disrupt_all = disrupt_all
         self.convoyed = order.is_convoyed()
         self.routes = []
     def get_routes(self, convoyers):
         if self.convoyed and self.order.unit.can_be_convoyed():
             if self.order.path:
                 path_list = [[fleet.coast.province for fleet in self.order.path]]
-            else: path_list = self.order.unit.coast.routes.get(self.into.key, None)
+            else: path_list = self.order.unit.coast.routes.get(self.into.key)
             if path_list:
                 key = self.order.unit.key
-                def available(prov):
-                    return convoyers.get(prov.key, None) == key
+                def available(prov): return convoyers.get(prov.key) == key
+                all_routes = [path for path in path_list if all(path, available)]
+                
+                if not self.disrupt_all:
+                    # DPTG craziness: ignore foreign convoyers if we can go alone.
+                    nation = self.order.unit.nation
+                    def countryman(prov): return any(prov.units, lambda u: u.nation == nation)
+                    solo_routes = [path for path in all_routes if all(path, countryman)]
+                else: solo_routes = None
+                
+                # Keep just the Decisions we're interested in
                 self.routes = [
                     sum([[unit.decisions[Decision.DISLODGE] for unit in prov.units] for prov in path], [])
-                    for path in path_list if all(path, available)
+                    for path in (solo_routes or all_routes)
                 ]
     def init_deps(self):
         if self.convoyed: self.depends = Set(sum(self.routes, []))
@@ -848,23 +858,35 @@ class Path_Decision(Tristate_Decision):
         self.failed = self.calc_path_fail()
         return self.decided()
     def calc_path_pass(self):
-        # Check for a path with no dislodged units
         if self.convoyed:
-            for path in self.routes:
-                for choice in path:
-                    if not choice.failed: break
-                else: return True
-            else: return False
-        else: return True
-    def calc_path_fail(self):
-        # Check for a dislodged unit on each path
-        if self.convoyed:
-            for path in self.routes:
-                for choice in path:
-                    if choice.passed: break
+            if self.disrupt_all:
+                # Check for any path with no dislodged units
+                for path in self.routes:
+                    for choice in path:
+                        if not choice.failed: break
+                    else: return True
                 else: return False
-            else: return True
-        else: return False
+            else:
+                # Check that no path has potentially dislodged units
+                for path in self.routes:
+                    for choice in path:
+                        if not choice.failed: return False
+        return True
+    def calc_path_fail(self):
+        if self.convoyed:
+            if self.disrupt_all:
+                # Check for a dislodged unit on each path
+                for path in self.routes:
+                    for choice in path:
+                        if choice.passed: break
+                    else: return False
+                else: return True
+            else:
+                # Check for a dislodged unit on any path
+                for path in self.routes:
+                    for choice in path:
+                        if choice.passed: return True
+        return False
 
 class Numeric_Decision(Decision):
     ''' A numeric decision, which is decided when the maximum possible value

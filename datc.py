@@ -2113,9 +2113,9 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
 class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
     "6.F.  MULTI-ROUTE CONVOYS"
     # All depend on or relate to 4.A.1 (disrupt_all)
-    def ftest_6F9_any(self):
+    def ptest_6F9_any(self):
         "6.F.9.a  DISLODGE OF MULTI-ROUTE CONVOY"
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [ENG, FLT, NTH],
             [ENG, AMY, LON],
@@ -2136,7 +2136,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6F10_any(self):
         "6.F.10.a  DISLODGE OF MULTI-ROUTE CONVOY WITH FOREIGN FLEET"
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [ENG, FLT, NTH],
             [FRA, FLT, BRE],
@@ -2156,9 +2156,9 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ftest_6F11_any(self):
+    def ptest_6F11_any(self):
         "6.F.11.a  DISLODGE OF MULTI-ROUTE CONVOY WITH ONLY FOREIGN FLEETS"
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [ENG, AMY, LON],
             [RUS, FLT, NTH],
@@ -2179,7 +2179,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6F12_any(self):
         "6.F.12.a  DISLODGED CONVOYING FLEET NOT ON ROUTE"
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [ENG, FLT, ECH],
             [FRA, FLT, NAO],
@@ -2199,10 +2199,10 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, IRI, MRT],
             [FRA, FLT, IRI],
         ])
-    def ptest_6F13_any(self):
+    def ftest_6F13_any(self):
         "6.F.13.a  THE UNWANTED ALTERNATIVE"
         # 4.A.6, as well
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [FRA, FLT, ECH],
             [GER, FLT, HOL],
@@ -2219,13 +2219,14 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, DEN), MTO, NTH])
         self.assertMapState(steady_state + [
             [ENG, AMY, BEL],
+            #[ENG, AMY, LON], # This is probably correct.
             [ENG, FLT, NTH, MRT],
             [GER, FLT, NTH],
         ])
     
     def ptest_6F9_all(self):
         "6.F.9.b  DISLODGE OF MULTI-ROUTE CONVOY"
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [ENG, FLT, NTH],
             [FRA, FLT, BRE],
@@ -2247,7 +2248,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6F10_all(self):
         "6.F.10.b  DISLODGE OF MULTI-ROUTE CONVOY WITH FOREIGN FLEET"
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [ENG, FLT, NTH],
             [FRA, FLT, BRE],
@@ -2269,7 +2270,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6F11_all(self):
         "6.F.11.b  DISLODGE OF MULTI-ROUTE CONVOY WITH ONLY FOREIGN FLEETS"
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [RUS, FLT, NTH],
             [FRA, FLT, BRE],
@@ -2291,7 +2292,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         ])
     def ptest_6F12_all(self):
         "6.F.12.b  DISLODGED CONVOYING FLEET NOT ON ROUTE"
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [ENG, FLT, ECH],
             [FRA, FLT, NAO],
@@ -2314,7 +2315,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
     def ptest_6F13_all(self):
         "6.F.13.b  THE UNWANTED ALTERNATIVE"
         # 4.A.6, as well
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [FRA, FLT, ECH],
             [GER, FLT, HOL],
@@ -2445,10 +2446,10 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, SKA), MTO, NTH])
         self.assertMapState(steady_state + [
         ])
-    def ftest_6F19_any(self):
+    def ptest_6F19_any(self):
         "6.F.19.d.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [FRA, AMY, TUN],
             [FRA, FLT, ION],
@@ -2470,7 +2471,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
     def ptest_6F19_all(self):
         "6.F.19.d.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [FRA, AMY, TUN],
             [FRA, FLT, TYS],
@@ -2490,7 +2491,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
     def ptest_6F20_any(self):
         "6.F.20.d.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
-        self.judge.datc.disrupt_all = False
+        self.judge.datc.datc_4a1 = 'a'
         steady_state = [
             [FRA, AMY, TUN],
             [FRA, FLT, TYS],
@@ -2514,7 +2515,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
     def ptest_6F20_all(self):
         "6.F.20.d.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
-        self.judge.datc.disrupt_all = True
+        self.judge.datc.datc_4a1 = 'b'
         steady_state = [
             [FRA, AMY, TUN],
             [FRA, FLT, TYS],
