@@ -257,19 +257,19 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             This case causes the move to fail.
             This is the preferred solution for DATC, DPTG, and DAIDE.
         '''#'''
-        self.judge.datc.default_coast = True
+        self.judge.datc.datc_4b1 = 'a'
         start_state = [
             [FRA, FLT, POR],
         ]
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, POR), MTO, SPA])
         self.assertMapState(start_state)
-    def ftest_6B1_default(self):
+    def ptest_6B1_default(self):
         ''' 6.B.1.b  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NECESSARY
             Subject to issue 4.B.1 (default_coast).
             This case chooses a default coast for the move.
         '''#'''
-        self.judge.datc.default_coast = True
+        self.judge.datc.datc_4b1 = 'b'
         start_state = [
             [FRA, FLT, POR],
         ]
@@ -284,35 +284,34 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             This case moves to the only available coast.
             This is the preferred solution for DATC and DPTG.
         '''#'''
+        self.judge.datc.datc_4b2 = 'a'
         start_state = [
             [FRA, FLT, GAS],
         ]
         self.init_state(SPR, 1901, start_state)
         self.legalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
-        self.judge.datc.infer_coast = True
         self.assertMapState([
             [FRA, FLT, [SPA, NCS]],
         ])
-    def ftest_6B2_fail(self):
+    def ptest_6B2_fail(self):
         ''' 6.B.2.c  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.2 (infer_coast). 
             This case marks the move as illegal.
             This seems to be the preferred solution for DAIDE.
         '''#'''
+        self.judge.datc.datc_4b2 = 'c'
         start_state = [
             [FRA, FLT, GAS],
         ]
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
-        self.judge.datc.infer_coast = False
         self.assertMapState(start_state)
-    def ftest_6B3_change(self):
+    def ptest_6B3_change(self):
         ''' 6.B.3.a  MOVING WITH WRONG COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.3 (change_coast). 
             This case moves to the only possible coast.
         '''#'''
-        self.judge.datc.change_coast = False
-        self.judge.datc.infer_coast = True
+        self.judge.datc.datc_4b3 = 'a'
         start_state = [
             [FRA, FLT, GAS],
         ]
@@ -327,7 +326,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             This case marks the move as illegal.
             This is the preferred solution for DATC.
         '''#'''
-        self.judge.datc.change_coast = False
+        self.judge.datc.datc_4b3 = 'b'
         start_state = [
             [FRA, FLT, GAS],
         ]
@@ -1394,12 +1393,12 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ftest_6D29_quasi_change(self):
+    def ptest_6D29_quasi_change(self):
         ''' 6.D.29.a.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'a'
-        self.judge.datc.change_coast = True
+        self.judge.datc.datc_4b3 = 'a'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1413,7 +1412,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, RUM])
         self.assertMapState([
             [AUS, AMY, BUD],
-            [RUS, FLT, [BUL, ECS]],
+            [RUS, FLT, RUM, MRT],
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
@@ -1422,7 +1421,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'a'
-        self.judge.datc.change_coast = False
+        self.judge.datc.datc_4b3 = 'b'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1445,7 +1444,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'a'
-        self.judge.datc.default_coast = False
+        self.judge.datc.datc_4b1 = 'a'
         start_state = [
             [ITA, FLT, AEG],
             [RUS, FLT, CON],
@@ -1468,7 +1467,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'a'
-        self.judge.datc.default_coast = True
+        self.judge.datc.datc_4b1 = 'b'
         start_state = [
             [ITA, FLT, AEG],
             [RUS, FLT, CON],
@@ -1534,12 +1533,12 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, RUM])
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, RUM])
         self.assertMapState(start_state)
-    def ftest_6D29_illegal_change(self):
+    def ptest_6D29_illegal_change(self):
         ''' 6.D.29.d.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'd'
-        self.judge.datc.change_coast = True
+        self.judge.datc.datc_4b3 = 'a'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1553,7 +1552,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, RUM])
         self.assertMapState([
             [AUS, AMY, BUD],
-            [RUS, FLT, [BUL, ECS]],
+            [RUS, FLT, RUM, MRT],
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
@@ -1562,7 +1561,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'd'
-        self.judge.datc.change_coast = False
+        self.judge.datc.datc_4b3 = 'b'
         start_state = [
             [AUS, AMY, BUD],
             [RUS, FLT, RUM],
@@ -1580,7 +1579,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'd'
-        self.judge.datc.default_coast = False
+        self.judge.datc.datc_4b1 = 'a'
         start_state = [
             [ITA, FLT, AEG],
             [RUS, FLT, CON],
@@ -1593,12 +1592,12 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, CON])
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, CON])
         self.assertMapState(start_state)
-    def ftest_6D30_illegal_default(self):
+    def ptest_6D30_illegal_default(self):
         ''' 6.D.30.d.b  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
         self.judge.datc.datc_4e1 = 'd'
-        self.judge.datc.default_coast = True
+        self.judge.datc.datc_4b1 = 'b'
         start_state = [
             [ITA, FLT, AEG],
             [RUS, FLT, CON],

@@ -302,40 +302,47 @@ class Map(object):
 			unit = Unit(country or nation, coast)
 		#print '\tordered_unit(%s, %s) -> %s' % (nation, unit_spec, unit)
 		return unit
-	def ordered_coast(self, unit, coast_spec):
-		'''	Finds a coast from its token representation.
+	def ordered_coast(self, unit, coast_spec, datc):
+		'''	Finds a coast from its maybe_coast representation.
 			If the specified coast doesn't exist, returns a fake one.
-			Uses the unit's unit_type as a default,
-			and its location to disambiguate bicoastal destinations.
+			Uses the unit's unit_type, and (depending on options)
+			its location to disambiguate bicoastal destinations.
 		'''#'''
 		# Collect specifications
-		unit_type = coastline = province = None
+		unit_type = unit.coast.unit_type
+		coastline = province = None
 		for token in Message(coast_spec):
 			if token.is_province():
 				province = self.spaces.get(token) or Province(token, [], None)
 			elif token.is_coastline(): coastline = token
-			elif token.is_unit_type(): unit_type = token
 		if not province:
 			raise ValueError, 'Missing province in coast spec: %s' % Message(coast_spec)
 		
 		# Try to match all specs, but without ambiguity
-		coast = self.coasts.get((unit_type or unit.coast.unit_type,
-			province.key, coastline))
-		if not coast:
+		coast = self.coasts.get((unit_type, province.key, coastline))
+		if coast:
+			if datc.datc_4b3 == 'a' and not unit.can_move_to(coast):
+				# Wrong coast specified; change it to the right one.
+				possible = [c for c in province.coasts
+						if c.key in unit.coast.borders_out
+						and c.unit_type == unit_type]
+				if len(possible) == 1: coast = possible[0]
+		else:
 			possible = []
 			for item in province.coasts:
 				if unit_type and item.unit_type != unit_type: continue
 				if coastline and item.coastline != coastline: continue
 				possible.append(item)
 			if len(possible) == 1: coast = possible[0]
-			elif len(possible) > 1:
+			elif possible:
+				# Multiple coasts; see whether our location disambiguates.
+				# Note that my 4.B.2 "default" coast is the possible one.
 				nearby = [c for c in possible if c.key in unit.coast.borders_out]
-				if len(nearby) == 1: coast = nearby[0]
-				elif len(nearby) > 1: coast = Coast(None, province, coastline, [])
+				if len(nearby) == 1 and datc.datc_4b2 != 'c': coast = nearby[0]
+				elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
 			if not coast:
-				coast = Coast(unit_type or unit.coast.unit_type,
-						province, coastline, [])
-		#print '\tordered_coast(%s, %s) -> %s' % (unit, coast_spec, coast)
+				coast = Coast(None, province, coastline, [])
+		#print '\tordered_coast(%s, %s) -> %s (%s, %s, %s)' % (unit, coast_spec, coast, datc.datc_4b1, datc.datc_4b2, datc.datc_4b3)
 		return coast
 	def distance(self, coast, provs):
 		'''	Returns the coast's distance from the nearest of the provinces,
@@ -707,7 +714,7 @@ class Coast(Comparable):
 		elif category == 'Bicoastal': return self.unit_type == AMY
 		elif category == 'Coastal':   return self.unit_type in (AMY, FLT)
 		else:                         return False
-	def exists(self): return self in self.province.coasts
+	def exists(self): return self.unit_type and self in self.province.coasts
 	def collect_convoy_routes(self, dest, board):
 		'''	Collects possible convoy routes,
 			saving them in routes[dest].

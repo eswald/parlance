@@ -92,7 +92,7 @@ class HoldOrder(MovementPhaseOrder):
 		self.key = (unit.key, HLD)
 		self.unit = unit
 		self.destination = unit.coast
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		result = HoldOrder(board.ordered_unit(nation, order[0]))
 		result.order = order
 		return result
@@ -113,9 +113,9 @@ class MoveOrder(MovementPhaseOrder):
 			if not self.unit.can_move_to(self.destination): note = FAR
 			elif not self.destination.exists():             note = CST
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		unit = board.ordered_unit(nation, order[0])
-		dest = board.ordered_coast(unit, order[2])
+		dest = board.ordered_coast(unit, order[2], datc)
 		if not unit.can_move_to(dest):
 			unit.coast.collect_convoy_routes(dest.province.key, board)
 		result = MoveOrder(unit, dest)
@@ -149,10 +149,10 @@ class ConvoyingOrder(MovementPhaseOrder):
 					return fleet in route
 				note = self.convoy_note(self.supported, self.destination, has_this_fleet)
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		unit = board.ordered_unit(nation, order[0])
 		mover = board.ordered_unit(nation, order[2])
-		dest = board.ordered_coast(mover, order[4])
+		dest = board.ordered_coast(mover, order[4], datc)
 		mover.coast.collect_convoy_routes(dest.province.key, board)
 		result = ConvoyingOrder(unit, mover, dest)
 		result.order = order
@@ -222,9 +222,9 @@ class ConvoyedOrder(MovementPhaseOrder):
 						if self.destination.province.key not in space.province.borders_out:
 							note = FAR
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		unit = board.ordered_unit(nation, order[0])
-		dest = board.ordered_coast(unit, order[2])
+		dest = board.ordered_coast(unit, order[2], datc)
 		if len(order) > 4:
 			path = [board.ordered_unit(nation, prov) for prov in order[4]]
 			#for prov in path: print 'Convoying unit: %s' % prov
@@ -246,12 +246,12 @@ class SupportOrder(MovementPhaseOrder):
 			elif not self.unit.can_move_to(self.destination.province):
 				note = FAR
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		# Note that we don't care about order[3], so it could be MTO or CTO.
 		unit = board.ordered_unit(nation, order[0])
 		supported = board.ordered_unit(nation, order[2])
 		if len(order) > 4:
-			dest = board.ordered_coast(supported, order[4])
+			dest = board.ordered_coast(supported, order[4], datc)
 			result = SupportMoveOrder(unit, supported, dest)
 			if not supported.can_move_to(dest):
 				supported.coast.collect_convoy_routes(dest.province.key, board)
@@ -314,7 +314,7 @@ class DisbandOrder(RetreatPhaseOrder):
 		self.key = (unit.key, DSB)
 		self.unit = unit
 		self.destination = None
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		result = DisbandOrder(board.ordered_unit(nation, order[0]))
 		result.order = order
 		return result
@@ -333,9 +333,9 @@ class RetreatOrder(RetreatPhaseOrder):
 		if note == MBV and self.destination.maybe_coast not in self.unit.retreats:
 			note = NVR
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		unit = board.ordered_unit(nation, order[0])
-		dest = board.ordered_coast(unit, order[2])
+		dest = board.ordered_coast(unit, order[2], datc)
 		result = RetreatOrder(unit, dest)
 		result.order = order
 		return result
@@ -363,7 +363,7 @@ class WaiveOrder(BuildPhaseOrder):
 		elif self.nation != power:                  note = NYU
 		elif not self.required(power, past_orders): note = NMB
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		for token in Message(order):
 			if token.is_power():
 				power = board.powers.get(token) or Power(token, [])
@@ -395,7 +395,7 @@ class BuildOrder(BuildPhaseOrder):
 			else:                                                  note = MBV
 		elif note == MBV:                                          note = ESC
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		result = BuildOrder(board.ordered_unit(nation, order[0]))
 		result.order = order
 		return result
@@ -410,7 +410,7 @@ class RemoveOrder(BuildPhaseOrder):
 		note = self.__super.order_note(power, phase, past_orders)
 		if note == MBV and not self.required(power, past_orders): note = NMR
 		return note
-	def create(order, nation, board):
+	def create(order, nation, board, datc):
 		result = RemoveOrder(board.ordered_unit(nation, order[0]))
 		result.order = order
 		return result
@@ -428,7 +428,7 @@ _class_types = {
 	REM: RemoveOrder,
 	WVE: WaiveOrder,
 }
-def UnitOrder(order, nation, board):
+def UnitOrder(order, nation, board, datc):
 	'''	Determine the class of the order, and create one of that type.
 		This function hides the definition of the UnitOrder class,
 		but is more useful.
@@ -437,7 +437,7 @@ def UnitOrder(order, nation, board):
 		nation is the country making the order;
 		board is a Map object.
 	'''#'''
-	return _class_types[order[1]].create(order, nation, board)
+	return _class_types[order[1]].create(order, nation, board, datc)
 
 class OrderSet(dict):
 	'''	A mapping of Coast key -> UnitOrder, with special provisions for Waives.

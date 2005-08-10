@@ -33,9 +33,9 @@ class datc_options(config.option_class):
         self.datc_4a5 = self.getdatc('retreat when dislodged by convoy',                                       'ab',    'b')
         self.datc_4a6 = self.getdatc('convoy path specification',                                              'abc',   'b')
         self.datc_4a7 = self.getdatc('avoiding a head to head battle to bounce a unit',                        'ab',    'b')
-        self.datc_4b1 = self.getdatc('omitted coast specification in move order when two coasts are possible', 'a',     'a')
-        self.datc_4b2 = self.getdatc('omitted coast specification in move order when one coast is possible',   'ac',    'c')
-        self.datc_4b3 = self.getdatc('move order to impossible coast',                                         'ab',    'b')
+        self.datc_4b1 = self.getdatc('omitted coast specification in move order when two coasts are possible', 'ab',    'a') # Done!
+        self.datc_4b2 = self.getdatc('omitted coast specification in move order when one coast is possible',   'abc',   'c') # Done!
+        self.datc_4b3 = self.getdatc('move order to impossible coast',                                         'ab',    'b') # Done!
         self.datc_4b4 = self.getdatc('coast specification in support order',                                   'acde',  'd')
         self.datc_4b5 = self.getdatc('wrong coast of ordered unit',                                            'ab',    'a')
         self.datc_4b6 = self.getdatc('unknown coasts or irrelevant coasts',                                    'ab',    'a')
@@ -55,7 +55,7 @@ class datc_options(config.option_class):
         self.datc_4d7 = self.getdatc('waiving builds',                                                         'ab',    'a')
         self.datc_4d8 = self.getdatc('removing a unit in civil disorder',                                      'abcde', 'd')
         self.datc_4d9 = self.getdatc('receiving hold support in civil disorder',                               'ab',    'b')
-        self.datc_4e1 = self.getdatc('illegal orders',                                                         'abcd',  'd')
+        self.datc_4e1 = self.getdatc('illegal orders',                                                         'abcd',  'd') # Done!
         self.datc_4e2 = self.getdatc('poorly written orders',                                                  'e',     'e')
         self.datc_4e3 = self.getdatc('implicit orders',                                                        'ab',    'b')
         self.datc_4e4 = self.getdatc('perpetual orders',                                                       'ab',    'b')
@@ -124,7 +124,7 @@ class Standard_Judge(Judge):
             orders = self.next_orders
             for tlist in message.fold()[1:]:
                 power = self.map.powers[country]
-                order = UnitOrder(tlist, power, self.map)
+                order = UnitOrder(tlist, power, self.map, self.datc)
                 note = order.order_note(power, self.phase, orders)
                 self.log_debug(14, ' SUB: %s => %s', order, note)
                 order.__note = note
@@ -151,7 +151,7 @@ class Standard_Judge(Judge):
             orders = self.next_orders
             if len(message) > 4:
                 # Attempt to remove a specific order
-                order = UnitOrder(message[4:-1], country, self.map)
+                order = UnitOrder(message[4:-1], country, self.map, self.datc)
                 if not orders.remove(order, country):
                     client.reject(message)
                     return
