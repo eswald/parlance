@@ -22,7 +22,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 		and 4.A.2(c) overrides 4.A.5(b).
 	'''#'''
 	
-	def ftest_4A1_any(self):
+	def ptest_4A1_any(self):
 		'4.A.1.a  MULTI-ROUTE CONVOY DISRUPTION'
 		# From 6.F.9
 		self.judge.datc.datc_4a1 = 'a'
@@ -303,7 +303,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[RUS, FLT, BLA],
 			[TUR, FLT, BLA, MRT],
 		])
-	def ftest_4A3_1971(self):
+	def ptest_4A3_1971(self):
 		'4.A.3.a  CONVOYING TO ADJACENT PLACE'
 		# 6.G.1, 6.G.2, 6.G.3, 6.G.4, and an implicit convoy test
 		self.judge.datc.datc_4a3 = 'a'
@@ -360,7 +360,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[ITA, AMY, TRI],
 			[TUR, AMY, SEV],
 		])
-	def ftest_4A3_Walker(self):
+	def ptest_4A3_Walker(self):
 		'4.A.3.b  CONVOYING TO ADJACENT PLACE'
 		# 6.G.1, 6.G.2, 6.G.3, 6.G.4, and an implicit convoy test
 		self.judge.datc.datc_4a3 = 'b'
@@ -418,7 +418,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[ITA, AMY, TRI],
 			[TUR, AMY, SEV],
 		])
-	def ftest_4A3_refined(self):
+	def ptest_4A3_refined(self):
 		'4.A.3.c  CONVOYING TO ADJACENT PLACE'
 		# 6.G.1, 6.G.2, 6.G.3, 6.G.4, and an implicit convoy test
 		self.judge.datc.datc_4a3 = 'c'
@@ -478,7 +478,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[ITA, AMY, TRI],
 			[TUR, AMY, SEV],
 		])
-	def ftest_4A3_1982(self):
+	def ptest_4A3_1982(self):
 		'4.A.3.d  CONVOYING TO ADJACENT PLACE'
 		# 6.G.1, 6.G.2, 6.G.3, 6.G.4, and an implicit convoy test
 		self.judge.datc.datc_4a3 = 'd'
@@ -536,7 +536,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[ITA, AMY, TRI],
 			[TUR, AMY, SEV],
 		])
-	def ftest_4A3_DPTG(self):
+	def ptest_4A3_DPTG(self):
 		'4.A.3.e  CONVOYING TO ADJACENT PLACE'
 		# 6.G.1, 6.G.2, 6.G.3, 6.G.4, and an implicit convoy test
 		self.judge.datc.datc_4a3 = 'e'
@@ -774,7 +774,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[FRA, FLT, ECH],
 			[RUS, AMY, LVP],
 		])
-	def ptest_4A6_ignored(self):
+	def ftest_4A6_ignored(self):
 		'4.A.6.a  CONVOY PATH SPECIFICATION'
 		self.judge.datc.datc_4a6 = 'a'
 		steady_state = [
@@ -801,7 +801,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 			[ENG, AMY, NWY],
 			[FRA, FLT, ECH],
 		])
-	def ftest_4A6_optional(self):
+	def ptest_4A6_optional(self):
 		'4.A.6.b  CONVOY PATH SPECIFICATION'
 		self.judge.datc.datc_4a6 = 'b'
 		steady_state = [
@@ -903,8 +903,8 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
 
 class DATC_4_B(DiplomacyAdjudicatorTestCase):
 	'''	4.B.  COASTAL ISSUES
-		Note: This program does not support default coasts.
-		Thus, 4.B.1(a), 4.B.2(b), 4.B.4(b), and 4.B.7(b) are unavailable.
+		Note: This suite does not currently test for default coasts.
+		Thus, 4.B.1(b), 4.B.2(b), 4.B.4(b), and 4.B.7(b) are unavailable.
 	'''#'''
 	
 	def ptest_4B1_fail(self):
@@ -918,7 +918,7 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(FRA, [(FRA, FLT, MAO), MTO, SPA])
 		self.assertMapState(steady_state + [
 		])
-	def ftest_4B2_infer(self):
+	def ptest_4B2_infer(self):
 		'4.B.2.a  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE'
 		# Two tests are needed to distinguish this from case b (default coast).
 		self.judge.datc.datc_4b2 = 'a'
@@ -958,7 +958,7 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
 		self.assertMapState(steady_state + [
 		])
-	def ftest_4B3_infer(self):
+	def ptest_4B3_infer(self):
 		'4.B.3.a  MOVE ORDER TO IMPOSSIBLE COAST'
 		self.judge.datc.datc_4b3 = 'a'
 		steady_state = [
@@ -981,7 +981,7 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(FRA, [(FRA, FLT, MAR), MTO, (SPA, NCS)])
 		self.assertMapState(steady_state + [
 		])
-	def ftest_4B4_required(self):
+	def ptest_4B4_required(self):
 		'4.B.4.a  COAST SPECIFICATION IN SUPPORT ORDER'
 		# If either Portugal or Mid-Atlantic Ocean move,
 		# you have the unsupported option 'b' (default coast).
@@ -1054,7 +1054,7 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
 		self.assertMapState(steady_state + [
 			[TUR, FLT, [BUL, ECS]],
 		])
-	def ftest_4B4_optional(self):
+	def ptest_4B4_optional(self):
 		'4.B.4.d  COAST SPECIFICATION IN SUPPORT ORDER'
 		# a:required; b:default; c:infer; d:; e:impossible
 		# If either Portugal or Mid-Atlantic Ocean move,
@@ -1183,7 +1183,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		Thus, 4.C.1(c), 4.C.2(c), 4.B.5(c), and 4.B.6(c) are unavailable.
 	'''#'''
 	
-	def etest_4C1_invalid(self):
+	def ftest_4C1_invalid(self):
 		'4.C.1.a  MISSING UNIT DESIGNATION'
 		self.judge.datc.datc_4c1 = 'a'
 		steady_state = [
@@ -1194,7 +1194,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(GER, [BEL, MTO, HOL])
 		self.assertMapState(steady_state + [
 		])
-	def etest_4C1_valid(self):
+	def ptest_4C1_valid(self):
 		'4.C.1.b  MISSING UNIT DESIGNATION'
 		self.judge.datc.datc_4c1 = 'b'
 		steady_state = [
@@ -1229,7 +1229,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.assertMapState(steady_state + [
 			[GER, FLT, HOL],
 		])
-	def etest_4C3_fail(self):
+	def ftest_4C3_fail(self):
 		'4.C.3.a  MISSING UNIT DESIGNATION IN BUILD ORDER'
 		self.judge.datc.datc_4c3 = 'a'
 		start_state = []
@@ -1238,7 +1238,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(RUS, [MOS, BLD])
 		self.illegalOrder(RUS, [(STP, NTH), BLD])
 		self.assertMapState(start_state)
-	def etest_4C3_inland(self):
+	def ptest_4C3_inland(self):
 		'4.C.3.b  MISSING UNIT DESIGNATION IN BUILD ORDER'
 		self.judge.datc.datc_4c3 = 'b'
 		start_state = []
@@ -1249,7 +1249,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.assertMapState(start_state + [
 			[RUS, AMY, MOS],
 		])
-	def etest_4C3_coastal(self):
+	def ftest_4C3_coastal(self):
 		'4.C.3.c  MISSING UNIT DESIGNATION IN BUILD ORDER'
 		self.judge.datc.datc_4c3 = 'c'
 		start_state = []
@@ -1277,7 +1277,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.assertMapState(start_state + [
 			[RUS, AMY, MOS],
 		])
-	def etest_4C5_invalid(self):
+	def ftest_4C5_invalid(self):
 		'4.C.5.a  MISSING NATIONALITY IN SUPPORT ORDER'
 		self.judge.datc.datc_4c5 = 'a'
 		steady_state = [
@@ -1292,7 +1292,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
 		self.illegalOrder(GER, [(GER, AMY, HOL), SUP, BUR, MTO, BEL])
 		self.assertMapState(steady_state + [
 		])
-	def etest_4C5_valid(self):
+	def ptest_4C5_valid(self):
 		'4.C.5.b  MISSING NATIONALITY IN SUPPORT ORDER'
 		self.judge.datc.datc_4c5 = 'b'
 		steady_state = [
