@@ -218,6 +218,19 @@ class Judge_Basics(datc.DiplomacyAdjudicatorTestCase):
             [FRA, AMY, MAR],
         ])
 
+class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
+    "Test cases to reproduce bugs that have been fixed."
+    def test_orderless_convoyee(self):
+        'Error when convoying an army without an order'
+        self.judge.datc.datc_4a3 = 'f'
+        steady_state = [
+            [TUR, FLT, BLA],
+            [TUR, AMY, ANK],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(TUR, [(TUR, FLT, BLA), CVY, (TUR, AMY, ANK), CTO, SEV])
+        self.assertMapState(steady_state)
+
 class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
         - MBV: Order is OK
@@ -247,13 +260,13 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
         result = self.submitOrder(country, order)
         self.failUnlessEqual(result, note)
     
-	# HoldOrder notes
-	# RetreatOrder notes
-	# DisbandOrder notes
-	# RemoveOrder notes
-	# WaiveOrder notes
+    # HoldOrder notes
+    # RetreatOrder notes
+    # DisbandOrder notes
+    # RemoveOrder notes
+    # WaiveOrder notes
     
-	# MoveOrder notes
+    # MoveOrder notes
     def ptest_far_impossible_move(self):
         ''' FAR for movement to non-adjacent province'''
         self.assertOrderNote(ENG, [(ENG, FLT, LON), MTO, NWY], FAR)
@@ -268,7 +281,7 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, [ (TUR, FLT, BLA) ])
         self.assertOrderNote(TUR, [(TUR, FLT, BLA), MTO, (BUL, SCS)], FAR)
     
-	# ConvoyedOrder notes
+    # ConvoyedOrder notes
     def ptest_far_impossible_convoy(self):
         ''' FAR for an army convoyed with no possible convoy route'''
         self.assertOrderNote(GER, [(GER, AMY, BER), CTO, HOL], FAR)
@@ -291,7 +304,7 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrderNote(ENG, [(ENG, AMY, DEN), CTO, HOL, VIA, [NTH, NWG, NAO, IRI, ECH, NTH]], FAR)
     
-	# SupportOrder notes
+    # SupportOrder notes
     def ptest_far_support_hold(self):
         ''' FAR for supporting a hold in a non-adjacent province'''
         self.assertOrderNote(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI)], FAR)
@@ -323,7 +336,7 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
         self.assertOrderNote(TUR, [(TUR, AMY, ANK), CTO, RUM, VIA, [BLA]], MBV)
         self.assertOrderNote(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, ANK), MTO, RUM], FAR)
     
-	# ConvoyingOrder notes
+    # ConvoyingOrder notes
     def ptest_far_convoy_impossible_convoy(self):
         ''' FAR for convoying an army with no possible convoy route'''
         self.init_state(SPR, 1901, [
@@ -390,7 +403,7 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
         # The standard map has no sea supply centers
         raise NotImplementedError
     
-	# BuildOrder notes
+    # BuildOrder notes
     def ptest_ysc(self):
         ''' YSC for building on another power's supply center'''
         self.init_state(WIN, 1901, [])
