@@ -28,6 +28,11 @@ class UnitOrder(Comparable):
 				self.unit.coast.province, self.order_type)
 	def tokenize(self): return self.order or Message(self.key)
 	def __cmp__(self, other): return cmp(self.key, other.key)
+	def create(klass, order, nation, board, datc):
+		result = klass(board.ordered_unit(nation, order[0]))
+		result.order = order
+		return result
+	create = classmethod(create)
 	
 	# Order queries
 	def is_moving(self):     return self.order_type in (MTO, CTO, RTO)
@@ -114,11 +119,6 @@ class HoldOrder(MovementPhaseOrder):
 		self.key = (unit.key, HLD)
 		self.unit = unit
 		self.destination = unit.coast
-	def create(klass, order, nation, board, datc):
-		result = klass(board.ordered_unit(nation, order[0]))
-		result.order = order
-		return result
-	create = classmethod(create)
 	def __repr__(self): return 'HoldOrder(%r)' % self.unit
 class MoveOrder(MovementPhaseOrder):
 	order_type = MTO
@@ -343,11 +343,6 @@ class DisbandOrder(RetreatPhaseOrder):
 		self.key = (unit.key, DSB)
 		self.unit = unit
 		self.destination = None
-	def create(klass, order, nation, board, datc):
-		result = klass(board.ordered_unit(nation, order[0]))
-		result.order = order
-		return result
-	create = classmethod(create)
 class RetreatOrder(RetreatPhaseOrder):
 	order_type = RTO
 	def __init__(self, unit, destination_coast):
@@ -424,11 +419,6 @@ class BuildOrder(BuildPhaseOrder):
 			else:                                                  note = MBV
 		elif note == MBV:                                          note = ESC
 		return note
-	def create(klass, order, nation, board, datc):
-		result = klass(board.ordered_unit(nation, order[0]))
-		result.order = order
-		return result
-	create = classmethod(create)
 class RemoveOrder(BuildPhaseOrder):
 	order_type = REM
 	op = gt
@@ -439,11 +429,6 @@ class RemoveOrder(BuildPhaseOrder):
 		note = self.__super.order_note(power, phase, past_orders)
 		if note == MBV and not self.required(power, past_orders): note = NMR
 		return note
-	def create(klass, order, nation, board, datc):
-		result = klass(board.ordered_unit(nation, order[0]))
-		result.order = order
-		return result
-	create = classmethod(create)
 
 _class_types = {
 	HLD: HoldOrder,
