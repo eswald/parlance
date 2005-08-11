@@ -171,7 +171,7 @@ class ConvoyingOrder(MovementPhaseOrder):
 	def matches(self, order_set):
 		'''	Whether the order is matched by the convoyed unit. '''
 		counterpart = order_set.get_order(self.supported)
-		return (self.supported.nation and counterpart.is_convoyed()
+		return (self.supported.exists() and counterpart and counterpart.is_convoyed()
 			and self.destination.matches(counterpart.destination.key))
 	def order_note(self, power, phase, past_orders=None):
 		note = self.__super.order_note(power, phase, past_orders)
