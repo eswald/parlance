@@ -28,7 +28,7 @@ class datc_options(config.option_class):
     def __init__(self):
         self.datc_4a1 = self.getdatc('multi-route convoy disruption',                                          'ab',    'b') # Done!
         self.datc_4a2 = self.getdatc('convoy disruption paradoxes',                                            'bdef',  'd')
-        self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef','f')
+        self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef','f') # Done!
         self.datc_4a4 = self.getdatc('support cut on attack on itself via convoy',                             'ab',    'a')
         self.datc_4a5 = self.getdatc('retreat when dislodged by convoy',                                       'ab',    'b')
         self.datc_4a6 = self.getdatc('convoy path specification',                                              'abc',   'b')
@@ -411,7 +411,7 @@ class Standard_Judge(Judge):
         
         # 1) Run through the units, collecting orders and checking validity.
         # Each unit gets a Dislodge decision.
-        # Each moving unit gets Path, Move, Attack, and Prevent decisions.
+        # Each moving unit gets Move, Attack, and Prevent decisions.
         # Each valid supporting unit gets a Support decision.
         # Each province moved into gets a Hold decision.
         for unit in self.map.units:
@@ -422,30 +422,26 @@ class Standard_Judge(Judge):
             decisions.add(Dislodge_Decision(order))
             if order.is_moving():
                 self.add_movement_decisions(order, unit, decisions)
-            elif order.__result: pass
-            elif order.is_supporting():
+            elif order.is_convoying():
+                if order.matches(self.next_orders) and not self.illegal(order):
+                    convoyers[unit.coast.province.key] = (order.supported.key, unit.nation.key)
+                elif not order.__result: order.__result = NSO
+            elif order.is_supporting() and not order.__result:
                 if order.matches(self.next_orders):
                     decisions.add(Support_Decision(order))
                 else: order.__result = NSO
-            elif order.is_convoying():
-                if order.matches(self.next_orders):
-                    convoyers[unit.coast.province.key] = order.supported.key
-                else: order.__result = NSO
+        self.log_debug(11, "Convoyers = %s", convoyers)
         
         # 2) Clean up order inter-dependencies.
+        # Each moving unit in a potential head-to-head conflict
+        # gets Head and Defend decisions.
+        # Each moving unit gets a Path decision.
         # Find available routes for convoyed units.
         # Tell supported units about their supports.
-        # Each unit in a head-to-head conflict gets a Defend decision.
-        for choice in decisions[Decision.PATH]:
-            choice.get_routes(convoyers)
+        for choice in decisions[Decision.MOVE]:
+            self.add_path_decisions(choice.order, convoyers, decisions)
         for choice in decisions[Decision.SUPPORT]:
             choice.order.supported.supports.append(choice)
-        for choice in decisions[Decision.MOVE]:
-            other = self.find_head(choice.order)
-            if other:
-                decisions.add(Defend_Decision(choice.order))
-                for decision in choice.order.unit.decisions.itervalues():
-                    decision.head = other
         
         # 3) Initialize the dependencies in each decision.
         decision_list = decisions.sorted()
@@ -475,17 +471,7 @@ class Standard_Judge(Judge):
         # 7) Return the ORD messages
         return orders
     
-    def find_head(self, order):
-        if not order.is_convoyed():
-            unit_list = order.unit.coast.province.entering
-            for other in order.destination.province.units:
-                if other in unit_list and not other.current_order.is_convoyed():
-                    return other
-        return None
     def add_movement_decisions(self, order, unit, decisions):
-        path = Path_Decision(order, self.datc.datc_4a1 == 'b')
-        if order.__result: path.failed = True
-        else: decisions.add(path)
         decisions.add(Move_Decision(order))
         decisions.add(Attack_Decision(order))
         decisions.add(Prevent_Decision(order))
@@ -496,6 +482,39 @@ class Standard_Judge(Judge):
             decisions.add(hold)
             into.hold = hold
         into.entering.append(unit)
+    def add_path_decisions(self, order, convoyers, decisions):
+        # Is anyone moving in the opposite direction?
+        unit_list = order.unit.coast.province.entering
+        heads = any(order.destination.province.units, lambda u: u in unit_list)
+        if heads:
+            decisions.add(Head_Decision(order))
+            decisions.add(Defend_Decision(order))
+        
+        # Warning: if any routes are given, a convoy will be attempted.
+        # So, only give routes if 4.A.3 allows the convoy.
+        # Options 'e' and 'f' are prevented in MoveOrder.create().
+        disrupt_any = self.datc.datc_4a1 == 'a'
+        try_overland = False
+        if order.is_convoyed():
+            routes = order.get_routes(convoyers, disrupt_any)
+            if order.maybe_overland():
+                if not routes: routes = None
+                elif self.datc.datc_4a3 == 'd':
+                    # Divine the 'intent' of the orders
+                    key = (order.unit.key, order.unit.nation.key)
+                    if key not in convoyers.itervalues(): routes = None
+                elif self.datc.datc_4a3 == 'a': pass
+                elif heads: # 'b' or 'c': only if a unit moves opposite
+                    if self.datc.datc_4a3 == 'c': try_overland = True
+                else: routes = None
+        else: routes = None
+        
+        self.log_debug(11, "Path_Decision(%s, %s, %s, %s) from '%s' for 4.A.1 and '%s' for 4.A.3",
+                order, routes and [[s.key for s in p] for p in routes],
+                not disrupt_any, try_overland, self.datc.datc_4a1, self.datc.datc_4a3)
+        path = Path_Decision(order, routes, not disrupt_any, try_overland)
+        if order.__result: path.failed = True
+        else: decisions.add(path)
     def unit_order(self, unit, order_class):
         ''' Returns the last order given by the unit's owner.
             Depends on handle_SUB() to weed out invalid orders.
@@ -506,9 +525,12 @@ class Standard_Judge(Judge):
             result.__result = None
         return result
     def illegal(self, order):
-        ''' Called for movement orders, to determine quasi-legality.
+        ''' Determine quasi-legality of orders.
             If this returns True, then the unit should act like it's holding;
-            False, like it's attempting to move.
+            False, like it's attempting the order.
+            Quasi-legal orders can have side effects:
+            - quasi-legal movement cancels any support to hold
+            - quasi-legal convoys show intent to convoy
         '''#'''
         # Todo: Improve the algorithm for option C;
         # in particular, FAR for convoy paths with missing fleets is okay
@@ -619,7 +641,9 @@ class Standard_Judge(Judge):
             True Move     -> SUC
             True Support  -> SUC
             Convoys and Holds: The document is unclear, so:
-            Convoy -> Same as convoyed unit, plus RET if must retreat
+            Convoy -> NSO if the convoy didn't pass through it
+                      Otherwise, same as convoyed unit
+                      In either case, plus RET if must retreat
             Hold   -> RET if must retreat, SUC otherwise
         '''#'''
         order = unit.current_order
@@ -640,8 +664,11 @@ class Standard_Judge(Judge):
                 if unit.decisions[Decision.SUPPORT].passed: result = SUC
                 else: result = CUT
             elif order.is_convoying():
-                self.process_results(order.supported)
-                result = order.supported.current_order.__result
+                routes = order.supported.decisions[Decision.PATH].routes
+                if routes and unit.coast.province in routes[0]:
+                    self.process_results(order.supported)
+                    result = order.supported.current_order.__result
+                else: result = NSO
             order.__result = result
             self.log_debug(14, 'Final result: %s', result)
         if unit.decisions[Decision.DISLODGE].passed:
@@ -681,6 +708,7 @@ class Decision_Set(DefaultDict):
         return chain(*self.itervalues())
     def sorted(self):
         return (self[Decision.PATH] +
+                self[Decision.HEAD] +
                 self[Decision.ATTACK] +
                 self[Decision.SUPPORT] +
                 self[Decision.DEFEND] +
@@ -691,29 +719,30 @@ class Decision_Set(DefaultDict):
 
 class Decision(object):
     # Tristate decisions
-    MOVE, SUPPORT, DISLODGE, PATH = range(4)
+    MOVE, SUPPORT, DISLODGE, PATH, HEAD = range(5)
     # Numeric decisions
-    ATTACK, HOLD, PREVENT, DEFEND = range(4,8)
+    ATTACK, HOLD, PREVENT, DEFEND = range(5,9)
     
+    # Can this be automated?
     type = None
     names = {
         0: 'Move',
         1: 'Support',
         2: 'Dislodge',
         3: 'Path',
-        4: 'Attack',
-        5: 'Hold',
-        6: 'Prevent',
-        7: 'Defend',
+        4: 'Head',
+        5: 'Attack',
+        6: 'Hold',
+        7: 'Prevent',
+        8: 'Defend',
     }
     
     # We have over a hundred decisions per movement phase;
     # memory management is crucial.
-    __slots__ = ('depends', 'head', 'into', 'order')
+    __slots__ = ('depends', 'into', 'order')
     
     def __init__(self, order):
         self.depends = []    # Decisions on which this one depends.
-        self.head    = None  # Unit moving opposite direction, without convoy.
         self.into    = None  # Province being moved into
         self.order   = order
         
@@ -723,7 +752,11 @@ class Decision(object):
     def __str__(self):
         return '%s decision for %s; %s' % (
             self.names[self.type], self.order.unit, self.state())
+    def __repr__(self): return str(self)   # To make lists look nice
     def state(self): raise NotImplementedError
+    def battles(self):
+        unit_list = self.order.unit.coast.province.entering
+        return [unit for unit in self.into.units if unit in unit_list]
 
 class Tristate_Decision(Decision):
     __slots__ = ('passed', 'failed')
@@ -742,18 +775,23 @@ class Tristate_Decision(Decision):
         if self.passed and self.failed:
             print 'Error in %s, using' % self
             for choice in self.depends: print '-', choice
+        #if self.passed or self.failed: print 'Decision made for ' + str(self)
         return self.passed or self.failed
     def state(self): return self.status[(self.passed, self.failed)]
 class Move_Decision(Tristate_Decision):
     __slots__ = ()
     type = Decision.MOVE
     def init_deps(self):
-        add_dep = self.depends.append
-        add_dep(self.order.unit.decisions[Decision.ATTACK])
-        if self.head: add_dep(self.head.decisions[Decision.DEFEND])
-        else:         add_dep(self.into.hold)
+        # Slightly different than the DATC document:
+        # the Hold Strength is always counted.
+        # However, the Hold Strength will never be greater than the Defend
+        # Strength in Standard, because the unit must be moving.
+        self.depends.append(self.order.unit.decisions[Decision.ATTACK])
+        self.depends.append(self.into.hold)
+        self.depends.extend([unit.decisions[Decision.DEFEND]
+            for unit in self.battles()])
         self.depends.extend([unit.decisions[Decision.PREVENT]
-                for unit in self.into.entering if unit != self.order.unit])
+            for unit in self.into.entering if unit != self.order.unit])
     def calculate(self):
         ''' Move decision logic
             >>> Vienna = standard_map.coasts[(AMY, VIE, None)]
@@ -781,6 +819,8 @@ class Move_Decision(Tristate_Decision):
             >>> print choice
             Move decision for (AMY VIE); Failed
         '''#'''
+        #print 'Calculating %s:' % str(self)
+        #for dep in self.depends: print '+ ' + str(dep)
         attack = self.depends[0]
         min_oppose, max_oppose = minmax(self.depends[1:])
         self.passed = attack.min_value >  max_oppose
@@ -820,73 +860,94 @@ class Dislodge_Decision(Tristate_Decision):
         self.failed = (my_move and    my_move.passed) or  all(self.depends[1:], lambda d: d.failed)
         return self.decided()
 class Path_Decision(Tristate_Decision):
-    __slots__ = ('convoyed', 'routes', 'disrupt_all')
+    # When passed, a convoyed unit will have a good route as routes[0].
+    # A unit moving overland will have an empty routes.
+    __slots__ = ('routes', 'disrupt_all', 'backup')
     type = Decision.PATH
-    def __init__(self, order, disrupt_all):
+    def __init__(self, order, routes, disrupt_all, try_overland):
         Tristate_Decision.__init__(self, order)
         self.disrupt_all = disrupt_all
-        self.convoyed = order.is_convoyed()
-        self.routes = []
-    def get_routes(self, convoyers):
-        if self.convoyed and self.order.unit.can_be_convoyed():
-            if self.order.path:
-                path_list = [[fleet.coast.province for fleet in self.order.path]]
-            else: path_list = self.order.unit.coast.routes.get(self.into.key)
-            if path_list:
-                key = self.order.unit.key
-                def available(prov): return convoyers.get(prov.key) == key
-                all_routes = [path for path in path_list if all(path, available)]
-                
-                if not self.disrupt_all:
-                    # DPTG craziness: ignore foreign convoyers if we can go alone.
-                    nation = self.order.unit.nation
-                    def countryman(prov): return any(prov.units, lambda u: u.nation == nation)
-                    solo_routes = [path for path in all_routes if all(path, countryman)]
-                else: solo_routes = None
-                
-                # Keep just the Decisions we're interested in
-                self.routes = [
-                    sum([[unit.decisions[Decision.DISLODGE] for unit in prov.units] for prov in path], [])
-                    for path in (solo_routes or all_routes)
-                ]
+        self.backup = try_overland
+        self.routes = routes and [sum([[unit.decisions[Decision.DISLODGE]
+                    for unit in prov.units]
+                for prov in path], [])
+            for path in routes
+        ]
     def init_deps(self):
-        if self.convoyed: self.depends = Set(sum(self.routes, []))
+        if self.routes: self.depends = Set(sum(self.routes, []))
         else: self.depends = []
     def calculate(self):
-        # There should be a way to do it in one pass, but this is easier.
-        self.passed = self.calc_path_pass()
-        self.failed = self.calc_path_fail()
+        #print 'Calculating %s (%s, %s, %s):' % (self,
+        #        self.routes and [[s.key for s in p] for p in self.routes],
+        #        self.disrupt_all, self.backup)
+        #for dep in self.depends: print '+ ' + str(dep)
+        if self.routes:
+            # There should be a way to do it in one pass, but this is easier.
+            self.failed = self.calc_path_fail()
+            if self.failed and self.backup: self.routes = None
+            else: self.passed = self.calc_path_pass()
+        if not self.routes:
+            # None means an overland route; empty list means unavailable convoy.
+            if self.routes is None:
+                self.passed = self.order.unit.can_move_to(self.order.destination)
+            else: self.passed = False
+            self.failed = not self.passed
         return self.decided()
     def calc_path_pass(self):
-        if self.convoyed:
-            if self.disrupt_all:
-                # Check for any path with no dislodged units
-                for path in self.routes:
-                    for choice in path:
-                        if not choice.failed: break
-                    else: return True
-                else: return False
-            else:
-                # Check that no path has potentially dislodged units
-                for path in self.routes:
-                    for choice in path:
-                        if not choice.failed: return False
+        if self.disrupt_all:
+            # Check for any path with no dislodged units
+            for path in self.routes:
+                for choice in path:
+                    if not choice.failed: break
+                else:
+                    self.routes = [path]
+                    return True
+            else: return False
+        else:
+            # Check that no path has potentially dislodged units
+            for path in self.routes:
+                for choice in path:
+                    if not choice.failed: return False
         return True
     def calc_path_fail(self):
-        if self.convoyed:
-            if self.disrupt_all:
-                # Check for a dislodged unit on each path
-                for path in self.routes:
-                    for choice in path:
-                        if choice.passed: break
-                    else: return False
-                else: return True
-            else:
-                # Check for a dislodged unit on any path
-                for path in self.routes:
-                    for choice in path:
-                        if choice.passed: return True
+        if self.disrupt_all:
+            # Check for a dislodged unit on each path
+            for path in self.routes:
+                for choice in path:
+                    if choice.passed: break
+                else: return False
+            else: return True
+        else:
+            # Check for a dislodged unit on any path
+            for path in self.routes:
+                for choice in path:
+                    if choice.passed: return True
         return False
+class Head_Decision(Tristate_Decision):
+    # Failed: the units bypass each other; Passed: they battle each other.
+    __slots__ = ()
+    type = Decision.HEAD
+    def init_deps(self):
+        path = self.order.unit.decisions[Decision.PATH]
+        heads = [unit.decisions[Decision.HEAD] for unit in self.battles()]
+        self.depends = [path] + heads
+    def calculate(self):
+        # If this unit is convoyed, it fails.
+        # If the opposing heads all fail, it fails.
+        # If this unit and an opposing unit move overland, it succeeds.
+        # Tricky part is datc_4a3.c:
+        # the taken path depends on a Path decision.
+        path = self.depends[0]
+        heads = self.depends[1:]
+        if path.failed: self.failed = True
+        elif all(heads, lambda head: head.failed): self.failed = True
+        elif path.passed:
+            if path.routes: self.failed = True
+            elif any(heads, Head_Decision.overland): self.passed = True
+        return self.decided()
+    def overland(self):
+        path = self.depends[0]
+        return self.passed or (path.passed and not path.routes)
 
 class Numeric_Decision(Decision):
     ''' A numeric decision, which is decided when the maximum possible value
@@ -902,6 +963,7 @@ class Numeric_Decision(Decision):
         if self.max_value < self.min_value:
             print 'Error in %s, using' % self
             for choice in self.depends: print '-', choice
+        #if self.max_value == self.min_value: print 'Decision made for ' + str(self)
         return self.max_value == self.min_value
     def state(self):
         return 'minimum %d, maximum %d' % (self.min_value, self.max_value)
@@ -910,14 +972,11 @@ class Attack_Decision(Numeric_Decision):
     __slots__ = ()
     type = Decision.ATTACK
     def init_deps(self):
-        # Todo: Make this multi-unit safe
-        path = self.order.unit.decisions[Decision.PATH]
-        move = None
-        if not self.head:
-            for other in self.into.units:
-                if other.current_order.is_moving():
-                    move = other.decisions[Decision.MOVE]
-        self.depends = [path, move] + self.order.unit.supports
+        unit = self.order.unit
+        path = unit.decisions[Decision.PATH]
+        heads = [other.decisions[Decision.HEAD] for other in self.battles()]
+        moves = [other.decisions.get(Decision.MOVE) for other in self.into.units]
+        self.depends = [path] + heads + moves + unit.supports
     def calculate(self):
         ''' Attack decision, support code
             >>> Rome = standard_map.coasts[(AMY, ROM, None)]
@@ -939,29 +998,30 @@ class Attack_Decision(Numeric_Decision):
             >>> print choice
             Attack decision for (AMY ROM); minimum 1, maximum 1
         '''#'''
+        attacked = self.into.units
+        index1 = 1 + len(self.battles())
+        index2 = index1 + len(attacked)
         path = self.depends[0]
-        move = self.depends[1]
-        supports = self.depends[2:]
-        def min_test(choice): return choice.passed
-        def max_test(choice): return not choice.failed
-        self.min_value = self.calc_attack(path, move, supports, min_test)
-        self.max_value = self.calc_attack(path, move, supports, max_test)
+        heads = self.depends[1:index1]
+        moves = zip(attacked, self.depends[index1:index2])
+        supports = self.depends[index2:]
+        def minimal_test(choice): return choice and choice.passed
+        def maximal_test(choice): return choice and not choice.failed
+        self.min_value = self.calc_attack(path, heads, moves, supports, minimal_test, maximal_test)
+        self.max_value = self.calc_attack(path, heads, moves, supports, maximal_test, minimal_test)
         #print 'Attack values: "%s" / "%s"' % (self.min_value, self.max_value)
-        #print '  from (%s, %s, %s)' % (path, move, supports)
+        #print '  from (%s, %s, %s, %s)' % (path, heads, moves, supports)
         return self.decided()
-    def calc_attack(self, path, move, supports, valid):
+    def calc_attack(self, path, heads, moves, supports, valid, valid_head):
         if valid(path):
             valid_supports = filter(valid, supports)
-            if self.head or not (move and valid(move)):
-                # Todo: Correct this for multiple units
-                powers = []
-                for other in self.into.units:
-                    powers.append(other.nation)
-                    if other.nation == self.order.unit.nation: return 0
-                else:
-                    return 1 + len([choice for choice in valid_supports
-                        if choice.order.unit.nation not in powers])
-            else: return 1 + len(valid_supports)
+            powers = Set([choice.order.unit.nation.key
+                for choice in heads if valid_head(choice)] +
+                [unit.nation.key for unit, choice in moves if not valid(choice)])
+            #print 'Calc attack powers: %s' % powers
+            if self.order.unit.nation.key in powers: return 0
+            return 1 + len([choice for choice in valid_supports
+                if choice.order.unit.nation.key not in powers])
         else: return 0
 class Hold_Decision(Numeric_Decision):
     # Strength of the defense
@@ -998,36 +1058,52 @@ class Prevent_Decision(Numeric_Decision):
     __slots__ = ()
     type = Decision.PREVENT
     def init_deps(self):
-        path = self.order.unit.decisions[Decision.PATH]
-        if self.head: head = self.head.decisions[Decision.MOVE]
-        else:         head = None
-        self.depends = [path, head] + self.order.unit.supports
+        unit = self.order.unit
+        path = unit.decisions[Decision.PATH]
+        head = unit.decisions.get(Decision.HEAD)
+        moves = [other.decisions[Decision.MOVE] for other in self.battles()]
+        self.depends = [path, head] + moves + unit.supports
     def calculate(self):
         path = self.depends[0]
-        head = self.depends[1]
         if path.failed: self.max_value = self.min_value = 0
         else:
+            head = self.depends[1]
+            moves = [choice for choice in self.depends
+                if choice and choice.type == Decision.MOVE]
+            supports = [choice for choice in self.depends
+                if choice and choice.type == Decision.SUPPORT]
+            def pass_test(choice): return choice.passed
+            def fail_test(choice): return not choice.failed
+            
             self.max_value = self.min_value = 1
-            for support in self.depends[2:]:
+            for support in supports:
                 if not support.failed:
                     self.max_value += 1
                     if support.passed: self.min_value += 1
-            if head and not head.failed:
+            if head and not head.failed and any(moves, fail_test):
                 self.min_value = 0
-                if head.passed: self.max_value = 0
+                if head.passed and any(moves, pass_test): self.max_value = 0
             elif not path.passed: self.min_value = 0
         return self.decided()
 class Defend_Decision(Numeric_Decision):
     __slots__ = ()
     type = Decision.DEFEND
-    def init_deps(self): self.depends = self.order.unit.supports
+    def init_deps(self):
+        unit = self.order.unit
+        self.depends = [unit.decisions[Decision.HEAD]] + unit.supports
     def calculate(self):
-        self.min_value = self.max_value = 1
-        for support in self.depends:
-            if not support.failed:
-                self.max_value += 1
-                if support.passed:
-                    self.min_value += 1
+        # Significantly different from the DATC description,
+        # taking the new HEAD decisions into account.
+        head = self.depends[0]
+        if head.failed: self.min_value = self.max_value = 0
+        else:
+            self.min_value = self.max_value = 1
+            for support in self.depends[1:]:
+                if not support.failed:
+                    self.max_value += 1
+                    if support.passed:
+                        self.min_value += 1
+            if not head.passed: self.min_value = 0
         return self.decided()
 
 

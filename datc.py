@@ -30,10 +30,14 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     
     def setUp(self):
         ''' Initializes class variables for test cases.'''
+        self.set_verbosity(0)
         config.option_class.local_opts.update(self.game_options)
         variant = config.variant_options(self.variant_name)
         self.judge = variant.new_judge()
         self.judge.start()
+    def set_verbosity(self, verbosity):
+        from functions import Verbose_Object
+        Verbose_Object.verbosity = verbosity
     def init_state(self, season, year, unit_list):
         self.judge.map.handle_NOW(NOW([season, year], *unit_list))
         self.judge.init_turn()
@@ -2191,7 +2195,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, IRI, MRT],
             [FRA, FLT, IRI],
         ])
-    def ftest_6F13_any(self):
+    def ptest_6F13_any(self):
         "6.F.13.a  THE UNWANTED ALTERNATIVE"
         # 4.A.6, as well
         self.judge.datc.datc_4a1 = 'a'
@@ -2210,8 +2214,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, HOL), SUP, (GER, FLT, DEN), MTO, NTH])
         self.legalOrder(GER, [(GER, FLT, DEN), MTO, NTH])
         self.assertMapState(steady_state + [
-            [ENG, AMY, BEL],
-            #[ENG, AMY, LON], # This is probably correct.
+            [ENG, AMY, LON],
             [ENG, FLT, NTH, MRT],
             [GER, FLT, NTH],
         ])
@@ -3071,11 +3074,10 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     "6.G.  CONVOYING TO ADJACENT PLACES"
-    # Many of these also depend on or relate to 4.A.3
-    def ftest_6G7_quasi(self):
-        "6.G.7.b  SWAPPING WITH ILLEGAL INTENT"
-        # 4.E.1 (quasi_legal)
-        self.judge.datc.quasi_legal = True
+    # Many of these depend on or relate to 4.A.3
+    def ptest_6G7_always(self):
+        "6.G.7.a  SWAPPING WITH ILLEGAL INTENT"
+        self.judge.datc.datc_4a3 = 'a'
         steady_state = [
             [ENG, FLT, SKA],
             [RUS, FLT, GOB],
@@ -3092,10 +3094,91 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G7_illegal(self):
-        "6.G.7.d  SWAPPING WITH ILLEGAL INTENT"
+    def ptest_6G7_swap(self):
+        "6.G.7.b  SWAPPING WITH ILLEGAL INTENT"
+        self.judge.datc.datc_4a3 = 'b'
+        steady_state = [
+            [ENG, FLT, SKA],
+            [RUS, FLT, GOB],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, SWE],
+            [RUS, AMY, NWY],
+        ])
+    def ptest_6G7_undisrupted(self):
+        "6.G.7.c  SWAPPING WITH ILLEGAL INTENT"
+        self.judge.datc.datc_4a3 = 'c'
+        steady_state = [
+            [ENG, FLT, SKA],
+            [RUS, FLT, GOB],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, SWE],
+            [RUS, AMY, NWY],
+        ])
+    def ptest_6G7_intent_quasi(self):
+        "6.G.7.d.a  SWAPPING WITH ILLEGAL INTENT"
         # 4.E.1 (quasi_legal)
-        self.judge.datc.quasi_legal = False
+        self.judge.datc.datc_4a3 = 'd'
+        self.judge.datc.datc_4e1 = 'a'
+        self.judge.game_opts.AOA = True
+        self.illegalOrder = self.legalOrder
+        steady_state = [
+            [ENG, FLT, SKA],
+            [RUS, FLT, GOB],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, SWE],
+            [RUS, AMY, NWY],
+        ])
+    def ptest_6G7_intent_illegal(self):
+        "6.G.7.d.d  SWAPPING WITH ILLEGAL INTENT"
+        # 4.E.1 (quasi_legal)
+        self.judge.datc.datc_4a3 = 'd'
+        self.judge.datc.datc_4e1 = 'd'
+        self.judge.game_opts.AOA = True
+        self.illegalOrder = self.legalOrder
+        steady_state = [
+            [ENG, FLT, SKA],
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
+        self.assertMapState(steady_state + [
+        ])
+    def ptest_6G7_explicit(self):
+        "6.G.7.e  SWAPPING WITH ILLEGAL INTENT"
+        self.judge.datc.datc_4a3 = 'e'
         steady_state = [
             [ENG, FLT, SKA],
             [ENG, AMY, NWY],

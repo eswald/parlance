@@ -719,41 +719,51 @@ class Coast(Comparable):
 		'''	Collects possible convoy routes,
 			saving them in routes[dest].
 			dest must be a province Token.
-			Each route is a list of Province instances.
+			Each route is a tuple of Province instances.
 			
 			>>> Liverpool = standard_map.coasts[(AMY, LVP, None)]
-			>>> Liverpool.collect_convoy_routes(YOR, standard_map)
-			>>> print len(Liverpool.routes[YOR])
+			>>> len(Liverpool.collect_convoy_routes(YOR, standard_map))
 			11
-			>>> print len(Liverpool.routes[YOR][0])
+			>>> len(Liverpool.routes[YOR][0])
 			3
 			>>> Liverpool.collect_convoy_routes(LVP, standard_map)
-			>>> print len(Liverpool.routes[LVP])
-			0
+			[]
 		'''#'''
 		if not self.routes.has_key(dest):
-			self.routes[dest] = path_list = []
-			if dest != self.province:
-				# Todo: Collect paths from the reverse direction, if available.
-				spaces = board.spaces
-				possible = [[p]
-					for p in [spaces[key] for key in self.province.borders_out]
-					if p.can_convoy()
-				]
-				while possible:
-					route = possible.pop()
-					here = route[-1]
-					if dest in here.borders_out: path_list.append(route)
-					seen = [p.key for p in route]
-					possible.extend([route + [p]
-						for p in [spaces[key]
-							for key in here.borders_out
-							if key not in seen]
-						if p.can_convoy()
-					])
-				# Sort shorter paths to the front,
-				# to speed up checking
-				path_list.sort(lambda x,y: cmp(len(x), len(y)))
+			self.routes[dest] = []
+			spaces = board.spaces
+			if self.province != dest in spaces:
+				where = spaces[dest].is_coastal()
+				if where:
+					# Collect paths from the reverse direction, if available.
+					result = board.coasts[where].routes.get(self.province.key)
+					if result:
+						def reversed(seq): l = list(seq); l.reverse(); return tuple(l)
+						self.routes[dest] = [reversed(path) for path in result]
+					elif result is None: self.routes[dest] = self._collect_routes(dest, spaces)
+		return self.routes[dest]
+	def _collect_routes(self, dest, spaces):
+		''' Helper function for collect_convoy_routes(). '''
+		path_list = []
+		possible = [(p,)
+			for p in [spaces[key] for key in self.province.borders_out]
+			if p.can_convoy()
+		]
+		while possible:
+			route = possible.pop()
+			here = route[-1]
+			if dest in here.borders_out: path_list.append(route)
+			seen = [p.key for p in route]
+			possible.extend([route + (p,)
+				for p in [spaces[key]
+					for key in here.borders_out
+					if key not in seen]
+				if p.can_convoy()
+			])
+		# Sort shorter paths to the front,
+		# to speed up checking
+		path_list.sort(lambda x,y: cmp(len(x), len(y)))
+		return path_list
 	def matches(self, key):
 		#print '\tmatches(%s, %s)' % (self.key, key)
 		return (self.key == key) or (self.unit_type is None
