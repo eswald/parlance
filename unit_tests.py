@@ -217,10 +217,33 @@ class Judge_Basics(datc.DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
+    def ptest_retreat_into_mover(self):
+        "A unit cannot retreat into a province someone else moved into."
+        steady_state = [
+            [TUR, FLT, BLA],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [TUR, AMY, SEV],
+            [AUS, AMY, RUM],
+            [RUS, AMY, WAR],
+        ])
+        self.legalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(TUR, [(TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(AUS, [(AUS, AMY, RUM), HLD])
+        self.legalOrder(RUS, [(RUS, AMY, WAR), MTO, UKR])
+        new_state = steady_state + [
+            [TUR, AMY, RUM],
+            [RUS, AMY, UKR],
+        ]
+        self.assertMapState(new_state + [
+            [AUS, AMY, RUM, MRT],
+        ])
+        self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, UKR])
+        self.assertMapState(new_state)
 
 class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
     "Test cases to reproduce bugs that have been fixed."
-    def test_orderless_convoyee(self):
+    def ptest_orderless_convoyee(self):
         'Error when convoying an army without an order'
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
@@ -230,6 +253,113 @@ class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, steady_state)
         self.legalOrder(TUR, [(TUR, FLT, BLA), CVY, (TUR, AMY, ANK), CTO, SEV])
         self.assertMapState(steady_state)
+    def ptest_retreat_past_attacker_full(self):
+        "Bug caused by checking a dislodger's province after moving it."
+        steady_state = [
+            [TUR, FLT, BLA],
+            [TUR, FLT, CON],
+            [TUR, AMY, SMY],
+            [TUR, AMY, ANK],
+            [AUS, FLT, VEN],
+            [AUS, AMY, TRI],
+            [AUS, AMY, SER],
+            [AUS, AMY, BUL],
+            [AUS, AMY, BUD],
+            [ENG, FLT, DEN],
+            [ENG, AMY, RUH],
+            [ENG, FLT, ECH],
+            [ENG, FLT, NWY],
+            [ENG, FLT, WAL],
+            [ITA, FLT, AEG],
+            [ITA, AMY, VIE],
+            [ITA, FLT, GRE],
+            [ITA, AMY, NAP],
+            [ITA, AMY, ROM],
+            [RUS, AMY, UKR],
+            [RUS, AMY, GAL],
+            [RUS, AMY, SWE],
+            [RUS, AMY, MOS],
+            [FRA, AMY, PAR],
+            [FRA, AMY, MAR],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [TUR, FLT, MAO],
+            [TUR, AMY, SEV],
+            [AUS, AMY, RUM],
+            [ENG, FLT, BEL],
+            [ENG, FLT, NTH],
+            [ENG, FLT, LON],
+            [ITA, AMY, HOL],
+            [GER, AMY, BER],
+        ])
+        self.legalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(TUR, [(TUR, FLT, MAO), MTO, BRE])
+        self.legalOrder(TUR, [(TUR, FLT, CON), SUP, (TUR, AMY, SMY)])
+        self.legalOrder(TUR, [(TUR, AMY, SMY), SUP, (TUR, FLT, CON)])
+        self.legalOrder(TUR, [(TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(TUR, [(TUR, AMY, ANK), SUP, (TUR, FLT, CON)])
+        self.legalOrder(AUS, [(AUS, FLT, VEN), SUP, (AUS, AMY, TRI)])
+        self.legalOrder(AUS, [(AUS, AMY, TRI), SUP, (AUS, AMY, BUD)])
+        self.legalOrder(AUS, [(AUS, AMY, SER), MTO, GRE])
+        self.legalOrder(AUS, [(AUS, AMY, BUL), MTO, CON])
+        self.legalOrder(AUS, [(AUS, AMY, BUD), SUP, (AUS, AMY, RUM)])
+        self.legalOrder(AUS, [(AUS, AMY, RUM), SUP, (AUS, AMY, BUD)])
+        self.legalOrder(ENG, [(ENG, FLT, BEL), MTO, HOL])
+        self.legalOrder(ENG, [(ENG, FLT, DEN), SUP, (ENG, FLT, LON), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, AMY, RUH), SUP, (ENG, FLT, BEL), MTO, HOL])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), SUP, (ENG, FLT, NTH), MTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), MTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, NWY), MTO, (STP, NCS)])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), SUP, (ENG, FLT, ECH)])
+        self.legalOrder(ENG, [(ENG, FLT, LON), MTO, NTH])
+        self.legalOrder(ITA, [(ITA, FLT, AEG), MTO, CON])
+        self.legalOrder(ITA, [(ITA, AMY, VIE), MTO, BUD])
+        self.legalOrder(ITA, [(ITA, AMY, HOL), MTO, KIE])
+        self.legalOrder(ITA, [(ITA, FLT, GRE), HLD])
+        self.legalOrder(ITA, [(ITA, AMY, NAP), HLD])
+        self.legalOrder(ITA, [(ITA, AMY, ROM), MTO, VEN])
+        self.legalOrder(RUS, [(RUS, AMY, UKR), MTO, MOS])
+        self.legalOrder(RUS, [(RUS, AMY, GAL), MTO, VIE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, DEN])
+        self.legalOrder(RUS, [(RUS, AMY, MOS), MTO, STP])
+        self.legalOrder(GER, [(GER, AMY, BER), MTO, MUN])
+        self.legalOrder(FRA, [(FRA, AMY, PAR), HLD])
+        self.legalOrder(FRA, [(FRA, AMY, MAR), HLD])
+        
+        new_state = steady_state + [
+            [TUR, FLT, BRE],
+            [TUR, AMY, RUM],
+            [ENG, FLT, HOL],
+            [ENG, FLT, BEL],
+            [ENG, FLT, NTH],
+            [ITA, AMY, KIE],
+            [GER, AMY, MUN],
+        ]
+        self.assertMapState(new_state + [
+            [AUS, AMY, RUM, MRT],
+        ])
+        self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
+        self.assertMapState(new_state)
+    def ptest_retreat_past_attacker_simple(self):
+        "Condensed version of the problem above"
+        steady_state = [
+            [TUR, FLT, BLA],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [TUR, AMY, SEV],
+            [AUS, AMY, RUM],
+        ])
+        self.legalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(TUR, [(TUR, AMY, SEV), MTO, RUM])
+        self.legalOrder(AUS, [(AUS, AMY, RUM), HLD])
+        new_state = steady_state + [
+            [TUR, AMY, RUM],
+        ]
+        self.assertMapState(new_state + [
+            [AUS, AMY, RUM, MRT],
+        ])
+        self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
+        self.assertMapState(new_state)
 
 class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:

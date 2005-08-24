@@ -677,11 +677,12 @@ class Standard_Judge(Judge):
             else: return RET
         else: return result or SUC
     def collect_retreats(self, unit):
+        self.log_debug(8, 'Collecting retreats for %s, dislodged by %s', unit, unit.dislodger)
         return [coast.maybe_coast for coast in
                 [self.map.coasts[key] for key in unit.coast.borders_out]
                 if self.valid_retreat(coast, unit.dislodger)]
     def valid_retreat(self, retreat, dislodger):
-        if retreat.province == dislodger.coast.province: return False
+        if retreat.province == dislodger: return False
         for unit in retreat.province.units:
             order = unit.current_order
             if not (order.is_moving() and order.unit.decisions[Decision.MOVE].passed):
@@ -827,7 +828,7 @@ class Move_Decision(Tristate_Decision):
         self.failed = attack.max_value <= min_oppose
         if self.passed:
             for unit in self.order.destination.province.units:
-                unit.dislodger = self.order.unit
+                unit.dislodger = self.order.unit.coast.province
         return self.decided()
 class Support_Decision(Tristate_Decision):
     __slots__ = ()
