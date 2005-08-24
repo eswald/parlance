@@ -561,8 +561,10 @@ class Echo(Observer):
 
 
 def _test():
-    import doctest, player
-    return doctest.testmod(player)
+    from main import run_player
+    run_player(HoldBot, True, True)
+    #import doctest, player
+    #return doctest.testmod(player)
 if __name__ == "__main__": _test()
 
 # vim: sts=4 sw=4 et tw=75 fo=crql1
