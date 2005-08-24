@@ -79,8 +79,9 @@ def run_realtime():
 """#"""
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
-    from sys     import argv
-    from network import Client
+    from sys       import argv
+    from network   import Client
+    from functions import Verbose_Object
     name = player_class.name or player_class.__name__
     num = 1
     try:
@@ -89,6 +90,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
             try: num = int(arg)
             except ValueError:
                 if arg[3] == '=': opts['countries'][arg[:3]] = int(arg[4:])
+                elif arg[:2] == '-v': Verbose_Object.verbosity = int(arg[2:])
                 elif opts.has_key('host'): raise ValueError
                 else:
                     index = arg.find(':')
@@ -101,11 +103,11 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
         else: opts['host'] = 'localhost'
     except:
         if allow_multiple:
-            print 'Usage: %s [host][:port] [number]%s' % (argv[0],
+            print 'Usage: %s [host][:port] [number]%s -v<level>' % (argv[0],
                     allow_country and ' [power=passcode] ...' or '')
             print 'Connects <number> copies of %s to <host>:<port>' % name
         else:
-            print 'Usage: %s [host][:port]%s' % (argv[0],
+            print 'Usage: %s [host][:port]%s -v<level>' % (argv[0],
                     allow_country and ' [power=passcode]' or '')
             print 'Connects a copy of %s to <host>:<port>' % name
     else:
@@ -143,4 +145,4 @@ if __name__ == "__main__":
 	#if len(argv) > 1: run_player(player.Echo)
 	#else: run_realtime()
 
-# vim: ts=4 sw=4 noet
+# vim: sts=4 sw=4 et tw=75 fo=crql1
