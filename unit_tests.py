@@ -360,6 +360,17 @@ class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
         ])
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
         self.assertMapState(new_state)
+    def ptest_empty_nation_error(self):
+        ''' An error occurred when processing orders for doubled units.
+            This shouldn't happen anyway, but it's worth fixing.
+            It currently flags the order as NSU; should it instead be legal?
+        '''#'''
+        self.init_state(SPR, 1901, [
+            [TUR, FLT, BLA],
+            [TUR, AMY, SEV],
+            [TUR, AMY, SEV],
+        ])
+        self.illegalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
 
 class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:

@@ -794,7 +794,9 @@ class Unit(Comparable):
 					or cmp(self.coast, other.coast))
 		else: return NotImplemented
 	def key(self):
-		return (self.nation.key, self.coast.unit_type, self.coast.maybe_coast)
+		return (self.nation and self.nation.key,
+				self.coast and self.coast.unit_type,
+				self.coast and self.coast.maybe_coast)
 	key = property(fget=key)
 	
 	# Actions
