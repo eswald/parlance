@@ -85,7 +85,9 @@ class Connection(SocketWrapper):
         except socket.error, e:
             # Ignore 'Resource temporarily unavailable' errors
             # Anything else is probably a bad connection
-            if e.args[0] != 11:
+            if e.args[0] == 11:
+                self.log_debug(13, 'Ignoring socket error %s', e.args)
+            else:
                 self.log_debug(1, 'Socket error %s', e.args)
                 # Should I disable the final message in this case?
                 self.close()
@@ -401,6 +403,9 @@ class ServerSocket(SocketWrapper):
                     if event & select.POLLIN:
                         self.log_debug(13, 'Checking %s', sock.prefix)
                         sock.check()
+                    if sock.closed:
+                        self.log_debug(7, '%s closed itself', sock.prefix)
+                        self.remove(fd)
                     elif sock.broken:
                         self.log_debug(7, 'Done receiving from %s', sock.prefix)
                         self.remove(fd)
