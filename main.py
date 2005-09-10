@@ -1,3 +1,4 @@
+from sys       import argv
 import config
 """
 from threading import Thread
@@ -79,7 +80,6 @@ def run_realtime():
 """#"""
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
-    from sys       import argv
     from network   import Client
     from functions import Verbose_Object
     name = player_class.name or player_class.__name__
@@ -103,7 +103,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
         else: opts['host'] = 'localhost'
     except:
         if allow_multiple:
-            print 'Usage: %s [host][:port] [number]%s -v<level>' % (argv[0],
+            print 'Usage: %s [host][:port] [number]%s [-v<level>]' % (argv[0],
                     allow_country and ' [power=passcode] ...' or '')
             print 'Connects <number> copies of %s to <host>:<port>' % name
         else:
@@ -134,10 +134,18 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
 def run_server():
     from functions import Verbose_Object
     from network   import ServerSocket
-    Verbose_Object.verbosity = 7
+    verbosity = 7
+    try:
+        for arg in argv[1:]:
+            if arg[:2] == '-v': verbosity = int(arg[2:])
+            else: raise ValueError
+    except:
+        print 'Usage: %s [-v<level>]' % (argv[0],)
+        print 'Runs the DAIDE server, with output verbosity <level> (default 7)'
+    Verbose_Object.verbosity = verbosity
     server = ServerSocket()
     if server.open(): server.run()
-    else: server.log_debug(1, 'Failed to open.')
+    else: server.log_debug(1, 'Failed to open the server.')
 
 if __name__ == "__main__":
     run_server()
