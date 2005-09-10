@@ -400,6 +400,7 @@ class ServerSocket(SocketWrapper):
             if ready:
                 for fd, event in ready:
                     sock = self.sockets[fd]
+                    self.log_debug(15, 'Event %s received for %s', event, sock.prefix)
                     if event & select.POLLIN:
                         self.log_debug(13, 'Checking %s', sock.prefix)
                         sock.check()
