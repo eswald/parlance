@@ -262,6 +262,7 @@ class Standard_Judge(Judge):
                     msg = self.check_solo(growing)
                 if msg:
                     # End the game
+                    self.game_end = msg
                     results.append(msg)
                     results.append(self.map.create_NOW())
                     self.phase = None

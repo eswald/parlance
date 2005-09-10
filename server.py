@@ -675,11 +675,16 @@ class Game(Verbose_Object):
                 self.admin('An Observer has connected. %s', self.has_need())
                 if self.started: self.reveal_passcodes(client)
             
-            # Should send SCO and NOW messages here;
-            # DRW/SLO/SMR for ended games
             if self.started:
                 self.send_hello(client)
-                if self.closed: client.send(self.summarize())
+                # This should probably be farmed out to the judge,
+                # but it works for now.
+                client.send(self.judge.map.create_SCO())
+                client.send(self.judge.map.create_NOW())
+                if self.closed:
+                    msg = self.judge.game_end
+                    if msg: client.send(msg)
+                    client.send(self.summarize())
             else: self.check_start()
         else: client.reject(message); self.disconnect(client)
     def handle_REJ_MAP(self, client, message): self.disconnect(client)
@@ -767,8 +772,9 @@ class Judge(Verbose_Object):
         This class has the minimum skeleton required by the Server.
         
         Flags for the server:
-            - unready: True until each power has a set of valid orders.
-            - phase:   Indicates the phase of the current turn.
+            - unready:  True until each power has a set of valid orders.
+            - phase:    Indicates the phase of the current turn.
+            - game_end: The message indicating how the game ended, if it has.
         
         phase will be a Turn.phase() result for a game in progress,
         None for games ended or not yet started.
@@ -780,6 +786,7 @@ class Judge(Verbose_Object):
         self.mdf = game_map.mdf()
         self.map_name = game_map.name
         self.game_opts = game_opts
+        self.game_end = None
         self.unready = True
         self.phase = None
     def reset(self):
