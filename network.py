@@ -74,7 +74,9 @@ class Connection(SocketWrapper):
     
     # Incoming messages
     def read(self):
-        if self.closed or not self.sock: return None
+        if self.closed or not self.sock:
+            self.log_debug(7, 'Reading while closed')
+            return None
         try:
             header = self.sock.recv(4)
             if header and self.sock:
@@ -82,6 +84,9 @@ class Connection(SocketWrapper):
                 if msg_len: message = self.sock.recv(msg_len)
                 else:       message = ''
                 return self.process_message(msg_type, message)
+            else:
+                self.log_debug(7, 'Received empty packet')
+                self.close()
         except socket.error, e:
             # Ignore 'Resource temporarily unavailable' errors
             # Anything else is probably a bad connection
