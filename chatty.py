@@ -99,14 +99,16 @@ else:
             from language    import NOW, SCO
             self.__super.handle_MAP(message)
             if self.map.valid:
+                mapname = self.map.name
+                filename = 'map for ' + mapname
                 message = None
-                filename = find_variant_file(self.map.name, 'map')
-                if filename:
-                    try: message = read_message_file(filename, self.rep)
-                    except Exception, e:
-                        self.output('Error reading %s: %s', filename, e)
-                if message: self.show_map(message)
-                else: self.output('No map available for %s', self.map.name)
+                try:
+                    filename = find_variant_file(mapname, 'map')
+                    message = read_message_file(filename, self.rep)
+                    if message: self.show_map(message)
+                    else: self.output('Invalid message file %s', filename)
+                except Exception, e:
+                    self.output('Error reading %s: %s', filename, e)
                 # Just in case it works...
                 self.send(NOW())
                 self.send(SCO())
