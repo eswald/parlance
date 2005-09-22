@@ -65,7 +65,9 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     def submitOrder(self, country, order):
         client = self.Fake_Service(country)
         self.judge.handle_SUB(client, SUB(order))
-        return client.replies[0][-2]
+        reply = client.replies[0]
+        if reply[0] == THX: return reply[-2]
+        else:               return reply[0]
     def assertIllegalOrder(self, country, order):
         note = self.submitOrder(country, order)
         self.failIfEqual(note, MBV)

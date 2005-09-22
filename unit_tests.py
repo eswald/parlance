@@ -371,6 +371,24 @@ class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
             [TUR, AMY, SEV],
         ])
         self.illegalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
+    def ptest_removing_last_units_error(self):
+        ''' The judge used to reject REM orders from just-eliminated countries.
+            They get removed anyway, but only when time runs out.
+            Fixed by allowing any eliminated country to submit orders,
+            relying on other processing to reject any invalid orders.
+        '''#'''
+        steady_state = [
+            [RUS, AMY, BER],
+            [RUS, AMY, MUN],
+            [RUS, AMY, KIE],
+        ]
+        start_state = steady_state + [
+            [GER, FLT, NTH],
+        ]
+        self.init_state(FAL, 1901, start_state)
+        self.assertMapState(start_state)
+        self.legalOrder(GER, [(GER, FLT, NTH), REM])
+        self.assertMapState(steady_state)
 
 class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:

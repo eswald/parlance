@@ -120,7 +120,7 @@ class Standard_Judge(Judge):
     def handle_SUB(self, client, message):
         ''' Processes orders submitted by a power.'''
         country = client.country
-        if country and self.phase and not self.eliminated(country):
+        if country and self.phase:
             orders = self.next_orders
             for tlist in message.fold()[1:]:
                 power = self.map.powers[country]
