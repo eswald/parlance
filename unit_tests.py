@@ -2,10 +2,11 @@
 '''#'''
 
 import unittest, datc
-from time     import sleep
-from sets     import Set
-from language import *
-from xtended  import *
+from time      import sleep
+from sets      import Set
+from functions import Verbose_Object
+from language  import *
+from xtended   import *
 SWI = Token('SWI', 0x504B)
 
 class Judge_Movement(datc.DiplomacyAdjudicatorTestCase):
@@ -592,29 +593,32 @@ class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
     def ntest_nmr(self): pass
     def ntest_nrs(self): pass
 
-class Server_Basics(unittest.TestCase):
+class ServerTestCase(unittest.TestCase):
     "Basic Server Functionality"
-    from network import Verbose_Object, Connection
+    from network import Connection
     class Fake_Player(Verbose_Object):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
         '''#'''
+        sleep_time = 14
         def __init__(self, send_method, representation):
             from language import NME
             self.log_debug(9, 'Fake player started')
             self.closed = False
             self.send = send_method
             self.rep = representation
-            send_method(NME('Loose connection', 'Fake_Player'))
+            send_method(NME('Loose connection', self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
         def handle_message(self, message):
             from language import HLO, MAP, SVE, LOD
             self.log_debug(5, '<< %s', message)
+            self.power = message[2]
+            self.pcode = message[5].value()
             if message[0] is HLO:
-                sleep(14)
-                self.send(ADM(str(message[2]), 'Passcode: %d' % message[5].value()))
+                sleep(self.sleep_time)
+                self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
                 self.close()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
     class Fake_Client(Connection):
@@ -691,10 +695,8 @@ class Server_Basics(unittest.TestCase):
         if self.server and not self.server.closed: self.server.close()
         for thread in self.threads:
             if thread.isAlive(): thread.join()
-    def set_verbosity(self, verbosity):
-        from functions import Verbose_Object
-        Verbose_Object.verbosity = verbosity
-    def connect_server(self, clients, games=1, poll=True):
+    def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
+    def connect_server(self, clients, games=1, poll=True, **kwargs):
         from network import ServerSocket, Client
         config.option_class.local_opts.update({'number of games' : games})
         self.server = server = ServerSocket()
@@ -707,7 +709,7 @@ class Server_Basics(unittest.TestCase):
                 assert not server.closed
                 threads = []
                 for player_class in clients:
-                    thread = Client(player_class).start()
+                    thread = Client(player_class, **kwargs).start()
                     assert thread
                     threads.append(thread)
                 for thread in threads:
@@ -716,6 +718,8 @@ class Server_Basics(unittest.TestCase):
             self.threads.extend(threads)
             server.close()
             raise
+
+class Server_Basics(ServerTestCase):
     def ptest_timeout(self):
         "Thirty-second timeout for the Initial Message"
         self.set_verbosity(15)
@@ -736,6 +740,45 @@ class Server_Basics(unittest.TestCase):
         "Seven fake players and an observer"
         from player  import Clock
         self.connect_server([Clock] + ([self.Fake_Player] * 7))
+    def test_takeover(self):
+        "Takeover ability after game start"
+        class Fake_Takeover(Verbose_Object):
+            ''' A false player, who restarts once after receiving HLO.'''
+            sleep_time = 7
+            def __init__(self, send_method, representation, power, passcode):
+                from language import IAM
+                self.log_debug(9, 'Fake player started')
+                self.restarted = False
+                self.closed = False
+                self.send = send_method
+                self.rep = representation
+                self.power = power
+                send_method(IAM(power, passcode))
+            def close(self):
+                self.log_debug(9, 'Closed')
+                self.closed = True
+            def handle_message(self, message):
+                from language import YES, IAM
+                self.log_debug(5, '<< %s', message)
+                if message[0] is YES and message[2] is IAM:
+                    self.send(ADM(self.power.text, 'Takeover successful'))
+                    sleep(self.sleep_time)
+                    self.close()
+                else: raise AssertionError, 'Unexpected message: ' + str(message)
+        class Fake_Restarter(self.Fake_Player):
+            sleep_time = 3
+            def close(self):
+                from network import Client
+                thread = Client(Fake_Takeover, power=self.power,
+                    passcode=self.pcode).start()
+                assert thread
+                thread.join()
+                self.log_debug(9, 'Closed')
+                self.closed = True
+        self.set_verbosity(15)
+        self.connect_server([Fake_Restarter] + [self.Fake_Player] * 6)
+
+class Server_FullGames(ServerTestCase):
     def ptest_holdbots(self):
         "Seven drawing holdbots"
         from player import HoldBot

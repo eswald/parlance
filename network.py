@@ -4,7 +4,7 @@ import config, socket, select
 from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
-from language  import Message, Token, YES, REJ, ADM
+from language  import Message, Token, YES, REJ, ADM, OFF
 from functions import Verbose_Object
 from server    import Server
 
@@ -283,6 +283,7 @@ class Service(Connection):
         self.client_id = client_id
         self.deadline  = time() + 30
         self.country   = None
+        self.booted    = False
         self.server    = server
         self.game      = server.default_game()
         self.rep       = self.game.representation
@@ -303,6 +304,7 @@ class Service(Connection):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
         self.log_debug(6, 'Booting client #%d', self.client_id)
         self.send(OFF())
+        self.booted = self.country
         self.country = None
         self.close()
     
@@ -354,7 +356,7 @@ class ServerSocket(SocketWrapper):
     def close(self):
         if self.server and not self.server.closed: self.server.close()
         self.closed = True
-        for client in self.sockets.itervalues():
+        for client in self.sockets.values():
             if not client.closed: client.close()
         #if self.sock: self.remove(self.fileno())
         self.__super.close()

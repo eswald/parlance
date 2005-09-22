@@ -394,7 +394,11 @@ class Game(Verbose_Object):
         self.cancel_time_requests(client)
         if client in self.clients:
             self.clients.remove(client)
-            if client.country:
+            if client.booted:
+                new_player = self.players[client.booted]['client']
+                self.admin('%s has been %s. %s', client.booted,
+                        new_player and 'replaced' or 'booted', self.has_need())
+            elif client.country:
                 player = self.players[client.country]
                 if self.closed or not self.started:
                     self.admin('%s (%s) has disconnected. %s',
@@ -739,19 +743,20 @@ class Game(Verbose_Object):
                 # The current client might be dead, but we haven't noticed yet.
                 # Or this could be a legitimate GM decision,
                 # to replace a bot with a human player
-                old_client.boot()
                 good = True
             else: good = False
             
             if good:
                 self.log_debug(6, 'Client #%d takes control of %s', client.client_id, country)
+                if client not in self.clients: self.clients.append(client)
                 if client.country: self.open_position(client.country)
-                self.clients[client] = country
+                client.country = country
                 slot['client'] = client
                 slot['ready'] = True
                 slot['robotic'] = False # Assume a human is taking over
                 slot['name'] += ' (taken over in %s)' % str(self.judge.turn())
                 client.accept(message)
+                if old_client: old_client.boot()
                 
                 # Restart timers if everybody's here
                 unready = self.players_unready()
