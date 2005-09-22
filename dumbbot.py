@@ -211,8 +211,8 @@ class DumbBot(Player):
     check_best = True
     description = 'An enhanced version of DumbBot'
     
-    def __init__(self, *args):
-        self.__super.__init__(*args)
+    def __init__(self, *args, **kwargs):
+        self.__super.__init__(*args, **kwargs)
         self.vals = DumbBot_Values()
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
     def handle_MAP(self, message):

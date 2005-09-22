@@ -482,6 +482,8 @@ class Token(_tuple_Token):
         elif isinstance(name, str):
             if rep and rep.has_key(name):
                 return _get_or_create_token(klass, name, rep[name])
+            elif rep and rep.has_key(name.upper()):
+                return _get_or_create_token(klass, name.upper(), rep[name.upper()])
             elif _cache.has_key(name): return _cache[name]
             elif len(name) == 1:
                 charnum = ord(name)

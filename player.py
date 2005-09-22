@@ -62,8 +62,19 @@ class Player(Verbose_Object):
         self.draws     = []    # A list of acceptable draws
         
         # Usefully sent through keyword arguments
-        self.power = kwargs.get('power')  # The power being played, or None
-        self.pcode = kwargs.get('pcode')  # The passcode from the HLO message
+        power = kwargs.get('power')     # The power being played, or None
+        pcode = kwargs.get('passcode')  # The passcode from the HLO message
+        if power:
+            try: self.power = Token(power, rep=representation)
+            except ValueError:
+                self.log_debug(1, 'Invalid power "%r"', power)
+                self.power = None
+            try: self.pcode = int(pcode)
+            except ValueError:
+                self.log_debug(1, 'Invalid passcode "%r"', pcode)
+                self.pcode = None
+            self.log_debug(7, 'Using power=%r, passcode=%r', self.power, self.pcode)
+        else: self.power = self.pcode = None
         
         # A list of variables to remember across SVE/LOD
         self.remember  = ['map', 'in_game', 'power', 'pcode', 'bcc_list', 'fwd_list', 'pressed', 'draws']
@@ -192,7 +203,7 @@ class Player(Verbose_Object):
             self.map = Map(message.fold()[1][0], self.rep)
             if self.map.valid: self.accept(message)
             else:              self.send(MDF())
-        else: self.send(YES(message))
+        else: self.accept(message)
     def handle_MDF(self, message):
         ''' Replies to the MDF command.
             The map should have loaded itself, but might not be valid.
@@ -259,6 +270,25 @@ class Player(Verbose_Object):
         '''#'''
         raise NotImplementedError
     
+    def wait_for_map(self):
+        from time import sleep
+        while not self.map:
+            if self.closed: return
+            else: sleep(1)
+        if self.map.valid:
+            self.send(HLO())
+            self.send(SCO())
+            self.send(NOW())
+    def handle_YES_IAM(self, message):
+        if not self.map:
+            self.send(MAP())
+            from threading import Thread
+            Thread(target=self.wait_for_map).start()
+        elif not self.power:
+            self.send(HLO())
+            self.send(SCO())
+            self.send(NOW())
+    def handle_REJ_IAM(self, message): self.close()
     def handle_REJ_NME(self, message): self.close()
     def handle_OFF(self, message): self.close()
     def game_over(self, message):

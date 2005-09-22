@@ -84,12 +84,15 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
     from functions import Verbose_Object
     name = player_class.name or player_class.__name__
     num = 1
+    opts = {}
+    countries = {}
     try:
-        opts = allow_country and {'countries': {}} or {}
         for arg in argv[1:]:
             try: num = int(arg)
             except ValueError:
-                if arg[3] == '=': opts['countries'][arg[:3]] = int(arg[4:])
+                if arg[3] == '=':
+                    if allow_country: countries[arg[:3]] = int(arg[4:])
+                    else: raise ValueError
                 elif arg[:2] == '-v': Verbose_Object.verbosity = int(arg[2:])
                 elif opts.has_key('host'): raise ValueError
                 else:
@@ -113,15 +116,22 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
     else:
         if num == 1:
             config.option_class.local_opts.update(opts)
-            client = Client(player_class)
+            if countries:
+                nation, pcode = countries.popitem()
+                client = Client(player_class, power=nation, passcode=pcode)
+            else: client = Client(player_class)
             if client.open(): client.run()
             else: print '%s refuses to run.  Sorry.' % name
         else:
             from time import sleep
             bored = False
             threads = []
-            for dummy in range(num):
-                client = Client(player_class)
+            while num > 0 or countries:
+                num -= 1
+                if countries:
+                    nation, pcode = countries.popitem()
+                    client = Client(player_class, power=nation, passcode=pcode)
+                else: client = Client(player_class)
                 thread = client.start()
                 if thread: threads.append((thread, client))
                 else: print 'Failed to start %s.  Sorry.' % name
