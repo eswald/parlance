@@ -86,6 +86,9 @@ else:
             else:
                 print text
                 self.chatbuf.append(text)
+        def handle_OFF(self, message):
+            self.output('The server has closed.')
+            self.__super.handle_OFF(message)
     class MapChat(Cursed):
         ''' Even better: This one displays a map.'''
         def __init__(self, *args):
