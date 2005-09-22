@@ -145,17 +145,27 @@ def run_server():
     from functions import Verbose_Object
     from network   import ServerSocket
     verbosity = 7
+    opts = {}
     try:
         for arg in argv[1:]:
             if arg[:2] == '-v': verbosity = int(arg[2:])
-            else: raise ValueError
+            elif arg[:2] == '-g':
+                games = int(arg[2:])
+                opts['games'] = games
+                opts['number of games'] = games
+            else:
+                config.variant_options(arg)
+                opts['variant'] = arg
+                opts['variant name'] = arg
     except:
-        print 'Usage: %s [-v<level>]' % (argv[0],)
-        print 'Runs the DAIDE server, with output verbosity <level> (default 7)'
-    Verbose_Object.verbosity = verbosity
-    server = ServerSocket()
-    if server.open(): server.run()
-    else: server.log_debug(1, 'Failed to open the server.')
+        print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % (argv[0],)
+        print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
+    else:
+        config.option_class.local_opts.update(opts)
+        Verbose_Object.verbosity = verbosity
+        server = ServerSocket()
+        if server.open(): server.run()
+        else: server.log_debug(1, 'Failed to open the server.')
 
 if __name__ == "__main__":
     run_server()
