@@ -787,6 +787,7 @@ class Judge(Verbose_Object):
     
     def __init__(self, game_map, game_opts):
         ''' Initializes instance variables.'''
+        assert game_map.valid
         self.map = game_map
         self.mdf = game_map.mdf()
         self.map_name = game_map.name

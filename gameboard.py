@@ -38,7 +38,7 @@ class Map(object):
         if options:
             self.name         = options.map_name
             self.rep          = options.rep
-            self.valid        = self.define(options.map_mdf)
+            self.valid        = not self.define(options.map_mdf)
             self.current_turn = Turn(options.seasons)
             self.restart()
         elif name and representation:
@@ -60,13 +60,13 @@ class Map(object):
         '''#'''
         # Look in the cache first
         if self.__mdf_cache.has_key(name):
-            return self.define(self.__mdf_cache[name])
+            return not self.define(self.__mdf_cache[name])
         else:
             # Attempt to find the MDF among the map paths
             from translation import read_message_file
             try: filename = config.find_variant_file(name, 'mdf')
             except IOError: return False
-            return self.define(read_message_file(filename, self.rep))
+            return not self.define(read_message_file(filename, self.rep))
     def define(self, message):
         ''' Attempts to create a map from an MDF message.
             Returns True if successful, False otherwise.
@@ -95,12 +95,13 @@ class Map(object):
             >>> m.valid
             False
             >>> m.define(mdf)
-            True
+            ''
         '''#'''
         
         # Store the mdf, for future reference
         if not self.__mdf_cache.has_key(self.name):
-            if message.validate(None, -1, True): return False
+            result = message.validate(None, -1, True)
+            if result: return 'Invalid MDF message: %s' % str(result)
             self.__mdf_cache[self.name] = message
         
         (mdf, powers, provinces, adjacencies) = message.fold()
@@ -111,7 +112,8 @@ class Map(object):
             pow_list = dist.pop(0)
             if pow_list == UNO:
                 for prov in dist:
-                    if prov_homes.has_key(prov): return False
+                    if prov_homes.has_key(prov):
+                        return 'Supply center %s listed as both owned and unowned' % str(prov)
                     prov_homes[prov] = []
             else:
                 if not isinstance(pow_list, list): pow_list = [pow_list]
@@ -132,7 +134,8 @@ class Map(object):
             prov = adj.pop(0)
             is_sc = prov_homes.has_key(prov)
             non_sc = prov in non_centres
-            if is_sc == non_sc: return False
+            if is_sc == non_sc:
+                return 'Conflicting supply center designation for ' + str(prov)
             elif is_sc: home = prov_homes[prov]
             else:       home = None
             
@@ -145,7 +148,9 @@ class Map(object):
                 provs[other[1]].borders_in.add(key[1])
         self.spaces = provs
         self.coasts = coasts
-        return all(provs.itervalues(), Province.is_valid)
+        for prov in provs.itervalues():
+            if not prov.is_valid(): return 'Invalid province: ' + str(prov)
+        else: return ''
     def restart(self):
         if self.opts:
             self.handle_SCO(self.opts.start_sco)
@@ -374,7 +379,7 @@ class Map(object):
     def handle_MDF(self, message):
         ''' Handles the MDF command, loading province information.
         '''#'''
-        self.valid = self.define(message)
+        self.valid = not self.define(message)
     def handle_SCO(self, message):
         ''' Handles the SCO command, loading center ownership information.
             >>> standard_map.handle_SCO(standard_sco)
