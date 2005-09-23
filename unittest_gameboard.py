@@ -6,14 +6,34 @@ import unittest
 import config
 from gameboard import Map, Turn, Province
 
-class Map_Bugfix(unittest.TestCase):
-    "Tests to reproduce bugs related to the Map class"
+class Map_Variants(unittest.TestCase):
+    "Validity checks for each of the known variants"
     def define_variant(self, variant_name):
         options = config.variant_options(variant_name)
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
-    def ptest_standard_map(self): self.define_variant('standard')
-    def ptest_hundred3_map(self): self.define_variant('hundred3')
+    def ptest_abstraction2_map(self):     self.define_variant('abstraction2')
+    def ptest_african2_map(self):         self.define_variant('african2')
+    def ptest_americas4_map(self):        self.define_variant('americas4')
+    def ptest_chromatic_map(self):        self.define_variant('chromatic')
+    def ptest_classical_map(self):        self.define_variant('classical')
+    def ptest_fleet_rome_map(self):       self.define_variant('fleet_rome')
+    def ptest_hundred3_map(self):         self.define_variant('hundred3')
+    def ptest_hundred31_map(self):        self.define_variant('hundred31')
+    def ptest_hundred32_map(self):        self.define_variant('hundred32')
+    def ptest_iberian2_map(self):         self.define_variant('iberian2')
+    def ptest_modern_map(self):           self.define_variant('modern')
+    def ptest_sailho_map(self):           self.define_variant('sailho')
+    def ptest_shift_around_map(self):     self.define_variant('shift_around')
+    def ptest_south_america32_map(self):  self.define_variant('south_america32')
+    def ptest_south_america51_map(self):  self.define_variant('south_america51')
+    def ptest_south_east_asia3_map(self): self.define_variant('south_east_asia3')
+    def ptest_standard_map(self):         self.define_variant('standard')
+    def ptest_versailles3_map(self):      self.define_variant('versailles3')
+    def ptest_world3_map(self):           self.define_variant('world3')
+
+class Map_Bugfix(unittest.TestCase):
+    "Tests to reproduce bugs related to the Map class"
     def ptest_empty_UNO(self):
         "Test whether Map can define maps with no non-home supply centers."
         from translation import translate
