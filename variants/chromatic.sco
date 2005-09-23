@@ -1,0 +1,6 @@
+sco (yel Gol Sun Top)
+    (red Cri Rub Ver)
+    (blu Cob Roy Sap)
+    (lig Ala Gho Ivo)
+    (dar Ebo Jet Obd)
+    (UNO Bro Cry Gar Mag Mal Sil)

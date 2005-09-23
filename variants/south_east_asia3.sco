@@ -1,0 +1,8 @@
+sco (aus Cai Dar Por)
+    (chn Gui Guz Kun)
+    (ind Bal Jak Med Sur)
+    (mly Kot Kua Kuc)
+    (thl Bag Chi Tha)
+    (phi Ceb Dav Man)
+    (vtn Dan Han Sai)
+    (UNO Bru Bur Cam Eti Hon Lao Mar Pap Sin Spi Tai)

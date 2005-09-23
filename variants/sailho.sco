@@ -1,0 +1,5 @@
+sco (nth Aeo Her)
+    (sth Had Xen)
+    (est Ama Cen)
+    (wst Les Ves)
+    (UNO Aph Are Cup Mor Nes Pro Str Tar)

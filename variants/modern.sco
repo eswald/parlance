@@ -1,0 +1,12 @@
+sco (brt Edi Gib Liv Lon)
+    (egy Ale Asw Cai)
+    (frn Bor Lyo Mar Par)
+    (ger Ber Fra Ham Mun)
+    (ita Mil Nap Rom Ven)
+    (pol Gda Kra War)
+    (rus Gor Mos Mur Ros Stp)
+    (spa Bar Mad Svl)
+    (tur Ada Ank Ist Izm)
+    (ukr Kha Kie Ode Sev)
+    (UNO Aus Bel Bie Bul Cro Cze Den Geo Gre Hol Hun Ire Irn Isr Lib
+          Lit Mon Mor Nor Por Rum Sau Ser Swe Swi Tun)
