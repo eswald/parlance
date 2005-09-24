@@ -153,6 +153,31 @@ class DumbBot_Values:
         self.build_proximity_weight  = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
         self.remove_proximity_weight = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
 
+class Province_Values(object):
+    ''' Holds various information about the provinces.
+        This needs to be separate from the Map, so generate_orders()
+        can be re-entrant (in case it runs overtime).
+
+        - proximity_map         prov -> list of PROXIMITY_DEPTH values; the value of the province, considering the N nearest spaces
+        - defence_value         prov -> approximately the size of the largest enemy who has a unit next to the province
+        - attack_value          prov -> approximately the size of the owning power
+        - strength_value        prov -> the number of units we have next to the province
+        - competition_value     prov -> the greatest number of units any other power has next to the province
+        - adjacent_unit_count   prov -> nation -> number of units each nation has in or next to the province
+    '''#'''
+    def __init__(self, board):
+        provs = board.spaces.keys()
+        self.defence_value     = dict.fromkeys(provs, 0)
+        self.attack_value      = dict.fromkeys(provs, 0)
+        self.strength_value    = dict.fromkeys(provs, 0)
+        self.competition_value = dict.fromkeys(provs, 0)
+        
+        self.proximity_map = {}
+        self.adjacent_unit_count = {}
+        for prov in provs:
+            self.proximity_map[prov] = [0] * PROXIMITY_DEPTH
+            self.adjacent_unit_count[prov] = dict.fromkeys(board.powers.keys(), 0)
+
 class DumbBot(Player):
     ''' From the original C file:
         /**
@@ -237,82 +262,76 @@ class DumbBot(Player):
             This means that it won't kill the whole bot on errors,
             but it might get called again before completing.
         '''#'''
-        #from language import SPR, SUM, FAL, AUT
+        #from language import SPR, SUM, FAL, AUT, WIN
         
         turn   = self.map.current_turn
         season = turn.season
         phase  = turn.phase()
-        orders = None
+        orders = values = None
         try:
             self.log_debug(10, 'Starting NOW %s message', turn)
             if not (self.in_game and self.missing_orders()): return
             if   season in (SPR, SUM):
                 # Spring Moves/Retreats
-                orders = self.calculate_factors( self.vals.proximity_spring_attack_weight, self.vals.proximity_spring_defence_weight )
-                self.calculate_destination_value( orders, self.vals.spring_proximity_weight, self.vals.spring_strength_weight, self.vals.spring_competition_weight )
+                values = self.calculate_factors( self.vals.proximity_spring_attack_weight, self.vals.proximity_spring_defence_weight )
+                self.calculate_destination_value( values, self.vals.spring_proximity_weight, self.vals.spring_strength_weight, self.vals.spring_competition_weight )
             elif season in (FAL, AUT):
                 # Fall Moves/Retreats
-                orders = self.calculate_factors( self.vals.proximity_fall_attack_weight, self.vals.proximity_fall_defence_weight )
-                self.calculate_destination_value( orders, self.vals.fall_proximity_weight, self.vals.fall_strength_weight, self.vals.fall_competition_weight )
+                values = self.calculate_factors( self.vals.proximity_fall_attack_weight, self.vals.proximity_fall_defence_weight )
+                self.calculate_destination_value( values, self.vals.fall_proximity_weight, self.vals.fall_strength_weight, self.vals.fall_competition_weight )
+            elif season is not WIN:
+                self.log_debug(1, 'Unknown season %s', season)
             
-            if   phase == turn.move_phase:    self.generate_movement_orders(orders)
-            elif phase == turn.retreat_phase: self.generate_retreat_orders(orders)
+            if   phase == turn.move_phase:    orders = self.generate_movement_orders(values)
+            elif phase == turn.retreat_phase: orders = self.generate_retreat_orders(values)
             elif phase == turn.build_phase:
-                orders = self.calculate_factors( self.vals.proximity_spring_attack_weight, self.vals.proximity_spring_defence_weight )
+                values = self.calculate_factors( self.vals.proximity_spring_attack_weight, self.vals.proximity_spring_defence_weight )
                 surplus = self.power.surplus()
                 self.log_debug(11, ' Build phase surplus: %d', surplus)
                 if surplus > 0:
                     # Removing excess units
-                    self.calculate_winter_destination_value( orders, self.vals.remove_proximity_weight, self.vals.remove_defence_weight )
-                    self.generate_remove_orders(surplus, orders)
+                    self.calculate_winter_destination_value( values, self.vals.remove_proximity_weight, self.vals.remove_defence_weight )
+                    orders = self.generate_remove_orders(surplus, values)
                 elif surplus < 0:
                     # Building
-                    self.calculate_winter_destination_value( orders, self.vals.build_proximity_weight, self.vals.build_defence_weight )
-                    self.generate_build_orders(-surplus, orders)
-            else: raise IllegalStateError
+                    self.calculate_winter_destination_value( values, self.vals.build_proximity_weight, self.vals.build_defence_weight )
+                    orders = self.generate_build_orders(-surplus, values)
+            else: self.log_debug(1, 'Unknown phase %s', phase)
             
-            self.submit_set(orders)
-            if self.print_csv: self.generate_csv(orders);
+            if orders: self.submit_set(orders)
+            if self.print_csv: self.generate_csv(values);
         except:
             self.log_debug(1, 'Error while handling NOW %s message', turn)
-            if orders: self.generate_csv(orders)
+            if values: self.generate_csv(values)
             self.close()
             raise
     def calculate_factors(self, proximity_attack_weight, proximity_defence_weight):
-        orders = OrderSet(self.power)
-        orders.__proximity_map = {}
-        orders.__defence_value = {}
-        orders.__attack_value = {}
-        orders.__strength_value = {}
-        orders.__competition_value = {}
-        adjacent_unit_count = {}
+        values = Province_Values(self.map)
         
         for province_counter in self.map.spaces.itervalues():
             # Calculate attack and defense values for each province
-            orders.__attack_value[province_counter.key] = 0
-            orders.__defence_value[province_counter.key] = 0
             if province_counter.is_supply():
                 if province_counter.owner == self.power:
                     # Our SC. Calc defense value
-                    orders.__defence_value[province_counter.key] = self.calculate_defence_value( province_counter )
+                    values.defence_value[province_counter.key] = self.calculate_defence_value( province_counter )
                 else:
                     # Not ours. Calc attack value (which is the size of the owning power)
                     owner = province_counter.owner
                     if owner:
-                        orders.__attack_value[province_counter.key] = self.power_size[owner.key]
+                        values.attack_value[province_counter.key] = self.power_size[owner.key]
                         if owner in province_counter.homes:
-                            orders.__attack_value[province_counter.key] *= self.vals.home_attack_weight
-                    else: orders.__attack_value[province_counter.key] = self.vals.size_constant
+                            values.attack_value[province_counter.key] *= self.vals.home_attack_weight
+                    else: values.attack_value[province_counter.key] = self.vals.size_constant
             for unit in province_counter.units:
-                orders.__attack_value[province_counter.key] += int(self.power_size[unit.nation.key] * self.vals.base_unit_weight)
+                values.attack_value[province_counter.key] += int(self.power_size[unit.nation.key] * self.vals.base_unit_weight)
             
             # Calculate proximity[0] for each coast.
             # Proximity[0] is calculated based on the attack value and defence value of the province,
             # modified by the weightings for the current season.
             for province_coast_iterator in province_counter.coasts:
-                orders.__proximity_map[province_coast_iterator.key] = [
-                    orders.__attack_value[province_counter.key] * proximity_attack_weight +
-                    orders.__defence_value[province_counter.key] * proximity_defence_weight
+                values.proximity_map[province_coast_iterator.key] = [
+                    values.attack_value[province_counter.key] * proximity_attack_weight +
+                    values.defence_value[province_counter.key] * proximity_defence_weight
                 ]
         
         # Calculate proximities [ 1... ]
@@ -327,41 +346,30 @@ class DumbBot(Player):
                 # but only the highest from a single province
                 for coast_iterator in proximity_iterator.borders_out:
                     coast = self.map.coasts[coast_iterator]
-                    weight = orders.__proximity_map[coast.key][proximity_counter]
+                    weight = values.proximity_map[coast.key][proximity_counter]
                     key = coast.province.key
                     if provs_seen.has_key(key):
                         if weight > provs_seen[key]: provs_seen[key] = weight
                     else: provs_seen[key] = weight
                 
                 # Add this province in, then divide the answer by 5
-                orders.__proximity_map[proximity_iterator.key].append(sum(provs_seen.values(),
-                    orders.__proximity_map[proximity_iterator.key][proximity_counter]) // 5)
+                values.proximity_map[proximity_iterator.key].append(sum(provs_seen.values(),
+                    values.proximity_map[proximity_iterator.key][proximity_counter]) // 5)
         
-        # Calculate number of units each power has next to each province
-        for province_counter in self.map.spaces:
-            adjacent_unit_count[province_counter] = {}
-            for power_counter in self.map.powers:
-                adjacent_unit_count[province_counter][ power_counter ] = 0
-
-            # Strength value is the number of units we have next to the province
-            orders.__strength_value[province_counter] = 0
-
-            # Competition value is the greatest number of units any other power has next to the province
-            orders.__competition_value[province_counter] = 0
-        
+        # Calculate number of units each power has in or next to each province
         for unit_iterator in self.map.units:
-            adjacent_unit_count[unit_iterator.coast.province.key][ unit_iterator.nation.key ] += 1
+            values.adjacent_unit_count[unit_iterator.coast.province.key][ unit_iterator.nation.key ] += 1
             for coast_iterator in unit_iterator.coast.borders_out:
-                adjacent_unit_count[ coast_iterator[1] ][ unit_iterator.nation.key ] += 1
+                values.adjacent_unit_count[ coast_iterator[1] ][ unit_iterator.nation.key ] += 1
         
         for province_counter in self.map.spaces:
             for power_counter in self.map.powers:
                 if power_counter == self.power:
-                    orders.__strength_value[province_counter] = adjacent_unit_count[province_counter][ power_counter ]
-                elif adjacent_unit_count[province_counter][ power_counter ] > orders.__competition_value[province_counter]:
-                    orders.__competition_value[province_counter] = adjacent_unit_count[province_counter][ power_counter ]
+                    values.strength_value[province_counter] = values.adjacent_unit_count[province_counter][ power_counter ]
+                elif values.adjacent_unit_count[province_counter][ power_counter ] > values.competition_value[province_counter]:
+                    values.competition_value[province_counter] = values.adjacent_unit_count[province_counter][ power_counter ]
         
-        return orders
+        return values
     def calculate_defence_value(self, province):
         ''' Calculate the defense value. The defence value of a centre
             is the size of the largest enemy who has a unit which can
@@ -383,7 +391,7 @@ class DumbBot(Player):
             if defence_value: defence_value *= self.vals.home_defence_weight
             else: defence_value = -self.vals.home_vacation_weight
         return defence_value
-    def calculate_destination_value(self, orders, proximity_weight, strength_weight, competition_weight):
+    def calculate_destination_value(self, values, proximity_weight, strength_weight, competition_weight):
         ''' Given the province and coast calculated values, and the
             weighting for this turn, calculate the value of each coast.
         '''#'''
@@ -391,12 +399,12 @@ class DumbBot(Player):
         for coast_id in self.map.coasts.itervalues():
             destination_weight = 0
             for proximity_counter in range(PROXIMITY_DEPTH):
-                destination_weight += orders.__proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
-            destination_weight += strength_weight    * orders.__strength_value[coast_id.province.key]
-            destination_weight -= competition_weight * orders.__competition_value[coast_id.province.key]
+                destination_weight += values.proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
+            destination_weight += strength_weight    * values.strength_value[coast_id.province.key]
+            destination_weight -= competition_weight * values.competition_value[coast_id.province.key]
             destination_value[coast_id.key] = destination_weight
-        orders.destination_value = destination_value
-    def calculate_winter_destination_value(self, orders, proximity_weight, defence_weight):
+        values.destination_value = destination_value
+    def calculate_winter_destination_value(self, values, proximity_weight, defence_weight):
         ''' Given the province and coast calculated values, and the
             weighting for this turn, calculate the value of each coast
             for winter builds and removals.
@@ -405,11 +413,11 @@ class DumbBot(Player):
         for coast_id in self.map.coasts.itervalues():
             destination_weight = 0
             for proximity_counter in range(PROXIMITY_DEPTH):
-                destination_weight += orders.__proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
-            destination_weight += defence_weight * max(0, orders.__defence_value[coast_id.province.key])
+                destination_weight += values.proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
+            destination_weight += defence_weight * max(0, values.defence_value[coast_id.province.key])
             destination_value[coast_id.key] = destination_weight
-        orders.destination_value = destination_value
-    def generate_csv(self, orders):
+        values.destination_value = destination_value
+    def generate_csv(self, values):
         ''' Generate a .csv file (readable by Excel and most other
             spreadsheets) which shows the data used to calculate the moves
             for this turn. Lists all the calculated information for every
@@ -429,29 +437,30 @@ class DumbBot(Player):
                 fp.write("Proximity[%d]," % proximity_counter)
             fp.write("Value\n")
             for coast_id in self.map.coasts.itervalues():
-                if orders.__strength_value[coast_id.province.key] > 0:
+                if values.strength_value[coast_id.province.key] > 0:
                     fp.write("%s,%s, " % (coast_id.province, coast_id))
                     fp.write("%2f,%2f,%f,%f, " % (
-                        orders.__attack_value[coast_id.province.key],
-                        orders.__defence_value[coast_id.province.key],
-                        orders.__strength_value[coast_id.province.key],
-                        orders.__competition_value[coast_id.province.key]
+                        values.attack_value[coast_id.province.key],
+                        values.defence_value[coast_id.province.key],
+                        values.strength_value[coast_id.province.key],
+                        values.competition_value[coast_id.province.key]
                     ))
 
                     for proximity_counter in range(max_proximity):
-                        if len(orders.__proximity_map[coast_id.key]) > proximity_counter:
-                            fp.write("%5f," % orders.__proximity_map[coast_id.key][ proximity_counter ])
+                        if len(values.proximity_map[coast_id.key]) > proximity_counter:
+                            fp.write("%5f," % values.proximity_map[coast_id.key][ proximity_counter ])
                         else: fp.write("oops,")
-                    fp.write(" %8f" % orders.destination_value[coast_id.key])
+                    fp.write(" %8f" % values.destination_value[coast_id.key])
                     fp.write("\n")
             fp.close()
     
-    def generate_movement_orders(self, orders):
+    def generate_movement_orders(self, values):
         ''' Generate the actual orders for a movement turn.'''
         self.log_debug(10, "Movement orders for %s" % self.map.current_turn)
         our_units = self.power.units[:]
         from iaq         import DefaultDict
-        orders.waiting = DefaultDict([])
+        orders = OrderSet(self.power)
+        waiting = DefaultDict([])
         
         while our_units:
             # Put our units into a random order. This is one of the ways
@@ -462,24 +471,25 @@ class DumbBot(Player):
             
             for unit in our_units:
                 if not orders.get_order(unit):
-                    order = self.order_unit(unit, orders)
+                    order = self.order_unit(unit, orders, values, waiting)
                     if order: orders.add(order)
                     else: unordered.append(unit)
             our_units = unordered
-        self.check_for_wasted_holds(orders)
-    def check_for_wasted_holds(self, orders):
+        self.check_for_wasted_holds(orders, values)
+        return orders
+    def check_for_wasted_holds(self, orders, values):
         ''' Replaces Hold orders with supports, if possible.'''
         destination_map = {}
         holding = []
         for order in orders:
             if order.is_moving():
                 destination_map[order.destination.province.key] = (order,
-                    orders.destination_value[order.destination.key] *
-                    orders.__competition_value[order.destination.province.key])
+                    values.destination_value[order.destination.key] *
+                    values.competition_value[order.destination.province.key])
             else:
                 destination_map[order.unit.coast.province.key] = (order,
-                    orders.destination_value[order.unit.coast.key] *
-                    (orders.__competition_value[order.unit.coast.province.key] - 1))
+                    values.destination_value[order.unit.coast.key] *
+                    (values.competition_value[order.unit.coast.province.key] - 1))
                 if order.is_holding(): holding.append(order)
         
         for order in holding:
@@ -509,11 +519,11 @@ class DumbBot(Player):
                     orders.add(SupportMoveOrder(unit, source.unit, source.destination))
                 else: orders.add(SupportHoldOrder(unit, source.unit))
                 self.log_debug(14, "   Now have orders = %s", orders)
-    def order_unit(self, unit, orders):
+    def order_unit(self, unit, orders, values, waiting):
         self.log_debug(11, " Selecting destination for %s", unit)
         
         # Determine whether another unit is waiting on this one
-        waiters = orders.waiting[unit.coast.province.key]
+        waiters = waiting[unit.coast.province.key]
         
         # Put all the adjacent coasts into the destination map,
         # and the current location (we can hold rather than move)
@@ -523,12 +533,12 @@ class DumbBot(Player):
         
         while True:
             # Pick a destination
-            dest = self.random_destination(destination_map, orders)
+            dest = self.random_destination(destination_map, values)
             self.log_debug(11, "  Destination selected: %s" % dest)
             
             # If this is a hold order
             if dest.province == unit.coast.province:
-                convoy_order = self.consider_convoy(unit, orders)
+                convoy_order = self.consider_convoy(unit, orders, values)
                 if convoy_order: return convoy_order
                 else:
                     # Hold order
@@ -552,7 +562,7 @@ class DumbBot(Player):
                             else:
                                 self.log_debug(13, "   Occupying unit not moving")
                                 # If it needs supporting
-                                if orders.__competition_value[dest.province.key] > 1:
+                                if values.competition_value[dest.province.key] > 1:
                                     # Support it
                                     self.log_debug(11, "    Supporting occupying unit")
                                     return SupportHoldOrder(unit, other_unit)
@@ -562,7 +572,7 @@ class DumbBot(Player):
                             # so give up on this unit for now,
                             # but signal the other unit not to try moving here.
                             self.log_debug(13, "   Occupying unit unordered")
-                            orders.waiting[dest.province.key].append(unit.coast.province.key)
+                            waiting[dest.province.key].append(unit.coast.province.key)
                             return None
                 
                 # Check for units moving there
@@ -570,7 +580,7 @@ class DumbBot(Player):
                 for order in orders.moving_into(dest.province):
                     self.log_debug(13, "   Unit already moving here")
                     # If it may need support
-                    if orders.__competition_value[dest.province.key] > 0:
+                    if values.competition_value[dest.province.key] > 0:
                         # Support it
                         self.log_debug(11, "    Supporting moving unit")
                         return SupportMoveOrder(unit, order.unit, order.destination)
@@ -578,7 +588,7 @@ class DumbBot(Player):
                 
                 if selection_is_ok:
                     # Final check: see if a convoy would be better than a direct move
-                    convoy_order = self.consider_convoy(unit, orders, dest)
+                    convoy_order = self.consider_convoy(unit, orders, values, dest)
                     if convoy_order: return convoy_order
                     else:
                         self.log_debug(11, "  Ordered to move")
@@ -588,7 +598,7 @@ class DumbBot(Player):
                     # Make sure it isn't selected again
                     destination_map.remove(dest.key)
         return None
-    def consider_convoy(self, fleet, orders, dest=None):
+    def consider_convoy(self, fleet, orders, values, dest=None):
         if self.attempt_convoys and fleet.can_convoy():
             self.log_debug(13, "  Considering convoys through %s." % fleet)
             beach = None
@@ -610,7 +620,7 @@ class DumbBot(Player):
                                 key = prov.is_coastal()
                                 if key: possible.append(key)
                 if possible:
-                    beach = self.random_destination(possible, orders)
+                    beach = self.random_destination(possible, values)
                     self.log_debug(13, "   %s selected for landing." % beach.province)
                 else: self.log_debug(13, "   No available landing sites.")
             
@@ -626,18 +636,18 @@ class DumbBot(Player):
                     and not orders.get_order(unit)
                     and not unit.can_move_to(beach.province.key)]
                 if armies:
-                    army = self.random_destination(armies, orders)
+                    army = self.random_destination(armies, values)
                     self.log_debug(13, '   %s chosen (from among %s).' % (army,
                         expand_list([key[1] for key in armies])))
                     if dest: alternate = fleet.coast
                     else: alternate = beach
-                    convoy_best = orders.destination_value[army.key] < orders.destination_value[alternate.key]
+                    convoy_best = values.destination_value[army.key] < values.destination_value[alternate.key]
                     if convoy_best: first = alternate; second = army
                     else: first = army; second = alternate
                     
                     if convoy_best != self.weighted_choice(
-                            orders.destination_value[first.key],
-                            orders.destination_value[second.key]):
+                            values.destination_value[first.key],
+                            values.destination_value[second.key]):
                         self.log_debug(11, "   Ordered to convoy")
                         unit = [u for u in self.power.units if u.coast.key == army.key][0]
                         orders.add(ConvoyedOrder(unit, beach, [fleet]))
@@ -646,9 +656,10 @@ class DumbBot(Player):
                 else: self.log_debug(13, "   Nobody available to convoy")
         return None
     
-    def generate_retreat_orders(self, orders):
+    def generate_retreat_orders(self, values):
         ''' Generate Retreat orders'''
         self.log_debug(10, "Retreat orders for %s", self.map.current_turn)
+        orders = OrderSet(self.power)
         
         # Put the units into a list in random order
         our_units = [unit for unit in self.power.units if unit.dislodged]
@@ -664,7 +675,7 @@ class DumbBot(Player):
             
             while destination_map:
                 # Pick a destination
-                dest = self.random_destination(destination_map, orders)
+                dest = self.random_destination(destination_map, values)
                 self.log_debug(13, "  Destination selected: %s", dest)
                 
                 # If there is a unit already moving to this province
@@ -683,9 +694,11 @@ class DumbBot(Player):
                 # No retreat possible. Disband unit
                 self.log_debug(13, "   Disbanding unit")
                 orders.add(DisbandOrder(unit))
-    def generate_remove_orders(self, remove_count, orders):
+        return orders
+    def generate_remove_orders(self, remove_count, values):
         ''' Generate the actual remove orders for an adjustment phase'''
         self.log_debug(10, "Remove orders for %s", self.map.current_turn)
+        orders = OrderSet(self.power)
         
         # Put all the units into a removal map
         remove_map = self.power.units[:]
@@ -693,14 +706,16 @@ class DumbBot(Player):
         # For each required removal
         while remove_count and remove_map:
             unit = remove_map.pop(self.random_selection([
-                    -orders.destination_value[u.coast.key]
+                    -values.destination_value[u.coast.key]
                     for u in remove_map]))
             self.log_debug(11, " Removal selected: %s", unit)
             orders.add(RemoveOrder(unit))
             remove_count -= 1
-    def generate_build_orders(self, build_count, orders):
+        return orders
+    def generate_build_orders(self, build_count, values):
         ''' Generate the build orders for an adjustment turn'''
         self.log_debug(10, "Build orders for %s", self.map.current_turn)
+        orders = OrderSet(self.power)
         
         # Put all the coasts of our open home centres into a map
         self.log_debug(11, ' Choosing from coasts of %s.', expand_list(self.power.homes))
@@ -713,7 +728,7 @@ class DumbBot(Player):
         builds_remaining = build_count
         while build_map and builds_remaining:
             # Select the best location, more or less
-            dest = self.random_destination(build_map, orders)
+            dest = self.random_destination(build_map, values)
             self.log_debug(13, " Considering build: %s", dest)
             build_map.remove(dest.key)
             
@@ -728,14 +743,15 @@ class DumbBot(Player):
         if builds_remaining:
             self.log_debug(11, " Waiving %d builds", builds_remaining)
             orders.waive(builds_remaining)
+        return orders
     
-    def random_destination(self, coast_keys, orders):
+    def random_destination(self, coast_keys, values):
         ''' Chooses randomly among the coasts,
-            with preference to higher values of orders.destination_value.
+            with preference to higher values of values.destination_value.
             Returns the index of the chosen item.
         '''#'''
         return self.map.coasts[coast_keys[self.random_selection(
-                [orders.destination_value[key] for key in coast_keys])]]
+                [values.destination_value[key] for key in coast_keys])]]
     def random_selection(self, choice_values):
         ''' Chooses randomly among the choices,
             using the first most of the time, particularly if much better.
