@@ -10,7 +10,7 @@
 '''#'''
 
 import unittest
-from datc import DiplomacyAdjudicatorTestCase
+from unittest_datc import DiplomacyAdjudicatorTestCase
 from language import *
 from xtended import *
 

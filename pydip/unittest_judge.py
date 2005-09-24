@@ -3,13 +3,14 @@
     These are usually simpler, and may test implementation-specific stuff.
 '''#'''
 
-import unittest, datc
+import unittest
 from sets      import Set
+from unittest_datc import DiplomacyAdjudicatorTestCase
 from language  import *
 from xtended   import *
 SWI = Token('SWI', 0x504B)
 
-class Judge_Movement(datc.DiplomacyAdjudicatorTestCase):
+class Judge_Movement(DiplomacyAdjudicatorTestCase):
     ''' Judge movement phase adjudication'''
     def ptest_army_move_inland(self):
         "Army movement to adjacent inland sector"
@@ -114,7 +115,7 @@ class Judge_Movement(datc.DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, POR), MTO, (SPA, NCS)])
         self.assertMapState(steady_state)
 
-class Judge_Basics(datc.DiplomacyAdjudicatorTestCase):
+class Judge_Basics(DiplomacyAdjudicatorTestCase):
     "Basic Judge Functionality"
     game_options = {'LVL': 0, 'PDA': True}
     def acceptable(self, country, message):
@@ -242,7 +243,7 @@ class Judge_Basics(datc.DiplomacyAdjudicatorTestCase):
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, UKR])
         self.assertMapState(new_state)
 
-class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
+class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
     "Test cases to reproduce bugs that have been fixed."
     def ptest_orderless_convoyee(self):
         'Error when convoying an army without an order'
@@ -391,7 +392,7 @@ class Judge_Bugfix(datc.DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), REM])
         self.assertMapState(steady_state)
 
-class Judge_Errors(datc.DiplomacyAdjudicatorTestCase):
+class Judge_Errors(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
         - MBV: Order is OK
         - FAR: Not adjacent

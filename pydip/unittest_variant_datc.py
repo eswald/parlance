@@ -9,10 +9,10 @@
 	Parts of this file were modified from a jDip test case file.
 '''#'''
 
-import datc
+from unittest_datc import DiplomacyAdjudicatorTestCase
 
 "7.  COLONIAL VARIANT"
-class DATC_7_A(datc.DiplomacyAdjudicatorTestCase):
+class DATC_7_A(DiplomacyAdjudicatorTestCase):
 	"7.A.  HONG KONG OPTIONAL RULE"
 	variant_name = 'colonial'
 	
@@ -23,7 +23,7 @@ class DATC_7_A(datc.DiplomacyAdjudicatorTestCase):
 	def test_7A3(self):
 		"7.A.3.  HONG KONG DOES NOT COUNT FOR VICTORY FOR CHINA"
 
-class DATC_7_B(datc.DiplomacyAdjudicatorTestCase):
+class DATC_7_B(DiplomacyAdjudicatorTestCase):
 	"7.B.  TRANS SIBERIAN RAILROAD OPTIONAL RULE"
 	variant_name = 'colonial'
 	
@@ -96,7 +96,7 @@ class DATC_7_B(datc.DiplomacyAdjudicatorTestCase):
 	def test_7B34(self):
 		"7.B.34.  ONLY RUSSIA MAY USE THE TSR"
 
-class DATC_7_C(datc.DiplomacyAdjudicatorTestCase):
+class DATC_7_C(DiplomacyAdjudicatorTestCase):
 	"7.C.  SUEZ CANAL OPTIONAL RULE"
 	variant_name = 'colonial'
 	
@@ -133,7 +133,7 @@ class DATC_7_C(datc.DiplomacyAdjudicatorTestCase):
 		"7.C.14.  SUEZ CANAL DISRUPTED CONVOY PARADOX WITH NO RESOLUTION"
 		# 4.A.2
 
-class DATC_7_D(datc.DiplomacyAdjudicatorTestCase):
+class DATC_7_D(DiplomacyAdjudicatorTestCase):
 	"7.D.  TRANS-SIBERIAN RAILROAD AND SUEZ CANAL COMBINED ISSUES"
 	variant_name = 'colonial'
 	
@@ -143,7 +143,7 @@ class DATC_7_D(datc.DiplomacyAdjudicatorTestCase):
 		"7.D.2.  KRUIJSWIJK'S PARADOX"
 
 "Other rule variants"
-class DATC_8(datc.DiplomacyAdjudicatorTestCase):
+class DATC_8(DiplomacyAdjudicatorTestCase):
 	"8.  ICE VARIANT"
 	variant_name = 'loeb9'
 	
@@ -158,7 +158,7 @@ class DATC_8(datc.DiplomacyAdjudicatorTestCase):
 	def test_8E(self):
 		"8.E.  NO CONVOY IN ICE SECTOR"
 
-class DATC_9(datc.DiplomacyAdjudicatorTestCase):
+class DATC_9(DiplomacyAdjudicatorTestCase):
 	"9.  CONVOYING COASTAL AREA VARIANT"
 	variant_name = 'loeb9'
 	
@@ -180,7 +180,7 @@ class DATC_9(datc.DiplomacyAdjudicatorTestCase):
 		"9.G.  DISRUPTED CONVOY SUPPORT PARADOX WITH TWO RESOLUTIONS"
 		# 4.A.2
 
-class DATC_10(datc.DiplomacyAdjudicatorTestCase):
+class DATC_10(DiplomacyAdjudicatorTestCase):
 	"10.  DIFFICULT PASSABLE BORDER VARIANT"
 	variant_name = 'loeb9'
 	
@@ -215,14 +215,14 @@ class DATC_10(datc.DiplomacyAdjudicatorTestCase):
 	def test_10O(self):
 		"10.O.  SUPPORT ON ATTACK ON OWN ARMY OVER DIFFICULT PASSABLE BORDER DOES NOT CUT SUPPORT"
 
-class DATC_11(datc.DiplomacyAdjudicatorTestCase):
+class DATC_11(DiplomacyAdjudicatorTestCase):
 	"11.  BUILD IN ANY SUPPLY CENTER VARIANT"
 	variant_name = 'chaos'
 	
 	def test_11A(self):
 		"11.A.  CIVIL DISORDER"
 
-class DATC_12(datc.DiplomacyAdjudicatorTestCase):
+class DATC_12(DiplomacyAdjudicatorTestCase):
 	"12.  1898 VARIANT"
 	variant_name = '1898'
 	
