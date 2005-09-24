@@ -19,6 +19,10 @@ class Chatty(Observer):
             self.output('Goodbye.')
         except EOFError: self.output('Thank you for playing.'); self.close()
     def output(self, line, *args): print str(line) % args
+    def handle_CCD(self, message):
+        self.output('[Server]: %s has been disconnected.', message[2])
+    def handle_NOT_CCD(self, message):
+        self.output('[Server]: %s is back in the game.', message[4])
     def handle_ADM(self, message):
         msg = message.fold()
         self.output('%s: %s', msg[1][0], msg[2][0])
