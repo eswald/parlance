@@ -21,6 +21,7 @@ from time         import ctime
 from player       import Player
 from gameboard    import location_key
 from functions    import expand_list, all
+from iaq          import DefaultDict
 from orders       import *
 
 # The number of values in the proximity weightings
@@ -163,7 +164,7 @@ class Province_Values(object):
         - attack_value          prov -> approximately the size of the owning power
         - strength_value        prov -> the number of units we have next to the province
         - competition_value     prov -> the greatest number of units any other power has next to the province
-        - adjacent_unit_count   prov -> nation -> number of units each nation has in or next to the province
+        - adjacent_units        prov -> nation -> Units the nation has in or next to the province
     '''#'''
     def __init__(self, board):
         provs = board.spaces.keys()
@@ -171,12 +172,8 @@ class Province_Values(object):
         self.attack_value      = dict.fromkeys(provs, 0)
         self.strength_value    = dict.fromkeys(provs, 0)
         self.competition_value = dict.fromkeys(provs, 0)
-        
-        self.proximity_map = {}
-        self.adjacent_unit_count = {}
-        for prov in provs:
-            self.proximity_map[prov] = [0] * PROXIMITY_DEPTH
-            self.adjacent_unit_count[prov] = dict.fromkeys(board.powers.keys(), 0)
+        self.proximity_map     = DefaultDict([0] * PROXIMITY_DEPTH)
+        self.adjacent_units    = DefaultDict(DefaultDict([]))
 
 class DumbBot(Player):
     ''' From the original C file:
@@ -356,18 +353,19 @@ class DumbBot(Player):
                 values.proximity_map[proximity_iterator.key].append(sum(provs_seen.values(),
                     values.proximity_map[proximity_iterator.key][proximity_counter]) // 5)
         
-        # Calculate number of units each power has in or next to each province
+        # Find the units each power has in or next to each province
         for unit_iterator in self.map.units:
-            values.adjacent_unit_count[unit_iterator.coast.province.key][ unit_iterator.nation.key ] += 1
+            values.adjacent_units[unit_iterator.coast.province.key][ unit_iterator.nation.key ].append(unit_iterator)
             for coast_iterator in unit_iterator.coast.borders_out:
-                values.adjacent_unit_count[ coast_iterator[1] ][ unit_iterator.nation.key ] += 1
+                values.adjacent_units[ coast_iterator[1] ][ unit_iterator.nation.key ].append(unit_iterator)
         
         for province_counter in self.map.spaces:
             for power_counter in self.map.powers:
+                unit_count = len(values.adjacent_units[province_counter][ power_counter ])
                 if power_counter == self.power:
-                    values.strength_value[province_counter] = values.adjacent_unit_count[province_counter][ power_counter ]
-                elif values.adjacent_unit_count[province_counter][ power_counter ] > values.competition_value[province_counter]:
-                    values.competition_value[province_counter] = values.adjacent_unit_count[province_counter][ power_counter ]
+                    values.strength_value[province_counter] = unit_count
+                elif unit_count > values.competition_value[province_counter]:
+                    values.competition_value[province_counter] = unit_count
         
         return values
     def calculate_defence_value(self, province):
@@ -458,7 +456,6 @@ class DumbBot(Player):
         ''' Generate the actual orders for a movement turn.'''
         self.log_debug(10, "Movement orders for %s" % self.map.current_turn)
         our_units = self.power.units[:]
-        from iaq         import DefaultDict
         orders = OrderSet(self.power)
         waiting = DefaultDict([])
         
