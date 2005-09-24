@@ -220,6 +220,7 @@ class Player(Verbose_Object):
         self.in_game = True
         self.opts = config.game_options(message)
         if self.opts.TRN > 1: self.quit = False
+    def handle_PNG(self, message): self.accept(message)
     
     def missing_orders(self):
         return self.orders.missing_orders(self.phase())

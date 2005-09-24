@@ -153,6 +153,7 @@ class Server(Client_Manager):
             client.send(reply(message))
             return True
         return False
+    def handle_PNG(self, client, message): client.accept(message)
     
     def default_game(self):
         for game in self.games:

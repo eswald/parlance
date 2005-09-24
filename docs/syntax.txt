@@ -75,6 +75,7 @@ client_acceptable -1 IAM [sub power] [sub number]
 client_acceptable -1 NOT [sub client_negatable]
 client_acceptable -1 NME [sub string] [sub string]
 client_acceptable -1 OBS
+client_acceptable -1 PNG [sub any]
 client_acceptable -1 TME [sub number]
 client_acceptable  0 [draw]
 client_acceptable  0 GOF
@@ -113,6 +114,7 @@ server_rejectable -1 [server_acceptable]
 server_rejectable -1 LOD [sub string] ; Note: YES might be a proper response to this, for observers.  Check with list.
 server_acceptable -1 MAP [sub string]
 server_acceptable -1 SVE [sub string]
+server_acceptable -1 PNG [sub any]
 server_negatable  -1 CCD [sub power]
 server_negatable  -1 TME [sub number] ; For DSD
 
