@@ -32,16 +32,17 @@ class ComboBot(DumbBot):
         combos = self.generate_hold_combos() + self.generate_move_combos() + self.generate_convoy_combos()
         self.log_debug(11, 'Considering %d order combos:', len(combos))
         for orders in combos: self.log_debug(11, '    ' + str(orders))
-        combo_sets = self.combine_combos(values, combos)
+        combo_sets = [(cs.calc_value(values, self.map), cs) for cs in self.combine_combos(combos)]
+        combo_sets.sort()
         self.log_debug(11, 'Choosing from among %d order sets:', len(combo_sets))
-        for orders in combo_sets: self.log_debug(11, '    ' + str(orders))
+        for orders in combo_sets: self.log_debug(11, '    %d - %s', *(orders))
         
         # Choose one of the best ones
-        combo_sets.sort()
-        using = best = combo_sets.pop()
+        best = combo_sets.pop()
+        using = best[1]
         while combo_sets:
             second = combo_sets.pop()
-            if self.random_destination(best, second): using = second
+            if self.weighted_choice(best[0], second[0]): using = second[1]
             else: break
         self.log_debug(11, 'Selected order set: %s', str(using))
         return using.unit_orders
@@ -83,12 +84,13 @@ class ComboBot(DumbBot):
         if not armies: return []
         return ([OrderCombo(self,
                 [ConvoyingOrder(fleet, army, beach),
-                    ConvoyedOrder(army, beach, [fleet.coast.province])])
+                    ConvoyedOrder(army, beach, [fleet])])
                 for beach in beaches for army in armies]
-            + sum([self.get_multi_convoys(next, [fleet.coast.province, next.coast.province], armies)
+            + sum([self.get_multi_convoys(next, [fleet, next], armies)
                 for next in fleets], []))
     def get_multi_convoys(self, fleet, path, armies):
-        self.log_debug(11, "Considering convoys through %s.", '-'.join(path))
+        self.log_debug(11, "Considering convoys through %s.",
+                '-'.join([unit.coast.province.key.text for unit in path]))
         fleets = []
         beaches = []
         coasts = self.map.coasts
@@ -104,22 +106,24 @@ class ComboBot(DumbBot):
                 [ConvoyingOrder(fleet, army, beach),
                     ConvoyedOrder(army, beach, path)])
                 for beach in beaches for army in armies]
-            + sum([self.get_multi_convoys(next, path + [next.coast.province], armies)
-                for next in fleets if next.coast.province not in path], []))
+            + sum([self.get_multi_convoys(next, path + [next], armies)
+                for next in fleets if next not in path], []))
     
-    def combine_combos(self, values, combos, base=None):
+    def combine_combos(self, combos, base=None):
         ''' Gathers a list of complete order sets from the combos.
         '''#'''
-        if base is None: base = ComboSet(values, self.power)
+        if base is None: base = ComboSet(self.power)
         results = []
         roots = list(combos)
         while roots:
             combo = roots.pop()
             compatibility = self.unfilled_orders(base, combo)
+            self.log_debug(13, ' Compatibility of %s with %s: %d',
+                    combo, base, compatibility)
             if compatibility >= 0:
-                new_set = ComboSet(values, base, combo)
+                new_set = ComboSet(base, combo)
                 if compatibility > 0:
-                    results.extend(self.combine_combos(values, roots, new_set))
+                    results.extend(self.combine_combos(roots, new_set))
                     roots.extend(combo.sub_combos)
                 else: results.append(new_set)
         return results
@@ -143,14 +147,14 @@ class ComboBot(DumbBot):
                         # Conflicting orders
                         return -1
                     elif not (base_order.is_holding() or combo_order.is_holding()):
-                        return -1
+                        return -2
                 elif base_order.is_moving() and combo.unit_orders.moving_into(base_order.destination.province):
                     # Both combos are moving to the same province
-                    return -1
+                    return -3
             elif combo_order:
                 if combo_order.is_moving() and base.unit_orders.moving_into(combo_order.destination.province):
                     # Both combos are moving to the same province
-                    return -1
+                    return -4
             else:
                 # Count unordered units
                 result += 1
@@ -278,15 +282,14 @@ class OrderCombo(object):
                     elif army in unordered: armies.append(army)
                 elif coast in convoyers: fleets.append(coast)
         paths = []
-        new_paths = list(convoyers)
+        new_paths = [[fleet] for fleet in convoyers]
         while new_paths:
             paths.extend(new_paths)
             new_paths = [route + [fleet]
                 for route in new_paths
                 for fleet in all_fleets[route[-1].key]
                 if fleet not in route]
-        return sum([[ConvoyedOrder(army, beach,
-                [fleet.coast.province.key for fleet in route])]
+        return sum([[ConvoyedOrder(army, beach, route)]
             + [ConvoyingOrder(fleet, army, beach) for fleet in route]
             for route in paths
             for army in all_armies[route[0].key]
@@ -295,8 +298,7 @@ class OrderCombo(object):
         for route in paths:
             for army in all_armies[route[0].key]:
                 for beach in all_beaches[route[-1].key]:
-                    results.append(ConvoyedOrder(army, beach,
-                        [fleet.coast.province.key for fleet in route]))
+                    results.append(ConvoyedOrder(army, beach, route))
                     results.extend([ConvoyingOrder(fleet, army, beach)
                             for fleet in route])
         return results
@@ -311,14 +313,15 @@ class Memoize:
         self.fn = fn
     def __call__(self, obj, *args):
         key = (self.fn,) + args
-        if obj.__cache.has_key(key):
-            return obj.__cache[key]
-        else:
-            obj.__cache[key] = result = self.fn(obj, *args)
-            return result
+        try:
+            if obj.__cache.has_key(key):
+                return obj.__cache[key]
+        except AttributeError: obj.__cache = {}
+        obj.__cache[key] = result = self.fn(obj, *args)
+        return result
 
 class ComboSet(object):
-    def __init__(self, values, base, combo=None):
+    def __init__(self, base, combo=None):
         if combo:
             self.power = base.power
             self.unit_orders = copy(base.unit_orders)
@@ -334,15 +337,11 @@ class ComboSet(object):
         else:
             self.power = base
             self.unit_orders = OrderSet(base)
-        self.destination_value = self.calc_value(values)
     
     def __str__(self):
-        return "ComboSet(%s, '%s')" % (self.destination_value,
-            "', '".join([str(order) for order in self.unit_orders]))
-    def __cmp__(self, other):
-        return cmp(self.destination_value, other.destination_value)
+        return "ComboSet('%s')" % "', '".join([str(order) for order in self.unit_orders])
     
-    def calc_value(self, values):
+    def calc_value(self, values, board):
         ''' Primitive calculation of the value of the orders.
             The value tends to be underestimated.
             - provs_gained       probability of being there (not there now)
@@ -350,18 +349,18 @@ class ComboSet(object):
             - provs_lost         probability of enemy being there (I'm there or own it)
             - provs_doomed       probability of being destroyed
         '''#'''
-        return 1 + random() * .1
+        #return 1 + random() * .1
         result = 0
         adj_provinces = Set()
         for order in self.unit_orders:
             if order:
                 unit = order.unit
                 # calc held for order.unit
-                unit_value = values.destination_value[unit.coast.province.key]
+                unit_value = values.destination_value[unit.coast.key]
                 result += unit_value * self.stay_prob(unit, False)
                 if order.is_moving():
                     # calc gained for order.destination
-                    dest_value = values.destination_value[order.destination.province.key]
+                    dest_value = values.destination_value[order.destination.key]
                     result += dest_value * self.success_prob(order, False)
                     # calc doomed for order.destination
                     dest_worth = dest_value
@@ -370,14 +369,18 @@ class ComboSet(object):
                 unit_worth = unit_value
                 result -= unit_worth * self.destroy_prob(order, True)
                 # save adjacent provinces for later
-                adj_provinces.update(unit.coast.borders_out)
+                adj_provinces.update([key[1] for key in unit.coast.borders_out])
             else: return 0
         # calc lost for any adjacent province an enemy can move to
         for prov in adj_provinces:
-            result -= prov.destination_value * self.lost_prob(prov, True)
+            province = board.spaces[prov]
+            prov_value = max([values.destination_value[coast.key] for coast in province.coasts])
+            result -= prov_value * self.lost_prob(province, True)
         # calc lost for my SCs that could have an enemy closer than a friend.
         for sc in self.power.centers:
-            result -= sc.destination_value * self.threat_prob(sc, True)
+            province = board.spaces[sc]
+            sc_value = max([values.destination_value[coast.key] for coast in province.coasts])
+            result -= sc_value * self.threat_prob(province, True)
         return result
     
     # For the following functions, bias indicates whether to guess aggressively
@@ -387,6 +390,7 @@ class ComboSet(object):
         '''#'''
         result = ((1 - self.dislodge_prob(unit, not bias))
                 * (1 - self.move_prob(unit, not bias)))
+        return result
     def dislodge_prob(self, unit, bias):
         ''' How likely the indicated unit is to be dislodged unless it moves.
         '''#'''
@@ -398,9 +402,10 @@ class ComboSet(object):
         '''#'''
         order = self.unit_orders.get_order(unit)
         if order:
-            if order.is_moving(): result = success_prob(order, bias)
+            if order.is_moving(): result = self.success_prob(order, bias)
             else: result = 0
-        else: return bias and 1 or 0
+        else: result = bias and 1 or 0
+        return result
     def destroy_prob(self, unit, bias):
         ''' How likely the given unit is to be destroyed.
         '''#'''
@@ -419,13 +424,13 @@ class ComboSet(object):
         return bias and 1 or 0
     
     # Cache results of the probability functions
-    stay_prob = Memoize(stay_prob)
-    move_prob = Memoize(move_prob)
-    lost_prob = Memoize(lost_prob)
-    threat_prob = Memoize(threat_prob)
-    success_prob = Memoize(success_prob)
-    destroy_prob = Memoize(destroy_prob)
-    dislodge_prob = Memoize(dislodge_prob)
+    #stay_prob = Memoize(stay_prob)
+    #move_prob = Memoize(move_prob)
+    #lost_prob = Memoize(lost_prob)
+    #threat_prob = Memoize(threat_prob)
+    #success_prob = Memoize(success_prob)
+    #destroy_prob = Memoize(destroy_prob)
+    #dislodge_prob = Memoize(dislodge_prob)
 
 
 if __name__ == "__main__":

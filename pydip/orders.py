@@ -493,6 +493,13 @@ class OrderSet(dict):
         return '{ %s }' % '; '.join(['%s: %s' %
                 (nation, ', '.join(map(str, orders)))
             for nation, orders in nations.iteritems()])
+    def __copy__(self):
+        # Inefficient, but it works much better than straight copy() does.
+        result = OrderSet(self.default)
+        for order in self:
+            item = order.unit or order.nation
+            result[item.key].append(order)
+        return result
     
     def add(self, order, nation=None):
         order.__author = nation or self.default
