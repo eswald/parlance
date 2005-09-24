@@ -103,8 +103,8 @@ class Player(Verbose_Object):
         sub = orders.create_SUB()
         if sub and self.in_game:
             if self.submitted: self.send(NOT(SUB))
-            self.send(sub)
             self.submitted = True
+            self.send(sub)
             if (self.client_opts.confirm and not self.missing_orders()):
                 self.send_admin('Submitted.')
     def submit(self, order):
