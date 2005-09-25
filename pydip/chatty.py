@@ -142,14 +142,10 @@ else:
                 
                 for country in folded[0]:
                     power = self.map.powers.get(country[0])
-                    if power:
-                        power.__color = country[1]
-                        power.__name  = country[2][0]
-                        power.__adj   = country[2][0]
+                    if power: power.__color = country[1]
                 for prov in folded[1]:
                     province = self.map.spaces[prov[0]]
                     province.__color = prov[1]
-                    province.__name  = prov[-1][0]
                     color = self.get_color(0, province.__color, False)
                     win.addstr(prov[2], prov[3], prov[0].text, color)
                     if province.is_supply():
@@ -160,7 +156,7 @@ else:
                         province.__y = prov[2]
                         win.addstr(province.__y, province.__x, '*', color)
                     coords = {}
-                    for loc in prov[4:-1]:
+                    for loc in prov[4:]:
                         if isinstance(loc[0], Token):
                             unit_type = loc[0]
                             coastline = None
