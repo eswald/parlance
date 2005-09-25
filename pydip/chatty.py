@@ -110,7 +110,7 @@ else:
                 filename = 'map for ' + mapname
                 message = None
                 try:
-                    filename = find_variant_file(mapname, 'map')
+                    filename = find_variant_file(mapname, 'tty')
                     message = read_message_file(filename, self.rep)
                     if message: self.show_map(message)
                     else: self.output('Invalid message file %s', filename)
