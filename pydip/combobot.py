@@ -357,17 +357,18 @@ class ComboSet(object):
                 unit = order.unit
                 # calc held for order.unit
                 unit_value = values.destination_value[unit.coast.key]
-                result += unit_value * self.stay_prob(unit, False)
+                result += unit_value * self.stay_prob(unit, False, values.adjacent_units)
                 if order.is_moving():
                     # calc gained for order.destination
                     dest_value = values.destination_value[order.destination.key]
-                    result += dest_value * self.success_prob(order, False)
+                    result += dest_value * self.success_prob(order, False, values.adjacent_units)
                     # calc doomed for order.destination
-                    dest_worth = dest_value
-                    result += dest_worth * self.destroy_prob(order.destination, False)
+                    for enemy in order.destination.province.units:
+                        dest_worth = dest_value
+                        result += dest_worth * self.destroy_prob(enemy, False, values.adjacent_units)
                 # calc doomed for order.unit
                 unit_worth = unit_value
-                result -= unit_worth * self.destroy_prob(order, True)
+                result -= unit_worth * self.destroy_prob(order.unit, True, values.adjacent_units)
                 # save adjacent provinces for later
                 adj_provinces.update([key[1] for key in unit.coast.borders_out])
             else: return 0
@@ -375,53 +376,119 @@ class ComboSet(object):
         for prov in adj_provinces:
             province = board.spaces[prov]
             prov_value = max([values.destination_value[coast.key] for coast in province.coasts])
-            result -= prov_value * self.lost_prob(province, True)
+            result -= prov_value * self.lost_prob(province, True, values.adjacent_units)
         # calc lost for my SCs that could have an enemy closer than a friend.
         for sc in self.power.centers:
             province = board.spaces[sc]
             sc_value = max([values.destination_value[coast.key] for coast in province.coasts])
-            result -= sc_value * self.threat_prob(province, True)
+            result -= sc_value * self.threat_prob(province, True, values.adjacent_units)
         return result
+    
+    # Helpers for the *_prob() functions
+    def enemies(self, province, nation, adjacent_units):
+        return [unit
+                for power, unit_list in adjacent_units[province.key].iteritems()
+                if power.key not in (nation.key, self.power.key)
+                for unit in unit_list
+                if unit.coast.province.key != province.key]
+    def friends(self, province, adjacent_units):
+        return [unit for unit in adjacent_units[province.key][self.power.key]
+                if unit.coast.province.key != province.key]
     
     # For the following functions, bias indicates whether to guess aggressively
     # or conservatively, such that foo_prob(x,True) >= foo_prob(x,False).
-    def stay_prob(self, unit, bias):
+    def stay_prob(self, unit, bias, adjacent_units):
         ''' How likely a unit is to stay in the province indicated.
         '''#'''
-        result = ((1 - self.dislodge_prob(unit, not bias))
-                * (1 - self.move_prob(unit, not bias)))
+        result = ((1 - self.dislodge_prob(unit, not bias, adjacent_units))
+                * (1 - self.move_prob(unit, not bias, adjacent_units)))
         return result
-    def dislodge_prob(self, unit, bias):
-        ''' How likely the indicated unit is to be dislodged unless it moves.
+    def attacked_prob(self, province, nation, force, bias, adjacent_units):
+        ''' How likely the province is to be attacked by an enemy of the nation,
+            with at least the indicated force.
         '''#'''
+        result = 0
+        if nation != self.power:
+            entering = False
+            supports = []
+            for unit in self.friends(province, adjacent_units):
+                order = self.unit_orders.get_order(unit)
+                if order.is_moving():
+                    if order.destination.province.key == province.key:
+                        entering = True
+                elif (order.is_supporting()
+                        and order.destination.province.key == province.key
+                        and order.supported.coast.province.key != province.key):
+                    supports.append(1 - self.success_prob(order, bias, adjacent_units))
+            if force == 1: result = entering and 1 or 0
+            elif len(supports) >= force - 1:
+                # Will my supports work?
+                from operator import mul
+                result = 1 - (bias and min or max)([reduce(mul, sl, 1)
+                        for sl in sublists(supports) if len(sl) == force - 1])
+        
+        if bias:
+            # Allow mutual enemies to help out
+            enemies = self.enemies(province, nation, adjacent_units)
+            # Todo: Consider whether they cooperate, ever
+            if len(enemies) >= force: result = 1
+        return result
+    def dislodge_prob(self, unit, bias, adjacent_units):
+        ''' How likely the indicated unit is to be dislodged unless it moves.
+            Assumes that no enemy units are in the indicated unit's province.
+        '''#'''
+        enemies = self.enemies(unit.coast.province, unit.nation, adjacent_units)
         # if no more than one enemy unit nearby, 0
+        if len(enemies) <= 1: return 0
         # if all nearby enemy units are attacked, 0
-        return bias and 1 or 0
-    def move_prob(self, unit, bias):
+        if all(enemies, lambda enemy: self.attacked_prob(enemy.coast.province,
+                enemy.nation, 1, not bias, adjacent_units) == 1):
+            return 0
+        # Todo: Guess better than this
+        strength = 1
+        return self.attacked_prob(unit.coast.province, unit.nation,
+                strength, bias, adjacent_units)
+    def move_prob(self, unit, bias, adjacent_units):
         ''' How likely a unit is to move out of the province indicated.
         '''#'''
         order = self.unit_orders.get_order(unit)
         if order:
-            if order.is_moving(): result = self.success_prob(order, bias)
+            if order.is_moving(): result = self.success_prob(order, bias, adjacent_units)
             else: result = 0
         else: result = bias and 1 or 0
         return result
-    def destroy_prob(self, unit, bias):
+    def destroy_prob(self, unit, bias, adjacent_units):
         ''' How likely the given unit is to be destroyed.
         '''#'''
-        return self.dislodge_prob(unit, bias)
-    def threat_prob(self, centre, bias):
+        return self.dislodge_prob(unit, bias, adjacent_units)
+    def threat_prob(self, centre, bias, adjacent_units):
         ''' How likely the given supply center is to have an enemy closer than a friend.
         '''#'''
         return bias and 1 or 0
-    def lost_prob(self, province, bias):
+    def lost_prob(self, province, bias, adjacent_units):
         ''' How likely the given province is to be taken by an enemy.
         '''#'''
         return bias and 1 or 0
-    def success_prob(self, order, bias):
+    def success_prob(self, order, bias, adjacent_units):
         ''' How likely the given order is to succeed.
         '''#'''
-        return bias and 1 or 0
+        if order.is_moving():
+            # Todo: Consider supports for or against
+            probs = [1]
+            for unit in order.destination.province.units:
+                other_order = self.unit_orders.get_order(unit)
+                if other_order:
+                    probs.append(1 - self.stay_prob(unit, not bias, adjacent_units))
+                else: probs.append(0)
+            if order.is_convoyed() and order.path:
+                for fleet in order.path:
+                    probs.append(1 - self.dislodge_prob(fleet, not bias, adjacent_units))
+            result = min(probs)
+        elif order.is_supporting():
+            result = 1 - self.attacked_prob(order.unit.coast.province,
+                    order.unit.nation, 1, not bias, adjacent_units)
+        else: result = bias and 1 or 0
+        return result
     
     # Cache results of the probability functions
     #stay_prob = Memoize(stay_prob)
