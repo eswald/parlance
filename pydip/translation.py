@@ -12,7 +12,7 @@ def read_message_file(filename, rep=None):
         [Token('ENG', 0x4101), Token('LVP', 0x553B), Token('EDI', 0x5536), Token('LON', 0x553A)]
     '''#'''
     message_file = open(filename, 'r', 1)
-    text = ''.join(message_file.readlines())
+    text = ' '.join(message_file.readlines())
     message_file.close()
     return translate(text, rep)
 
