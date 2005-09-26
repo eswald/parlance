@@ -1,0 +1,183 @@
+ARG:Argentina:Argentinean
+MXC:Mexico:Mexican
+COL:Colombia:Colombian
+BRZ:Brazil:Brazilian
+CHL:Chile:Chilean
+PER:Peru:Peruvian
+SPN:Spain:Spanish
+USA:United States:American
+VEN:Venezuela:Venezuelan
+GBR:Great Britain:British
+
+GSC:Gulf of Santa Catarina
+Nwt:Northwest Territories
+CPO:Central Pacific Ocean
+NAO:North Atlantic Ocean
+SAO:South Atlantic Ocean
+SPO:South Pacific Ocean
+NPO:North Pacific Ocean
+NCB:North Caribbean Sea
+GOT:Gulf of Tehuantepec
+EGL:Eastern Great Lakes
+GOS:Gulf of San Lorenzo
+NTH:Northern East Coast
+WGL:Western Great Lakes
+STH:Southern East Coast
+MAO:Mid Atlantic Ocean
+WCB:West Caribbean Sea
+ECB:East Caribbean Sea
+MPO:Mid Pacific Ocean
+GOG:Gulf of Guayaquil
+Gal:Galapagos Islands
+MAS:Massachusets Gulf
+SOY:Strait of Yucatan
+GOV:Gulf of Venezuela
+BTR:Bermuda Triangle
+GOC:Gulf of Campeche
+GOH:Gulf of Honduras
+Sdc:Santiago de Cuba
+SCH:Santaren Channel
+ACH:Anegada Channel
+GFO:Gulf of Fonseca
+COM:Coast of Mexico
+Baj:Baja California
+RLP:Rio de la Plata
+COB:Coast of Brazil
+Tdf:Tierra de Fuego
+APP:Appalachian Bay
+Mka:Missouri/Kansas
+Rmo:Rocky Mountains
+CGU:Corcovado Gulf
+GOP:Gulf of Panama
+GOA:Gulf of Alaska
+Rdj:Rio de Janeiro
+Nys:New York State
+Bgu:British Guyana
+GOM:Gulf of Mexico
+FST:Florida Strait
+Bis:Bahama Islands
+CHG:Chiriqui Gulf
+SOC:Sea of Cortes
+Cau:Chaco Austral
+PBA:Paranagua Bay
+GBA:Guanabara Bay
+Nca:New Caledonia
+Dgu:Dutch Guayana
+COP:Coast of Peru
+Sne:Sierra Nevada
+GOU:Gulf of Uraba
+Sdo:Santo Domingo
+Rup:Rupert's Land
+Eas:Easter Island
+Nyc:New York City
+AGU:Araucan Gulf
+HUM:Humboldt Sea
+BGR:Bahia Grande
+BBL:Bahia Blanca
+GSE:Guayanas Sea
+SAR:Sargasso Sea
+LAB:Labrador Sea
+New:Newfoundland
+Bas:Buenos Aires
+Pal:Porto Alegre
+Cbo:Chaco Boreal
+Mge:Minas Gerais
+MOS:Mosquito Bay
+BEA:Beaufort Sea
+ARC:Artic Ocean
+Wei:West Indies
+Ant:Antofagasta
+Mgr:Mato Grosso
+Esa:El Salvador
+Gdl:Guadalajara
+Pri:Puerto Rico
+Nor:New Orleans
+Msp:Mississippi
+Nen:New England
+DRA:Drake Pass
+BER:Bering Sea
+Cal:California
+MBA:Marajo Bay
+Mag:Magallanes
+Val:Valparaiso
+Scr:Santa Cruz
+Cri:Costa Rica
+Nle:Nuevo Leon
+Nmx:New Mexico
+Was:Washington
+HUD:Hudson Bay
+Aco:Aconcagua
+Gre:Greenland
+Min:Minnesota
+Pat:Patagonia
+Ara:Araucania
+Caj:Cajamarca
+Spa:Sao Paulo
+Crt:Cartagena
+Ori:Orinoquia
+Mar:Maracaibo
+Nic:Nicaragua
+Gua:Guatemala
+Chh:Chihuahua
+Mic:Michigan
+Vir:Virginia
+Tri:Trinidad
+Mal:Malvinas
+Aca:Acapulco
+San:Santiago
+Sfe:Santa Fe
+Mss:Misiones
+Tar:Tarapaca
+Are:Arequipa
+Asu:Asuncion
+Ama:Amazonia
+Hon:Honduras
+Ver:Veracruz
+Cam:Camaguey
+Mon:Montreal
+Bol:Bolivar
+Hal:Halifax
+Uru:Uruguay
+Ata:Atacama
+Cor:Cordoba
+Tuc:Tucuman
+Ecu:Ecuador
+Chi:Chicago
+Caq:Caqueta
+Car:Caracas
+Bar:Barinas
+Cay:Cayenne
+Gjr:Guajira
+Chp:Chiapas
+Yuc:Yucatan
+Jam:Jamaica
+Flo:Florida
+Atl:Atlanta
+Ont:Ontario
+Tor:Toronto
+Ore:Oregon
+Pot:Potosi
+Ala:Alaska
+Haw:Hawaii
+Que:Quebec
+Tem:Temuco
+Pam:Pampas
+Lpa:La Paz
+Lor:Loreto
+Pan:Panama
+Bog:Bogota
+Oax:Oaxaca
+Mex:Mexico
+Man:Manaus
+Hav:Havana
+Ans:Andes
+Cuz:Cuzco
+Del:Delta
+Bah:Bahia
+Tex:Texas
+Hai:Haiti
+Lim:Lima
+Acr:Acre
+Cli:Cali
+Par:Para
+Ben:Beni

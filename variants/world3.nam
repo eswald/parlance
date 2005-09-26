@@ -1,0 +1,213 @@
+ARG:Argentina:Argentinean
+BRZ:Brazil:Brazilian
+CHN:China:Chinese
+EUR:Europe:European
+FAN:Frozen Antarctica:Antarctic
+GHN:Ghana:Ghanaian
+IDA:India:Indian
+KNY:Kenya:Kenyan
+LBY:Libya:Libyan
+NEE:Near East:Eastern
+DOW:Downunder:Austrailian
+PRU:Pacific Russia:Pacific
+QUE:Quebec:Quebecois
+RUS:Russia:Russian
+SAA:South Africa:South African
+UNN:Union:Union
+WUS:Western USA:Western-USA
+
+Bat:British Antarctic Territory
+WMS:Western Mediterranean Sea
+SWA:South West Atlantic Ocean
+NEA:North East Atlantic Ocean
+NWA:North West Atlantic Ocean
+SEA:South East Atlantic Ocean
+EMS:Eastern Mediterranean Sea
+Car:Central African Republic
+NEP:North East Pacific Ocean
+SWP:South West Pacific Ocean
+NWP:North West Pacific Ocean
+NEI:North East Indian Ocean
+NWI:North West Indian Ocean
+SEI:South East Indian Ocean
+SWI:South West Indian Ocean
+SIO:Southern Indian Ocean
+CPO:Central Pacific Ocean
+NAO:North Atlantic Ocean
+Nde:Norwegian Dependency
+SAO:South Atlantic Ocean
+Nwt:North West Territory
+Ape:Antarctic Peninsula
+WAO:West Atlantic Ocean
+EAO:East Atlantic Ocean
+NPO:North Pacific Ocean
+SPO:South Pacific Ocean
+Nte:Northern Territory
+MCH:Mozambique Channel
+SEP:South East Pacific
+WPO:West Pacific Ocean
+Wau:Western Australia
+Cis:Caribbean Islands
+Dmv:Du Mont d'Urville
+ESS:East Siberian Sea
+Ite:Indian Territory
+Bco:British Columbia
+Ahu:Austria Hungary
+Sau:South Australia
+Nsw:New South Wales
+Yte:Yukon Territory
+Cen:Central America
+Nov:Novokzarevskaya
+Mbl:Marie Byrd Land
+PIS:Pacific Islands
+SCH:South China Sea
+Imo:Inner Mongolia
+Nsd:Northern Sudan
+Ssu:Southern Sudan
+GOM:Gulf Of Mexico
+Rdj:Rio de Janeiro
+Bho:Belo Horizonte
+Len:Leningradskaya
+Ris:Ross Ice Shelf
+SOO:Sea Of Okhotsk
+Gbr:Great Britain
+Stp:St Petersburg
+Bst:Baltic States
+Wch:Western China
+CSE:Caribbean Sea
+BOB:Bay Of Bengal
+NWG:Norwegian Sea
+Wsi:West Siberia
+Esi:East Siberia
+Hei:Heilongjiang
+Tkm:Turkmenistan
+Sar:Saudi Arabia
+Saf:South Africa
+New:Newfoundland
+Sas:Saskatchewan
+Bai:Buenos Aires
+AOC:Arctic Ocean
+BFS:Beaufort Sea
+EPA:East Pacific
+SOJ:Sea Of Japan
+LSE:Labrador Sea
+Sca:Scandinavia
+Vla:Vladivostok
+Afg:Afghanistan
+Phi:Philippines
+Nze:New Zealand
+Nen:New England
+Gla:Great Lakes
+ASE:Arabian Sea
+BAR:Barents Sea
+Kaz:Kazakhstan
+Uzb:Uzbekistan
+Kyr:Kyrgyzstan
+Taj:Tajikistan
+Ban:Bangladesh
+Mau:Mauritania
+Moz:Mozambique
+Qsl:Queensland
+Dso:Deep South
+Clf:California
+Scr:Santa Cruz
+Sop:South Pole
+Mad:Madagascar
+BAS:Baltic Sea
+BRS:Bering Sea
+YSE:Yellow Sea
+TSE:Tasman Sea
+HBA:Hudson Bay
+BLA:Black Sea
+Kam:Kamchatka
+Gua:Guangzhou
+Ind:Indonesia
+Mnt:Monterrey
+Ven:Venezuela
+Sap:Sao Paulo
+NTH:North Sea
+Mng:Mongolia
+Tha:Thailand
+Pak:Pakistan
+Clc:Calcutta
+Sha:Shanghai
+Eth:Ethiopia
+Cam:Cameroon
+Tan:Tanzania
+Zim:Zimbabwe
+Bot:Botswana
+Vic:Victoria
+Man:Manitoba
+Col:Colombia
+Sal:Salvador
+Bsl:Brasilia
+Ama:Amazonas
+JSE:Java Sea
+Ger:Germany
+Bal:Balkans
+Ukr:Ukraine
+Bel:Belarus
+Arm:Armenia
+Yak:Yakutsk
+Irk:Irkutsk
+Bei:Beijing
+Lan:Lanzhou
+Vie:Vietnam
+Som:Somalia
+Alg:Algeria
+Mor:Morocco
+Nga:Nigeria
+Nam:Namibia
+Flo:Florida
+Ont:Ontario
+Mid:Midwest
+Alb:Alberta
+Uru:Uruguay
+Bol:Bolivia
+Men:Mendoza
+RSE:Red Sea
+God:Godthab
+Fra:France
+Pol:Poland
+Mos:Moscow
+Trk:Turkey
+Bom:Bombay
+Gui:Guinea
+Zam:Zambia
+Ang:Angola
+Uga:Uganda
+Qbc:Quebec
+Ala:Alaska
+Mex:Mexico
+Guy:Guyana
+Rec:Recife
+Vos:Vostok
+Maw:Mawson
+Ita:Italy
+Spa:Spain
+Kor:Korea
+Del:Delhi
+Bur:Burma
+Tib:Tibet
+Syr:Syria
+Jap:Japan
+Egy:Egypt
+Lib:Libya
+Gha:Ghana
+Ngr:Niger
+Zai:Zaire
+Ken:Kenya
+Con:Congo
+Uni:Union
+Tex:Texas
+Chi:Chile
+Sho:Showa
+Cas:Casey
+San:Sanae
+Thu:Thule
+Oms:Omsk
+Ira:Iran
+Irq:Iraq
+Cha:Chad
+Mal:Mali
+Per:Peru
