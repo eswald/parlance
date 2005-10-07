@@ -5,7 +5,7 @@
 import config
 from sets        import Set
 from itertools   import chain
-from functions   import Comparable, any, all
+from functions   import Verbose_Object, Comparable, any, all
 from iaq         import DefaultDict #, Memoize
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
@@ -13,7 +13,7 @@ def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
     else:                      return (unit_type, loc[0], loc[1])
 
-class Map(object):
+class Map(Verbose_Object):
     ''' The map for the game, with various notes.
         Variables:
             - name:     The name used to request this map
@@ -48,6 +48,7 @@ class Map(object):
             self.current_turn = Turn()
         else: raise ValueError, 'Invalid arguments for Map()'
     def __str__(self): return "Map('%s')" % self.name
+    prefix = property(fget=__str__)
     
     def load(self, name):
         ''' Attempts to load a map based on its name.
@@ -148,9 +149,34 @@ class Map(object):
                 provs[other[1]].borders_in.add(key[1])
         self.spaces = provs
         self.coasts = coasts
+        
+        self.read_names()
         for prov in provs.itervalues():
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
         else: return ''
+    def read_names(self):
+        ''' Attempts to read the country and province names from a file.
+            No big deal if it fails, but it's a nice touch.
+        '''#'''
+        try:
+            filename = config.find_variant_file(self.name, 'nam')
+            name_file = open(filename, 'r', 1)
+        except IOError: return
+        try:
+            for line in name_file:
+                fields = line.strip().split(':')
+                if fields[0]:
+                    token = Token(fields[0].upper(), rep=self.rep)
+                    if token.is_power():
+                        self.powers[token].name = fields[1]
+                        self.powers[token].adjective = fields[2]
+                    elif token.is_province():
+                        self.spaces[token].name = fields[1]
+                    else: self.log_debug(11, "Unknown token type for %r", token)
+        except Exception, err:
+            self.log_debug(1, "Error parsing '%s': %s", filename, err)
+        else: self.log_debug(11, "Name file '%s' loaded", filename)
+        name_file.close()
     def restart(self):
         if self.opts:
             self.handle_SCO(self.opts.start_sco)
@@ -560,9 +586,11 @@ class Power(Comparable):
     '''#'''
     def __init__(self, token, home_scs):
         self.key        = token
+        self.name       = token.text
         self.homes      = home_scs
-        self.centers    = []
         self.units      = []
+        self.centers    = []
+        self.adjective  = self.name
         self.eliminated = False
     def __cmp__(self, other):
         ''' Allows direct comparison of Powers and tokens.
@@ -584,7 +612,7 @@ class Power(Comparable):
         elif isinstance(other, Power): return cmp(self.key, other.key)
         else: return NotImplemented 
     def tokenize(self): return [self.key]
-    def __str__(self): return str(self.key)
+    def __str__(self): return self.name
     def __repr__(self): return 'Power(%s, %s)' % (self.key, self.homes)
     
     def surplus(self):
@@ -629,6 +657,7 @@ class Province(Comparable):
     '''#'''
     def __init__(self, token, adjacencies, owners):
         self.key         = token
+        self.name        = token.text
         self.homes       = owners
         self.coasts      = []
         self.units       = []
@@ -656,7 +685,7 @@ class Province(Comparable):
         if self.key.is_coastal(): return location_key(AMY, self.key)
         else: return None
     def can_convoy(self): return self.key.category_name() in ('Sea SC', 'Sea non-SC')
-    def __str__(self): return str(self.key)
+    def __str__(self): return self.name
     def tokenize(self): return [self.key]
     def __cmp__(self, other):
         ''' Compares Provinces with each other, or with their tokens.

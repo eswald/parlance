@@ -223,10 +223,13 @@ else:
                 self.editwin.refresh()
         def handle_SCO(self, message):
             distrib = message.fold()[1:]
+            owners = []
             win = self.mapwin
             if win:
                 for dist in distrib:
                     power = self.map.powers.get(dist[0])
+                    owners.append('%s, %d' %
+                            (power and power.name or 'Unowned', len(dist) - 1))
                     for prov in dist[1:]:
                         province = self.map.spaces[prov]
                         if power: color = self.get_color(power.__color, province.__color, True)
@@ -234,9 +237,7 @@ else:
                         win.addstr(province.__y, province.__x, '*', color)
                 win.refresh()
             self.output('Supply Centres %s: %s',
-                    self.map.current_turn, '; '.join([
-                        '%s, %d' % (dist[0], len(dist) - 1)
-                        for dist in distrib]))
+                    self.map.current_turn, '; '.join(owners))
 
 
 if __name__ == "__main__":
