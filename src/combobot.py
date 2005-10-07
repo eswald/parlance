@@ -20,7 +20,6 @@ class ComboBot(DumbBot):
     name    = 'ComboBot'
     version = '0.1'
     description = 'ComboBot - A bot that considers unit combinations'
-    static_logfile = 'logs/output_combobot.txt'
     
     def generate_movement_orders(self, values):
         ''' Generate the actual orders for a movement turn.

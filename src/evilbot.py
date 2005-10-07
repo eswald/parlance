@@ -22,7 +22,6 @@ class EvilBot(DumbBot):
     
     # Static variables
     friends = Set()
-    static_logfile = 'logs/output_evilbot'
     print_csv = False
     
     def handle_HLO(self, message):

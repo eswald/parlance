@@ -421,7 +421,7 @@ class DumbBot(Player):
             for this turn. Lists all the calculated information for every
             province we have a unit in or adjacent to.
         '''#'''
-        filename = "logs/%s_%d_%s.csv" % (
+        filename = "log/bots/%s_%d_%s.csv" % (
             self.power,
             self.map.current_turn.year,
             self.map.current_turn.season

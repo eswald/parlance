@@ -128,4 +128,4 @@ class Gene_Splicer(Player):
 
 if __name__ == "__main__":
 	import dumbbot
-	evolve(dumbbot.DumbBot, 'logs/evolution')
+	evolve(dumbbot.DumbBot, 'log/stats/evolution')

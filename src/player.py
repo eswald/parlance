@@ -508,7 +508,7 @@ class Ladder(Observer):
     ''' An observer to implement a ratings ladder.'''
     
     name = 'Ladder'
-    score_file = 'logs/ladder_scores'
+    score_file = 'log/stats/ladder_scores'
     
     def __init__(self, *args):
         self.__super.__init__(*args)
