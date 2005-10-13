@@ -283,6 +283,8 @@ class Service(Connection):
         self.client_id = client_id
         self.deadline  = time() + 30
         self.country   = None
+        self.guesses   = 0
+        self.mastery   = False
         self.booted    = False
         self.server    = server
         self.game      = server.default_game()

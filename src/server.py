@@ -135,14 +135,22 @@ class Server(Client_Manager):
                 client.send(HUH(message))
     def handle_ADM(self, client, message):
         text = message.fold()[2][0].lower()
-        handled = True
         if text[0:7] == 'server:':
             for pattern in self.commands:
                 match = pattern['pattern'].search(text, 7)
                 if match:
                     pattern['command'](self, client, match)
                     break
-            else: client.admin('Unrecognized command: ' + text[7:])
+            else:
+                for pattern in client.game.commands:
+                    match = pattern['pattern'].search(text, 7)
+                    if match:
+                        if client.mastery:
+                            pattern['command'](client.game, client, match)
+                        else:
+                            client.admin('You are not authorized to do that.')
+                        break
+                else: client.admin('Unrecognized command: "%s"', text[7:])
         elif self.options.fwd_admin:
             if text[0:4] == 'all:': self.broadcast(message)
             else: client.game.broadcast(message)
@@ -179,7 +187,6 @@ class Server(Client_Manager):
         self.games.append(game)
         self.start_clients()
         return game
-    def end_game(self, client, match): client.game.close()
     def start_bot(self, client, match):
         ''' Starts the specified number of the specified kind of bot.
             If number is less than one, it will be added to
@@ -214,9 +221,14 @@ class Server(Client_Manager):
             client.admin('  %s - %s', bot_class.name, bot_class.description)
     def list_help(self, client, match):
         for line in ([
-            'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',
+            #'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',
             'Begin an admin message with "Server:" to use the following commands, all of which are case-insensitive:',
         ] + [pattern['decription'] for pattern in self.commands]):
+            client.admin(line)
+    def list_master(self, client, match):
+        preface = client.mastery and 'As the game master, you may' or 'If you were the game master, you could'
+        client.admin('%s begin an admin message with "Server:" to use the following commands:', preface)
+        for line in [pattern['decription'] for pattern in client.game.commands]:
             client.admin(line)
     def close(self, client=None, match=None):
         ''' Tells clients to exit, and closes the server's sockets.'''
@@ -234,27 +246,37 @@ class Server(Client_Manager):
             self.closed = True
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
+    def become_master(self, client, match):
+        if client.mastery: client.admin('You are already a game master.')
+        elif client.guesses < 3 and match.group(1) == self.password:
+            client.mastery = True
+            client.admin('Master powers granted.')
+        else:
+            client.admin('Password incorrect.')
+            client.guesses += 1
     
     commands = [
-        {'pattern': re.compile('end game'), 'command': end_game,
-        'decription': '  end game - Ends the current game without a winner'},
-        {'pattern': re.compile('new game'), 'command': start_game,
-        'decription': '  new game - Starts a new game of Standard Diplomacy'},
+        #{'pattern': re.compile('new game'), 'command': start_game,
+        #'decription': '  new game - Starts a new game of Standard Diplomacy'},
         #{'pattern': re.compile('new (\w+) game'), 'command': start_game,
         #'decription': 'new <variant> game - Starts a new game of <variant>'},
-        {'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
-        'decription': '  select game <id> - Switches to game <id>, if it exists'},
+        #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
+        #'decription': '  select game <id> - Switches to game <id>, if it exists'},
         #{'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
         #'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
         #{'pattern': re.compile('help variants'), 'command': list_variants,
         #'decription': '  help variants - Lists known variants'},
         #{'pattern': re.compile('help bots'), 'command': list_bots,
         #'decription': '  help bots - Lists bots that can be started'},
+        {'pattern': re.compile('master (\w+)'), 'command': become_master,
+        'decription': '  master <password> - Grants you power to use master commands'},
+        {'pattern': re.compile('help master'), 'command': list_master,
+        'decription': '  help master - Lists commands that a game master can use'},
         {'pattern': re.compile('help'), 'command': list_help,
         'decription': '  help - Lists admin commands recognized by the server'},
         {'pattern': re.compile('shutdown (\w+)'), 'command': close,
         #'decription': '  shutdown <password> - Stops the server'},
-        'decription': ''},
+        'decription': ' '},
     ]
 
 
@@ -302,8 +324,9 @@ class Game(Verbose_Object):
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts
         self.press_allowed  = False
-        self.started   = False
+        self.started        = False
         self.closed         = False
+        self.paused         = False
         
         self.timers         = {}
         self.deadline       = None
@@ -327,13 +350,12 @@ class Game(Verbose_Object):
             Turn.retreat_phase : retreat_limit,
             Turn.build_phase   : build_limit,
             'press'            : press_limit,
-            'max'              : max(move_limit, retreat_limit, build_limit),
         }
         
         self.clients        = []
+        self.masters        = []
         self.players        = {}
         self.limbo          = {}
-        self.guesses        = DefaultDict(0)
         powers = self.judge.players()
         shuffle(powers)
         self.p_order        = powers
@@ -344,7 +366,8 @@ class Game(Verbose_Object):
                 'passcode' : randint(100, bound-1),
                 'name'     : '',
                 'version'  : '',
-                'ready'    : False
+                'ready'    : False,
+                'pname'    : self.judge.player_name(country),
             }
     def prefix(self): return 'Game %d' % self.game_id
     prefix = property(fget=prefix)
@@ -361,14 +384,12 @@ class Game(Verbose_Object):
         if self.closed: pass
         elif self.judge.phase:
             self.broadcast(CCD(country))
-            self.log_debug(6, 'Passcode for %s: %d', country, player['passcode'])
+            pcode = 'Passcode for %s: %d' % (player['pname'], player['passcode'])
+            self.log_debug(6, pcode)
             if not self.judge.eliminated(country):
-                #self.admin('Passcode for %s: %d', country, player['passcode'])
-                if self.options.DSD and self.deadline:
-                    # Deadline Stops on Disconnection
-                    self.time_left = self.deadline - time()
-                    self.deadline = self.press_deadline = None
-                    self.broadcast(NOT(TME(self.relative_limit(self.time_left))))
+                for client in self.clients:
+                    if client.mastery: client.admin(pcode)
+                if self.options.DSD: self.pause()
         elif self.limbo: self.offer_power(country, *self.limbo.popitem())
     def offer_power(self, country, client, message):
         ''' Sets the client as the player for the power,
@@ -393,30 +414,45 @@ class Game(Verbose_Object):
     def disconnect(self, client):
         self.log_debug(6, 'Client #%d has disconnected', client.client_id)
         self.cancel_time_requests(client)
+        opening = None
         if client in self.clients:
             self.clients.remove(client)
             if client.booted:
-                new_player = self.players[client.booted]['client']
-                self.admin('%s has been %s. %s', client.booted,
-                        new_player and 'replaced' or 'booted', self.has_need())
+                player = self.players[client.booted]
+                if player['client'] is client:
+                    reason = 'booted'
+                    opening = client.booted
+                else: reason = 'replaced'
+                self.admin('%s has been %s. %s', player['pname'],
+                        reason, self.has_need())
             elif client.country:
                 player = self.players[client.country]
                 if self.closed or not self.started:
                     self.admin('%s (%s) has disconnected. %s',
                             player['name'], player['version'], self.has_need())
-                
-                if not self.closed:
-                    # For testing purposes: stop the game if a player quits
-                    self.log_debug(11, 'Deciding whether to quit (%s)',
-                            self.server.options.quit)
-                    if self.server.options.quit: self.close()
-                    else: self.open_position(client.country)
+                opening = client.country
                 client.country = None
             else: self.admin('An Observer has disconnected. %s', self.has_need())
-        elif client.country: self.open_position(client.country)  # Rejected the map
+        elif client.country:
+            # Rejected the map
+            opening = client.country
+            client.country = None
         elif self.limbo.has_key(client): del self.limbo[client]
-        client.country = None
-    def close(self):
+        
+        # For testing purposes: stop the game if a player quits
+        if opening and not self.closed:
+            self.log_debug(11, 'Deciding whether to quit (%s)',
+                    self.server.options.quit)
+            if self.server.options.quit: self.close()
+            else: self.open_position(opening)
+        
+        # Pass on the role of game master, if necessary
+        if client in self.masters: self.masters.remove(client)
+        if self.masters and not any([c.mastery for c in self.clients]):
+            master = self.masters[0]
+            master.mastery = True
+            master.admin('You have been granted master powers; send "Server: help master" to list them.')
+    def close(self, client=None, match=None):
         self.log_debug(10, 'Closing')
         self.deadline = None
         self.judge.phase = None
@@ -450,6 +486,7 @@ class Game(Verbose_Object):
         return len([p for p in self.players.itervalues() if not p['client']])
     def has_need(self):
         ''' Creates the line announcing connected and needed players.'''
+        if self.closed: return ''
         observing = len([True for client in self.clients if not client.country])
         have      = len(self.clients) - observing
         needed    = len(self.players) - have
@@ -476,6 +513,12 @@ class Game(Verbose_Object):
             self.set_deadlines()
     
     # Time Limits
+    def pause(self):
+        if self.deadline:
+            self.time_left = self.deadline - time()
+            self.deadline = self.press_deadline = None
+            self.broadcast(NOT(TME(self.relative_limit(self.time_left))))
+        self.paused = True
     def absolute_limit(self, time_limit):
         ''' Converts a TME message number into a number of seconds.
             Negative message numbers indicate hours; positive, seconds.
@@ -501,14 +544,17 @@ class Game(Verbose_Object):
             seconds = self.limits[phase]
             self.press_allowed = (phase and self.press_in[phase])
             self.time_checked = seconds
+        self.deadline = self.press_deadline = self.time_left = None
         if seconds and not self.closed:
-            self.broadcast(TME(self.relative_limit(seconds)))
-            self.deadline = time() + seconds
-            if self.press_allowed and phase == Turn.move_phase:
-                self.press_deadline = self.deadline - self.limits['press']
-            else: self.press_deadline = None
-        else: self.deadline = self.press_deadline = None
-        self.time_left = None
+            message = TME(self.relative_limit(seconds))
+            if self.paused:
+                self.time_left = seconds
+                self.broadcast(NOT(message))
+            else:
+                self.deadline = time() + seconds
+                if self.press_allowed and phase == Turn.move_phase:
+                    self.press_deadline = self.deadline - self.limits['press']
+                self.broadcast(message)
     def max_time(self, now):
         ''' Returns the number of seconds before the next event.
             Only valid if self.deadline is not None.
@@ -537,7 +583,7 @@ class Game(Verbose_Object):
             elif self.press_deadline and now > self.press_deadline:
                 self.press_allowed  = False
                 self.press_deadline = None
-    def ready(self): return not (self.judge.unready or self.players_unready())
+    def ready(self): return not (self.paused or self.judge.unready or self.players_unready())
     def run_judge(self):
         ''' Runs the judge and handles turn transitions.'''
         if self.deadline: self.log_debug(10, 'Running the judge with %f seconds left', self.deadline - time())
@@ -639,7 +685,7 @@ class Game(Verbose_Object):
             else:      client.reject(message)
         elif len(message) == 4 and message[2].is_integer():
             request = self.absolute_limit(message[2].value())
-            if request > self.limits['max']:
+            if request > max(self.limits.values()):
                 # Ignore requests greater than the longest time limit
                 client.reject(message)
             else:
@@ -676,6 +722,11 @@ class Game(Verbose_Object):
                 struct['ready'] = True
                 self.admin('%s (%s) has connected. %s',
                         struct['name'], struct['version'], self.has_need())
+                if not struct['robotic']:
+                    if not any([c.mastery for c in self.clients]):
+                        client.mastery = True
+                        client.admin('You have been granted master powers; send "Server: help master" to list them.')
+                    self.masters.append(client)
             else:
                 self.admin('An Observer has connected. %s', self.has_need())
                 if self.started: self.reveal_passcodes(client)
@@ -728,7 +779,7 @@ class Game(Verbose_Object):
             client.reject(message)
             if client.country: self.open_position(country)
             client.boot()
-        elif self.guesses[client] < 3 and slot['passcode'] == passcode:
+        elif client.guesses < 3 and slot['passcode'] == passcode:
             # Be very careful here.
             old_client = slot['client']
             self.log_debug(9, 'Passcode check succeeded; switching from %r', client.country)
@@ -766,11 +817,50 @@ class Game(Verbose_Object):
             else: client.reject(message)
         else:
             self.log_debug(7, 'Passcode check failed')
-            self.guesses[client] += 1
+            client.guesses += 1
             client.reject(message)
     def handle_OBS(self, client, message):
         if client in self.clients: client.reject(message)
         else: client.send_list([YES(message), MAP(self.judge.map_name)])
+    
+    # Commands for the master of a game
+    def find_players(self, name):
+        result = []
+        low_result = []
+        for key, struct in self.players.iteritems():
+            names = (struct['name'], struct['version'], struct['pname'], key.text)
+            if name in names:
+                result.append(struct['client'])
+            elif name.lower() in [n.lower() for n in names]:
+                low_result.append(struct['client'])
+        return result or low_result
+    def eject(self, client, match):
+        name = match.group(1)
+        players = self.find_players(name)
+        if len(players) == 1: players[0].boot()
+        else:
+            status = players and 'Ambiguous' or 'Unknown'
+            client.admin('%s player "%s"', status, name)
+    def stop_time(self, client, match):
+        if self.paused: client.admin('The game is already paused.')
+        else: self.pause(); client.admin('Game paused.')
+    def resume(self, client, match):
+        if self.paused:
+            self.paused = False
+            if self.time_left: self.set_deadlines(self.time_left)
+            client.admin('Game resumed.')
+        else: client.admin('The game is not currently paused.')
+    
+    commands = [
+        {'pattern': re.compile('pause'), 'command': stop_time,
+        'decription': '  pause - Stops deadline timers and phase transitions'},
+        {'pattern': re.compile('resume'), 'command': resume,
+        'decription': '  resume - Resumes deadline timers and phase transitions'},
+        {'pattern': re.compile('eject (\w+)'), 'command': eject,
+        'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
+        {'pattern': re.compile('end game'), 'command': close,
+        'decription': '  end game - Ends the game (without a winner)'},
+    ]
 
 
 class Judge(Verbose_Object):
@@ -826,6 +916,7 @@ class Judge(Verbose_Object):
     # Law of Demeter
     def missing_orders(self, country): raise NotImplementedError
     def players(self): return self.map.powers.keys()
+    def player_name(self, country): return self.map.powers[country].name
     def score(self, player): return len(self.map.powers[player].centers)
     def turn(self): return self.map.current_turn
     def eliminated(self, country):
