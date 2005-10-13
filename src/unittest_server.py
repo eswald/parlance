@@ -1,8 +1,9 @@
 ''' Unit tests for the Server module.
 '''#'''
 
-import unittest
+import unittest, config
 from time      import sleep
+from functions import Verbose_Object
 
 class ServerTestCase(unittest.TestCase):
     "Basic Server Functionality"
@@ -12,26 +13,29 @@ class ServerTestCase(unittest.TestCase):
             Also useful to learn country passcodes.
         '''#'''
         sleep_time = 14
-        def __init__(self, send_method, representation):
+        name = 'Loose connection'
+        def __init__(self, send_method, representation, queue=[]):
             from language import NME
             self.log_debug(9, 'Fake player started')
             self.closed = False
+            self.queue = queue
             self.send = send_method
             self.rep = representation
-            send_method(NME('Loose connection', self.__class__.__name__))
+            send_method(NME(self.name, self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
         def handle_message(self, message):
-            from language import HLO, MAP, SVE, LOD
+            from language import HLO, MAP, SVE, LOD, YES, ADM
             self.log_debug(5, '<< %s', message)
-            self.power = message[2]
-            self.pcode = message[5].value()
             if message[0] is HLO:
+                self.power = message[2]
+                self.pcode = message[5].value()
                 sleep(self.sleep_time)
                 self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
                 self.close()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
+            else: self.queue.append(message)
     class Fake_Client(Connection):
         ''' A fake Client to test the server timeout.'''
         is_server = False
@@ -189,6 +193,29 @@ class Server_Basics(ServerTestCase):
                 self.closed = True
         self.set_verbosity(15)
         self.connect_server([Fake_Restarter] + [self.Fake_Player] * 6)
+
+class Server_Admin(ServerTestCase):
+    "Administrative messages handled by the server"
+    class Fake_Master(ServerTestCase.Fake_Player):
+        name = 'Fake Human Player'
+    def setUp(self):
+        from network import Client
+        ServerTestCase.setUp(self)
+        self.connect_server([])
+        self.master_queue = []
+        self.master = Client(self.Fake_Master, queue=self.master_queue)
+        self.backup = Client(self.Fake_Master)
+        self.client = Client(self.Fake_Player)
+        self.threads.append(self.master.start())
+        self.threads.append(self.backup.start())
+        self.threads.append(self.client.start())
+    def ptest_start_bot(self):
+        "Whether a game master can start new bots"
+        from language import ADM
+        self.set_verbosity(15)
+        self.master.send(ADM('Master', 'Server: start holdbot'))
+        sleep(15)
+        self.failUnless(ADM('Server', '1 bot started') in self.master_queue)
 
 class Server_FullGames(ServerTestCase):
     def ptest_holdbots(self):

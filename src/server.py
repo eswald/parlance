@@ -58,12 +58,13 @@ class Client_Manager(Verbose_Object):
         self.threads = []
     def start_clients(self):
         for klass in self.classes: self.start_thread(klass)
-    def start_threads(self, player_class, number, **kwargs):
+    def start_threads(self, player_class, number, callback=None, **kwargs):
         success = failure = 0
         for dummy in range(number):
             if self.start_thread(player_class, **kwargs):
                 success += 1
             else: failure += 1
+        if callback: callback(success, failure)
         return success, failure
     def start_thread(self, player_class, **kwargs):
         from network import Client
@@ -198,13 +199,20 @@ class Server(Client_Manager):
             bot_name = bot_name[:-1]
             default_num = 0
         if bots.has_key(bot_name):
+            from threading import Thread
             try: num = int(match.group(1))
             except TypeError: num = default_num
             if num < 1: num += client.game.players_needed()
-            (success, failure) = self.start_threads(bots[bot_name], num, game_id=client.game.game_id)
-            text = '%d bot%s started' % (success, s(success))
-            if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
-            client.admin(text)
+            # Client.open() needs to be in a separate thread from the polling
+            def callback(success, failure):
+                text = '%d bot%s started' % (success, s(success))
+                if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
+                client.admin(text)
+            thread = Thread(target=self.start_threads,
+                    args=(bots[bot_name], num, callback),
+                    kwargs={'game_id': client.game.game_id})
+            self.threads.append((thread, self))
+            thread.start()
         else: client.admin('Unknown bot: %s', bot_name)
     def select_game(self, client, match):
         try: num = int(match.group(1))
@@ -262,12 +270,12 @@ class Server(Client_Manager):
         #'decription': 'new <variant> game - Starts a new game of <variant>'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
-        #{'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
-        #'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
+        {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
+        'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
         #{'pattern': re.compile('help variants'), 'command': list_variants,
         #'decription': '  help variants - Lists known variants'},
-        #{'pattern': re.compile('help bots'), 'command': list_bots,
-        #'decription': '  help bots - Lists bots that can be started'},
+        {'pattern': re.compile('help bots'), 'command': list_bots,
+        'decription': '  help bots - Lists bots that can be started'},
         {'pattern': re.compile('master (\w+)'), 'command': become_master,
         'decription': '  master <password> - Grants you power to use master commands'},
         {'pattern': re.compile('help master'), 'command': list_master,
@@ -448,7 +456,7 @@ class Game(Verbose_Object):
         
         # Pass on the role of game master, if necessary
         if client in self.masters: self.masters.remove(client)
-        if self.masters and not any([c.mastery for c in self.clients]):
+        if self.masters and not (self.closed or any([c.mastery for c in self.clients])):
             master = self.masters[0]
             master.mastery = True
             master.admin('You have been granted master powers; send "Server: help master" to list them.')
@@ -856,7 +864,7 @@ class Game(Verbose_Object):
         'decription': '  pause - Stops deadline timers and phase transitions'},
         {'pattern': re.compile('resume'), 'command': resume,
         'decription': '  resume - Resumes deadline timers and phase transitions'},
-        {'pattern': re.compile('eject (\w+)'), 'command': eject,
+        {'pattern': re.compile('eject +(.+)'), 'command': eject,
         'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
         {'pattern': re.compile('end game'), 'command': close,
         'decription': '  end game - Ends the game (without a winner)'},

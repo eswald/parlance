@@ -413,9 +413,9 @@ class HoldBot(Player):
             return self.seq[self.index]
     names = Cycler(('Ed', 'Ned', 'Ted', 'Jed', 'Zed', 'Red', 'Fred'))
     
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.name = self.names.next()
-        self.__super.__init__(*args)
+        self.__super.__init__(*args, **kwargs)
     def handle_NOW(self, message):
         ''' Sends the commands to hold all units in place.
             Disbands units that must retreat.
