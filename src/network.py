@@ -461,7 +461,7 @@ class ServerSocket(SocketWrapper):
         if result is None:
             time_left = [(client.deadline - now)
                     for client in self.sockets.values() if client.deadline]
-            if time_left: result = max([0, min(time_left)])
+            if time_left: result = max([0, 0.005 + min(time_left)])
             else: result = self.opts.wait_time
         return result
     def broadcast(self, message):
