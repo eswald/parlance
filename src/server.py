@@ -188,32 +188,6 @@ class Server(Client_Manager):
         self.games.append(game)
         self.start_clients()
         return game
-    def start_bot(self, client, match):
-        ''' Starts the specified number of the specified kind of bot.
-            If number is less than one, it will be added to
-            the number of empty power slots in the client's game.
-        '''#'''
-        bot_name = match.group(2)
-        default_num = 1
-        if bot_name[-1] == 's' and not bots.has_key(bot_name):
-            bot_name = bot_name[:-1]
-            default_num = 0
-        if bots.has_key(bot_name):
-            from threading import Thread
-            try: num = int(match.group(1))
-            except TypeError: num = default_num
-            if num < 1: num += client.game.players_needed()
-            # Client.open() needs to be in a separate thread from the polling
-            def callback(success, failure):
-                text = '%d bot%s started' % (success, s(success))
-                if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
-                client.admin(text)
-            thread = Thread(target=self.start_threads,
-                    args=(bots[bot_name], num, callback),
-                    kwargs={'game_id': client.game.game_id})
-            self.threads.append((thread, self))
-            thread.start()
-        else: client.admin('Unknown bot: %s', bot_name)
     def select_game(self, client, match):
         try: num = int(match.group(1))
         except ValueError:
@@ -223,10 +197,6 @@ class Server(Client_Manager):
                 client.admin('Joined game #%d.', num)
             else: client.admin('Unknown game #%d.', num)
     def list_variants(self, client, match): client.admin('Command accepted.')
-    def list_bots(self, client, match):
-        client.admin('Available types of bots:')
-        for bot_class in bots.itervalues():
-            client.admin('  %s - %s', bot_class.name, bot_class.description)
     def list_help(self, client, match):
         for line in ([
             #'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',
@@ -270,12 +240,8 @@ class Server(Client_Manager):
         #'decription': 'new <variant> game - Starts a new game of <variant>'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
-        {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
-        'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
         #{'pattern': re.compile('help variants'), 'command': list_variants,
         #'decription': '  help variants - Lists known variants'},
-        {'pattern': re.compile('help bots'), 'command': list_bots,
-        'decription': '  help bots - Lists bots that can be started'},
         {'pattern': re.compile('master (\w+)'), 'command': become_master,
         'decription': '  master <password> - Grants you power to use master commands'},
         {'pattern': re.compile('help master'), 'command': list_master,
@@ -858,6 +824,36 @@ class Game(Verbose_Object):
             if self.time_left: self.set_deadlines(self.time_left)
             client.admin('Game resumed.')
         else: client.admin('The game is not currently paused.')
+    def start_bot(self, client, match):
+        ''' Starts the specified number of the specified kind of bot.
+            If number is less than one, it will be added to
+            the number of empty power slots in the client's game.
+        '''#'''
+        bot_name = match.group(2)
+        default_num = 1
+        if bot_name[-1] == 's' and not bots.has_key(bot_name):
+            bot_name = bot_name[:-1]
+            default_num = 0
+        if bots.has_key(bot_name):
+            from threading import Thread
+            try: num = int(match.group(1))
+            except TypeError: num = default_num
+            if num < 1: num += self.players_needed()
+            # Client.open() needs to be in a separate thread from the polling
+            def callback(success, failure):
+                text = '%d bot%s started' % (success, s(success))
+                if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
+                client.admin(text)
+            thread = Thread(target=self.server.start_threads,
+                    args=(bots[bot_name], num, callback),
+                    kwargs={'game_id': self.game_id})
+            self.server.threads.append((thread, self))
+            thread.start()
+        else: client.admin('Unknown bot: %s', bot_name)
+    def list_bots(self, client, match):
+        client.admin('Available types of bots:')
+        for bot_class in bots.itervalues():
+            client.admin('  %s - %s', bot_class.name, bot_class.description)
     
     commands = [
         {'pattern': re.compile('pause'), 'command': stop_time,
@@ -868,6 +864,10 @@ class Game(Verbose_Object):
         'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
         {'pattern': re.compile('end game'), 'command': close,
         'decription': '  end game - Ends the game (without a winner)'},
+        {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
+        'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
+        {'pattern': re.compile('help bots'), 'command': list_bots,
+        'decription': '  help bots - Lists bots that can be started'},
     ]
 
 

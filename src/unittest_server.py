@@ -14,11 +14,11 @@ class ServerTestCase(unittest.TestCase):
         '''#'''
         sleep_time = 14
         name = 'Loose connection'
-        def __init__(self, send_method, representation, queue=[]):
+        def __init__(self, send_method, representation):
             from language import NME
             self.log_debug(9, 'Fake player started')
             self.closed = False
-            self.queue = queue
+            self.queue = []
             self.send = send_method
             self.rep = representation
             send_method(NME(self.name, self.__class__.__name__))
@@ -36,6 +36,12 @@ class ServerTestCase(unittest.TestCase):
                 self.close()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             else: self.queue.append(message)
+        def admin(self, line):
+            from language import ADM
+            self.queue = []
+            self.send(ADM(self.name, 'Server: %s' % str(line)))
+            sleep(5)
+            return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
     class Fake_Client(Connection):
         ''' A fake Client to test the server timeout.'''
         is_server = False
@@ -202,20 +208,28 @@ class Server_Admin(ServerTestCase):
         from network import Client
         ServerTestCase.setUp(self)
         self.connect_server([])
-        self.master_queue = []
-        self.master = Client(self.Fake_Master, queue=self.master_queue)
-        self.backup = Client(self.Fake_Master)
-        self.client = Client(self.Fake_Player)
-        self.threads.append(self.master.start())
-        self.threads.append(self.backup.start())
-        self.threads.append(self.client.start())
+        master_client = Client(self.Fake_Master)
+        backup_client = Client(self.Fake_Master)
+        robot_client  = Client(self.Fake_Player)
+        self.threads.append(master_client.start())
+        self.threads.append(backup_client.start())
+        self.threads.append(robot_client.start())
+        while not robot_client.player: sleep(5)
+        self.master = master_client.player
+        self.backup = backup_client.player
+        self.robot  = robot_client.player
     def test_start_bot(self):
         "Whether a game master can start new bots"
-        from language import ADM
-        self.set_verbosity(15)
-        self.master.send(ADM('Master', 'Server: start holdbot'))
-        sleep(15)
-        self.failUnless(ADM('Server', '1 bot started') in self.master_queue)
+        self.set_verbosity(0)
+        responses = self.master.admin('start holdbot')
+        self.failUnless('1 bot started' in responses,
+                'Responses:\n' + str.join('\n', responses))
+    def test_start_bot_client(self):
+        "Only a game master should start new bots"
+        self.set_verbosity(0)
+        responses = self.robot.admin('start holdbot')
+        self.failUnless('You are not authorized to do that.' in responses,
+                'Responses:\n' + str.join('\n', responses))
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):
