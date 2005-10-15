@@ -98,7 +98,7 @@ class ServerTestCase(unittest.TestCase):
             'timeout for select() without deadline' : 5,
             'publish order sets': False,
             'publish individual orders': False,
-            'static years before setting draw': 3,
+            'total years before setting draw': 3,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
@@ -135,7 +135,7 @@ class ServerTestCase(unittest.TestCase):
             raise
 
 class Server_Basics(ServerTestCase):
-    def ptest_timeout(self):
+    def test_timeout(self):
         "Thirty-second timeout for the Initial Message"
         self.set_verbosity(15)
         self.connect_server([])
@@ -143,19 +143,19 @@ class Server_Basics(ServerTestCase):
         client.open()
         sleep(45)
         client.read_error(client.opts.Timeout)
-    def ptest_full_connection(self):
+    def test_full_connection(self):
         "Seven fake players, polling if possible"
         self.set_verbosity(15)
         self.connect_server([self.Fake_Player] * 7)
-    def ptest_without_poll(self):
+    def test_without_poll(self):
         "Seven fake players, selecting"
         self.set_verbosity(15)
         self.connect_server([self.Fake_Player] * 7, poll=False)
-    def ptest_with_timer(self):
+    def test_with_timer(self):
         "Seven fake players and an observer"
         from player  import Clock
         self.connect_server([Clock] + ([self.Fake_Player] * 7))
-    def ptest_takeover(self):
+    def test_takeover(self):
         "Takeover ability after game start"
         class Fake_Takeover(Verbose_Object):
             ''' A false player, who takes over a position and then quits.'''
@@ -173,7 +173,7 @@ class Server_Basics(ServerTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
             def handle_message(self, message):
-                from language import YES, IAM
+                from language import YES, IAM, ADM
                 self.log_debug(5, '<< %s', message)
                 if message[0] is YES and message[2] is IAM:
                     self.send(ADM(self.power.text, 'Takeover successful'))
@@ -209,7 +209,7 @@ class Server_Admin(ServerTestCase):
         self.threads.append(self.master.start())
         self.threads.append(self.backup.start())
         self.threads.append(self.client.start())
-    def ptest_start_bot(self):
+    def test_start_bot(self):
         "Whether a game master can start new bots"
         from language import ADM
         self.set_verbosity(15)
@@ -218,11 +218,11 @@ class Server_Admin(ServerTestCase):
         self.failUnless(ADM('Server', '1 bot started') in self.master_queue)
 
 class Server_FullGames(ServerTestCase):
-    def ptest_holdbots(self):
+    def test_holdbots(self):
         "Seven drawing holdbots"
         from player import HoldBot
         self.connect_server([HoldBot] * 7)
-    def ptest_one_dumbbot(self):
+    def test_one_dumbbot(self):
         "Six drawing holdbots and a dumbbot"
         from player  import HoldBot
         from dumbbot import DumbBot
@@ -230,11 +230,11 @@ class Server_FullGames(ServerTestCase):
         DumbBot.verbosity = 20
         self.connect_server([DumbBot, HoldBot, HoldBot,
                 HoldBot, HoldBot, HoldBot, HoldBot])
-    def ptest_dumbbots(self):
-        "seven dumbbots"
+    def test_dumbbots(self):
+        "seven dumbbots, quick game"
         from dumbbot import DumbBot
         self.connect_server([DumbBot] * 7)
-    def ptest_two_games(self):
+    def test_two_games(self):
         "seven holdbots; two games"
         self.set_verbosity(4)
         from player import HoldBot

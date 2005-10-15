@@ -12,29 +12,29 @@ class Map_Variants(unittest.TestCase):
         options = config.variant_options(variant_name)
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
-    def ptest_abstraction2_map(self):     self.define_variant('abstraction2')
-    def ptest_african2_map(self):         self.define_variant('african2')
-    def ptest_americas4_map(self):        self.define_variant('americas4')
-    def ptest_chromatic_map(self):        self.define_variant('chromatic')
-    def ptest_classical_map(self):        self.define_variant('classical')
-    def ptest_fleet_rome_map(self):       self.define_variant('fleet_rome')
-    def ptest_hundred3_map(self):         self.define_variant('hundred3')
-    def ptest_hundred31_map(self):        self.define_variant('hundred31')
-    def ptest_hundred32_map(self):        self.define_variant('hundred32')
-    def ptest_iberian2_map(self):         self.define_variant('iberian2')
-    def ptest_modern_map(self):           self.define_variant('modern')
-    def ptest_sailho_map(self):           self.define_variant('sailho')
-    def ptest_shift_around_map(self):     self.define_variant('shift_around')
-    def ptest_south_america32_map(self):  self.define_variant('south_america32')
-    def ptest_south_america51_map(self):  self.define_variant('south_america51')
-    def ptest_south_east_asia3_map(self): self.define_variant('south_east_asia3')
-    def ptest_standard_map(self):         self.define_variant('standard')
-    def ptest_versailles3_map(self):      self.define_variant('versailles3')
-    def ptest_world3_map(self):           self.define_variant('world3')
+    def test_abstraction2_map(self):     self.define_variant('abstraction2')
+    def test_african2_map(self):         self.define_variant('african2')
+    def test_americas4_map(self):        self.define_variant('americas4')
+    def test_chromatic_map(self):        self.define_variant('chromatic')
+    def test_classical_map(self):        self.define_variant('classical')
+    def test_fleet_rome_map(self):       self.define_variant('fleet_rome')
+    def test_hundred3_map(self):         self.define_variant('hundred3')
+    def test_hundred31_map(self):        self.define_variant('hundred31')
+    def test_hundred32_map(self):        self.define_variant('hundred32')
+    def test_iberian2_map(self):         self.define_variant('iberian2')
+    def test_modern_map(self):           self.define_variant('modern')
+    def test_sailho_map(self):           self.define_variant('sailho')
+    def test_shift_around_map(self):     self.define_variant('shift_around')
+    def test_south_america32_map(self):  self.define_variant('south_america32')
+    def test_south_america51_map(self):  self.define_variant('south_america51')
+    def test_south_east_asia3_map(self): self.define_variant('south_east_asia3')
+    def test_standard_map(self):         self.define_variant('standard')
+    def test_versailles3_map(self):      self.define_variant('versailles3')
+    def test_world3_map(self):           self.define_variant('world3')
 
 class Map_Bugfix(unittest.TestCase):
     "Tests to reproduce bugs related to the Map class"
-    def ptest_empty_UNO(self):
+    def test_empty_UNO(self):
         "Test whether Map can define maps with no non-home supply centers."
         from translation import translate
         # Almost Standard...
@@ -129,7 +129,7 @@ class Map_Bugfix(unittest.TestCase):
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
-    def ptest_island_province(self):
+    def test_island_province(self):
         "Check for The Pale in Hundred3, which is an island."
         from language    import Token, AMY
         options = config.variant_options('hundred3')
@@ -139,7 +139,7 @@ class Map_Bugfix(unittest.TestCase):
         coast = game_map.coasts[(AMY, prov, None)]
         self.failUnless(coast.is_valid())
         self.failUnless(coast.province.is_valid())
-    def ptest_island_province(self):
+    def test_island_province(self):
         "Test whether Province can define island spaces."
         from language    import AMY, FLT
         from xtended     import NAF, MAO, WES

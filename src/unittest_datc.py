@@ -97,19 +97,19 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
 class DATC_6_A(DiplomacyAdjudicatorTestCase):
     "6.A.  BASIC CHECKS"
     
-    def ptest_6A1(self):
+    def test_6A1(self):
         "6.A.1.  MOVING TO AN AREA THAT IS NOT A NEIGHBOUR"
         self.illegalOrder(ENG, [(ENG, FLT, NTH), MTO, PIC])
-    def ptest_6A2(self):
+    def test_6A2(self):
         "6.A.2.  MOVE ARMY TO SEA"
         self.illegalOrder(ENG, [(ENG, AMY, LVP), MTO, IRI])
-    def ptest_6A3(self):
+    def test_6A3(self):
         "6.A.3.  MOVE FLEET TO LAND"
         self.illegalOrder(GER, [(GER, FLT, KIE), MTO, MUN])
-    def ptest_6A4(self):
+    def test_6A4(self):
         "6.A.4.  MOVE TO OWN SECTOR"
         self.illegalOrder(GER, [(GER, FLT, KIE), MTO, KIE])
-    def ptest_6A5(self):
+    def test_6A5(self):
         "6.A.5.  MOVE TO OWN SECTOR WITH CONVOY"
         self.init_state(SPR, 1901, [
             [ENG, AMY, LVP],
@@ -130,7 +130,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
             [GER, AMY, WAL],
             [ENG, AMY, YOR, MRT],
         ])
-    def ptest_6A5_old(self):
+    def test_6A5_old(self):
         "6.A.5.old  MOVE TO OWN SECTOR WITH CONVOY"
         start_state = [
             [ENG, FLT, LON],
@@ -144,7 +144,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(ENG, [(ENG, AMY, YOR), CTO, YOR, VIA, [NTH]])
         self.illegalOrder(ENG, [(ENG, AMY, LVP), SUP, (ENG, AMY, YOR), MTO, YOR])
         self.assertMapState(start_state)
-    def ptest_6A6(self):
+    def test_6A6(self):
         "6.A.6.  ORDERING A UNIT OF ANOTHER COUNTRY"
         start_state = [
             [ENG, FLT, LON],
@@ -152,7 +152,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(GER, [(ENG, FLT, LON), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6A6_modified(self):
+    def test_6A6_modified(self):
         ''' 6.A.6.modified  ORDERING A UNIT OF ANOTHER COUNTRY
             Differs from the above in the country specification of the unit.
         '''#'''
@@ -162,7 +162,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(GER, [(GER, FLT, LON), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6A7(self):
+    def test_6A7(self):
         "6.A.7.  ONLY ARMIES CAN BE CONVOYED"
         start_state = [
             [ENG, FLT, LON],
@@ -172,7 +172,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(ENG, [(ENG, FLT, LON), CTO, BEL, VIA, [NTH]])
         self.illegalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
         self.assertMapState(start_state)
-    def ptest_6A7_modified(self):
+    def test_6A7_modified(self):
         ''' 6.A.7.modified  ONLY ARMIES CAN BE CONVOYED
             Differs from the above in the type specification of the unit.
         '''#'''
@@ -184,7 +184,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(ENG, [(ENG, FLT, LON), CTO, BEL, VIA, [NTH]])
         self.illegalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, FLT, LON), CTO, BEL])
         self.assertMapState(start_state)
-    def ptest_6A8(self):
+    def test_6A8(self):
         "6.A.8.  SUPPORT TO HOLD YOURSELF IS NOT POSSIBLE"
         self.init_state(SPR, 1901, [
             [ITA, AMY, VEN],
@@ -199,7 +199,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, TYR],
             [AUS, FLT, TRI, MRT],
         ])
-    def ptest_6A9(self):
+    def test_6A9(self):
         "6.A.9.  FLEETS MUST FOLLOW COAST IF NOT ON SEA"
         start_state = [
             [ITA, FLT, ROM],
@@ -207,7 +207,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(ITA, [(ITA, FLT, ROM), MTO, VEN])
         self.assertMapState(start_state)
-    def ptest_6A10(self):
+    def test_6A10(self):
         "6.A.10.  SUPPORT ON UNREACHABLE DESTINATION NOT POSSIBLE"
         start_state = [
             [AUS, AMY, VEN],
@@ -219,7 +219,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(ITA, [(ITA, FLT, ROM), SUP, (ITA, AMY, APU), MTO, VEN])
         self.legalOrder(ITA, [(ITA, AMY, APU), MTO, VEN])
         self.assertMapState(start_state)
-    def ptest_6A10_old(self):
+    def test_6A10_old(self):
         "6.A.10.old support on unreachable destination is not possible"
         start_state = [
             [AUS, AMY, BUD],
@@ -231,7 +231,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, FLT, TRI), MTO, VEN])
         self.legalOrder(ITA, [(ITA, AMY, VEN), HLD])
         self.assertMapState(start_state)
-    def ptest_6A11(self):
+    def test_6A11(self):
         "6.A.11.  SIMPLE BOUNCE"
         start_state = [
             [AUS, AMY, VIE],
@@ -241,7 +241,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, VIE), MTO, TYR])
         self.legalOrder(ITA, [(ITA, AMY, VEN), MTO, TYR])
         self.assertMapState(start_state)
-    def ptest_6A12(self):
+    def test_6A12(self):
         "6.A.12.  BOUNCE OF THREE UNITS"
         start_state = [
             [AUS, AMY, VIE],
@@ -257,7 +257,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
 class DATC_6_B(DiplomacyAdjudicatorTestCase):
     "6.B.  COASTAL ISSUES"
     
-    def ptest_6B1_fail(self):
+    def test_6B1_fail(self):
         ''' 6.B.1.a  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NECESSARY
             Subject to issue 4.B.1 (default_coast).
             This case causes the move to fail.
@@ -270,7 +270,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, POR), MTO, SPA])
         self.assertMapState(start_state)
-    def ptest_6B1_default(self):
+    def test_6B1_default(self):
         ''' 6.B.1.b  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NECESSARY
             Subject to issue 4.B.1 (default_coast).
             This case chooses a default coast for the move.
@@ -284,7 +284,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, FLT, [SPA, NCS]],
         ])
-    def ptest_6B2_infer(self):
+    def test_6B2_infer(self):
         ''' 6.B.2.a  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.2 (infer_coast). 
             This case moves to the only available coast.
@@ -299,7 +299,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, FLT, [SPA, NCS]],
         ])
-    def ptest_6B2_fail(self):
+    def test_6B2_fail(self):
         ''' 6.B.2.c  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.2 (infer_coast). 
             This case marks the move as illegal.
@@ -312,7 +312,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
         self.assertMapState(start_state)
-    def ptest_6B3_change(self):
+    def test_6B3_change(self):
         ''' 6.B.3.a  MOVING WITH WRONG COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.3 (change_coast). 
             This case moves to the only possible coast.
@@ -326,7 +326,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, FLT, [SPA, NCS]],
         ])
-    def ptest_6B3_fail(self):
+    def test_6B3_fail(self):
         ''' 6.B.3.b  MOVING WITH WRONG COAST WHEN COAST IS NOT NECESSARY
             Subject to issue 4.B.3 (change_coast). 
             This case marks the move as illegal.
@@ -339,7 +339,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, GAS), MTO, (SPA, SCS)])
         self.assertMapState(start_state)
-    def ptest_6B4(self):
+    def test_6B4(self):
         "6.B.4.  SUPPORT TO UNREACHABLE COAST ALLOWED"
         self.init_state(SPR, 1901, [
             [FRA, FLT, GAS],
@@ -354,7 +354,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, MAR],
             [ITA, FLT, WES],
         ])
-    def ptest_6B5(self):
+    def test_6B5(self):
         "6.B.5.  SUPPORT FROM UNREACHABLE COAST NOT ALLOWED"
         start_state = [
             [FRA, FLT, [SPA, NCS]],
@@ -366,7 +366,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(FRA, [(FRA, FLT, MAR), MTO, GOL])
         self.legalOrder(ITA, [(ITA, FLT, GOL), HLD])
         self.assertMapState(start_state)
-    def ptest_6B6(self):
+    def test_6B6(self):
         "6.B.6.  SUPPORT CAN BE CUT WITH OTHER COAST"
         self.init_state(SPR, 1901, [
             [ENG, FLT, IRI],
@@ -387,7 +387,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, MAO],
             [FRA, FLT, MAO, MRT],
         ])
-    def ptest_6B7_required(self):
+    def test_6B7_required(self):
         ''' 6.B.7.a  SUPPORTING WITH UNSPECIFIED COAST"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are required and must match.
@@ -410,7 +410,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, [SPA, SCS]],
         ])
-    def ptest_6B7_optional(self):
+    def test_6B7_optional(self):
         ''' 6.B.7.d  SUPPORTING WITH UNSPECIFIED COAST"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are optional, but must match if specified.
@@ -429,7 +429,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, WES), MTO, (SPA, SCS)])
         self.legalOrder(ITA, [(ITA, FLT, GOL), SUP, (ITA, FLT, WES), MTO, (SPA, SCS)])
         self.assertMapState(start_state)
-    def ptest_6B7_illegal(self):
+    def test_6B7_illegal(self):
         ''' 6.B.7.e  SUPPORTING WITH UNSPECIFIED COAST"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are not allowed in support orders.
@@ -453,7 +453,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, WES],
         ])
-    def ptest_6B8_required(self):
+    def test_6B8_required(self):
         ''' 6.B.8.a  SUPPORTING WITH UNSPECIFIED COAST WHEN ONLY ONE COAST IS POSSIBLE"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are required and must match.
@@ -476,7 +476,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, [SPA, SCS]],
         ])
-    def ptest_6B8_optional(self):
+    def test_6B8_optional(self):
         ''' 6.B.8.d  SUPPORTING WITH UNSPECIFIED COAST WHEN ONLY ONE COAST IS POSSIBLE"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are optional, but must match if specified.
@@ -495,7 +495,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, WES), MTO, (SPA, SCS)])
         self.legalOrder(ITA, [(ITA, FLT, GOL), SUP, (ITA, FLT, WES), MTO, (SPA, SCS)])
         self.assertMapState(start_state)
-    def ptest_6B8_illegal(self):
+    def test_6B8_illegal(self):
         ''' 6.B.8.e  SUPPORTING WITH UNSPECIFIED COAST WHEN ONLY ONE COAST IS POSSIBLE"
             Subject to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts are not allowed in support orders.
@@ -519,7 +519,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, WES],
         ])
-    def ptest_6B9_required(self):
+    def test_6B9_required(self):
         ''' 6.B.9.a  SUPPORTING WITH WRONG COAST
             Related to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts must match.
@@ -543,7 +543,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, [SPA, SCS]],
         ])
-    def ptest_6B9_optional(self):
+    def test_6B9_optional(self):
         ''' 6.B.9.d  SUPPORTING WITH WRONG COAST
             Related to issue 4.B.4 (support_coast, require_coast).
             In this case, coasts must match if specified.
@@ -568,7 +568,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, GOL],
             [ITA, FLT, [SPA, SCS]],
         ])
-    def ptest_6B10_fail(self):
+    def test_6B10_fail(self):
         ''' 6.B.10.a  UNIT ORDERED WITH WRONG COAST
             Subject to issue 4.B.5 (wrong_coast).
             In this case, coast specification must match the unit.
@@ -596,7 +596,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, FLT, GOL],
         ])
-    def ptest_6B11_a(self):
+    def test_6B11_a(self):
         ''' 6.B.11.a  COAST CAN NOT BE ORDERED TO CHANGE
             Related to issue 4.B.5 (wrong_coast).
         '''#'''
@@ -607,7 +607,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, [SPA, SCS]), MTO, GOL])
         self.assertMapState(start_state)
-    def ptest_6B11_b(self):
+    def test_6B11_b(self):
         ''' 6.B.11.b  COAST CAN NOT BE ORDERED TO CHANGE
             Related to issue 4.B.5 (wrong_coast).
         '''#'''
@@ -618,7 +618,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, [SPA, SCS]), MTO, GOL])
         self.assertMapState(start_state)
-    def ptest_6B12_fail(self):
+    def test_6B12_fail(self):
         ''' 6.B.12.a  ARMY MOVEMENT WITH COASTAL SPECIFICATION
             Subject to issue 4.B.6 (ignore_coast).
             In this case, armies cannot accept a coast specification.
@@ -646,7 +646,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, AMY, SPA],
         ])
-    def ptest_6B13(self):
+    def test_6B13(self):
         "6.B.13.  COASTAL CRAWL NOT ALLOWED"
         start_state = [
             [TUR, FLT, [BUL, SCS]],
@@ -656,7 +656,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, CON), MTO, (BUL, ECS)])
         self.legalOrder(TUR, [(TUR, FLT, [BUL, SCS]), MTO, CON])
         self.assertMapState(start_state)
-    def ptest_6B14_fail(self):
+    def test_6B14_fail(self):
         ''' 6.B.14.a  BUILDING WITH UNSPECIFIED COAST
             Subject to issue 4.B.7 (build_coast).
             In this case, coast specification is required for fleet builds.
@@ -682,7 +682,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_C(DiplomacyAdjudicatorTestCase):
     "6.C.  CIRCULAR MOVEMENT"
-    def ptest_6C1(self):
+    def test_6C1(self):
         "6.C.1.  THREE ARMY CIRCULAR MOVEMENT"
         self.init_state(SPR, 1901, [
             [TUR, FLT, ANK],
@@ -697,7 +697,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, SMY],
         ])
-    def ptest_6C2(self):
+    def test_6C2(self):
         "6.C.2.  THREE ARMY CIRCULAR MOVEMENT WITH SUPPORT"
         self.init_state(SPR, 1901, [
             [TUR, FLT, ANK],
@@ -715,7 +715,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, SMY],
             [TUR, AMY, BUL],
         ])
-    def ptest_6C3(self):
+    def test_6C3(self):
         "6.C.3.  A DISRUPTED THREE ARMY CIRCULAR MOVEMENT"
         start_state = [
             [TUR, FLT, ANK],
@@ -729,7 +729,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, AMY, SMY), MTO, ANK])
         self.legalOrder(TUR, [(TUR, AMY, BUL), MTO, CON])
         self.assertMapState(start_state)
-    def ptest_6C4(self):
+    def test_6C4(self):
         "6.C.4.  A CIRCULAR MOVEMENT WITH ATTACKED CONVOY"
         self.init_state(SPR, 1901, [
             [AUS, AMY, TRI],
@@ -756,7 +756,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, ADR],
             [ITA, FLT, NAP],
         ])
-    def ptest_6C5(self):
+    def test_6C5(self):
         "6.C.5.  A DISRUPTED CIRCULAR MOVEMENT DUE TO DISLODGED CONVOY"
         self.init_state(SPR, 1901, [
             [AUS, AMY, TRI],
@@ -786,7 +786,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, TUN],
             [TUR, FLT, ION, MRT],
         ])
-    def ptest_6C6(self):
+    def test_6C6(self):
         "6.C.6.  TWO ARMIES WITH TWO CONVOYS"
         self.init_state(SPR, 1901, [
             [ENG, FLT, NTH],
@@ -804,7 +804,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [FRA, AMY, LON],
         ])
-    def ptest_6C7(self):
+    def test_6C7(self):
         "6.C.7.  DISRUPTED UNIT SWAP"
         start_state = [
             [ENG, FLT, NTH],
@@ -823,7 +823,7 @@ class DATC_6_C(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_D(DiplomacyAdjudicatorTestCase):
     "6.D.  SUPPORTS AND DISLODGES"
-    def ptest_6D1(self):
+    def test_6D1(self):
         "6.D.1.  SUPPORTED HOLD CAN PREVENT DISLODGEMENT"
         start_state = [
             [AUS, FLT, ADR],
@@ -837,7 +837,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, AMY, VEN), HLD])
         self.legalOrder(ITA, [(ITA, AMY, TYR), SUP, (ITA, AMY, VEN)])
         self.assertMapState(start_state)
-    def ptest_6D2(self):
+    def test_6D2(self):
         "6.D.2.  A MOVE CUTS SUPPORT ON HOLD"
         start_state = [
             [AUS, FLT, ADR],
@@ -859,7 +859,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, TYR],
             [ITA, AMY, VEN, MRT],
         ])
-    def ptest_6D3(self):
+    def test_6D3(self):
         "6.D.3.  A MOVE CUTS SUPPORT ON MOVE"
         start_state = [
             [AUS, FLT, ADR],
@@ -873,7 +873,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, AMY, VEN), HLD])
         self.legalOrder(ITA, [(ITA, FLT, ION), MTO, ADR])
         self.assertMapState(start_state)
-    def ptest_6D4(self):
+    def test_6D4(self):
         "6.D.4.  SUPPORT TO HOLD ON UNIT SUPPORTING A HOLD ALLOWED"
         start_state = [
             [GER, AMY, BER],
@@ -887,7 +887,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, BAL), SUP, (RUS, AMY, PRU), MTO, BER])
         self.legalOrder(RUS, [(RUS, AMY, PRU), MTO, BER])
         self.assertMapState(start_state)
-    def ptest_6D5(self):
+    def test_6D5(self):
         "6.D.5.  SUPPORT TO HOLD ON UNIT SUPPORTING A MOVE ALLOWED"
         start_state = [
             [GER, AMY, BER],
@@ -909,7 +909,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, BAL],
             [RUS, AMY, PRU],
         ])
-    def ptest_6D6(self):
+    def test_6D6(self):
         "6.D.6.  SUPPORT TO HOLD ON CONVOYING UNIT ALLOWED"
         start_state = [
             [GER, AMY, BER],
@@ -931,7 +931,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, LVN],
             [RUS, FLT, GOB],
         ])
-    def ptest_6D7(self):
+    def test_6D7(self):
         "6.D.7.  SUPPORT TO HOLD ON MOVING UNIT NOT ALLOWED"
         start_state = [
             [GER, FLT, BAL],
@@ -953,7 +953,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, FIN],
             [GER, FLT, BAL, MRT],
         ])
-    def ptest_6D8(self):
+    def test_6D8(self):
         "6.D.8.  FAILED CONVOY CAN NOT RECEIVE HOLD SUPPORT"
         self.init_state(SPR, 1901, [
             [AUS, FLT, ION],
@@ -974,7 +974,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, BUL],
             [TUR, AMY, GRE, MRT],
         ])
-    def ptest_6D9(self):
+    def test_6D9(self):
         "6.D.9.  SUPPORT TO MOVE ON HOLDING UNIT NOT ALLOWED"
         self.init_state(SPR, 1901, [
             [ITA, AMY, VEN],
@@ -992,7 +992,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, ALB],
             [AUS, AMY, TRI, MRT],
         ])
-    def ptest_6D10(self):
+    def test_6D10(self):
         "6.D.10.  SELF DISLODGMENT PROHIBITED"
         start_state = [
             [GER, AMY, BER],
@@ -1004,7 +1004,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, KIE), MTO, BER])
         self.legalOrder(GER, [(GER, AMY, MUN), SUP, (GER, FLT, KIE), MTO, BER])
         self.assertMapState(start_state)
-    def ptest_6D11(self):
+    def test_6D11(self):
         "6.D.11.  NO SELF DISLODGMENT OF RETURNING UNIT"
         start_state = [
             [GER, AMY, BER],
@@ -1018,7 +1018,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, MUN), SUP, (GER, FLT, KIE), MTO, BER])
         self.legalOrder(RUS, [(RUS, AMY, WAR), MTO, PRU])
         self.assertMapState(start_state)
-    def ptest_6D12(self):
+    def test_6D12(self):
         "6.D.12.  SUPPORTING A FOREIGN UNIT TO DISLODGE OWN UNIT PROHIBITED"
         start_state = [
             [AUS, FLT, TRI],
@@ -1030,7 +1030,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, VIE), SUP, (ITA, AMY, VEN), MTO, TRI])
         self.legalOrder(ITA, [(ITA, AMY, VEN), MTO, TRI])
         self.assertMapState(start_state)
-    def ptest_6D13(self):
+    def test_6D13(self):
         "6.D.13.  SUPPORTING A FOREIGN UNIT TO DISLODGE A RETURNING OWN UNIT PROHIBITED"
         start_state = [
             [AUS, FLT, TRI],
@@ -1044,7 +1044,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, AMY, VEN), MTO, TRI])
         self.legalOrder(ITA, [(ITA, FLT, APU), MTO, ADR])
         self.assertMapState(start_state)
-    def ptest_6D14(self):
+    def test_6D14(self):
         "6.D.14.  SUPPORTING A FOREIGN UNIT IS NOT ENOUGH TO PREVENT DISLODGEMENT"
         start_state = [
             [AUS, FLT, TRI],
@@ -1066,7 +1066,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ADR],
             [AUS, FLT, TRI, MRT],
         ])
-    def ptest_6D15(self):
+    def test_6D15(self):
         "6.D.15.  DEFENDER CAN NOT CUT SUPPORT FOR ATTACK ON ITSELF"
         start_state = [
             [RUS, FLT, CON],
@@ -1082,7 +1082,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, ANK],
             [TUR, FLT, ANK, MRT],
         ])
-    def ptest_6D16(self):
+    def test_6D16(self):
         "6.D.16.  CONVOYING A UNIT DISLODGING A UNIT OF SAME POWER IS ALLOWED"
         start_state = [
             [ENG, AMY, LON],
@@ -1101,7 +1101,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, LON],
             [ENG, AMY, LON, MRT],
         ])
-    def ptest_6D17(self):
+    def test_6D17(self):
         "6.D.17.  DISLODGEMENT CUTS SUPPORTS"
         start_state = [
             [RUS, FLT, CON],
@@ -1123,7 +1123,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, ARM],
             [RUS, FLT, CON, MRT],
         ])
-    def ptest_6D18(self):
+    def test_6D18(self):
         "6.D.18.  A SURVIVING UNIT WILL SUSTAIN SUPPORT"
         start_state = [
             [RUS, FLT, CON],
@@ -1148,7 +1148,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, ARM],
             [TUR, FLT, ANK, MRT],
         ])
-    def ptest_6D19(self):
+    def test_6D19(self):
         "6.D.19.  EVEN WHEN SURVIVING IS IN ALTERNATIVE WAY"
         start_state = [
             [RUS, FLT, CON],
@@ -1167,7 +1167,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, SMY],
             [TUR, FLT, ANK, MRT],
         ])
-    def ptest_6D20(self):
+    def test_6D20(self):
         "6.D.20.  UNIT CAN NOT CUT SUPPORT OF ITS OWN COUNTRY"
         start_state = [
             [ENG, FLT, LON],
@@ -1186,7 +1186,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, YOR],
             [FRA, FLT, ECH, MRT],
         ])
-    def ptest_6D21(self):
+    def test_6D21(self):
         "6.D.21.  DISLODGING DOES NOT CANCEL A SUPPORT CUT"
         start_state = [
             [AUS, FLT, TRI],
@@ -1211,7 +1211,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, BER],
             [GER, AMY, MUN, MRT],
         ])
-    def ptest_6D22(self):
+    def test_6D22(self):
         "6.D.22.  IMPOSSIBLE FLEET MOVE CAN NOT BE SUPPORTED"
         start_state = [
             [GER, FLT, KIE],
@@ -1230,7 +1230,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, BER],
             [GER, FLT, KIE, MRT],
         ])
-    def ptest_6D23(self):
+    def test_6D23(self):
         "6.D.23.  IMPOSSIBLE COAST MOVE CAN NOT BE SUPPORTED"
         start_state = [
             [ITA, FLT, GOL],
@@ -1249,7 +1249,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, MAR],
             [FRA, FLT, [SPA, NCS], MRT],
         ])
-    def ptest_6D24(self):
+    def test_6D24(self):
         "6.D.24.  IMPOSSIBLE ARMY MOVE CAN NOT BE SUPPORTED"
         start_state = [
             [FRA, AMY, MAR],
@@ -1271,7 +1271,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, GOL],
             [ITA, FLT, GOL, MRT],
         ])
-    def ptest_6D25(self):
+    def test_6D25(self):
         "6.D.25.  FAILING HOLD SUPPORT CAN BE SUPPORTED"
         start_state = [
             [GER, AMY, BER],
@@ -1285,7 +1285,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, BAL), SUP, (RUS, AMY, PRU), MTO, BER])
         self.legalOrder(RUS, [(RUS, AMY, PRU), MTO, BER])
         self.assertMapState(start_state)
-    def ptest_6D26(self):
+    def test_6D26(self):
         "6.D.26.  FAILING MOVE SUPPORT CAN BE SUPPORTED"
         start_state = [
             [GER, AMY, BER],
@@ -1299,7 +1299,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, BAL), SUP, (RUS, AMY, PRU), MTO, BER])
         self.legalOrder(RUS, [(RUS, AMY, PRU), MTO, BER])
         self.assertMapState(start_state)
-    def ptest_6D27(self):
+    def test_6D27(self):
         "6.D.27.  FAILING CONVOY CAN BE SUPPORTED"
         start_state = [
             [ENG, FLT, SWE],
@@ -1315,7 +1315,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, BAL), CVY, (GER, AMY, BER), CTO, LVN])
         self.legalOrder(RUS, [(RUS, FLT, PRU), SUP, (RUS, FLT, BAL)])
         self.assertMapState(start_state)
-    def ptest_6D33(self):
+    def test_6D33(self):
         "6.D.33.  UNWANTED SUPPORT ALLOWED"
         start_state = [
             [AUS, AMY, SER],
@@ -1334,7 +1334,7 @@ class DATC_6_D(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, GAL],
             [TUR, AMY, SER],
         ])
-    def ptest_6D34(self):
+    def test_6D34(self):
         "6.D.34.  SUPPORT TARGETING OWN AREA NOT ALLOWED"
         start_state = [
             [GER, AMY, BER],
@@ -1371,7 +1371,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.illegalOrder = self.legalOrder
     
     # With Quasi-Legal orders
-    def ptest_6D28_quasi(self):
+    def test_6D28_quasi(self):
         "6.D.28.a  IMPOSSIBLE MOVE AND SUPPORT"
         self.judge.datc.datc_4e1 = 'a'
         start_state = [
@@ -1391,7 +1391,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D29_quasi_change(self):
+    def test_6D29_quasi_change(self):
         ''' 6.D.29.a.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
@@ -1414,7 +1414,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D29_quasi_fail(self):
+    def test_6D29_quasi_fail(self):
         ''' 6.D.29.a.b  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
@@ -1437,7 +1437,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D30_quasi_fail(self):
+    def test_6D30_quasi_fail(self):
         ''' 6.D.30.a.a  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
@@ -1460,7 +1460,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D30_quasi_default(self):
+    def test_6D30_quasi_default(self):
         ''' 6.D.30.a.b  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
@@ -1483,7 +1483,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D31_quasi(self):
+    def test_6D31_quasi(self):
         "6.D.31.a  A TRICKY IMPOSSIBLE SUPPORT"
         self.judge.datc.datc_4e1 = 'a'
         start_state = [
@@ -1494,7 +1494,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, RUM), CTO, ARM, VIA, [BLA]])
         self.legalOrder(TUR, [(TUR, FLT, BLA), SUP, (AUS, AMY, RUM), MTO, ARM])
         self.assertMapState(start_state)
-    def ptest_6D32_quasi(self):
+    def test_6D32_quasi(self):
         "6.D.32.a  A MISSING FLEET"
         self.judge.datc.datc_4e1 = 'a'
         start_state = [
@@ -1516,7 +1516,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         ])
     
     # Without Quasi-Legal orders
-    def ptest_6D28_illegal(self):
+    def test_6D28_illegal(self):
         "6.D.28.d  IMPOSSIBLE MOVE AND SUPPORT"
         self.judge.datc.datc_4e1 = 'd'
         start_state = [
@@ -1531,7 +1531,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, RUM])
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, RUM])
         self.assertMapState(start_state)
-    def ptest_6D29_illegal_change(self):
+    def test_6D29_illegal_change(self):
         ''' 6.D.29.d.a  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
@@ -1554,7 +1554,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, RUM],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D29_illegal_fail(self):
+    def test_6D29_illegal_fail(self):
         ''' 6.D.29.d.b  MOVE TO IMPOSSIBLE COAST AND SUPPORT
             Also subject to issue 4.B.3 (change_coast).
         '''#'''
@@ -1572,7 +1572,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, RUM])
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, RUM])
         self.assertMapState(start_state)
-    def ptest_6D30_illegal_fail(self):
+    def test_6D30_illegal_fail(self):
         ''' 6.D.30.d.a  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
@@ -1590,7 +1590,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, CON])
         self.legalOrder(TUR, [(TUR, AMY, BUL), SUP, (TUR, FLT, BLA), MTO, CON])
         self.assertMapState(start_state)
-    def ptest_6D30_illegal_default(self):
+    def test_6D30_illegal_default(self):
         ''' 6.D.30.d.b  MOVE WITHOUT COAST AND SUPPORT
             Also subject to issue 4.B.1 (default_coast).
         '''#'''
@@ -1613,7 +1613,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [TUR, AMY, BUL],
         ])
-    def ptest_6D31_illegal(self):
+    def test_6D31_illegal(self):
         "6.D.31.d  A TRICKY IMPOSSIBLE SUPPORT"
         self.judge.datc.datc_4e1 = 'd'
         start_state = [
@@ -1624,7 +1624,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, RUM), CTO, ARM, VIA, [BLA]])
         self.illegalOrder(TUR, [(TUR, FLT, BLA), SUP, (AUS, AMY, RUM), MTO, ARM])
         self.assertMapState(start_state)
-    def ptest_6D32_illegal(self):
+    def test_6D32_illegal(self):
         "6.D.32.d  A MISSING FLEET"
         self.judge.datc.datc_4e1 = 'd'
         start_state = [
@@ -1642,7 +1642,7 @@ class DATC_6_D_Quasi(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_E(DiplomacyAdjudicatorTestCase):
     "6.E.  HEAD TO HEAD BATTLES AND BELEAGUERED GARRISON"
-    def ptest_6E1(self):
+    def test_6E1(self):
         "6.E.1.  DISLODGED UNIT HAS NO EFFECT ON ATTACKERS AREA"
         start_state = [
             [GER, AMY, BER],
@@ -1661,7 +1661,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
             [GER, AMY, SIL],
             [RUS, AMY, PRU, MRT],
         ])
-    def ptest_6E2(self):
+    def test_6E2(self):
         "6.E.2.  NO SELF DISLODGEMENT IN HEAD TO HEAD BATTLE"
         start_state = [
             [GER, AMY, BER],
@@ -1673,7 +1673,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, KIE), MTO, BER])
         self.legalOrder(GER, [(GER, AMY, MUN), SUP, (GER, AMY, BER), MTO, KIE])
         self.assertMapState(start_state)
-    def ptest_6E3(self):
+    def test_6E3(self):
         "6.E.3.  NO HELP IN DISLODGING OWN UNIT"
         start_state = [
             [GER, AMY, BER],
@@ -1685,7 +1685,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, MUN), SUP, (ENG, FLT, KIE), MTO, BER])
         self.legalOrder(ENG, [(ENG, FLT, KIE), MTO, BER])
         self.assertMapState(start_state)
-    def ptest_6E4(self):
+    def test_6E4(self):
         "6.E.4.  NON-DISLODGED LOSER HAS STILL EFFECT"
         start_state = [
             [GER, FLT, HOL],
@@ -1711,7 +1711,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, RUH), MTO, HOL])
         self.legalOrder(AUS, [(AUS, AMY, KIE), SUP, (AUS, AMY, RUH), MTO, HOL])
         self.assertMapState(start_state)
-    def ptest_6E5(self):
+    def test_6E5(self):
         "6.E.5.  LOSER DISLODGED BY ANOTHER ARMY HAS STILL EFFECT"
         start_state = [
             [GER, FLT, HOL],
@@ -1751,7 +1751,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, KIE],
             [AUS, AMY, RUH],
         ])
-    def ptest_6E6(self):
+    def test_6E6(self):
         "6.E.6.  NOT DISLODGE BECAUSE OF OWN SUPPORT HAS STILL EFFECT"
         start_state = [
             [GER, FLT, HOL],
@@ -1771,7 +1771,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, RUH), MTO, HOL])
         self.legalOrder(AUS, [(AUS, AMY, KIE), SUP, (AUS, AMY, RUH), MTO, HOL])
         self.assertMapState(start_state)
-    def ptest_6E7(self):
+    def test_6E7(self):
         "6.E.7.  NO SELF DISLODGEMENT WITH BELEAGUERED GARRISON"
         start_state = [
             [ENG, FLT, NTH],
@@ -1789,7 +1789,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NWY), MTO, NTH])
         self.legalOrder(RUS, [(RUS, FLT, SKA), SUP, (RUS, FLT, NWY), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6E8(self):
+    def test_6E8(self):
         "6.E.8.  NO SELF DISLODGEMENT WITH BELEAGUERED GARRISON AND HEAD TO HEAD BATTLE"
         start_state = [
             [ENG, FLT, NTH],
@@ -1807,7 +1807,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NWY), MTO, NTH])
         self.legalOrder(RUS, [(RUS, FLT, SKA), SUP, (RUS, FLT, NWY), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6E9(self):
+    def test_6E9(self):
         "6.E.9.  ALMOST SELF DISLODGEMENT WITH BELEAGUERED GARRISON"
         start_state = [
             [ENG, FLT, NTH],
@@ -1832,7 +1832,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, SKA],
             [RUS, FLT, NTH],
         ])
-    def ptest_6E10(self):
+    def test_6E10(self):
         "6.E.10.  ALMOST CIRCULAR MOVEMENT WITH NO SELF DISLODGEMENT WITH BELEAGUERED GARRISON"
         start_state = [
             [ENG, FLT, NTH],
@@ -1852,7 +1852,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NWY), MTO, NTH])
         self.legalOrder(RUS, [(RUS, FLT, SKA), SUP, (RUS, FLT, NWY), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6E11(self):
+    def test_6E11(self):
         "6.E.11.  NO SELF DISLODGEMENT WITH BELEAGUERED GARRISON, UNIT SWAP WITH ADJACENT CONVOYING AND TWO COASTS"
         start_state = [
             [FRA, AMY, SPA],
@@ -1880,7 +1880,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, [SPA, NCS]],
             [ITA, FLT, WES],
         ])
-    def ptest_6E12(self):
+    def test_6E12(self):
         "6.E.12.  SUPPORT ON ATTACK ON OWN UNIT CAN BE USED FOR OTHER MEANS"
         start_state = [
             [AUS, AMY, BUD],
@@ -1896,7 +1896,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, AMY, GAL), MTO, BUD])
         self.legalOrder(RUS, [(RUS, AMY, RUM), SUP, (RUS, AMY, GAL), MTO, BUD])
         self.assertMapState(start_state)
-    def ptest_6E13(self):
+    def test_6E13(self):
         "6.E.13.  THREE WAY BELEAGUERED GARRISON"
         start_state = [
             [ENG, FLT, EDI],
@@ -1916,7 +1916,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NWG), MTO, NTH])
         self.legalOrder(RUS, [(RUS, FLT, NWY), SUP, (RUS, FLT, NWG), MTO, NTH])
         self.assertMapState(start_state)
-    def ptest_6E14(self):
+    def test_6E14(self):
         "6.E.14.  ILLEGAL HEAD TO HEAD BATTLE CAN STILL DEFEND"
         start_state = [
             [ENG, AMY, LVP],
@@ -1926,7 +1926,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ENG, [(ENG, AMY, LVP), MTO, EDI])
         self.illegalOrder(RUS, [(RUS, FLT, EDI), MTO, LVP])
         self.assertMapState(start_state)
-    def ptest_6E15(self):
+    def test_6E15(self):
         "6.E.15.  THE FRIENDLY HEAD TO HEAD BATTLE"
         start_state = [
             [ENG, FLT, HOL],
@@ -1955,7 +1955,7 @@ class DATC_6_E(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_F(DiplomacyAdjudicatorTestCase):
     "6.F.  CONVOYS"
-    def ptest_6F1(self):
+    def test_6F1(self):
         "6.F.1.  NO CONVOY IN COASTAL AREAS"
         start_state = [
             [TUR, AMY, GRE],
@@ -1969,7 +1969,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(TUR, [(TUR, FLT, CON), CVY, (TUR, AMY, GRE), CTO, SEV])
         self.illegalOrder(TUR, [(TUR, FLT, BLA), CVY, (TUR, AMY, GRE), CTO, SEV])
         self.assertMapState(start_state)
-    def ptest_6F2(self):
+    def test_6F2(self):
         "6.F.2.  AN ARMY BEING CONVOYED CAN BOUNCE AS NORMAL"
         start_state = [
             [ENG, FLT, ECH],
@@ -1981,7 +1981,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BRE])
         self.legalOrder(FRA, [(FRA, AMY, PAR), MTO, BRE])
         self.assertMapState(start_state)
-    def ptest_6F3(self):
+    def test_6F3(self):
         "6.F.3.  AN ARMY BEING CONVOYED CAN RECEIVE SUPPORT"
         start_state = [
             [ENG, FLT, ECH],
@@ -2000,7 +2000,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, MAO],
             [FRA, AMY, PAR],
         ])
-    def ptest_6F4(self):
+    def test_6F4(self):
         "6.F.4.  AN ATTACKED CONVOY IS NOT DISRUPTED"
         start_state = [
             [ENG, FLT, NTH],
@@ -2016,7 +2016,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, HOL],
             [GER, FLT, SKA],
         ])
-    def ptest_6F5(self):
+    def test_6F5(self):
         "6.F.5.  A BELEAGUERED CONVOY IS NOT DISRUPTED"
         steady_state = [
             [ENG, FLT, NTH],
@@ -2037,7 +2037,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [ENG, AMY, HOL],
         ])
-    def ptest_6F6(self):
+    def test_6F6(self):
         "6.F.6.  DISLODGED CONVOY DOES NOT CUT SUPPORT"
         steady_state = [
             [ENG, AMY, LON],
@@ -2063,7 +2063,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, NTH, MRT],
             [GER, FLT, NTH],
         ])
-    def ptest_6F7(self):
+    def test_6F7(self):
         "6.F.7.  DISLODGED CONVOY DOES NOT CAUSE CONTESTED AREA"
         steady_state = [
             [ENG, AMY, LON],
@@ -2086,7 +2086,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
             [GER, FLT, NTH],
             [ENG, FLT, HOL],
         ])
-    def ptest_6F8(self):
+    def test_6F8(self):
         "6.F.8.  DISLODGED CONVOY DOES NOT CAUSE A BOUNCE"
         steady_state = [
             [ENG, AMY, LON],
@@ -2111,7 +2111,7 @@ class DATC_6_F(DiplomacyAdjudicatorTestCase):
 class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
     "6.F.  MULTI-ROUTE CONVOYS"
     # All depend on or relate to 4.A.1 (disrupt_all)
-    def ptest_6F9_any(self):
+    def test_6F9_any(self):
         "6.F.9.a  DISLODGE OF MULTI-ROUTE CONVOY"
         self.judge.datc.datc_4a1 = 'a'
         steady_state = [
@@ -2132,7 +2132,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F10_any(self):
+    def test_6F10_any(self):
         "6.F.10.a  DISLODGE OF MULTI-ROUTE CONVOY WITH FOREIGN FLEET"
         self.judge.datc.datc_4a1 = 'a'
         steady_state = [
@@ -2154,7 +2154,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F11_any(self):
+    def test_6F11_any(self):
         "6.F.11.a  DISLODGE OF MULTI-ROUTE CONVOY WITH ONLY FOREIGN FLEETS"
         self.judge.datc.datc_4a1 = 'a'
         steady_state = [
@@ -2175,7 +2175,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F12_any(self):
+    def test_6F12_any(self):
         "6.F.12.a  DISLODGED CONVOYING FLEET NOT ON ROUTE"
         self.judge.datc.datc_4a1 = 'a'
         steady_state = [
@@ -2197,7 +2197,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, IRI, MRT],
             [FRA, FLT, IRI],
         ])
-    def ptest_6F13_any(self):
+    def test_6F13_any(self):
         "6.F.13.a  THE UNWANTED ALTERNATIVE"
         # 4.A.6, as well
         self.judge.datc.datc_4a1 = 'a'
@@ -2221,7 +2221,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, NTH],
         ])
     
-    def ptest_6F9_all(self):
+    def test_6F9_all(self):
         "6.F.9.b  DISLODGE OF MULTI-ROUTE CONVOY"
         self.judge.datc.datc_4a1 = 'b'
         steady_state = [
@@ -2243,7 +2243,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F10_all(self):
+    def test_6F10_all(self):
         "6.F.10.b  DISLODGE OF MULTI-ROUTE CONVOY WITH FOREIGN FLEET"
         self.judge.datc.datc_4a1 = 'b'
         steady_state = [
@@ -2265,7 +2265,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F11_all(self):
+    def test_6F11_all(self):
         "6.F.11.b  DISLODGE OF MULTI-ROUTE CONVOY WITH ONLY FOREIGN FLEETS"
         self.judge.datc.datc_4a1 = 'b'
         steady_state = [
@@ -2287,7 +2287,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    def ptest_6F12_all(self):
+    def test_6F12_all(self):
         "6.F.12.b  DISLODGED CONVOYING FLEET NOT ON ROUTE"
         self.judge.datc.datc_4a1 = 'b'
         steady_state = [
@@ -2309,7 +2309,7 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, IRI, MRT],
             [FRA, FLT, IRI],
         ])
-    def ptest_6F13_all(self):
+    def test_6F13_all(self):
         "6.F.13.b  THE UNWANTED ALTERNATIVE"
         # 4.A.6, as well
         self.judge.datc.datc_4a1 = 'b'
@@ -2340,7 +2340,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         super(DATC_6_F_Paradox_Szykman, self).setUp()
         self.datc_4a2 = 'd'
     
-    def ptest_6F14(self):
+    def test_6F14(self):
         "6.F.14.d  SIMPLE CONVOY PARADOX"
         steady_state = [
             [ENG, FLT, LON],
@@ -2358,7 +2358,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
             [FRA, FLT, ECH, MRT],
         ])
-    def ptest_6F15(self):
+    def test_6F15(self):
         "6.F.15.d  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
         steady_state = [
             [ENG, FLT, LON],
@@ -2383,7 +2383,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH, MRT],
             [ITA, AMY, WAL],
         ])
-    def ptest_6F16(self):
+    def test_6F16(self):
         "6.F.16.d  PANDIN'S PARADOX"
         steady_state = [
             [ENG, FLT, LON],
@@ -2401,7 +2401,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
         self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
         self.assertMapState(steady_state)
-    def ptest_6F17(self):
+    def test_6F17(self):
         "6.F.17.d  PANDIN'S EXTENDED PARADOX"
         steady_state = [
             [ENG, FLT, LON],
@@ -2423,7 +2423,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6F18(self):
+    def test_6F18(self):
         "6.F.18.d  BETRAYAL PARADOX"
         steady_state = [
             [ENG, FLT, NTH],
@@ -2443,7 +2443,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, SKA), MTO, NTH])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6F19_any(self):
+    def test_6F19_any(self):
         "6.F.19.d.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
         self.judge.datc.datc_4a1 = 'a'
@@ -2465,7 +2465,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, TYS, MRT],
             [ITA, FLT, TYS],
         ])
-    def ptest_6F19_all(self):
+    def test_6F19_all(self):
         "6.F.19.d.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
         self.judge.datc.datc_4a1 = 'b'
@@ -2485,7 +2485,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6F20_any(self):
+    def test_6F20_any(self):
         "6.F.20.d.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
         self.judge.datc.datc_4a1 = 'a'
@@ -2509,7 +2509,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ION, MRT],
             [TUR, FLT, ION],
         ])
-    def ptest_6F20_all(self):
+    def test_6F20_all(self):
         "6.F.20.d.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
         self.judge.datc.datc_4a1 = 'b'
@@ -2533,7 +2533,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ION, MRT],
             [TUR, FLT, ION],
         ])
-    def ptest_6F21(self):
+    def test_6F21(self):
         "6.F.21.d  DAD'S ARMY CONVOY"
         steady_state = [
             [RUS, AMY, EDI],
@@ -2561,7 +2561,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, NAO, MRT],
             [ENG, FLT, CLY, MRT],
         ])
-    def ptest_6F22(self):
+    def test_6F22(self):
         "6.F.22.d  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
         steady_state = [
             [ENG, FLT, LON],
@@ -2589,7 +2589,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH],
             [RUS, FLT, NTH, MRT],
         ])
-    def ptest_6F22_extended(self):
+    def test_6F22_extended(self):
         ''' 6.F.22.extended.d  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
             The Russian move from St Petersbug to Edinburgh is not part
             of the paradox (and the paradox breaker should not be applied
@@ -2629,7 +2629,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, NTH, MRT],
             [RUS, AMY, EDI],
         ])
-    def ptest_6F23(self):
+    def test_6F23(self):
         "6.F.23.d  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
         steady_state = [
             [ENG, FLT, EDI],
@@ -2657,7 +2657,7 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6F24(self):
+    def test_6F24(self):
         "6.F.24.d  SECOND ORDER PARADOX WITH NO RESOLUTION"
         steady_state = [
             [ENG, FLT, LON],
@@ -2690,7 +2690,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
     "6.G.  CONVOYING TO ADJACENT PLACES"
     # This batch always uses CTO for the possibly convoyed units;
     # that's often not the intent, but MTO guessing is not yet implemented.
-    def ptest_6G1(self):
+    def test_6G1(self):
         "6.G.1.c  TWO UNITS CAN SWAP PLACES BY CONVOY"
         steady_state = [
             [ENG, FLT, SKA],
@@ -2706,7 +2706,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G2(self):
+    def test_6G2(self):
         "6.G.2.c  KIDNAPPING AN ARMY"
         steady_state = [
             [GER, FLT, SKA],
@@ -2722,7 +2722,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G3(self):
+    def test_6G3(self):
         "6.G.3.c  KIDNAPPING WITH A DISRUPTED CONVOY"
         steady_state = [
             [FRA, AMY, PIC],
@@ -2742,7 +2742,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [ENG, FLT, ECH, MRT],
         ])
-    def ptest_6G4(self):
+    def test_6G4(self):
         "6.G.4.c  KIDNAPPING WITH A DISRUPTED CONVOY AND OPPOSITE MOVE"
         steady_state = [
             [FRA, AMY, PIC],
@@ -2764,7 +2764,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [ENG, FLT, ECH, MRT],
         ])
-    def ptest_6G5(self):
+    def test_6G5(self):
         "6.G.5.c  SWAPPING WITH INTENT"
         steady_state = [
             [ITA, FLT, TYS],
@@ -2782,7 +2782,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, APU],
             [TUR, AMY, ROM],
         ])
-    def ptest_6G6(self):
+    def test_6G6(self):
         "6.G.6.c  SWAPPING WITH UNINTENDED INTENT"
         steady_state = [
             [ENG, FLT, ECH],
@@ -2806,7 +2806,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, EDI],
             [GER, AMY, LVP],
         ])
-    def ptest_6G8(self):
+    def test_6G8(self):
         "6.G.8.c  EXPLICIT CONVOY THAT ISN'T THERE"
         steady_state = [
             [FRA, AMY, BEL],
@@ -2822,7 +2822,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, HEL],
             [ENG, AMY, KIE],
         ])
-    def ptest_6G9(self):
+    def test_6G9(self):
         "6.G.9.c  SWAPPED OR DISLODGED?"
         steady_state = [
             [ENG, FLT, SKA],
@@ -2840,7 +2840,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G12(self):
+    def test_6G12(self):
         "6.G.12.c  SWAPPING TWO UNITS WITH TWO CONVOYS"
         steady_state = [
             [ENG, FLT, NWG],
@@ -2864,7 +2864,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, EDI],
             [GER, AMY, LVP],
         ])
-    def ptest_6G16(self):
+    def test_6G16(self):
         "6.G.16.c  THE TWO UNIT IN ONE AREA BUG, MOVING BY CONVOY"
         steady_state = [
             [ENG, AMY, DEN],
@@ -2888,7 +2888,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G17(self):
+    def test_6G17(self):
         "6.G.17.c  THE TWO UNIT IN ONE AREA BUG, MOVING OVER LAND"
         steady_state = [
             [ENG, AMY, DEN],
@@ -2912,7 +2912,7 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G18(self):
+    def test_6G18(self):
         "6.G.18.c  THE TWO UNIT IN ONE AREA BUG, WITH DOUBLE CONVOY"
         steady_state = [
             [ENG, FLT, NTH],
@@ -2944,7 +2944,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
     # Most of these depend on or relate to 4.A.3
     # This batch always uses MTO for the possibly convoyed units;
     # unfortunately, the judge never considers convoys then.
-    def ptest_6G1(self):
+    def test_6G1(self):
         "6.G.1.m  TWO UNITS CAN SWAP PLACES BY CONVOY"
         steady_state = [
             [ENG, FLT, SKA],
@@ -2958,7 +2958,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6G2(self):
+    def test_6G2(self):
         "6.G.2.m  KIDNAPPING AN ARMY"
         steady_state = [
             [GER, FLT, SKA],
@@ -2972,7 +2972,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, SKA), CVY, (ENG, AMY, NWY), CTO, SWE])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6G3(self):
+    def test_6G3(self):
         "6.G.3.m  KIDNAPPING WITH A DISRUPTED CONVOY"
         steady_state = [
             [FRA, AMY, BUR],
@@ -2993,7 +2993,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [ENG, FLT, ECH, MRT],
         ])
-    def ptest_6G4(self):
+    def test_6G4(self):
         "6.G.4.m  KIDNAPPING WITH A DISRUPTED CONVOY AND OPPOSITE MOVE"
         steady_state = [
             [FRA, AMY, BUR],
@@ -3017,7 +3017,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH, MRT],
             [ENG, AMY, BEL, MRT],
         ])
-    def ptest_6G5(self):
+    def test_6G5(self):
         "6.G.5.m  SWAPPING WITH INTENT"
         steady_state = [
             [ITA, FLT, TYS],
@@ -3033,7 +3033,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, ION), CVY, (TUR, AMY, APU), CTO, ROM])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6G6(self):
+    def test_6G6(self):
         "6.G.6.m  SWAPPING WITH UNINTENDED INTENT"
         steady_state = [
             [ENG, FLT, ECH],
@@ -3055,7 +3055,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, EDI])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6G9(self):
+    def test_6G9(self):
         "6.G.9.m  SWAPPED OR DISLODGED?"
         steady_state = [
             [ENG, FLT, SKA],
@@ -3077,7 +3077,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
 class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     "6.G.  CONVOYING TO ADJACENT PLACES"
     # Many of these depend on or relate to 4.A.3
-    def ptest_6G7_always(self):
+    def test_6G7_always(self):
         "6.G.7.a  SWAPPING WITH ILLEGAL INTENT"
         self.judge.datc.datc_4a3 = 'a'
         steady_state = [
@@ -3096,7 +3096,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G7_swap(self):
+    def test_6G7_swap(self):
         "6.G.7.b  SWAPPING WITH ILLEGAL INTENT"
         self.judge.datc.datc_4a3 = 'b'
         steady_state = [
@@ -3115,7 +3115,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G7_undisrupted(self):
+    def test_6G7_undisrupted(self):
         "6.G.7.c  SWAPPING WITH ILLEGAL INTENT"
         self.judge.datc.datc_4a3 = 'c'
         steady_state = [
@@ -3134,7 +3134,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G7_intent_quasi(self):
+    def test_6G7_intent_quasi(self):
         "6.G.7.d.a  SWAPPING WITH ILLEGAL INTENT"
         # 4.E.1 (quasi_legal)
         self.judge.datc.datc_4a3 = 'd'
@@ -3157,7 +3157,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G7_intent_illegal(self):
+    def test_6G7_intent_illegal(self):
         "6.G.7.d.d  SWAPPING WITH ILLEGAL INTENT"
         # 4.E.1 (quasi_legal)
         self.judge.datc.datc_4a3 = 'd'
@@ -3178,7 +3178,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
         self.assertMapState(steady_state + [
         ])
-    def ptest_6G7_explicit(self):
+    def test_6G7_explicit(self):
         "6.G.7.e  SWAPPING WITH ILLEGAL INTENT"
         self.judge.datc.datc_4a3 = 'e'
         steady_state = [
@@ -3224,7 +3224,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, SWE, MRT],
             [FRA, FLT, NWY],
         ])
-    def ptest_6G10_bounce(self):
+    def test_6G10_bounce(self):
         "6.G.10.b  SWAPPED OR AN HEAD TO HEAD BATTLE?"
         # 4.A.7 (convoy_bounce)
         self.judge.datc.convoy_bounce = True
@@ -3252,7 +3252,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, SWE, MRT],
         ])
-    def ptest_6G11_Szykman(self):
+    def test_6G11_Szykman(self):
         "6.G.11.d  A CONVOY TO AN ADJACENT PLACE WITH A PARADOX"
         # 4.A.2 (paradox)
         # This situation becomes paradoxical if we must choose
@@ -3276,7 +3276,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, NWY, MRT],
             [RUS, AMY, NWY],
         ])
-    def ptest_6G13_given(self):
+    def test_6G13_given(self):
         "6.G.13.a  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY"
         # 4.A.4 (convoy_cuts)
         self.judge.datc.convoy_cuts = False
@@ -3343,7 +3343,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, SWE, MRT],
         ])
-    def ptest_6G14_bounce(self):
+    def test_6G14_bounce(self):
         "6.G.14.b  BOUNCE BY CONVOY TO ADJACENT PLACE"
         # 4.A.7 (convoy_bounce)
         self.judge.datc.convoy_bounce = True
@@ -3395,7 +3395,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BEL],
             [FRA, AMY, BEL, MRT],
         ])
-    def ptest_6G15_bounce(self):
+    def test_6G15_bounce(self):
         "6.G.15.b  BOUNCE AND DISLODGE WITH DOUBLE CONVOY"
         # 4.A.7 (convoy_bounce)
         self.judge.datc.convoy_bounce = True
@@ -3422,7 +3422,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_H(DiplomacyAdjudicatorTestCase):
     "6.H.  RETREATING"
-    def ptest_6H1(self):
+    def test_6H1(self):
         "6.H.1.  NO SUPPORTS DURING RETREAT"
         steady_state = [
             [AUS, AMY, SER],
@@ -3455,7 +3455,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, TRI],
             [ITA, FLT, GRE],
         ])
-    def ptest_6H2(self):
+    def test_6H2(self):
         "6.H.2.  NO SUPPORTS FROM RETREATING UNIT"
         steady_state = [
             [ENG, FLT, YOR],
@@ -3495,7 +3495,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [GER, AMY, HOL],
             [RUS, AMY, NWY],
         ])
-    def ptest_6H3(self):
+    def test_6H3(self):
         "6.H.3.  NO CONVOY DURING RETREAT"
         steady_state = [
             [ENG, FLT, NTH],
@@ -3518,7 +3518,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [GER, AMY, HOL],
         ])
-    def ptest_6H4(self):
+    def test_6H4(self):
         "6.H.4.  NO OTHER MOVES DURING RETREAT"
         steady_state = [
             [ENG, FLT, NTH],
@@ -3542,7 +3542,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BEL],
             [GER, AMY, HOL],
         ])
-    def ptest_6H5(self):
+    def test_6H5(self):
         "6.H.5.  A UNIT MAY NOT RETREAT TO THE AREA FROM WHICH IT IS ATTACKED"
         steady_state = [
             [RUS, FLT, CON],
@@ -3562,7 +3562,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [RUS, FLT, ANK],
         ])
-    def ptest_6H5_modified(self):
+    def test_6H5_modified(self):
         "6.H.5.modified  A UNIT MAY NOT RETREAT TO AN OCCUPIED AREA"
         steady_state = [
             [RUS, FLT, CON],
@@ -3582,7 +3582,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [RUS, FLT, ANK],
         ])
-    def ptest_6H6(self):
+    def test_6H6(self):
         "6.H.6.  UNIT MAY NOT RETREAT TO A CONTESTED AREA"
         steady_state = [
             [AUS, AMY, BUD],
@@ -3606,7 +3606,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [AUS, AMY, VIE],
         ])
-    def ptest_6H7(self):
+    def test_6H7(self):
         "6.H.7.  MULTIPLE RETREAT TO SAME AREA WILL DISBAND UNITS"
         steady_state = [
             [AUS, AMY, BUD],
@@ -3636,7 +3636,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, VIE],
             [GER, AMY, BOH],
         ])
-    def ptest_6H8(self):
+    def test_6H8(self):
         "6.H.8.  TRIPLE RETREAT TO SAME AREA WILL DISBAND UNITS"
         steady_state = [
             [ENG, FLT, YOR],
@@ -3676,7 +3676,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [GER, AMY, HOL],
             [RUS, AMY, NWY],
         ])
-    def ptest_6H9(self):
+    def test_6H9(self):
         "6.H.9.  DISLODGED UNIT WILL NOT MAKE ATTACKERS AREA CONTESTED"
         steady_state = [
             [ENG, FLT, DEN],
@@ -3707,7 +3707,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [GER, AMY, PRU],
             [GER, FLT, BER],
         ])
-    def ptest_6H10(self):
+    def test_6H10(self):
         "6.H.10.  NOT RETREATING TO ATTACKER DOES NOT MEAN CONTESTED"
         steady_state = [
             [GER, AMY, MUN],
@@ -3738,7 +3738,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [GER, AMY, KIE],
             [RUS, AMY, PRU],
         ])
-    def ptest_6H11_blocked(self):
+    def test_6H11_blocked(self):
         "6.H.11.a  RETREAT WHEN DISLODGED BY ADJACENT CONVOY"
         # 4.A.3, 4.A.5
         steady_state = [
@@ -3793,7 +3793,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, MAR],
             [ITA, AMY, GAS],
         ])
-    def ptest_6H12_blocked(self):
+    def test_6H12_blocked(self):
         "6.H.12.a  RETREAT WHEN DISLODGED BY ADJACENT CONVOY WHILE TRYING TO DO THE SAME"
         # 4.A.3, 4.A.5
         steady_state = [
@@ -3872,7 +3872,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [RUS, AMY, LVP],
         ])
-    def ptest_6H13(self):
+    def test_6H13(self):
         "6.H.13.  NO RETREAT WITH CONVOY IN MAIN PHASE"
         steady_state = [
             [ENG, FLT, ECH],
@@ -3894,7 +3894,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, PIC],
         ])
-    def ptest_6H14(self):
+    def test_6H14(self):
         "6.H.14.  NO RETREAT WITH SUPPORT IN MAIN PHASE"
         steady_state = [
             [ENG, FLT, ECH],
@@ -3926,7 +3926,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, PIC],
             [GER, AMY, BUR],
         ])
-    def ptest_6H15(self):
+    def test_6H15(self):
         "6.H.15.  NO COASTAL CRAWL IN RETREAT"
         steady_state = [
             [FRA, FLT, MAO],
@@ -3946,7 +3946,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, FLT, POR],
         ])
-    def ptest_6H16(self):
+    def test_6H16(self):
         "6.H.16.  CONTESTED FOR BOTH COASTS"
         steady_state = [
             [FRA, FLT, MAO],
@@ -3973,7 +3973,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_I(DiplomacyAdjudicatorTestCase):
     "6.I.  BUILDING"
-    def ptest_6I1(self):
+    def test_6I1(self):
         "6.I.1.  TOO MANY BUILD ORDERS"
         # 4.D.4
         steady_state = [
@@ -3987,7 +3987,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [GER, AMY, KIE],
         ])
-    def ptest_6I2(self):
+    def test_6I2(self):
         "6.I.2.  FLEETS CAN NOT BE BUILD IN LAND AREAS"
         # 4.C.4
         steady_state = [
@@ -3998,7 +3998,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, steady_state)
         self.illegalOrder(RUS, [(RUS, FLT, MOS), BLD])
         self.assertMapState(steady_state)
-    def ptest_6I3(self):
+    def test_6I3(self):
         "6.I.3.  SUPPLY CENTER MUST BE EMPTY FOR BUILDING"
         steady_state = [
             [GER, AMY, BER],
@@ -4007,7 +4007,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, steady_state)
         self.illegalOrder(GER, [(GER, AMY, BER), BLD])
         self.assertMapState(steady_state)
-    def ptest_6I4(self):
+    def test_6I4(self):
         "6.I.4.  BOTH COASTS MUST BE EMPTY FOR BUILDING"
         steady_state = [
             [RUS, FLT, [STP, SCS]],
@@ -4017,7 +4017,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, steady_state)
         self.illegalOrder(RUS, [(RUS, FLT, [STP, NCS]), BLD])
         self.assertMapState(steady_state)
-    def ptest_6I5(self):
+    def test_6I5(self):
         "6.I.5.  BUILDING IN HOME SUPPLY CENTER THAT IS NOT OWNED"
         steady_state = [
             [GER, AMY, MUN],
@@ -4026,7 +4026,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, steady_state)
         self.illegalOrder(GER, [(GER, AMY, BER), BLD])
         self.assertMapState(steady_state)
-    def ptest_6I6(self):
+    def test_6I6(self):
         "6.I.6.  BUILDING IN OWNED SUPPLY CENTER THAT IS NOT A HOME SUPPLY CENTER"
         steady_state = [
             [GER, AMY, BER],
@@ -4037,7 +4037,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, steady_state)
         self.illegalOrder(GER, [(GER, AMY, WAR), BLD])
         self.assertMapState(steady_state)
-    def ptest_6I7(self):
+    def test_6I7(self):
         "6.I.7.  ONLY ONE BUILD IN A HOME SUPPLY CENTER"
         steady_state = [
             [RUS, AMY, WAR],
@@ -4052,7 +4052,7 @@ class DATC_6_I(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_J(DiplomacyAdjudicatorTestCase):
     "6.J.  CIVIL DISORDER AND DISBANDS"
-    def ptest_6J1(self):
+    def test_6J1(self):
         "6.J.1.  TOO MANY REMOVE ORDERS"
         # 4.D.6
         steady_state = [
@@ -4066,7 +4066,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
         self.legalOrder(FRA, [(FRA, AMY, PIC), REM])
         self.illegalOrder(FRA, [(FRA, AMY, PAR), REM])
         self.assertMapState(steady_state)
-    def ptest_6J2(self):
+    def test_6J2(self):
         "6.J.2.  REMOVING THE SAME UNIT TWICE"
         steady_state = [
             [FRA, AMY, PIC],
@@ -4079,7 +4079,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
         self.legalOrder(FRA, [(FRA, AMY, PAR), REM])
         self.legalOrder(FRA, [(FRA, AMY, PAR), REM])
         self.assertMapState(steady_state)
-    def ptest_6J3(self):
+    def test_6J3(self):
         "6.J.3.  CIVIL DISORDER TWO ARMIES WITH DIFFERENT DISTANCE"
         steady_state = [
             [RUS, AMY, LVN],
@@ -4089,7 +4089,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, SWE],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J4(self):
+    def test_6J4(self):
         "6.J.4.  CIVIL DISORDER TWO ARMIES WITH EQUAL DISTANCE"
         steady_state = [
             [RUS, AMY, UKR],
@@ -4099,7 +4099,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, LVN],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J5(self):
+    def test_6J5(self):
         "6.J.5  CIVIL DISORDER TWO FLEETS WITH DIFFERENT DISTANCE"
         steady_state = [
             [RUS, FLT, SKA],
@@ -4119,7 +4119,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, BER],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J7(self):
+    def test_6J7(self):
         "6.J.7.  CIVIL DISORDER TWO FLEETS AND ARMY WITH EQUAL DISTANCE"
         steady_state = [
             [RUS, AMY, BOH],
@@ -4130,7 +4130,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, NTH],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J8(self):
+    def test_6J8(self):
         "6.J.8.  CIVIL DISORDER A FLEET WITH SHORTER DISTANCE THEN THE ARMY"
         steady_state = [
             [RUS, FLT, BAL],
@@ -4140,7 +4140,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, TYR],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J9(self):
+    def test_6J9(self):
         "6.J.9.  CIVIL DISORDER MUST BE COUNTED FROM BOTH COASTS"
         steady_state = [
             [RUS, FLT, SKA],
@@ -4150,7 +4150,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, TYR],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J10(self):
+    def test_6J10(self):
         "6.J.10.  CIVIL DISORDER COUNTING CONVOYING DISTANCE"
         # 4.D.8
         steady_state = [
@@ -4162,7 +4162,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, SIL],
         ])
         self.assertMapState(steady_state)
-    def ptest_6J11(self):
+    def test_6J11(self):
         "6.J.11.  CIVIL DISORDER COUNTING DISTANCE WITHOUT CONVOYING FLEET"
         # 4.D.8
         steady_state = [

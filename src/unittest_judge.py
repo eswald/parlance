@@ -12,7 +12,7 @@ SWI = Token('SWI', 0x504B)
 
 class Judge_Movement(DiplomacyAdjudicatorTestCase):
     ''' Judge movement phase adjudication'''
-    def ptest_army_move_inland(self):
+    def test_army_move_inland(self):
         "Army movement to adjacent inland sector"
         #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
@@ -22,7 +22,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [RUS, AMY, WAR],
         ])
-    def ptest_army_move_coastal(self):
+    def test_army_move_coastal(self):
         "Army movement to adjacent coastal sector"
         self.init_state(SPR, 1901, [
             [RUS, AMY, SEV],
@@ -31,7 +31,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [RUS, AMY, RUM],
         ])
-    def ptest_army_move_overland(self):
+    def test_army_move_overland(self):
         "Army movement to adjacent overland sector"
         self.init_state(SPR, 1901, [
             [ITA, AMY, VEN],
@@ -40,7 +40,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [ITA, AMY, ROM],
         ])
-    def ptest_fleet_move_coastal(self):
+    def test_fleet_move_coastal(self):
         "Fleet movement to adjacent coastal sector"
         self.init_state(SPR, 1901, [
             [RUS, FLT, SEV],
@@ -49,7 +49,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [RUS, FLT, RUM],
         ])
-    def ptest_fleet_move_sea(self):
+    def test_fleet_move_sea(self):
         "Fleet movement to adjacent sea sector"
         self.init_state(SPR, 1901, [
             [RUS, FLT, BAR],
@@ -58,7 +58,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [RUS, FLT, NWG],
         ])
-    def ptest_move_support(self):
+    def test_move_support(self):
         "Movement with support to dislodge"
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
@@ -73,7 +73,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, WAR],
             [GER, AMY, WAR, MRT],
         ])
-    def ptest_hold_support(self):
+    def test_hold_support(self):
         "Holding with support against supported attack"
         start_state = [
             [RUS, AMY, MOS],
@@ -87,7 +87,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, WAR), HLD])
         self.legalOrder(GER, [(GER, AMY, PRU), SUP, (GER, AMY, WAR), HLD])
         self.assertMapState(start_state)
-    def ptest_convoy(self):
+    def test_convoy(self):
         "Basic convoy"
         #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
@@ -100,7 +100,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
             [ENG, AMY, BRE],
         ])
-    def ptest_support_coastless(self):
+    def test_support_coastless(self):
         "Support to move to an unspecified, ambiguous coast"
         steady_state = [
             [FRA, FLT, GOL],
@@ -136,7 +136,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
                 self.failUnlessEqual(winners, Set(msg[2:-1]))
                 break
         else: raise self.failureException, 'No draw message in %s' % (messages,)
-    def ptest_disordered_draws(self):
+    def test_disordered_draws(self):
         "Draws with different order still the same"
         #self.judge.verbosity = 20
         self.judge.game_opts.PDA = True
@@ -157,7 +157,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.acceptable(TUR, DRW([ENG, FRA, RUS]))
         self.acceptable(AUS, DRW([FRA, RUS, ENG]))
         self.assertDrawn(FRA, ENG, RUS)
-    def ptest_retreat_coasts(self):
+    def test_retreat_coasts(self):
         "Fleets retreat to specific coasts"
         self.init_state(SPR, 1901, [
             [ENG, FLT, GAS],
@@ -173,7 +173,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, GAS],
         ])
         self.assertRetreats(GAS, [BRE, MAO, (SPA, NCS)])
-    def ptest_retreat_contested(self):
+    def test_retreat_contested(self):
         "Units cannot retreat to contested areas"
         steady_state = [
             [FRA, AMY, PAR],
@@ -195,7 +195,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, GAS],
         ])
-    def ptest_multiple_builds(self):
+    def test_multiple_builds(self):
         "Only one unit can be built in a supply center"
         steady_state = [
             [FRA, AMY, PAR],
@@ -207,7 +207,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
-    def ptest_waives(self):
+    def test_waives(self):
         "Builds can be waived without error"
         steady_state = [
             [FRA, AMY, PAR],
@@ -219,7 +219,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
-    def ptest_retreat_into_mover(self):
+    def test_retreat_into_mover(self):
         "A unit cannot retreat into a province someone else moved into."
         steady_state = [
             [TUR, FLT, BLA],
@@ -245,7 +245,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
 
 class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
     "Test cases to reproduce bugs that have been fixed."
-    def ptest_orderless_convoyee(self):
+    def test_orderless_convoyee(self):
         'Error when convoying an army without an order'
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
@@ -255,7 +255,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, steady_state)
         self.legalOrder(TUR, [(TUR, FLT, BLA), CVY, (TUR, AMY, ANK), CTO, SEV])
         self.assertMapState(steady_state)
-    def ptest_retreat_past_attacker_full(self):
+    def test_retreat_past_attacker_full(self):
         "Bug caused by checking a dislodger's province after moving it."
         steady_state = [
             [TUR, FLT, BLA],
@@ -342,7 +342,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         ])
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
         self.assertMapState(new_state)
-    def ptest_retreat_past_attacker_simple(self):
+    def test_retreat_past_attacker_simple(self):
         "Condensed version of the problem above"
         steady_state = [
             [TUR, FLT, BLA],
@@ -362,7 +362,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         ])
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
         self.assertMapState(new_state)
-    def ptest_empty_nation_error(self):
+    def test_empty_nation_error(self):
         ''' An error occurred when processing orders for doubled units.
             This shouldn't happen anyway, but it's worth fixing.
             It currently flags the order as NSU; should it instead be legal?
@@ -373,7 +373,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
             [TUR, AMY, SEV],
         ])
         self.illegalOrder(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, SEV), MTO, RUM])
-    def ptest_removing_last_units_error(self):
+    def test_removing_last_units_error(self):
         ''' The judge used to reject REM orders from just-eliminated countries.
             They get removed anyway, but only when time runs out.
             Fixed by allowing any eliminated country to submit orders,
@@ -428,32 +428,32 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
     # WaiveOrder notes
     
     # MoveOrder notes
-    def ptest_far_impossible_move(self):
+    def test_far_impossible_move(self):
         ''' FAR for movement to non-adjacent province'''
         self.assertOrderNote(ENG, [(ENG, FLT, LON), MTO, NWY], FAR)
-    def ptest_far_inland(self):
+    def test_far_inland(self):
         ''' FAR for fleet movement to inland province'''
         self.assertOrderNote(RUS, [(RUS, FLT, SEV), MTO, UKR], FAR)
-    def ptest_far_sea(self):
+    def test_far_sea(self):
         ''' FAR for army movement to sea province'''
         self.assertOrderNote(FRA, [(FRA, AMY, MAR), MTO, GOL], FAR)
-    def ptest_far_wrong_coast(self):
+    def test_far_wrong_coast(self):
         ''' FAR for fleet movement to a non-adjacent coastline'''
         self.init_state(SPR, 1901, [ (TUR, FLT, BLA) ])
         self.assertOrderNote(TUR, [(TUR, FLT, BLA), MTO, (BUL, SCS)], FAR)
     
     # ConvoyedOrder notes
-    def ptest_far_impossible_convoy(self):
+    def test_far_impossible_convoy(self):
         ''' FAR for an army convoyed with no possible convoy route'''
         self.assertOrderNote(GER, [(GER, AMY, BER), CTO, HOL], FAR)
-    def ptest_far_fleetless_convoy(self):
+    def test_far_fleetless_convoy(self):
         ''' FAR for an army convoyed with a missing convoy fleet'''
         self.init_state(SPR, 1901, [
             [ENG, AMY, NWY],
             [ENG, FLT, NTH],
         ])
         self.assertOrderNote(ENG, [(ENG, AMY, NWY), CTO, KIE, VIA, [NTH, HEL]], FAR)
-    def ptest_far_doubled_convoy(self):
+    def test_far_doubled_convoy(self):
         ''' FAR for convoying an army twice through a sea'''
         self.init_state(SPR, 1901, [
             [ENG, AMY, DEN],
@@ -466,29 +466,29 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         self.assertOrderNote(ENG, [(ENG, AMY, DEN), CTO, HOL, VIA, [NTH, NWG, NAO, IRI, ECH, NTH]], FAR)
     
     # SupportOrder notes
-    def ptest_far_support_hold(self):
+    def test_far_support_hold(self):
         ''' FAR for supporting a hold in a non-adjacent province'''
         self.assertOrderNote(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI)], FAR)
-    def ptest_far_support_move(self):
+    def test_far_support_move(self):
         ''' FAR for supporting movement to a non-adjacent province'''
         self.assertOrderNote(GER, [(GER, AMY, BER), SUP, (GER, AMY, MUN), MTO, RUH], FAR)
-    def ptest_far_support_impossible_move(self):
+    def test_far_support_impossible_move(self):
         ''' FAR for supporting movement to a province the mover can't reach'''
         self.assertOrderNote(GER, [(GER, AMY, BER), SUP, (GER, AMY, MUN), MTO, PRU], FAR)
-    def ptest_far_support_wrong_coast(self):
+    def test_far_support_wrong_coast(self):
         ''' FAR for supporting fleet movement to a non-adjacent coastline'''
         self.init_state(SPR, 1901, [
             [TUR, FLT, BLA],
             [TUR, AMY, CON],
         ])
         self.assertOrderNote(TUR, [(TUR, AMY, CON), SUP, (TUR, FLT, BLA), MTO, (BUL, SCS)], FAR)
-    def ptest_far_support_impossible_convoy(self):
+    def test_far_support_impossible_convoy(self):
         ''' FAR for supporting convoy movement with no possible convoy route'''
         self.assertOrderNote(GER, [(GER, FLT, KIE), SUP, (GER, AMY, BER), MTO, HOL], FAR)
-    def ptest_far_support_fleetless_convoy(self):
+    def test_far_support_fleetless_convoy(self):
         ''' FAR for supporting convoy movement with no fleet to convoy'''
         self.assertOrderNote(GER, [(GER, FLT, KIE), SUP, (GER, AMY, BER), MTO, DEN], FAR)
-    def ptest_far_support_convoy_needing_self(self):
+    def test_far_support_convoy_needing_self(self):
         ''' FAR for supporting convoy movement with convoying fleet'''
         self.init_state(SPR, 1901, [
             [TUR, AMY, ANK],
@@ -498,21 +498,21 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         self.assertOrderNote(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, ANK), MTO, RUM], FAR)
     
     # ConvoyingOrder notes
-    def ptest_far_convoy_impossible_convoy(self):
+    def test_far_convoy_impossible_convoy(self):
         ''' FAR for convoying an army with no possible convoy route'''
         self.init_state(SPR, 1901, [
             [GER, AMY, BER],
             [GER, FLT, HEL],
         ])
         self.assertOrderNote(GER, [(GER, FLT, HEL), CVY, (GER, AMY, BER), CTO, HOL], FAR)
-    def ptest_far_convoy_fleetless_convoy(self):
+    def test_far_convoy_fleetless_convoy(self):
         ''' FAR for convoying an army with a missing convoy fleet'''
         self.init_state(SPR, 1901, [
             [ENG, AMY, NWY],
             [ENG, FLT, NTH],
         ])
         self.assertOrderNote(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, NWY), CTO, KIE], FAR)
-    def ptest_far_convoy_doubled_convoy(self):
+    def test_far_convoy_doubled_convoy(self):
         ''' FAR for convoying an army twice through a sea'''
         self.init_state(SPR, 1901, [
             [ENG, AMY, DEN],
@@ -524,13 +524,13 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrderNote(ENG, [(ENG, FLT, NWG), CVY, (ENG, AMY, DEN), CTO, HOL], FAR)
     
-    def ptest_nsp_move(self):
+    def test_nsp_move(self):
         ''' NSP for movement to a province not on the map'''
         self.assertOrderNote(FRA, [(FRA, AMY, MAR), MTO, SWI], NSP)
-    def ptest_nsp_support(self):
+    def test_nsp_support(self):
         ''' NSP for supporting movement to a province not on the map'''
         self.assertOrderNote(FRA, [(FRA, AMY, MAR), SUP, (GER, AMY, MUN), MTO, SWI], NSP)
-    def ptest_nsp_retreat(self):
+    def test_nsp_retreat(self):
         ''' NSP for retreating to a province not on the map'''
         self.init_state(SPR, 1901, [
             [ITA, AMY, MAR],
@@ -547,15 +547,15 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrderNote(ITA, [(ITA, AMY, MAR), RTO, SWI], NSP)
     
-    def ptest_cst_bicoastal_move(self):
+    def test_cst_bicoastal_move(self):
         ''' CST for moving to unspecified coastline when multiple possible'''
         self.init_state(SPR, 1901, [[FRA, FLT, POR]])
         self.assertOrderNote(FRA, [(FRA, FLT, POR), MTO, SPA], CST)
-    def ptest_cst_bicoastal_build(self):
+    def test_cst_bicoastal_build(self):
         ''' CST for building on unspecified coastline when multiple possible'''
         self.init_state(WIN, 1901, [])
         self.assertOrderNote(RUS, [(RUS, FLT, STP), BLD], CST)
-    def ptest_cst_inland_build(self):
+    def test_cst_inland_build(self):
         ''' CST for building a fleet inland'''
         self.init_state(WIN, 1901, [])
         self.assertOrderNote(RUS, [(RUS, FLT, MOS), BLD], CST)
@@ -565,20 +565,20 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         raise NotImplementedError
     
     # BuildOrder notes
-    def ptest_ysc(self):
+    def test_ysc(self):
         ''' YSC for building on another power's supply center'''
         self.init_state(WIN, 1901, [])
         self.assertOrderNote(RUS, [(RUS, AMY, BER), BLD], YSC)
-    def ptest_esc(self):
+    def test_esc(self):
         ''' ESC for building on an occupied supply center'''
         self.init_state(WIN, 1901, [[RUS, AMY, MOS]])
         self.assertOrderNote(RUS, [(RUS, AMY, MOS), BLD], ESC)
-    def ptest_hsc(self):
+    def test_hsc(self):
         ''' HSC for building on a controlled non-home SC'''
         self.chown_sc(RUS, [RUM])
         self.init_state(WIN, 1901, [])
         self.assertOrderNote(RUS, [(RUS, AMY, RUM), BLD], HSC)
-    def ptest_nsc(self):
+    def test_nsc(self):
         ''' NSC for building on a non-SC province'''
         self.init_state(WIN, 1901, [])
         self.assertOrderNote(RUS, [(RUS, AMY, UKR), BLD], NSC)
