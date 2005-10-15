@@ -466,7 +466,7 @@ class ServerSocket(SocketWrapper):
         return result
     def broadcast(self, message):
         self.log_debug(2, 'ALL << %s', message)
-        for client in self.sockets.itervalues(): client.write(message)
+        for client in self.sockets.values(): client.write(message)
     
     # For compatibility with other types of sockets
     def power_name(self): return '#' + str(self.next_id)
