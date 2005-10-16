@@ -4,6 +4,7 @@
 import unittest, config
 from time      import sleep
 from functions import Verbose_Object
+from language  import ADM
 
 class ServerTestCase(unittest.TestCase):
     "Basic Server Functionality"
@@ -14,7 +15,7 @@ class ServerTestCase(unittest.TestCase):
         '''#'''
         sleep_time = 14
         name = 'Loose connection'
-        def __init__(self, send_method, representation):
+        def __init__(self, send_method, representation, game_id=None):
             from language import NME
             self.log_debug(9, 'Fake player started')
             self.closed = False
@@ -37,7 +38,6 @@ class ServerTestCase(unittest.TestCase):
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             else: self.queue.append(message)
         def admin(self, line):
-            from language import ADM
             self.queue = []
             self.send(ADM(self.name, 'Server: %s' % str(line)))
             sleep(5)
@@ -115,15 +115,16 @@ class ServerTestCase(unittest.TestCase):
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
         for thread in self.threads:
-            if thread.isAlive(): thread.join()
+            while thread.isAlive(): thread.join(1)
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         from network import ServerSocket, Client
         config.option_class.local_opts.update({'number of games' : games})
-        self.server = server = ServerSocket()
-        if not poll: server.polling = None
-        s_thread = server.start()
-        assert s_thread
+        socket = ServerSocket()
+        if not poll: socket.polling = None
+        s_thread = socket.start()
+        self.server = server = socket.server
+        assert s_thread and server
         self.threads.append(s_thread)
         try:
             for dummy in range(games):
@@ -202,6 +203,7 @@ class Server_Basics(ServerTestCase):
 
 class Server_Admin(ServerTestCase):
     "Administrative messages handled by the server"
+    unauth = 'You are not authorized to do that.'
     class Fake_Master(ServerTestCase.Fake_Player):
         name = 'Fake Human Player'
     def setUp(self):
@@ -214,22 +216,38 @@ class Server_Admin(ServerTestCase):
         self.threads.append(master_client.start())
         self.threads.append(backup_client.start())
         self.threads.append(robot_client.start())
-        while not robot_client.player: sleep(5)
         self.master = master_client.player
         self.backup = backup_client.player
         self.robot  = robot_client.player
+        while True:
+            while self.robot.queue:
+                msg = self.robot.queue.pop()
+                if msg[0] is ADM and 'Have 3 players' in msg.fold()[2][0]:
+                    return
+            sleep(5)
+    def assertContains(self, item, series):
+        self.failUnless(item in series,
+                'Expected %r among %r' % (item, series))
+    
     def test_start_bot(self):
+        "Bot starting actually works"
+        count = len(self.server.threads)
+        self.master.admin('start holdbot')
+        self.failIf(self.server.closed)
+        self.failUnless(len(self.server.threads) > count)
+        self.failIf(self.server.threads[-1][1].closed)
+    def test_start_bot_master(self):
         "Whether a game master can start new bots"
-        self.set_verbosity(0)
         responses = self.master.admin('start holdbot')
-        self.failUnless('1 bot started' in responses,
-                'Responses:\n' + str.join('\n', responses))
+        self.assertContains('1 bot started', responses)
     def test_start_bot_client(self):
         "Only a game master should start new bots"
-        self.set_verbosity(0)
         responses = self.robot.admin('start holdbot')
-        self.failUnless('You are not authorized to do that.' in responses,
-                'Responses:\n' + str.join('\n', responses))
+        self.assertContains(self.unauth, responses)
+    def test_pause_master(self):
+        "Whether a game master can pause the game"
+        responses = self.master.admin('pause')
+        self.assertContains('Game paused.', responses)
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):

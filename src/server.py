@@ -69,17 +69,16 @@ class Client_Manager(Verbose_Object):
     def start_thread(self, player_class, **kwargs):
         from network import Client
         client = Client(player_class, **kwargs)
-        if client.open():
-            thread = client.start()
+        thread = client.start()
+        if thread:
             self.threads.append((thread, client))
             self.log_debug(10, 'Client %s opened' % player_class.__name__)
-            return True
         else: self.log_debug(7, 'Client %s failed to open' % player_class.__name__)
-        return False
+        return thread
     def close_threads(self):
         for thread, client in self.threads:
             if not client.closed: client.close()
-            while thread.isAlive(): sleep(.1)
+            while thread.isAlive(): thread.join(1)
 
 class Server(Client_Manager):
     ''' Coordinates messages between clients and the games,
@@ -432,7 +431,7 @@ class Game(Verbose_Object):
         self.judge.phase = None
         if not self.closed:
             self.closed = True
-            self.broadcast(self.summarize())
+            if self.started: self.broadcast(self.summarize())
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}
