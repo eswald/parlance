@@ -37,9 +37,9 @@ class ServerTestCase(unittest.TestCase):
                 self.close()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             else: self.queue.append(message)
-        def admin(self, line):
+        def admin(self, line, *args):
             self.queue = []
-            self.send(ADM(self.name, 'Server: %s' % str(line)))
+            self.send(ADM(self.name, str(line) % args))
             sleep(5)
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
     class Fake_Client(Connection):
@@ -204,6 +204,10 @@ class Server_Basics(ServerTestCase):
 class Server_Admin(ServerTestCase):
     "Administrative messages handled by the server"
     unauth = 'You are not authorized to do that.'
+    game_options = {}
+    game_options.update(ServerTestCase.game_options)
+    game_options['close on disconnect'] = False
+    
     class Fake_Master(ServerTestCase.Fake_Player):
         name = 'Fake Human Player'
     def setUp(self):
@@ -228,26 +232,35 @@ class Server_Admin(ServerTestCase):
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
+    def assertAdminResponse(self, player, command, response):
+        self.assertContains(response, player.admin('Server: %s', command))
+    def assertUnauthorized(self, player, command):
+        self.assertAdminResponse(player, command, self.unauth)
     
     def test_start_bot(self):
         "Bot starting actually works"
         count = len(self.server.threads)
-        self.master.admin('start holdbot')
-        self.failIf(self.server.closed)
+        self.master.admin('Server: start holdbot')
         self.failUnless(len(self.server.threads) > count)
         self.failIf(self.server.threads[-1][1].closed)
     def test_start_bot_master(self):
         "Whether a game master can start new bots"
-        responses = self.master.admin('start holdbot')
-        self.assertContains('1 bot started', responses)
+        self.assertAdminResponse(self.master, 'start holdbot', '1 bot started')
     def test_start_bot_client(self):
         "Only a game master should start new bots"
-        responses = self.robot.admin('start holdbot')
-        self.assertContains(self.unauth, responses)
+        self.assertUnauthorized(self.robot, 'start holdbot')
     def test_pause_master(self):
         "Whether a game master can pause the game"
-        responses = self.master.admin('pause')
-        self.assertContains('Game paused.', responses)
+        self.assertAdminResponse(self.master, 'pause', 'Game paused.')
+    def test_pause_backup(self):
+        "Whether a backup game master can pause the game"
+        self.master.close()
+        self.backup.admin('Ping')
+        sleep(5)
+        self.assertAdminResponse(self.backup, 'pause', 'Game paused.')
+    def test_pause_robot(self):
+        "Only a game master should pause the game"
+        self.assertUnauthorized(self.robot, 'pause')
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):
