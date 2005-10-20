@@ -140,6 +140,11 @@ class ServerTestCase(unittest.TestCase):
             self.threads.extend(threads)
             server.close()
             raise
+    def connect_player(self, player_class):
+        from network import Client
+        client = Client(self.Fake_Player)
+        self.threads.append(client.start())
+        return client.player
 
 class Server_Basics(ServerTestCase):
     def test_timeout(self):
@@ -211,18 +216,11 @@ class Server_Admin(ServerTestCase):
     class Fake_Master(ServerTestCase.Fake_Player):
         name = 'Fake Human Player'
     def setUp(self):
-        from network import Client
         ServerTestCase.setUp(self)
         self.connect_server([])
-        master_client = Client(self.Fake_Master)
-        backup_client = Client(self.Fake_Master)
-        robot_client  = Client(self.Fake_Player)
-        self.threads.append(master_client.start())
-        self.threads.append(backup_client.start())
-        self.threads.append(robot_client.start())
-        self.master = master_client.player
-        self.backup = backup_client.player
-        self.robot  = robot_client.player
+        self.master = self.connect_player(self.Fake_Master)
+        self.backup = self.connect_player(self.Fake_Master)
+        self.robot  = self.connect_player(self.Fake_Player)
         while True:
             while self.robot.queue:
                 msg = self.robot.queue.pop()
@@ -261,6 +259,16 @@ class Server_Admin(ServerTestCase):
     def test_pause_robot(self):
         "Only a game master should pause the game"
         self.assertUnauthorized(self.robot, 'pause')
+
+class Server_Multigame(ServerTestCase):
+    def setUp(self):
+        ServerTestCase.setUp(self)
+        self.connect_server([])
+        self.master = self.connect_player(self.Fake_Player)
+    def new_game(self, variant=None):
+        self.master.admin('Server: new%s game' %
+                (variant and ' '+variant or ''))
+    def test_new_game(self): pass
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):

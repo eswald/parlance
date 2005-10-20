@@ -396,8 +396,8 @@ class Game(Verbose_Object):
                     reason = 'booted'
                     opening = client.booted
                 else: reason = 'replaced'
-                self.admin('%s has been %s. %s', player['pname'],
-                        reason, self.has_need())
+                name = player[self.started and 'pname' or 'name']
+                self.admin('%s has been %s. %s', name, reason, self.has_need())
             elif client.country:
                 player = self.players[client.country]
                 if self.closed or not self.started:
@@ -801,7 +801,9 @@ class Game(Verbose_Object):
         result = []
         low_result = []
         for key, struct in self.players.iteritems():
-            names = (struct['name'], struct['version'], struct['pname'], key.text)
+            names = (struct['name'], struct['version'])
+            if self.started: names += (struct['pname'], key.text)
+            
             if name in names:
                 result.append(struct['client'])
             elif name.lower() in [n.lower() for n in names]:
