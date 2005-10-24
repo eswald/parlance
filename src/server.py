@@ -164,7 +164,9 @@ class Server(Client_Manager):
     def handle_PNG(self, client, message): client.accept(message)
     
     def default_game(self):
-        for game in self.games:
+        games = self.games
+        games.reverse()
+        for game in games:
             if not game.closed: return game
         else: return self.start_game()
     def join_game(self, client, game_id):
@@ -173,7 +175,7 @@ class Server(Client_Manager):
             client.game = self.games[game_id]
             return True
         else: return False
-    def start_game(self, client=None, name=None, match=None):
+    def start_game(self, client=None, match=None):
         if match and match.lastindex:
             var_name = match.group(1)
             try: variant = config.variant_options(var_name)
@@ -182,7 +184,7 @@ class Server(Client_Manager):
                 return
         else: variant = config.variant_options(self.options.variant)
         game_id = len(self.games)
-        if name: client.admin(name, 'New game started, with id %s.', game_id)
+        if client: client.admin('New game started, with id %s.', game_id)
         game = Game(self, game_id, variant)
         self.games.append(game)
         self.start_clients()
@@ -233,8 +235,8 @@ class Server(Client_Manager):
             client.guesses += 1
     
     commands = [
-        #{'pattern': re.compile('new game'), 'command': start_game,
-        #'decription': '  new game - Starts a new game of Standard Diplomacy'},
+        {'pattern': re.compile('new game'), 'command': start_game,
+        'decription': '  new game - Starts a new game of Standard Diplomacy'},
         #{'pattern': re.compile('new (\w+) game'), 'command': start_game,
         #'decription': 'new <variant> game - Starts a new game of <variant>'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,

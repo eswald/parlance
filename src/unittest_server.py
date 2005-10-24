@@ -268,7 +268,13 @@ class Server_Multigame(ServerTestCase):
     def new_game(self, variant=None):
         self.master.admin('Server: new%s game' %
                 (variant and ' '+variant or ''))
-    def test_new_game(self): pass
+        sleep(5)
+    def test_new_game(self):
+        self.new_game()
+        self.failUnlessEqual(len(self.server.games), 2)
+        game_tester = self.connect_player(self.Fake_Player)
+        sleep(5)
+        self.failUnless(len(self.server.games[1].clients))
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):
