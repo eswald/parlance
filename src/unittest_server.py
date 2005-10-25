@@ -275,6 +275,21 @@ class Server_Multigame(ServerTestCase):
         game_tester = self.connect_player(self.Fake_Player)
         sleep(5)
         self.failUnless(len(self.server.games[1].clients))
+    def test_second_connection(self):
+        self.new_game()
+        self.failUnlessEqual(len(self.server.games), 2)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        sleep(5)
+        self.failUnlessEqual(len(self.server.games[1].clients), 2)
+    def test_old_reconnect(self):
+        self.new_game()
+        self.failUnlessEqual(len(self.server.games), 2)
+        for dummy in range(7): self.connect_player(self.Fake_Player)
+        sleep(25)
+        self.connect_player(self.Fake_Player)
+        sleep(5)
+        self.failUnlessEqual(len(self.server.games[0].clients), 2)
 
 class Server_FullGames(ServerTestCase):
     def test_holdbots(self):

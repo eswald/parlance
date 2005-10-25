@@ -164,7 +164,7 @@ class Server(Client_Manager):
     def handle_PNG(self, client, message): client.accept(message)
     
     def default_game(self):
-        games = self.games
+        games = list(self.games)
         games.reverse()
         for game in games:
             if not game.closed: return game
