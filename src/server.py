@@ -170,7 +170,7 @@ class Server(Client_Manager):
             if not game.closed: return game
         else: return self.start_game()
     def join_game(self, client, game_id):
-        if game_id < len(self.games):
+        if client.game.game_id != game_id < len(self.games):
             client.game.disconnect(client)
             client.game = self.games[game_id]
             return True

@@ -42,6 +42,8 @@ class ServerTestCase(unittest.TestCase):
             self.send(ADM(self.name, str(line) % args))
             sleep(5)
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
+    class Fake_Master(Fake_Player):
+        name = 'Fake Human Player'
     class Fake_Client(Connection):
         ''' A fake Client to test the server timeout.'''
         is_server = False
@@ -105,6 +107,7 @@ class ServerTestCase(unittest.TestCase):
             'publish order sets': False,
             'publish individual orders': False,
             'total years before setting draw': 3,
+            'invalid message response': 'croak',
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
@@ -142,7 +145,7 @@ class ServerTestCase(unittest.TestCase):
             raise
     def connect_player(self, player_class):
         from network import Client
-        client = Client(self.Fake_Player)
+        client = Client(player_class)
         self.threads.append(client.start())
         return client.player
 
@@ -213,8 +216,6 @@ class Server_Admin(ServerTestCase):
     game_options.update(ServerTestCase.game_options)
     game_options['close on disconnect'] = False
     
-    class Fake_Master(ServerTestCase.Fake_Player):
-        name = 'Fake Human Player'
     def setUp(self):
         ServerTestCase.setUp(self)
         self.connect_server([])
@@ -264,7 +265,7 @@ class Server_Multigame(ServerTestCase):
     def setUp(self):
         ServerTestCase.setUp(self)
         self.connect_server([])
-        self.master = self.connect_player(self.Fake_Player)
+        self.master = self.connect_player(self.Fake_Master)
     def new_game(self, variant=None):
         self.master.admin('Server: new%s game' %
                 (variant and ' '+variant or ''))
@@ -288,6 +289,11 @@ class Server_Multigame(ServerTestCase):
         for dummy in range(7): self.connect_player(self.Fake_Player)
         sleep(25)
         self.connect_player(self.Fake_Player)
+        sleep(5)
+        self.failUnlessEqual(len(self.server.games[0].clients), 2)
+    def test_old_bot_connect(self):
+        self.new_game()
+        self.master.admin('Server: start holdbot')
         sleep(5)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
 

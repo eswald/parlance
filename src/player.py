@@ -169,6 +169,7 @@ class Player(Verbose_Object):
             # Special handling for common prefixes
             if message[0] in (YES, REJ, NOT):
                 method_name += '_' + message[2].text
+            self.log_debug(15, 'Searching for %s() handlers', method_name)
             
             # Call map handlers first
             if self.map and hasattr(self.map, method_name):
@@ -186,12 +187,12 @@ class Player(Verbose_Object):
     
     def handle_invalid(self, message, error=None, reply=None):
         response = self.client_opts.response
-        if response in ('print', 'warn'):
+        if response in ('print', 'warn', 'croak'):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
-        elif response in ('die', 'close'): self.close()
-        elif response in ('huh', 'complain'):
+        if response in ('huh', 'complain', 'croak'):
             self.send(reply or HUH([ERR, reply]))
+        if response in ('die', 'close', 'croak'): self.close()
         if error and response not in ('print', 'close', 'huh', 'ignore'): raise
     
     def handle_MAP(self, message):

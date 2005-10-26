@@ -76,11 +76,14 @@ client_acceptable -1 NOT [sub client_negatable]
 client_acceptable -1 NME [sub string] [sub string]
 client_acceptable -1 OBS
 client_acceptable -1 PNG [sub any]
+client_acceptable -1 SEL [sub game_id]
 client_acceptable -1 TME [sub number]
 client_acceptable  0 [draw]
 client_acceptable  0 GOF
 client_acceptable 10 SND [sub number] [sub power_list] [press]
 
+game_id -1 [number]
+; game_id -1 [string]
 press 10 [sub message]
 press 10 [sub any_message] WRT [repeat] [sub message_id]
 any_message 10 [reply]
