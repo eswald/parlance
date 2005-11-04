@@ -469,16 +469,22 @@ class Observer(Player):
             >>> p.handle_ADM(ADM('DanM', 'Do any other observers care to jump in?'))
         '''#'''
         import re
+        sorry = "Sorry; I'm just a bot."
         s = message.fold()[2][0]
         if self.admin_state == 0:
             if '?' in s and s.find('bserver') > 0:
-                self.send_admin("Sorry; I'm just a bot.")
+                self.send_admin(sorry)
                 self.admin_state = 1
         elif self.admin_state == 1:
-            result = re.match('[Aa]re you (sure|positive|really a bot|for real)', s)
-            if '?' in s and result:
-                self.send_admin("Yes, I'm %s." % result.group(1))
-            self.admin_state = 2
+            if s == sorry: self.admin_state = 2
+        elif self.admin_state == 2:
+            if '?' in s:
+                result = re.match('[Aa]re you (sure|positive|really a bot|for real)', s)
+                if result: self.send_admin("Yes, I'm %s." % result.group(1))
+                elif re.match('[Rr]eally', s): self.send_admin("Yup.")
+                elif re.match('[Wh]o', s): self.send_admin("Eric.")
+            elif re.match('[Nn]ot .*again'): self.send_admin("Fine, I'll shut up now.")
+            self.admin_state = 3
 
 class Sizes(Observer):
     ''' An observer that simply prints power sizes.'''
