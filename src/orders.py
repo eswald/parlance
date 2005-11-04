@@ -212,7 +212,7 @@ class ConvoyedOrder(MovementPhaseOrder):
     def __str__(self):
         return '%s %s - %s - %s' % (
                 self.unit.coast.unit_type, self.unit.coast.province,
-                ' - '.join([str(u.coast.province) for u in self.path]),
+                self.path and ' - '.join([str(u.coast.province) for u in self.path]) or '...',
                 self.destination.maybe_coast)
     def matches(self, order_set):
         ''' Whether the order is matched by the convoying unit(s). '''

@@ -193,7 +193,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, NTH],
             [GER, FLT, NTH, MRT],
         ])
-    def ftest_4A2_Hold(self):
+    def test_4A2_Hold(self):
         '4.A.2.e  CONVOY DISRUPTION PARADOXES'
         # Combination of 6.F.14, 6.F.18, and 6.F.24
         self.judge.datc.datc_4a2 = 'e'
@@ -246,7 +246,7 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), CVY, (GER, AMY, NWY), CTO, BEL])
         
         self.assertMapState(steady_state)
-    def ftest_4A2_DPTG(self):
+    def test_4A2_DPTG(self):
         '4.A.2.f  CONVOY DISRUPTION PARADOXES'
         # Combination of 6.F.14, 6.F.18, and 6.F.24
         self.judge.datc.datc_4a2 = 'f'

@@ -564,7 +564,9 @@ class Standard_Judge(Judge):
                         convoy = True
         
         resolved = None
-        if convoy: resolved = self.Szykman(core)
+        if convoy:
+            if   self.datc.datc_4a2 == 'd': resolved = self.Szykman(core)
+            elif self.datc.datc_4a2 == 'f': resolved = self.dptg(core)
         elif moving_to and moving_to == moving_from:
             resolved = self.circular(core)
         if not resolved: resolved = self.fallback(core)
@@ -588,6 +590,19 @@ class Standard_Judge(Judge):
                 prevent.min_value = prevent.max_value = 0
                 result.extend([choice, move, prevent])
         return result
+    def dptg(self, decisions):
+        ''' Applies the DPTG rule for convoy disruption paradoxes:
+            In confused circles of subversion, disrupt all movement.
+            In unconfused circles of subversion, disrupt only the convoys.
+        '''#'''
+        self.log_debug(8, 'Applying DPTG convoy-disruption rule.')
+        def confused(choice):
+            result = (choice.type == Decision.SUPPORT
+                    and choice.order.supported.current_order.is_convoying())
+            if result: self.log_debug(11, '* Confused: %s (%s)', choice)
+            return result
+        if any(decisions, confused): return self.fallback(decisions)
+        else: return self.Szykman(decisions)
     def circular(self, decisions):
         ''' Resolution for circular movement: All moves succeed.
         '''#'''

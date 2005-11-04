@@ -2333,12 +2333,367 @@ class DATC_6_F_Routes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, NTH],
         ])
 
+class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
+    "6.F.  CONVOY PARADOX (1982 RESOLUTION)"
+    # All depend on or relate to 4.A.2 (paradox)
+    def setUp(self):
+        super(DATC_6_F_Paradox_1982, self).setUp()
+        self.judge.datc.datc_4a2 = 'b'
+    
+    def ftest_6F14(self):
+        "6.F.14.b  SIMPLE CONVOY PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, ECH],
+            [FRA, FLT, ECH, MRT],
+        ])
+    def ftest_6F15(self):
+        "6.F.15.b  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [ITA, FLT, IRI],
+            [ITA, FLT, MAO],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+            [ITA, AMY, NAF],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(ITA, [(ITA, AMY, NAF), CTO, WAL, VIA, [MAO, IRI]])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, ECH],
+            [FRA, FLT, ECH, MRT],
+            [ITA, AMY, WAL],
+        ])
+    def ftest_6F16(self):
+        "6.F.16.b  PANDIN'S PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state)
+    def ftest_6F17(self):
+        "6.F.17.b  PANDIN'S EXTENDED PARADOX"
+        steady_state = [
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+            [FRA, FLT, YOR],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, YOR), SUP, (FRA, AMY, BRE), MTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, LON, MRT],
+            [FRA, AMY, LON],
+        ])
+    def ftest_6F18(self):
+        "6.F.18.b  BETRAYAL PARADOX"
+        steady_state = [
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH],
+            [GER, FLT, HEL],
+            [GER, FLT, SKA],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, LON],
+            [FRA, FLT, BEL],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), SUP, (ENG, AMY, LON), MTO, BEL])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (ENG, FLT, NTH)])
+        self.legalOrder(GER, [(GER, FLT, HEL), SUP, (GER, FLT, SKA), MTO, NTH])
+        self.legalOrder(GER, [(GER, FLT, SKA), MTO, NTH])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, BEL],
+            [FRA, FLT, BEL, MRT],
+        ])
+    def ftest_6F19_any(self):
+        "6.F.19.b.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, ION],
+            [ITA, FLT, NAP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [FRA, FLT, TYS],
+            [ITA, FLT, ROM],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+            [FRA, FLT, TYS, MRT],
+            [ITA, FLT, TYS],
+        ])
+    def ftest_6F19_all(self):
+        "6.F.19.b.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, ION],
+            [ITA, FLT, NAP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [FRA, FLT, TYS],
+            [ITA, FLT, ROM],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+            [FRA, FLT, TYS, MRT],
+            [ITA, FLT, TYS],
+        ])
+    def ftest_6F20_any(self):
+        "6.F.20.b.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+            [ITA, FLT, ION, MRT],
+            [TUR, FLT, ION],
+        ])
+    def ftest_6F20_all(self):
+        "6.F.20.b.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+        ])
+    def ftest_6F21(self):
+        "6.F.21.b  DAD'S ARMY CONVOY"
+        steady_state = [
+            [RUS, AMY, EDI],
+            [RUS, FLT, NWG],
+            [FRA, FLT, IRI],
+            [FRA, FLT, MAO],
+            [ENG, FLT, NAO],
+            [ENG, AMY, LVP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [RUS, AMY, NWY],
+            [ENG, FLT, CLY],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, EDI), SUP, (RUS, AMY, NWY), MTO, CLY])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, NWY), CTO, CLY])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, CLY, VIA, [NWG]])
+        self.legalOrder(FRA, [(FRA, FLT, IRI), SUP, (FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(ENG, [(ENG, AMY, LVP), CTO, CLY, VIA, [NAO]])
+        self.legalOrder(ENG, [(ENG, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, CLY])
+        self.legalOrder(ENG, [(ENG, FLT, CLY), SUP, (ENG, FLT, NAO)])
+        self.assertMapState(steady_state + [
+            [RUS, AMY, CLY],
+            [ENG, FLT, CLY, MRT],
+        ])
+    def ftest_6F22(self):
+        "6.F.22.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [GER, FLT, BEL],
+            [RUS, AMY, NWY],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, EDI],
+            [FRA, FLT, ECH],
+            [GER, FLT, PIC],
+            [RUS, FLT, NTH],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, NTH],
+            [FRA, FLT, ECH, MRT],
+            [GER, FLT, ECH],
+            [RUS, FLT, NTH, MRT],
+        ])
+    def ftest_6F22_extended(self):
+        ''' 6.F.22.extended.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
+            The Russian move from St Petersbug to Edinburgh is not part
+            of the paradox (and the paradox breaker should not be applied
+            on this order). When the paradox is resolved and Edinburgh
+            is empty, the Russian convoy in St Petersburg can succeed.
+        '''#'''
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [GER, FLT, BEL],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NWG],
+            [RUS, FLT, BAR],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, EDI],
+            [FRA, FLT, ECH],
+            [GER, FLT, PIC],
+            [RUS, FLT, NTH],
+            [RUS, AMY, STP],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, FLT, BAR), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, AMY, STP), CTO, EDI, VIA, [BAR, NWG]])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, NTH],
+            [FRA, FLT, ECH, MRT],
+            [GER, FLT, ECH],
+            [RUS, FLT, NTH, MRT],
+            [RUS, AMY, EDI],
+        ])
+    def ftest_6F23(self):
+        "6.F.23.b  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
+        steady_state = [
+            [ENG, FLT, EDI],
+            [ENG, FLT, YOR],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, BEL],
+            [GER, FLT, LON],
+            [ITA, FLT, MAO],
+            [ITA, FLT, IRI],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NTH],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, YOR), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(GER, [(GER, FLT, LON), SUP, (RUS, FLT, NTH)])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), SUP, (ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+        ])
+    def ftest_6F24(self):
+        "6.F.24.b  SECOND ORDER PARADOX WITH NO RESOLUTION"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, IRI],
+            [ENG, FLT, MAO],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [FRA, FLT, BEL],
+            [RUS, AMY, NWY],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, EDI],
+            [RUS, FLT, NTH],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, MAO), SUP, (ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, NTH],
+            [RUS, FLT, NTH, MRT],
+        ])
+
 class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
     "6.F.  CONVOY PARADOX (SZYKMAN RESOLUTION)"
     # All depend on or relate to 4.A.2 (paradox)
     def setUp(self):
         super(DATC_6_F_Paradox_Szykman, self).setUp()
-        self.datc_4a2 = 'd'
+        self.judge.datc.datc_4a2 = 'd'
     
     def test_6F14(self):
         "6.F.14.d  SIMPLE CONVOY PARADOX"
@@ -2684,6 +3039,684 @@ class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [ENG, FLT, NTH],
             [RUS, FLT, NTH, MRT],
+        ])
+
+class DATC_6_F_Paradox_Hold(DiplomacyAdjudicatorTestCase):
+    "6.F.  CONVOY PARADOX (ALL-HOLD RESOLUTION)"
+    # All depend on or relate to 4.A.2 (paradox)
+    def setUp(self):
+        super(DATC_6_F_Paradox_Hold, self).setUp()
+        self.judge.datc.datc_4a2 = 'e'
+    
+    def test_6F14(self):
+        "6.F.14.e  SIMPLE CONVOY PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+            [FRA, AMY, BRE],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.assertMapState(steady_state)
+    def test_6F15(self):
+        "6.F.15.e  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [ITA, AMY, NAF],
+            [ITA, FLT, IRI],
+            [ITA, FLT, MAO],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(ITA, [(ITA, AMY, NAF), CTO, WAL, VIA, [MAO, IRI]])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.assertMapState(steady_state)
+    def test_6F16(self):
+        "6.F.16.e  PANDIN'S PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state)
+    def test_6F17(self):
+        "6.F.17.e  PANDIN'S EXTENDED PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [FRA, FLT, YOR],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, YOR), SUP, (FRA, AMY, BRE), MTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state)
+    def test_6F18(self):
+        "6.F.18.e  BETRAYAL PARADOX"
+        steady_state = [
+            [ENG, FLT, NTH],
+            [ENG, AMY, LON],
+            [ENG, FLT, ECH],
+            [FRA, FLT, BEL],
+            [GER, FLT, HEL],
+            [GER, FLT, SKA],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), SUP, (ENG, AMY, LON), MTO, BEL])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (ENG, FLT, NTH)])
+        self.legalOrder(GER, [(GER, FLT, HEL), SUP, (GER, FLT, SKA), MTO, NTH])
+        self.legalOrder(GER, [(GER, FLT, SKA), MTO, NTH])
+        self.assertMapState(steady_state)
+    def test_6F19_any(self):
+        "6.F.19.e.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, ION],
+            [FRA, FLT, TYS],
+            [ITA, FLT, ROM],
+            [ITA, FLT, NAP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F19_all(self):
+        "6.F.19.e.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [FRA, FLT, ION],
+            [ITA, FLT, NAP],
+            [ITA, FLT, ROM],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F20_any(self):
+        "6.F.20.e.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+            [ITA, FLT, ION, MRT],
+            [TUR, FLT, ION],
+        ])
+    def test_6F20_all(self):
+        "6.F.20.e.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+            [ITA, FLT, ION, MRT],
+            [TUR, FLT, ION],
+        ])
+    def test_6F21(self):
+        "6.F.21.e  DAD'S ARMY CONVOY"
+        steady_state = [
+            [RUS, AMY, EDI],
+            [RUS, FLT, NWG],
+            [FRA, FLT, IRI],
+            [ENG, AMY, LVP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [RUS, AMY, NWY],
+            [FRA, FLT, MAO],
+            [ENG, FLT, NAO],
+            [ENG, FLT, CLY],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, EDI), SUP, (RUS, AMY, NWY), MTO, CLY])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, NWY), CTO, CLY])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, CLY, VIA, [NWG]])
+        self.legalOrder(FRA, [(FRA, FLT, IRI), SUP, (FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(ENG, [(ENG, AMY, LVP), CTO, CLY, VIA, [NAO]])
+        self.legalOrder(ENG, [(ENG, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, CLY])
+        self.legalOrder(ENG, [(ENG, FLT, CLY), SUP, (ENG, FLT, NAO)])
+        self.assertMapState(steady_state + [
+            [RUS, AMY, CLY],
+            [FRA, FLT, NAO],
+            [ENG, FLT, NAO, MRT],
+            [ENG, FLT, CLY, MRT],
+        ])
+    def test_6F22(self):
+        "6.F.22.e  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, EDI],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, PIC],
+            [GER, FLT, BEL],
+            [RUS, FLT, NTH],
+            [RUS, AMY, NWY],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F22_extended(self):
+        ''' 6.F.22.extended.e  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
+            The Russian move from St Petersbug to Edinburgh is not part
+            of the paradox (and the paradox breaker should not be applied
+            on this order). When the paradox is resolved and Edinburgh
+            is empty, the Russian convoy in St Petersburg can succeed.
+        '''#'''
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, EDI],
+            [FRA, FLT, ECH],
+            [FRA, AMY, BRE],
+            [GER, FLT, BEL],
+            [GER, FLT, PIC],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NWG],
+            [RUS, FLT, BAR],
+            [RUS, FLT, NTH],
+            [RUS, AMY, STP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, FLT, BAR), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, AMY, STP), CTO, EDI, VIA, [BAR, NWG]])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F23(self):
+        "6.F.23.e  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
+        steady_state = [
+            [ENG, FLT, EDI],
+            [ENG, FLT, YOR],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, BEL],
+            [GER, FLT, LON],
+            [ITA, FLT, MAO],
+            [ITA, FLT, IRI],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NTH],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, YOR), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(GER, [(GER, FLT, LON), SUP, (RUS, FLT, NTH)])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), SUP, (ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F24(self):
+        "6.F.24.e  SECOND ORDER PARADOX WITH NO RESOLUTION"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, IRI],
+            [ENG, FLT, MAO],
+            [ENG, FLT, EDI],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [FRA, FLT, BEL],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NTH],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, MAO), SUP, (ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+        ])
+
+class DATC_6_F_Paradox_DPTG(DiplomacyAdjudicatorTestCase):
+    "6.F.  CONVOY PARADOX (DPTG RESOLUTION)"
+    # All depend on or relate to 4.A.2 (paradox)
+    def setUp(self):
+        super(DATC_6_F_Paradox_DPTG, self).setUp()
+        self.judge.datc.datc_4a2 = 'f'
+    
+    def test_6F14(self):
+        "6.F.14.f  SIMPLE CONVOY PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, ECH],
+            [FRA, FLT, ECH, MRT],
+        ])
+    def test_6F15(self):
+        "6.F.15.f  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [ITA, FLT, IRI],
+            [ITA, FLT, MAO],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, WAL],
+            [FRA, FLT, ECH],
+            [ITA, AMY, NAF],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(ITA, [(ITA, AMY, NAF), CTO, WAL, VIA, [MAO, IRI]])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), CVY, (ITA, AMY, NAF), CTO, WAL])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, ECH],
+            [FRA, FLT, ECH, MRT],
+            [ITA, AMY, WAL],
+        ])
+    def test_6F16(self):
+        "6.F.16.f  PANDIN'S PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state)
+    def test_6F17(self):
+        "6.F.17.f  PANDIN'S EXTENDED PARADOX"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, WAL],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [FRA, FLT, YOR],
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, WAL), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, YOR), SUP, (FRA, AMY, BRE), MTO, LON])
+        self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F18(self):
+        "6.F.18.f  BETRAYAL PARADOX"
+        steady_state = [
+            [ENG, FLT, NTH],
+            [ENG, AMY, LON],
+            [ENG, FLT, ECH],
+            [FRA, FLT, BEL],
+            [GER, FLT, HEL],
+            [GER, FLT, SKA],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), SUP, (ENG, AMY, LON), MTO, BEL])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (ENG, FLT, NTH)])
+        self.legalOrder(GER, [(GER, FLT, HEL), SUP, (GER, FLT, SKA), MTO, NTH])
+        self.legalOrder(GER, [(GER, FLT, SKA), MTO, NTH])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F19_any(self):
+        "6.F.19.f.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, ION],
+            [ITA, FLT, NAP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [FRA, FLT, TYS],
+            [ITA, FLT, ROM],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+            [FRA, FLT, TYS, MRT],
+            [ITA, FLT, TYS],
+        ])
+    def test_6F19_all(self):
+        "6.F.19.f.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [FRA, FLT, ION],
+            [ITA, FLT, NAP],
+            [ITA, FLT, ROM],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ROM), MTO, TYS])
+        self.legalOrder(ITA, [(ITA, FLT, ROM), MTO, TYS])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F20_any(self):
+        "6.F.20.f.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'a'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+            [ITA, FLT, ION, MRT],
+            [TUR, FLT, ION],
+        ])
+    def test_6F20_all(self):
+        "6.F.20.f.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
+        # 4.A.1, as well
+        self.judge.datc.datc_4a1 = 'b'
+        steady_state = [
+            [FRA, AMY, TUN],
+            [FRA, FLT, TYS],
+            [ITA, FLT, NAP],
+            [TUR, FLT, AEG],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, FLT, ION],
+            [TUR, FLT, EAS],
+        ])
+        self.legalOrder(FRA, [(FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(FRA, [(FRA, FLT, TYS), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(ITA, [(ITA, FLT, NAP), SUP, (ITA, FLT, ION)])
+        self.legalOrder(ITA, [(ITA, FLT, ION), CVY, (FRA, AMY, TUN), CTO, NAP])
+        self.legalOrder(TUR, [(TUR, FLT, AEG), SUP, (TUR, FLT, EAS), MTO, ION])
+        self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
+        self.assertMapState(steady_state + [
+            [ITA, FLT, ION, MRT],
+            [TUR, FLT, ION],
+        ])
+    def test_6F21(self):
+        "6.F.21.f  DAD'S ARMY CONVOY"
+        steady_state = [
+            [RUS, AMY, EDI],
+            [RUS, FLT, NWG],
+            [FRA, FLT, IRI],
+            [ENG, AMY, LVP],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [RUS, AMY, NWY],
+            [FRA, FLT, MAO],
+            [ENG, FLT, NAO],
+            [ENG, FLT, CLY],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, EDI), SUP, (RUS, AMY, NWY), MTO, CLY])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, NWY), CTO, CLY])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, CLY, VIA, [NWG]])
+        self.legalOrder(FRA, [(FRA, FLT, IRI), SUP, (FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), MTO, NAO])
+        self.legalOrder(ENG, [(ENG, AMY, LVP), CTO, CLY, VIA, [NAO]])
+        self.legalOrder(ENG, [(ENG, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, CLY])
+        self.legalOrder(ENG, [(ENG, FLT, CLY), SUP, (ENG, FLT, NAO)])
+        self.assertMapState(steady_state + [
+            [RUS, AMY, CLY],
+            [FRA, FLT, NAO],
+            [ENG, FLT, NAO, MRT],
+            [ENG, FLT, CLY, MRT],
+        ])
+    def test_6F22(self):
+        "6.F.22.f  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [GER, FLT, BEL],
+            [RUS, AMY, NWY],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, EDI],
+            [FRA, FLT, ECH],
+            [GER, FLT, PIC],
+            [RUS, FLT, NTH],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, NTH],
+            [FRA, FLT, ECH, MRT],
+            [GER, FLT, ECH],
+            [RUS, FLT, NTH, MRT],
+        ])
+    def test_6F22_extended(self):
+        ''' 6.F.22.extended.f  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
+            The Russian move from St Petersbug to Edinburgh is not part
+            of the paradox (and the paradox breaker should not be applied
+            on this order). When the paradox is resolved and Edinburgh
+            is empty, the Russian convoy in St Petersburg can succeed.
+        '''#'''
+        steady_state = [
+            [ENG, FLT, LON],
+            [FRA, AMY, BRE],
+            [GER, FLT, BEL],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NWG],
+            [RUS, FLT, BAR],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, FLT, EDI],
+            [FRA, FLT, ECH],
+            [GER, FLT, PIC],
+            [RUS, FLT, NTH],
+            [RUS, AMY, STP],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, FLT, BAR), CVY, (RUS, AMY, STP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, AMY, STP), CTO, EDI, VIA, [BAR, NWG]])
+        self.assertMapState(steady_state + [
+            [ENG, FLT, NTH],
+            [FRA, FLT, ECH, MRT],
+            [GER, FLT, ECH],
+            [RUS, FLT, NTH, MRT],
+            [RUS, AMY, EDI],
+        ])
+    def test_6F23(self):
+        "6.F.23.f  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
+        steady_state = [
+            [ENG, FLT, EDI],
+            [ENG, FLT, YOR],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [GER, FLT, BEL],
+            [GER, FLT, LON],
+            [ITA, FLT, MAO],
+            [ITA, FLT, IRI],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NTH],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, YOR), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(GER, [(GER, FLT, LON), SUP, (RUS, FLT, NTH)])
+        self.legalOrder(ITA, [(ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(ITA, [(ITA, FLT, IRI), SUP, (ITA, FLT, MAO), MTO, ECH])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
+        ])
+    def test_6F24(self):
+        "6.F.24.f  SECOND ORDER PARADOX WITH NO RESOLUTION"
+        steady_state = [
+            [ENG, FLT, LON],
+            [ENG, FLT, IRI],
+            [ENG, FLT, MAO],
+            [ENG, FLT, EDI],
+            [FRA, AMY, BRE],
+            [FRA, FLT, ECH],
+            [FRA, FLT, BEL],
+            [RUS, AMY, NWY],
+            [RUS, FLT, NTH],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, EDI), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(ENG, [(ENG, FLT, MAO), SUP, (ENG, FLT, IRI), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, AMY, BRE), CTO, LON, VIA, [ECH]])
+        self.legalOrder(FRA, [(FRA, FLT, ECH), CVY, (FRA, AMY, BRE), CTO, LON])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), SUP, (FRA, FLT, ECH)])
+        self.legalOrder(RUS, [(RUS, AMY, NWY), CTO, BEL, VIA, [NTH]])
+        self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
+        self.assertMapState(steady_state + [
         ])
 
 class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
