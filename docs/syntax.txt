@@ -282,7 +282,7 @@ offer 120 FWD [sub power_list] [sub power_list] [sub power]
 
 multipart_offer 30 AND [repeat] [sub offer]
 multipart_offer 30 ORR [repeat] [sub offer]
-; multipart_offer 50 CHO [sub num_range] [repeat] [sub offer]
+multipart_offer 50 CHO [sub num_range] [repeat] [sub offer]
 num_range 50 [number] [optional number]
 
 turn_range 90 [sub turn] [sub turn]
@@ -310,7 +310,7 @@ press_token -20 XDO
 press_token -20 DMZ
 press_token -30 AND
 press_token -30 ORR
-; press_token -50 CHO
+press_token -50 CHO
 press_token -40 SCD
 press_token -40 OCC
 press_token -60 INS
