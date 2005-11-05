@@ -21,7 +21,8 @@ power       -1 [cat Powers]
 power_list  -1 [repeat] [power]
 maybe_power -1 [power]
 maybe_power -1 UNO						; For supply center distribution
-maybe_power -1 OBS						; For HLO messages
+player      -1 [power]
+player      -1 OBS						; For HLO messages
 turn        -1 [cat Phases] [number]
 number      -1 [cat Integers]
 order_note  -1 [cat Order_Notes]
@@ -125,7 +126,7 @@ server_command    -1 [draw]
 server_command    -1 [server_negatable]
 server_command    -1 [server_rejectable]
 server_command    -1 ADM [sub string] [sub string]
-server_command    -1 HLO [sub maybe_power] [sub number] [sub variant_list]
+server_command    -1 HLO [sub player] [sub number] [sub variant_list]
 server_command    -1 HUH [sub any]
 server_command    -1 NOT [sub server_negatable]
 server_command    -1 NOW [sub turn] [repeat] [sub unit_maybe_retreat]
