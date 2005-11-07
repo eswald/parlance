@@ -84,7 +84,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
     from functions import Verbose_Object
     name = player_class.name or player_class.__name__
     num = 1
-    opts = {}
+    opts = {'host': 'localhost'}
     countries = {}
     try:
         for arg in argv[1:]:
@@ -103,7 +103,6 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                     else: opts['host'] = arg
             else:
                 if not allow_multiple: raise ValueError
-        else: opts['host'] = 'localhost'
     except:
         if allow_multiple:
             print 'Usage: %s [host][:port] [number]%s [-v<level>]' % (argv[0],
