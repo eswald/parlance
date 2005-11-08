@@ -13,12 +13,12 @@ class ServerTestCase(unittest.TestCase):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
         '''#'''
-        sleep_time = 14
-        name = 'Loose connection'
+        name = 'Fake Player'
         def __init__(self, send_method, representation, game_id=None):
             from language import NME
             self.log_debug(9, 'Fake player started')
             self.closed = False
+            self.power = None
             self.queue = []
             self.send = send_method
             self.rep = representation
@@ -27,21 +27,29 @@ class ServerTestCase(unittest.TestCase):
             self.log_debug(9, 'Closed')
             self.closed = True
         def handle_message(self, message):
-            from language import HLO, MAP, SVE, LOD, YES, ADM
+            from language import OFF, HLO, MAP, SVE, LOD, YES, ADM
             self.log_debug(5, '<< %s', message)
             if message[0] is HLO:
                 self.power = message[2]
                 self.pcode = message[5].value()
-                sleep(self.sleep_time)
-                self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
-                self.close()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
+            elif message[0] is OFF: self.close()
             else: self.queue.append(message)
         def admin(self, line, *args):
             self.queue = []
             self.send(ADM(self.name, str(line) % args))
             sleep(5)
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
+    class Disconnector(Fake_Player):
+        sleep_time = 14
+        name = 'Loose connection'
+        def handle_message(self, message):
+            from language import HLO, ADM
+            self.__super.handle_message(message)
+            if message[0] is HLO:
+                sleep(self.sleep_time)
+                self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
+                self.close()
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     class Fake_Client(Connection):
@@ -161,15 +169,15 @@ class Server_Basics(ServerTestCase):
     def test_full_connection(self):
         "Seven fake players, polling if possible"
         self.set_verbosity(15)
-        self.connect_server([self.Fake_Player] * 7)
+        self.connect_server([self.Disconnector] * 7)
     def test_without_poll(self):
         "Seven fake players, selecting"
         self.set_verbosity(15)
-        self.connect_server([self.Fake_Player] * 7, poll=False)
+        self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         "Seven fake players and an observer"
         from player  import Clock
-        self.connect_server([Clock] + ([self.Fake_Player] * 7))
+        self.connect_server([Clock] + ([self.Disconnector] * 7))
     def test_takeover(self):
         "Takeover ability after game start"
         class Fake_Takeover(Verbose_Object):
@@ -195,7 +203,7 @@ class Server_Basics(ServerTestCase):
                     sleep(self.sleep_time)
                     self.close()
                 else: raise AssertionError, 'Unexpected message: ' + str(message)
-        class Fake_Restarter(self.Fake_Player):
+        class Fake_Restarter(self.Disconnector):
             ''' A false player, who starts Fake_Takeover after receiving HLO.'''
             sleep_time = 3
             def close(self):
@@ -207,7 +215,7 @@ class Server_Basics(ServerTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_verbosity(15)
-        self.connect_server([Fake_Restarter] + [self.Fake_Player] * 6)
+        self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
 
 class Server_Admin(ServerTestCase):
     "Administrative messages handled by the server"
@@ -248,6 +256,7 @@ class Server_Admin(ServerTestCase):
     def test_start_bot_client(self):
         "Only a game master should start new bots"
         self.assertUnauthorized(self.robot, 'start holdbot')
+    
     def test_pause_master(self):
         "Whether a game master can pause the game"
         self.assertAdminResponse(self.master, 'pause', 'Game paused.')
@@ -260,6 +269,49 @@ class Server_Admin(ServerTestCase):
     def test_pause_robot(self):
         "Only a game master should pause the game"
         self.assertUnauthorized(self.robot, 'pause')
+    
+    def test_press_enable(self):
+        "Whether the enable press option works"
+        from language import FRM, PCE, PRP, SND, YES
+        self.assertAdminResponse(self.master, 'enable press', 'Press level set to 8000.')
+        sender = self.connect_player(self.Fake_Player)
+        recipient = self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        while not (sender.power and recipient.power): sleep(1)
+        offer = PRP(PCE([sender.power, recipient.power]))
+        msg = SND(0, recipient.power, offer)
+        sender.send(msg)
+        sleep(5)
+        self.assertContains(YES(msg), sender.queue)
+        msg = FRM([sender.power, 0], recipient.power, offer)
+        self.assertContains(msg, recipient.queue)
+    def test_press_disable(self):
+        "Whether the disable press option works"
+        from language import ERR, HUH, PCE, PRP, SND, YES
+        self.assertAdminResponse(self.master, 'disable press', 'Press level set to 0.')
+        sender = self.connect_player(self.Fake_Player)
+        recipient = self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        while not (sender.power and recipient.power): sleep(1)
+        offer = PRP(PCE([sender.power, recipient.power]))
+        msg = SND(0, recipient.power, offer)
+        sender.send(msg)
+        sleep(5)
+        self.assertContains(HUH([ERR, msg]), sender.queue)
+    def test_press_master(self):
+        "Whether a game master can enable press"
+        self.assertAdminResponse(self.master, 'enable press', 'Press level set to 8000.')
+    def test_press_backup(self):
+        "Whether a backup game master can enable press"
+        self.master.close()
+        self.backup.admin('Ping')
+        sleep(5)
+        self.assertAdminResponse(self.backup, 'enable press', 'Press level set to 8000.')
+    def test_press_robot(self):
+        "Only a game master should enable press"
+        self.assertUnauthorized(self.robot, 'enable press')
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):
@@ -286,7 +338,7 @@ class Server_Multigame(ServerTestCase):
     def test_old_reconnect(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
-        for dummy in range(7): self.connect_player(self.Fake_Player)
+        for dummy in range(7): self.connect_player(self.Disconnector)
         sleep(25)
         self.connect_player(self.Fake_Player)
         sleep(5)

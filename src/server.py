@@ -857,8 +857,21 @@ class Game(Verbose_Object):
         client.admin('Available types of bots:')
         for bot_class in bots.itervalues():
             client.admin('  %s - %s', bot_class.name, bot_class.description)
+    def set_press_level(self, client, match):
+        cmd = match.group(1)
+        if cmd == 'en':    new_level = 8000
+        elif cmd == 'dis': new_level = 0
+        else:
+            try: new_level = int(cmd)
+            except ValueError:
+                client.admin('Invalid press level "%s"', cmd)
+                return
+        self.options.LVL = new_level
+        client.admin('Press level set to %d.', new_level)
     
     commands = [
+        {'pattern': re.compile('(en|dis)able +press'), 'command': set_press_level,
+        'decription': '  enable/disable press - Allows or blocks press between powers'},
         {'pattern': re.compile('pause'), 'command': stop_time,
         'decription': '  pause - Stops deadline timers and phase transitions'},
         {'pattern': re.compile('resume'), 'command': resume,
