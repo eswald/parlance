@@ -6,7 +6,7 @@ from time      import time, sleep
 from struct    import pack, unpack
 from language  import Message, Token, YES, REJ, ADM, OFF
 from functions import Verbose_Object
-from server    import Server
+from server    import Server, Client_Manager
 
 
 class network_options(config.option_class):
@@ -353,7 +353,7 @@ class ServerSocket(SocketWrapper):
         sock.listen(7)
         self.sock = sock
         self.add(self)
-        self.server = Server(self.broadcast)
+        self.server = Server(self.broadcast, Client_Manager())
         return bool(sock and self.server)
     def close(self):
         if self.server and not self.server.closed: self.server.close()

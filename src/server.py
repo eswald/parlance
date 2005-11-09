@@ -1,8 +1,7 @@
 import config, re
 from random    import randint, shuffle
-from time      import time, sleep
+from time      import time
 from gameboard import Turn
-from iaq       import DefaultDict
 from functions import any, s, expand_list, Verbose_Object
 from language  import *
 
@@ -52,12 +51,18 @@ class server_options(config.option_class):
 
 class Client_Manager(Verbose_Object):
     def __init__(self):
-        self.client_opts = main_options()
-        self.classes = [klass for klass in self.client_opts.clients if klass]
-        self.reserved = len(self.client_opts.clients) - len(self.classes)
+        opts = main_options()
+        self.classes = [klass for klass in opts.clients if klass]
+        self.reserved = len(opts.clients) - len(self.classes)
         self.threads = []
     def start_clients(self):
         for klass in self.classes: self.start_thread(klass)
+    def async_start(self, player_class, number, callback=None, **kwargs):
+        from threading import Thread
+        thread = Thread(target=self.start_threads,
+                args=(player_class, number, callback), kwargs=kwargs)
+        self.threads.append((thread, None))
+        thread.start()
     def start_threads(self, player_class, number, callback=None, **kwargs):
         success = failure = 0
         for dummy in range(number):
@@ -77,23 +82,24 @@ class Client_Manager(Verbose_Object):
         return thread
     def close_threads(self):
         for thread, client in self.threads:
-            if not client.closed: client.close()
+            if client and not client.closed: client.close()
             while thread.isAlive(): thread.join(1)
 
-class Server(Client_Manager):
+class Server(Verbose_Object):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
     
     password = '_now34'
     
-    def __init__(self, broadcast_function):
+    def __init__(self, broadcast_function, client_manager):
         ''' Initializes instance variables, including:
             - options          Option defaults for this program
         '''#'''
         self.__super.__init__()
         self.options   = server_options()
         self.broadcast = broadcast_function
+        self.manager   = client_manager
         self.games     = []
         self.closed    = False
         self.start_game()
@@ -187,7 +193,7 @@ class Server(Client_Manager):
         if client: client.admin('New game started, with id %s.', game_id)
         game = Game(self, game_id, variant)
         self.games.append(game)
-        self.start_clients()
+        self.manager.start_clients()
         return game
     def select_game(self, client, match):
         try: num = int(match.group(1))
@@ -223,6 +229,7 @@ class Server(Client_Manager):
             self.broadcast(OFF())
             #self.__super.close()
             self.closed = True
+            self.manager.close_threads()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
     def become_master(self, client, match):
@@ -838,7 +845,6 @@ class Game(Verbose_Object):
             bot_name = bot_name[:-1]
             default_num = 0
         if bots.has_key(bot_name):
-            from threading import Thread
             try: num = int(match.group(1))
             except TypeError: num = default_num
             if num < 1: num += self.players_needed()
@@ -847,11 +853,8 @@ class Game(Verbose_Object):
                 text = '%d bot%s started' % (success, s(success))
                 if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
                 client.admin(text)
-            thread = Thread(target=self.server.start_threads,
-                    args=(bots[bot_name], num, callback),
-                    kwargs={'game_id': self.game_id})
-            self.server.threads.append((thread, self))
-            thread.start()
+            self.server.manager.async_start(bots[bot_name],
+                    num, callback, game_id=self.game_id)
         else: client.admin('Unknown bot: %s', bot_name)
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
