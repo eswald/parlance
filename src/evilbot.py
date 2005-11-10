@@ -50,10 +50,12 @@ class EvilBot(DumbBot):
         '''Laugh at the poor humans.'''
         if self.power.units: self.admin('Bwa' + '-ha' * EvilBot.laughs + '!')
         EvilBot.laughs += 1
+        self.__super.handle_DRW(message)
     def handle_SLO(self, message):
         if message[2] == self.power:
             self.admin('You insignificant fools!')
             self.admin('Did you honestly think you could overcome the power of the dark side?')
+        self.__super.handle_SLO(message)
     def handle_OFF(self, message):
         self.friends.remove(self.power.key)
         self.__super.handle_OFF(message)
