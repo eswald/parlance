@@ -84,7 +84,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
     from functions import Verbose_Object
     name = player_class.name or player_class.__name__
     num = 1
-    opts = {'host': 'localhost'}
+    opts = {}
     countries = {}
     try:
         for arg in argv[1:]:
@@ -113,8 +113,8 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                     allow_country and ' [power=passcode]' or '')
             print 'Connects a copy of %s to <host>:<port>' % name
     else:
+        config.option_class.local_opts.update(opts)
         if num == 1:
-            config.option_class.local_opts.update(opts)
             if countries:
                 nation, pcode = countries.popitem()
                 client = Client(player_class, power=nation, passcode=pcode)
