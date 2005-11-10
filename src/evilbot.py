@@ -54,6 +54,9 @@ class EvilBot(DumbBot):
         if message[2] == self.power:
             self.admin('You insignificant fools!')
             self.admin('Did you honestly think you could overcome the power of the dark side?')
+    def handle_OFF(self, message):
+        self.friends.remove(self.power.key)
+        self.__super.handle_OFF(message)
 
 
 if __name__ == "__main__":
