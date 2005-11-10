@@ -100,7 +100,7 @@ class Player(Verbose_Object):
     def reject(self, message): self.send(REJ(message))
     def submit_set(self, orders):
         self.orders = orders
-        sub = orders.create_SUB()
+        sub = orders.create_SUB(self.power)
         if sub and self.in_game:
             if self.submitted: self.send(NOT(SUB))
             self.submitted = True
@@ -108,7 +108,7 @@ class Player(Verbose_Object):
             if (self.client_opts.confirm and not self.missing_orders()):
                 self.send_admin('Submitted.')
     def submit(self, order):
-        self.orders.add(order)
+        self.orders.add(order, self.power)
         self.submitted = True
         self.send(SUB(order))
     def phase(self): return self.map.current_turn.phase()
@@ -191,7 +191,7 @@ class Player(Verbose_Object):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
         if response in ('huh', 'complain', 'croak'):
-            self.send(reply or HUH([ERR, reply]))
+            self.send(reply or HUH([ERR, message]))
         if response in ('die', 'close', 'croak'): self.close()
         if error and response not in ('print', 'close', 'huh', 'ignore'): raise
     
@@ -224,7 +224,7 @@ class Player(Verbose_Object):
     def handle_PNG(self, message): self.accept(message)
     
     def missing_orders(self):
-        return self.orders.missing_orders(self.phase())
+        return self.orders.missing_orders(self.phase(), self.power)
     def handle_MIS(self, message):
         self.log_debug(7, 'Missing orders for %s: %s; %s',
                 self.power, message, self.missing_orders())

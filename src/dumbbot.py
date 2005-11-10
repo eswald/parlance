@@ -244,6 +244,7 @@ class DumbBot(Player):
         ''' Stores the size of each power,
             modified by the Ax^2 + Bx + C formula from DumbBot_Values.
         '''#'''
+        self.log_debug(7, 'Setting power_size matrix')
         self.power_size = {UNO: self.vals.size_constant}
         for power_counter, power in self.map.powers.iteritems():
             size = len(power.centers)
@@ -308,7 +309,7 @@ class DumbBot(Player):
         for province_counter in self.map.spaces.itervalues():
             # Calculate attack and defense values for each province
             if province_counter.is_supply():
-                if province_counter.owner == self.power:
+                if self.friendly(province_counter.owner):
                     # Our SC. Calc defense value
                     values.defence_value[province_counter.key] = self.calculate_defence_value( province_counter )
                 else:
@@ -362,7 +363,7 @@ class DumbBot(Player):
         for province_counter in self.map.spaces:
             for power_counter in self.map.powers:
                 unit_count = len(values.adjacent_units[province_counter][ power_counter ])
-                if power_counter == self.power:
+                if self.friendly(power_counter):
                     values.strength_value[province_counter] = unit_count
                 elif unit_count > values.competition_value[province_counter]:
                     values.competition_value[province_counter] = unit_count
@@ -452,11 +453,12 @@ class DumbBot(Player):
                     fp.write("\n")
             fp.close()
     
+    def friendly(self, nation): return nation == self.power
     def generate_movement_orders(self, values):
         ''' Generate the actual orders for a movement turn.'''
         self.log_debug(10, "Movement orders for %s" % self.map.current_turn)
-        our_units = self.power.units[:]
-        orders = OrderSet(self.power)
+        our_units = [unit for unit in self.map.units if self.friendly(unit.nation)]
+        orders = OrderSet()
         waiting = DefaultDict([])
         
         while our_units:
@@ -469,7 +471,7 @@ class DumbBot(Player):
             for unit in our_units:
                 if not orders.get_order(unit):
                     order = self.order_unit(unit, orders, values, waiting)
-                    if order: orders.add(order)
+                    if order: orders.add(order, unit.nation)
                     else: unordered.append(unit)
             our_units = unordered
         self.check_for_wasted_holds(orders, values)
@@ -513,8 +515,8 @@ class DumbBot(Player):
                 self.log_debug(14, "   Trying to remove '%s' from %s", order, orders)
                 orders.remove(order)
                 if source.is_moving():
-                    orders.add(SupportMoveOrder(unit, source.unit, source.destination))
-                else: orders.add(SupportHoldOrder(unit, source.unit))
+                    orders.add(SupportMoveOrder(unit, source.unit, source.destination), unit.nation)
+                else: orders.add(SupportHoldOrder(unit, source.unit), unit.nation)
                 self.log_debug(14, "   Now have orders = %s", orders)
     def order_unit(self, unit, orders, values, waiting):
         self.log_debug(11, " Selecting destination for %s", unit)
@@ -547,7 +549,7 @@ class DumbBot(Player):
                 
                 # If we have a unit in this province already 
                 for other_unit in dest.province.units:
-                    if other_unit.nation == self.power:
+                    if self.friendly(other_unit.nation):
                         self.log_debug(13, "  Province occupied")
                         
                         # Check whether it has been ordered already
@@ -612,7 +614,7 @@ class DumbBot(Player):
                         for unit in prov.units:
                             # Don't land on our holding or unsure unit.
                             # Side effect: prevents convoying a unit to itself.
-                            if not (unit.nation == self.power
+                            if not (self.friendly(unit.nation)
                                     and not orders.is_moving(unit)):
                                 key = prov.is_coastal()
                                 if key: possible.append(key)
@@ -627,8 +629,9 @@ class DumbBot(Player):
                 # inconsistent order set.  If it can move there anyway,
                 # a support is usually better than a convoy.
                 # (Granted, that could be the solution to BUL/CON...)
-                armies = [unit.coast.key for unit in self.power.units
+                armies = [unit.coast.key for unit in self.map.units
                     if unit.can_be_convoyed()
+                    and self.friendly(unit.nation)
                     and fleet.can_move_to(unit.coast.province)
                     and not orders.get_order(unit)
                     and not unit.can_move_to(beach.province.key)]
@@ -646,8 +649,8 @@ class DumbBot(Player):
                             values.destination_value[first.key],
                             values.destination_value[second.key]):
                         self.log_debug(11, "   Ordered to convoy")
-                        unit = [u for u in self.power.units if u.coast.key == army.key][0]
-                        orders.add(ConvoyedOrder(unit, beach, [fleet]))
+                        unit = [u for u in self.map.units if u.coast.key == army.key][0]
+                        orders.add(ConvoyedOrder(unit, beach, [fleet]), unit.nation)
                         return ConvoyingOrder(fleet, unit, beach)
                     else: self.log_debug(13, "   Convoy rejected")
                 else: self.log_debug(13, "   Nobody available to convoy")
