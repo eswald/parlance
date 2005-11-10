@@ -885,8 +885,8 @@ class Game(Verbose_Object):
         'decription': '  end game - Ends the game (without a winner)'},
         {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
         'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
-        {'pattern': re.compile('help bots'), 'command': list_bots,
-        'decription': '  help bots - Lists bots that can be started'},
+        {'pattern': re.compile('bots'), 'command': list_bots,
+        'decription': '  bots - Lists bots that can be started'},
     ]
 
 
