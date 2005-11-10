@@ -818,8 +818,8 @@ class DavidBot(DumbBot):
     check_best = False
     description = "A mimic of David Norman's DumbBot"
     
-    def __init__(self, *args):
-        self.__super.__init__(*args)
+    def __init__(self, *args, **kwargs):
+        self.__super.__init__(*args, **kwargs)
         self.vals.set([
             700, 300, 600, 400,
             1000, 1000, 1000, 1000,
