@@ -86,12 +86,12 @@ class DumbBot_Values:
     remove_proximity_weight = [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1]
     
     # Percentage change of not automatically playing the best move
-    play_alternative = 65
+    play_alternative = 75
     
     # If not automatic, chance of playing best move
     # if inferior move is nearly as good.
     # Larger numbers mean less chance.
-    alternative_difference_modifier = 200
+    alternative_difference_modifier = 100
     
     # Formula for power size. These are A,B,C in S = Ax^2 + Bx + C
     # where x is centre count and S is size of power
