@@ -24,6 +24,7 @@ class EvilBot(DumbBot):
     # Static variables
     friend_sets = DefaultDict(Set())
     print_csv = False
+    laughs = 3
     
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
@@ -48,13 +49,13 @@ class EvilBot(DumbBot):
         super(EvilBot, self).handle_SCO(message)
     def handle_DRW(self, message):
         '''Laugh at the poor humans.'''
-        if self.power.units: self.admin('Bwa' + '-ha' * EvilBot.laughs + '!')
+        if self.power.units: self.send_admin('Bwa' + '-ha' * EvilBot.laughs + '!')
         EvilBot.laughs += 1
         self.__super.handle_DRW(message)
     def handle_SLO(self, message):
         if message[2] == self.power:
-            self.admin('You insignificant fools!')
-            self.admin('Did you honestly think you could overcome the power of the dark side?')
+            self.send_admin('You insignificant fools!')
+            self.send_admin('Did you honestly think you could overcome the power of the dark side?')
         self.__super.handle_SLO(message)
     def handle_OFF(self, message):
         self.friends.remove(self.power.key)
