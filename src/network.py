@@ -289,7 +289,6 @@ class Service(Connection):
         self.server    = server
         self.game      = server.default_game()
         self.rep       = self.game.representation
-        connection.setblocking(False)
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
     def check(self):
@@ -369,6 +368,7 @@ class ServerSocket(SocketWrapper):
         else:
             self.log_debug(6, 'Connection from %s as client #%d',
                     addr, self.next_id)
+            conn.setblocking(False)
             self.add(Service(self.next_id, conn, self.server))
             self.next_id += 1
     def add(self, sock):

@@ -5,10 +5,53 @@ import unittest, config
 from time      import sleep
 from functions import Verbose_Object
 from language  import ADM
+from network   import Connection, Service
+from server    import Server, Client_Manager
+
+class Fake_Manager(Client_Manager):
+    def __init__(self, player_classes):
+        self.classes = player_classes
+        self.players = []
+        self.server = None
+        self.server = Server(self.broadcast, self)
+        self.start_clients()
+    def async_start(self, player_class, number, callback=None, **kwargs):
+        self.start_threads(player_class, number, callback, **kwargs)
+    def close_threads(self):
+        for player in self.players:
+            if not player.closed: player.close()
+    def start_thread(self, player_class, **kwargs):
+        if not self.server: return None
+        service = Fake_Service(len(self.players),
+                self.server, player_class, **kwargs)
+        self.players.append(service)
+        return service.player
+    def broadcast(self, message):
+        self.log_debug(2, 'ALL << %s', message)
+        for client in self.players: client.write(message)
+
+class Fake_Service(Service):
+    ''' Connects the Server straight to a player.
+    '''#'''
+    def __init__(self, client_id, server, player_class, **kwargs):
+        self.queue = []
+        self.player = None
+        self.__super.__init__(client_id, None, server)
+        self.player = player_class(self.handle_message, self.rep, **kwargs)
+        self.send_list(self.queue)
+    def write(self, message):
+        if self.player:
+            self.player.handle_message(message)
+            if self.player.closed: self.close()
+        else: self.queue.append(message)
+    def close(self):
+        if not self.closed: self.game.disconnect(self)
+        self.closed = True
+    def handle_message(self, message):
+        self.server.handle_message(self, message)
 
 class ServerTestCase(unittest.TestCase):
     "Basic Server Functionality"
-    from network import Connection
     class Fake_Player(Verbose_Object):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
@@ -38,7 +81,6 @@ class ServerTestCase(unittest.TestCase):
         def admin(self, line, *args):
             self.queue = []
             self.send(ADM(self.name, str(line) % args))
-            sleep(5)
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
     class Disconnector(Fake_Player):
         sleep_time = 14
@@ -119,8 +161,9 @@ class ServerTestCase(unittest.TestCase):
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
-        self.set_verbosity(7)
+        self.set_verbosity(0)
         config.option_class.local_opts.update(self.game_options)
+        self.manager = None
         self.server = None
         self.threads = []
     def tearDown(self):
@@ -128,7 +171,11 @@ class ServerTestCase(unittest.TestCase):
         for thread in self.threads:
             while thread.isAlive(): thread.join(1)
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
-    def connect_server(self, clients, games=1, poll=True, **kwargs):
+    def connect_server(self, clients, games=1, **kwargs):
+        config.option_class.local_opts.update({'number of games' : games})
+        self.manager = manager = Fake_Manager(clients)
+        self.server = manager.server
+    def connect_server_threaded(self, clients, games=1, poll=True, **kwargs):
         from network import ServerSocket, Client
         config.option_class.local_opts.update({'number of games' : games})
         socket = ServerSocket()
@@ -152,6 +199,8 @@ class ServerTestCase(unittest.TestCase):
             server.close()
             raise
     def connect_player(self, player_class):
+        return self.manager.start_thread(player_class)
+    def connect_player_threaded(self, player_class):
         from network import Client
         client = Client(player_class)
         self.threads.append(client.start())
@@ -161,7 +210,7 @@ class Server_Basics(ServerTestCase):
     def test_timeout(self):
         "Thirty-second timeout for the Initial Message"
         self.set_verbosity(15)
-        self.connect_server([])
+        self.connect_server_threaded([])
         client = self.Fake_Client(False)
         client.open()
         sleep(45)
@@ -169,11 +218,11 @@ class Server_Basics(ServerTestCase):
     def test_full_connection(self):
         "Seven fake players, polling if possible"
         self.set_verbosity(15)
-        self.connect_server([self.Disconnector] * 7)
+        self.connect_server_threaded([self.Disconnector] * 7)
     def test_without_poll(self):
         "Seven fake players, selecting"
         self.set_verbosity(15)
-        self.connect_server([self.Disconnector] * 7, poll=False)
+        self.connect_server_threaded([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         "Seven fake players and an observer"
         from player  import Clock
@@ -215,7 +264,7 @@ class Server_Basics(ServerTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_verbosity(15)
-        self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
+        self.connect_server_threaded([Fake_Restarter] + [self.Disconnector] * 6)
 
 class Server_Admin(ServerTestCase):
     "Administrative messages handled by the server"
@@ -230,12 +279,6 @@ class Server_Admin(ServerTestCase):
         self.master = self.connect_player(self.Fake_Master)
         self.backup = self.connect_player(self.Fake_Master)
         self.robot  = self.connect_player(self.Fake_Player)
-        while True:
-            while self.robot.queue:
-                msg = self.robot.queue.pop()
-                if msg[0] is ADM and 'Have 3 players' in msg.fold()[2][0]:
-                    return
-            sleep(5)
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
@@ -246,10 +289,11 @@ class Server_Admin(ServerTestCase):
     
     def test_start_bot(self):
         "Bot starting actually works"
-        count = len(self.server.threads)
+        game = self.server.default_game()
+        count = len(game.clients)
         self.master.admin('Server: start holdbot')
-        self.failUnless(len(self.server.threads) > count)
-        self.failIf(self.server.threads[-1][1].closed)
+        self.failUnless(len(game.clients) > count)
+        self.failIf(game.clients[-1].closed)
     def test_start_bot_master(self):
         "Whether a game master can start new bots"
         self.assertAdminResponse(self.master, 'start holdbot', '1 bot started')
@@ -264,7 +308,6 @@ class Server_Admin(ServerTestCase):
         "Whether a backup game master can pause the game"
         self.master.close()
         self.backup.admin('Ping')
-        sleep(5)
         self.assertAdminResponse(self.backup, 'pause', 'Game paused.')
     def test_pause_robot(self):
         "Only a game master should pause the game"
@@ -278,27 +321,23 @@ class Server_Admin(ServerTestCase):
         recipient = self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
-        while not (sender.power and recipient.power): sleep(1)
         offer = PRP(PCE([sender.power, recipient.power]))
         msg = SND(0, recipient.power, offer)
         sender.send(msg)
-        sleep(5)
         self.assertContains(YES(msg), sender.queue)
         msg = FRM([sender.power, 0], recipient.power, offer)
         self.assertContains(msg, recipient.queue)
     def test_press_disable(self):
         "Whether the disable press option works"
-        from language import ERR, HUH, PCE, PRP, SND, YES
+        from language import ERR, HUH, PCE, PRP, SND
         self.assertAdminResponse(self.master, 'disable press', 'Press level set to 0.')
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
-        while not (sender.power and recipient.power): sleep(1)
         offer = PRP(PCE([sender.power, recipient.power]))
         msg = SND(0, recipient.power, offer)
         sender.send(msg)
-        sleep(5)
         self.assertContains(HUH([ERR, msg]), sender.queue)
     def test_press_master(self):
         "Whether a game master can enable press"
@@ -307,7 +346,6 @@ class Server_Admin(ServerTestCase):
         "Whether a backup game master can enable press"
         self.master.close()
         self.backup.admin('Ping')
-        sleep(5)
         self.assertAdminResponse(self.backup, 'enable press', 'Press level set to 8000.')
     def test_press_robot(self):
         "Only a game master should enable press"
@@ -321,35 +359,32 @@ class Server_Multigame(ServerTestCase):
     def new_game(self, variant=None):
         self.master.admin('Server: new%s game' %
                 (variant and ' '+variant or ''))
-        sleep(5)
     def test_new_game(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
-        game_tester = self.connect_player(self.Fake_Player)
-        sleep(5)
+        self.connect_player(self.Fake_Player)
         self.failUnless(len(self.server.games[1].clients))
     def test_second_connection(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
-        sleep(5)
         self.failUnlessEqual(len(self.server.games[1].clients), 2)
     def test_old_reconnect(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
         for dummy in range(7): self.connect_player(self.Disconnector)
-        sleep(25)
         self.connect_player(self.Fake_Player)
-        sleep(5)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):
         self.new_game()
         self.master.admin('Server: start holdbot')
-        sleep(5)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
 
 class Server_FullGames(ServerTestCase):
+    def connect_server(self, *args, **kwargs):
+        super(Server_FullGames, self).connect_server(*args, **kwargs)
+        while not self.server.closed: sleep(3); self.server.check()
     def test_holdbots(self):
         "Seven drawing holdbots"
         from player import HoldBot

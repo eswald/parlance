@@ -237,9 +237,7 @@ class DumbBot(Player):
         self.__super.__init__(*args, **kwargs)
         self.vals = DumbBot_Values()
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
-    def handle_MAP(self, message):
-        self.__super.handle_MAP(message)
-        self.attitude = dict.fromkeys(self.map.powers.iterkeys(), 1)
+        self.attitude = DefaultDict(1)
     def handle_SCO(self, message):
         ''' Stores the size of each power,
             modified by the Ax^2 + Bx + C formula from DumbBot_Values.

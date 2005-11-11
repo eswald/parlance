@@ -120,12 +120,13 @@ class Standard_Judge(Judge):
     def handle_SUB(self, client, message):
         ''' Processes orders submitted by a power.'''
         country = client.country
-        if country and self.phase:
+        phase = self.phase  # Needed to avoid thread problems
+        if country and phase:
             orders = self.next_orders
             for tlist in message.fold()[1:]:
                 power = self.map.powers[country]
                 order = UnitOrder(tlist, power, self.map, self.datc)
-                note = order.order_note(power, self.phase, orders)
+                note = order.order_note(power, phase, orders)
                 self.log_debug(14, ' SUB: %s => %s', order, note)
                 order.__note = note
                 if note == MBV:
