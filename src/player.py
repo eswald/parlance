@@ -388,7 +388,7 @@ class Player(Verbose_Object):
         ''' Finds a random unused message id.
             Sequential would be easier, but more revealing.
         '''#'''
-        max_int = config.token_options.max_pos_int
+        max_int = Token.opts.max_pos_int
         me = self.pressed.setdefault(self.power, {})
         while True:
             num = randrange(-max_int, max_int)
