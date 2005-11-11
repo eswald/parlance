@@ -57,15 +57,17 @@ class ServerTestCase(unittest.TestCase):
             Also useful to learn country passcodes.
         '''#'''
         name = 'Fake Player'
-        def __init__(self, send_method, representation, game_id=None):
-            from language import NME
+        def __init__(self, send_method, representation, **kwargs):
+            from language import NME, IAM
             self.log_debug(9, 'Fake player started')
             self.closed = False
-            self.power = None
+            self.power = power = kwargs.get('power')
+            self.pcode = pcode = kwargs.get('passcode')
             self.queue = []
             self.send = send_method
             self.rep = representation
-            send_method(NME(self.name, self.__class__.__name__))
+            if power and pcode: send_method(IAM(power, pcode))
+            else: send_method(NME(self.name, self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
@@ -198,8 +200,8 @@ class ServerTestCase(unittest.TestCase):
             self.threads.extend(threads)
             server.close()
             raise
-    def connect_player(self, player_class):
-        return self.manager.start_thread(player_class)
+    def connect_player(self, player_class, **kwargs):
+        return self.manager.start_thread(player_class, **kwargs)
     def connect_player_threaded(self, player_class):
         from network import Client
         client = Client(player_class)
@@ -277,8 +279,10 @@ class Server_Admin(ServerTestCase):
         ServerTestCase.setUp(self)
         self.connect_server([])
         self.master = self.connect_player(self.Fake_Master)
+        self.become_master(self.master)
         self.backup = self.connect_player(self.Fake_Master)
         self.robot  = self.connect_player(self.Fake_Player)
+    def become_master(self, player): player.admin('Server: become master')
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
@@ -308,6 +312,7 @@ class Server_Admin(ServerTestCase):
         "Whether a backup game master can pause the game"
         self.master.close()
         self.backup.admin('Ping')
+        self.become_master(self.backup)
         self.assertAdminResponse(self.backup, 'pause', 'Game paused.')
     def test_pause_robot(self):
         "Only a game master should pause the game"
@@ -346,10 +351,37 @@ class Server_Admin(ServerTestCase):
         "Whether a backup game master can enable press"
         self.master.close()
         self.backup.admin('Ping')
+        self.become_master(self.backup)
         self.assertAdminResponse(self.backup, 'enable press', 'Press level set to 8000.')
     def test_press_robot(self):
         "Only a game master should enable press"
         self.assertUnauthorized(self.robot, 'enable press')
+    
+    def test_cleanup(self):
+        "Someone can connect to an abandoned game and end it."
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.master.close()
+        self.backup.close()
+        self.robot.admin('Ping')
+        game = self.server.default_game()
+        new_master = self.connect_player(self.Fake_Master,
+                power=self.master.power, passcode=self.master.pcode)
+        self.become_master(new_master)
+        new_master.admin('Server: end game')
+        self.failUnless(game.closed)
+    
+    def test_duplicate_mastership(self):
+        "Only one player should be a master at a time."
+        self.assertAdminResponse(self.backup, 'become master',
+                'This game already has a master.')
+    def test_master_password(self):
+        "A second player can become master with the right password"
+        self.assertAdminResponse(self.backup,
+                'become master %s' % self.server.options.password,
+                'Master powers granted.')
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):

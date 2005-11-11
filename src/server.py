@@ -46,6 +46,7 @@ class server_options(config.option_class):
         self.fwd_admin = self.getboolean('forward admin messages', False)
         self.quit      = self.getboolean('close on disconnect',    False)
         self.variant   = self.getstring( 'variant name',           'standard')
+        self.password  = self.getstring( 'admin command password', '_now34')
         self.games     = self.getint(    'number of games',        1)
 
 
@@ -89,8 +90,6 @@ class Server(Verbose_Object):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
-    
-    password = '_now34'
     
     def __init__(self, broadcast_function, client_manager):
         ''' Initializes instance variables, including:
@@ -218,7 +217,7 @@ class Server(Verbose_Object):
     def close(self, client=None, match=None):
         ''' Tells clients to exit, and closes the server's sockets.'''
         if client:
-            if match.group(1) == self.password:
+            if match.group(1) == self.options.password:
                 self.broadcast_admin('The server has been killed.  Good-bye.')
             else:
                 client.admin('Password incorrect.  Good-bye.')
@@ -233,13 +232,19 @@ class Server(Verbose_Object):
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
     def become_master(self, client, match):
+        guess = match.group(1)
         if client.mastery: client.admin('You are already a game master.')
-        elif client.guesses < 3 and match.group(1) == self.password:
+        elif client.guesses < 3 and guess == self.options.password:
             client.mastery = True
             client.admin('Master powers granted.')
-        else:
+        elif guess:
             client.admin('Password incorrect.')
             client.guesses += 1
+        elif any(client.game.clients, lambda c: c.mastery and not c.closed):
+            client.admin('This game already has a master.')
+        else:
+            client.mastery = True
+            client.admin('Master powers granted.')
     
     commands = [
         {'pattern': re.compile('new game'), 'command': start_game,
@@ -250,8 +255,8 @@ class Server(Verbose_Object):
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
         #{'pattern': re.compile('help variants'), 'command': list_variants,
         #'decription': '  help variants - Lists known variants'},
-        {'pattern': re.compile('master (\w+)'), 'command': become_master,
-        'decription': '  master <password> - Grants you power to use master commands'},
+        {'pattern': re.compile('become master *(\w*)'), 'command': become_master,
+        'decription': '  become master - Grants you power to use master commands'},
         {'pattern': re.compile('help master'), 'command': list_master,
         'decription': '  help master - Lists commands that a game master can use'},
         {'pattern': re.compile('help'), 'command': list_help,
@@ -335,7 +340,6 @@ class Game(Verbose_Object):
         }
         
         self.clients        = []
-        self.masters        = []
         self.players        = {}
         self.limbo          = {}
         powers = self.judge.players()
@@ -397,6 +401,7 @@ class Game(Verbose_Object):
         self.log_debug(6, 'Client #%d has disconnected', client.client_id)
         self.cancel_time_requests(client)
         opening = None
+        client.mastery = False
         if client in self.clients:
             self.clients.remove(client)
             if client.booted:
@@ -427,13 +432,6 @@ class Game(Verbose_Object):
                     self.server.options.quit)
             if self.server.options.quit: self.close()
             else: self.open_position(opening)
-        
-        # Pass on the role of game master, if necessary
-        if client in self.masters: self.masters.remove(client)
-        if self.masters and not (self.closed or any([c.mastery for c in self.clients])):
-            master = self.masters[0]
-            master.mastery = True
-            master.admin('You have been granted master powers; send "Server: help master" to list them.')
     def close(self, client=None, match=None):
         self.log_debug(10, 'Closing')
         self.deadline = None
@@ -704,11 +702,6 @@ class Game(Verbose_Object):
                 struct['ready'] = True
                 self.admin('%s (%s) has connected. %s',
                         struct['name'], struct['version'], self.has_need())
-                if not struct['robotic']:
-                    if not any([c.mastery for c in self.clients]):
-                        client.mastery = True
-                        client.admin('You have been granted master powers; send "Server: help master" to list them.')
-                    self.masters.append(client)
             else:
                 self.admin('An Observer has connected. %s', self.has_need())
                 if self.started: self.reveal_passcodes(client)
@@ -885,8 +878,8 @@ class Game(Verbose_Object):
         'decription': '  end game - Ends the game (without a winner)'},
         {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
         'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
-        {'pattern': re.compile('bots'), 'command': list_bots,
-        'decription': '  bots - Lists bots that can be started'},
+        {'pattern': re.compile('list bots'), 'command': list_bots,
+        'decription': '  list bots - Lists bots that can be started'},
     ]
 
 
