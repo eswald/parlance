@@ -447,11 +447,12 @@ def extend_globals(globs):
         This takes several seconds, so only do it if necessary.
     '''#'''
     import gameboard, language
-    standard_map = gameboard.Map(options=variant_options('standard'))
+    opts = variant_options('standard')
+    standard_map = gameboard.Map(options=opts)
     extension = {
         'standard_map': standard_map,
-        'standard_sco': standard_map.opts.start_sco,
-        'standard_now': standard_map.opts.start_now,
+        'standard_sco': opts.start_sco,
+        'standard_now': opts.start_now,
     }
     for key,value in default_rep.iteritems():
         if isinstance(value, int): extension[key] = language.Token(key, value)
