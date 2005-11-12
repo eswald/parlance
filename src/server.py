@@ -750,10 +750,36 @@ class Game(Verbose_Object):
         
         # Block attacks by the unscrupulous.
         if not self.started:
-            # They can't possibly know the passcodes legitimately
-            client.reject(message)
-            if client.country: self.open_position(country)
-            client.boot()
+            # Check whether we have actually given out this passcode
+            info = slot.get('assigned')
+            if info and slot['passcode'] == passcode:
+                self.log_debug(6, 'Client #%d takes over %s', client.client_id, country)
+                old_client = slot['client']
+                if old_client:
+                    for new_country in self.p_order:
+                        # Take the first open slot
+                        new_slot = self.players[new_country]
+                        if not new_slot['client']:
+                            self.log_debug(6, 'Reassigning client #%d to %s',
+                                    old_client.client_id, new_country)
+                            old_client.country = new_country
+                            new_slot['client'] = old_client
+                            new_slot['ready'] = slot['ready']
+                            new_slot['name'] = slot['name']
+                            new_slot['version'] = slot['version']
+                            break
+                    else: self.log_debug(1, 'No place to put old client #%d!', old_client.client_id)
+                
+                del slot['assigned']
+                slot['client'] = client
+                slot['name'] = info[0]
+                slot['version'] = info[1]
+                client.country = country
+                client.accept(message)
+            else:
+                client.reject(message)
+                if client.country: self.open_position(country)
+                client.boot()
         elif client.guesses < 3 and slot['passcode'] == passcode:
             # Be very careful here.
             old_client = slot['client']
@@ -833,21 +859,40 @@ class Game(Verbose_Object):
             the number of empty power slots in the client's game.
         '''#'''
         bot_name = match.group(2)
-        default_num = 1
-        if bot_name[-1] == 's' and not bots.has_key(bot_name):
-            bot_name = bot_name[:-1]
-            default_num = 0
         if bots.has_key(bot_name):
-            try: num = int(match.group(1))
-            except TypeError: num = default_num
-            if num < 1: num += self.players_needed()
+            bot_class = bots[bot_name]
+            country = match.group(3)
+            if country:
+                for token, struct in self.players.items():
+                    if country in (token.text.lower(), struct['pname'].lower()):
+                        num = 1
+                        power = token
+                        pcode = struct['passcode']
+                        if self.started and struct['client'] and not struct['client'].closed:
+                            client.admin('%s is still in the game.', struct['pname'])
+                            return
+                        else: struct['assigned'] = (bot_class.name, bot_class.version)
+                        break
+                else:
+                    client.admin('Unknown player: %s', country)
+                    return
+            else:
+                power = pcode = None
+                if bot_name[-1] == 's' and not bots.has_key(bot_name):
+                    bot_name = bot_name[:-1]
+                    default_num = 0
+                else: default_num = 1
+                try: num = int(match.group(1))
+                except TypeError: num = default_num
+                if num < 1: num += self.players_needed()
+            
             # Client.open() needs to be in a separate thread from the polling
             def callback(success, failure):
                 text = '%d bot%s started' % (success, s(success))
                 if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
                 client.admin(text)
-            self.server.manager.async_start(bots[bot_name],
-                    num, callback, game_id=self.game_id)
+            self.server.manager.async_start(bot_class, num, callback,
+                    game_id=self.game_id, power=power, passcode=pcode)
         else: client.admin('Unknown bot: %s', bot_name)
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
@@ -876,7 +921,9 @@ class Game(Verbose_Object):
         'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
         {'pattern': re.compile('end game'), 'command': close,
         'decription': '  end game - Ends the game (without a winner)'},
-        {'pattern': re.compile('start (an? |\d+ )?(\w+)'), 'command': start_bot,
+        {'pattern': re.compile('start (an? )?(\w+) as (\w+)'), 'command': start_bot,
+        'decription': '  start <bot> as <country> - Start a copy of <bot> to play <country>'},
+        {'pattern': re.compile('start (an? |\d+ )?(\w+)()'), 'command': start_bot,
         'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
         {'pattern': re.compile('list bots'), 'command': list_bots,
         'decription': '  list bots - Lists bots that can be started'},

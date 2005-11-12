@@ -48,6 +48,7 @@ class Fake_Service(Service):
         if not self.closed: self.game.disconnect(self)
         self.closed = True
     def handle_message(self, message):
+        self.log_debug(4, '%3s >> %s', self.power_name(), message)
         self.server.handle_message(self, message)
 
 class ServerTestCase(unittest.TestCase):
@@ -304,6 +305,40 @@ class Server_Admin(ServerTestCase):
     def test_start_bot_client(self):
         "Only a game master should start new bots"
         self.assertUnauthorized(self.robot, 'start holdbot')
+    def test_start_bot_replacement(self):
+        "The master can start a bot to replace a disconnected power."
+        game = self.server.default_game()
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        out = self.connect_player(self.Fake_Player)
+        out.close()
+        self.master.admin('Ping.')
+        self.assertAdminResponse(self.master, 'start holdbot as' + out.power,
+                '1 bot started')
+        self.failUnless(game.players[out.power.key]['client'])
+    def test_start_bot_country(self):
+        "The master can start a bot to take a specific country."
+        from xtended import ITA
+        game = self.server.default_game()
+        old_client = game.players[ITA]['client']
+        old_id = old_client and old_client.client_id
+        self.assertAdminResponse(self.master, 'start holdbot as Italy',
+                '1 bot started')
+        new_client = game.players[ITA]['client']
+        self.failUnless(new_client and new_client.client_id != old_id)
+    def test_start_bot_illegal(self):
+        "Bots cannot be started to take over players still in the game."
+        from xtended import ITA
+        game = self.server.default_game()
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        old_client = game.players[ITA]['client'].client_id
+        self.assertAdminResponse(self.master, 'start holdbot as Italy',
+                'Italy is still in the game.')
+        self.failUnlessEqual(game.players[ITA]['client'].client_id, old_client)
     
     def test_pause_master(self):
         "Whether a game master can pause the game"
@@ -410,6 +445,7 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):
         self.new_game()
+        self.master.admin('Server: become master')
         self.master.admin('Server: start holdbot')
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
 
