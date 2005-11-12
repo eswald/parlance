@@ -152,7 +152,7 @@ class Standard_Judge(Judge):
             orders = self.next_orders
             if len(message) > 4:
                 # Attempt to remove a specific order
-                order = UnitOrder(message[4:-1], country, self.map, self.datc)
+                order = UnitOrder(message.fold()[1][1], country, self.map, self.datc)
                 if not orders.remove(order, country):
                     client.reject(message)
                     return

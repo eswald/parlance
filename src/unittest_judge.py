@@ -242,6 +242,44 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         ])
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, UKR])
         self.assertMapState(new_state)
+    
+    def retract(self, country, order):
+        client = self.Fake_Service(country)
+        message = NOT(SUB(order))
+        self.judge.handle_NOT_SUB(client, message)
+        self.assertContains(client.replies, YES(message))
+    def test_retracting_new_order(self):
+        ''' Retracting a newer order should re-instate the old order.'''
+        self.init_state(SPR, 1902, [
+                [GER, AMY, RUH],
+        ])
+        self.legalOrder(GER, [(GER, AMY, RUH), MTO, BUR])
+        self.legalOrder(GER, [(GER, AMY, RUH), MTO, BEL])
+        self.retract(   GER, [(GER, AMY, RUH), MTO, BEL])
+        self.assertMapState([
+                [GER, AMY, BUR],
+        ])
+    def test_retracting_old_order(self):
+        ''' Retracting an older order should keep the new order.'''
+        self.init_state(SPR, 1902, [
+                [GER, AMY, RUH],
+        ])
+        self.legalOrder(GER, [(GER, AMY, RUH), MTO, BUR])
+        self.legalOrder(GER, [(GER, AMY, RUH), MTO, BEL])
+        self.retract(   GER, [(GER, AMY, RUH), MTO, BUR])
+        self.assertMapState([
+                [GER, AMY, BEL],
+        ])
+    def test_retracting_only_order(self):
+        ''' Retracting a unit's only order should leave it unordered.'''
+        self.init_state(SPR, 1902, [
+                [GER, AMY, RUH],
+        ])
+        self.legalOrder(GER, [(GER, AMY, RUH), MTO, BEL])
+        self.retract(   GER, [(GER, AMY, RUH), MTO, BEL])
+        self.assertMapState([
+                [GER, AMY, RUH],
+        ])
 
 class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
     "Test cases to reproduce bugs that have been fixed."
@@ -391,6 +429,11 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.assertMapState(start_state)
         self.legalOrder(GER, [(GER, FLT, NTH), REM])
         self.assertMapState(steady_state)
+    def test_retracting_order_error(self):
+        ''' The server crashed when I attempted to retract an order.'''
+        self.init_state(SPR, 1902, [ [GER, AMY, RUH], ])
+        client = self.Fake_Service(GER)
+        self.judge.handle_NOT_SUB(client, NOT(SUB([(GER, AMY, RUH), MTO, BEL])))
 
 class Judge_Errors(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
