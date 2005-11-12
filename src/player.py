@@ -340,7 +340,7 @@ class Player(Verbose_Object):
         
         # Forward it if requested, but avoid loops
         if self.fwd_list.has_key(sender) and press[0] != FRM:
-            self.send_press(self.fwd_list[sender], FRM(sender, recips, press), mid)
+            self.send_press(self.fwd_list[sender], FRM(sender, recips, press), [mid])
         
         # Pass it off to a handler method
         if press[0] in self.press_tokens:
@@ -355,7 +355,7 @@ class Player(Verbose_Object):
         # If that fails, reply with HUH/TRY
         reply = HUH(press)
         reply.insert(2, ERR)
-        self.send_press(sender, reply, mid)
+        self.send_press(sender, reply, [mid])
         self.send_press(sender, TRY(self.press_tokens))
     
     def send_press(self, recips, press, refs = None):
@@ -363,11 +363,6 @@ class Player(Verbose_Object):
         
         # Standardize inputs
         if not isinstance(recips, list): recips = [recips]
-        if refs:
-            if isinstance(refs, list):
-                if not isinstance(refs[0], (list, tuple)): refs = [refs]
-            else: refs = [refs]
-        else: refs = []
         
         # Forward, if requested
         mid = self.select_id()
@@ -380,7 +375,10 @@ class Player(Verbose_Object):
         # Create and store the message
         message = SND(mid, recips, press)
         if refs: message += WRT(*refs)
-        self.pressed[self.power].setdefault(mid[1],[]).append(message)
+        self.pressed[self.power].setdefault(mid,[]).append(message)
+        
+        # Actually send the message
+        self.send(message)
     def send_admin(self, text):
         self.send(ADM(self.name or 'Observer', str(text)))
     
