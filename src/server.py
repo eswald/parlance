@@ -859,6 +859,10 @@ class Game(Verbose_Object):
             the number of empty power slots in the client's game.
         '''#'''
         bot_name = match.group(2)
+        if bot_name[-1] == 's' and not bots.has_key(bot_name):
+            bot_name = bot_name[:-1]
+            default_num = 0
+        else: default_num = 1
         if bots.has_key(bot_name):
             bot_class = bots[bot_name]
             country = match.group(3)
@@ -878,10 +882,6 @@ class Game(Verbose_Object):
                     return
             else:
                 power = pcode = None
-                if bot_name[-1] == 's' and not bots.has_key(bot_name):
-                    bot_name = bot_name[:-1]
-                    default_num = 0
-                else: default_num = 1
                 try: num = int(match.group(1))
                 except TypeError: num = default_num
                 if num < 1: num += self.players_needed()

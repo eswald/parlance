@@ -339,6 +339,9 @@ class Server_Admin(ServerTestCase):
         self.assertAdminResponse(self.master, 'start holdbot as Italy',
                 'Italy is still in the game.')
         self.failUnlessEqual(game.players[ITA]['client'].client_id, old_client)
+    def test_start_multiple_bots(self):
+        "Exactly enough bots can be started to fill up the game."
+        self.assertAdminResponse(self.master, 'start holdbots', '4 bots started')
     
     def test_pause_master(self):
         "Whether a game master can pause the game"
