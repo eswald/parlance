@@ -773,6 +773,7 @@ class Game(Verbose_Object):
                             new_slot['ready'] = slot['ready']
                             new_slot['name'] = slot['name']
                             new_slot['version'] = slot['version']
+                            new_slot['robotic'] = slot['robotic']
                             break
                     else: self.log_debug(1, 'No place to put old client #%d!', old_client.client_id)
                 
@@ -780,6 +781,7 @@ class Game(Verbose_Object):
                 slot['client'] = client
                 slot['name'] = info[0]
                 slot['version'] = info[1]
+                slot['robotic'] = True
                 client.country = country
                 client.accept(message)
             else:

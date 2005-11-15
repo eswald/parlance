@@ -488,6 +488,19 @@ class Server_FullGames(ServerTestCase):
         from player import HoldBot
         self.connect_server([HoldBot] * 7, 2)
 
+class Server_Bugfix(ServerTestCase):
+    "Test cases to reproduce bugs found."
+    def test_robotic_key_error(self):
+        # Introduced in revision 93; crashes the server.
+        self.set_verbosity(20)
+        self.connect_server([])
+        self.master = self.connect_player(self.Fake_Master)
+        self.master.admin('Server: become master')
+        self.master.admin('Server: start holdbot as'
+                + self.server.default_game().p_order[0])
+        self.master.admin('Server: start 5 holdbots')
+        self.connect_player(self.Fake_Player)
+    
 if __name__ == '__main__': unittest.main()
 
 # vim: sts=4 sw=4 et tw=75 fo=crql1
