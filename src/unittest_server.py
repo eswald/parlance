@@ -75,12 +75,12 @@ class ServerTestCase(unittest.TestCase):
         def handle_message(self, message):
             from language import OFF, HLO, MAP, SVE, LOD, YES, ADM
             self.log_debug(5, '<< %s', message)
+            self.queue.append(message)
             if message[0] is HLO:
                 self.power = message[2]
                 self.pcode = message[5].value()
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             elif message[0] is OFF: self.close()
-            else: self.queue.append(message)
         def admin(self, line, *args):
             self.queue = []
             self.send(ADM(self.name, str(line) % args))
@@ -208,6 +208,9 @@ class ServerTestCase(unittest.TestCase):
         client = Client(player_class)
         self.threads.append(client.start())
         return client.player
+    def assertContains(self, item, series):
+        self.failUnless(item in series,
+                'Expected %r among %r' % (item, series))
 
 class Server_Basics(ServerTestCase):
     def test_timeout(self):
@@ -284,9 +287,6 @@ class Server_Admin(ServerTestCase):
         self.backup = self.connect_player(self.Fake_Master)
         self.robot  = self.connect_player(self.Fake_Player)
     def become_master(self, player): player.admin('Server: become master')
-    def assertContains(self, item, series):
-        self.failUnless(item in series,
-                'Expected %r among %r' % (item, series))
     def assertAdminResponse(self, player, command, response):
         self.assertContains(response, player.admin('Server: %s', command))
     def assertUnauthorized(self, player, command):
@@ -410,6 +410,10 @@ class Server_Admin(ServerTestCase):
         self.become_master(new_master)
         new_master.admin('Server: end game')
         self.failUnless(game.closed)
+    def test_unknown_variant(self):
+        self.assertAdminResponse(self.master, 'new unknown_variant game',
+                'Unknown variant "unknown_variant"')
+        self.failUnlessEqual(len(self.server.games), 1)
     
     def test_duplicate_mastership(self):
         "Only one player should be a master at a time."
@@ -451,6 +455,12 @@ class Server_Multigame(ServerTestCase):
         self.master.admin('Server: become master')
         self.master.admin('Server: start holdbot')
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
+    def test_sailho_game(self):
+        from language import MAP
+        self.new_game('sailho')
+        self.failUnlessEqual(len(self.server.games), 2)
+        player = self.connect_player(self.Fake_Player)
+        self.assertContains(MAP('sailho'), player.queue)
 
 class Server_FullGames(ServerTestCase):
     def connect_server(self, *args, **kwargs):

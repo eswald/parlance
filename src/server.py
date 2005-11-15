@@ -253,8 +253,8 @@ class Server(Verbose_Object):
     commands = [
         {'pattern': re.compile('new game'), 'command': start_game,
         'decription': '  new game - Starts a new game of Standard Diplomacy'},
-        #{'pattern': re.compile('new (\w+) game'), 'command': start_game,
-        #'decription': 'new <variant> game - Starts a new game of <variant>'},
+        {'pattern': re.compile('new (\w+) game'), 'command': start_game,
+        'decription': '  new <variant> game - Starts a new game, with the <variant> map'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
         #{'pattern': re.compile('help variants'), 'command': list_variants,
