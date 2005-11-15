@@ -176,7 +176,7 @@ class ServerTestCase(unittest.TestCase):
         for thread in self.threads:
             while thread.isAlive(): thread.join(1)
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
-    def connect_server(self, clients, games=1, **kwargs):
+    def connect_server(self, clients, games=1):
         config.option_class.local_opts.update({'number of games' : games})
         self.manager = manager = Fake_Manager(clients)
         self.server = manager.server
@@ -318,16 +318,16 @@ class Server_Admin(ServerTestCase):
         self.master.admin('Ping.')
         self.assertAdminResponse(self.master, 'start holdbot as' + out.power,
                 '1 bot started')
-        self.failUnless(game.players[out.power.key]['client'])
+        self.failUnless(game.players[out.power.key].client)
     def test_start_bot_country(self):
         "The master can start a bot to take a specific country."
         from xtended import ITA
         game = self.server.default_game()
-        old_client = game.players[ITA]['client']
+        old_client = game.players[ITA].client
         old_id = old_client and old_client.client_id
         self.assertAdminResponse(self.master, 'start holdbot as Italy',
                 '1 bot started')
-        new_client = game.players[ITA]['client']
+        new_client = game.players[ITA].client
         self.failUnless(new_client and new_client.client_id != old_id)
     def test_start_bot_illegal(self):
         "Bots cannot be started to take over players still in the game."
@@ -337,10 +337,10 @@ class Server_Admin(ServerTestCase):
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
-        old_client = game.players[ITA]['client'].client_id
+        old_client = game.players[ITA].client.client_id
         self.assertAdminResponse(self.master, 'start holdbot as Italy',
                 'Italy is still in the game.')
-        self.failUnlessEqual(game.players[ITA]['client'].client_id, old_client)
+        self.failUnlessEqual(game.players[ITA].client.client_id, old_client)
     def test_start_multiple_bots(self):
         "Exactly enough bots can be started to fill up the game."
         self.assertAdminResponse(self.master, 'start holdbots', '4 bots started')
@@ -470,8 +470,8 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(newbie.rep['AUS'], 0x4100)
 
 class Server_FullGames(ServerTestCase):
-    def connect_server(self, *args, **kwargs):
-        super(Server_FullGames, self).connect_server(*args, **kwargs)
+    def connect_server(self, *args):
+        super(Server_FullGames, self).connect_server(*args)
         while not self.server.closed: sleep(3); self.server.check()
     def test_holdbots(self):
         "Seven drawing holdbots"
@@ -499,7 +499,6 @@ class Server_Bugfix(ServerTestCase):
     "Test cases to reproduce bugs found."
     def test_robotic_key_error(self):
         # Introduced in revision 93; crashes the server.
-        self.set_verbosity(20)
         self.connect_server([])
         self.master = self.connect_player(self.Fake_Master)
         self.master.admin('Server: become master')

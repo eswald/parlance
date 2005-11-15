@@ -285,6 +285,32 @@ class Game(Verbose_Object):
         amounts of last-second traffic from preventing someone's orders
         from going through, but can be abused.
     '''#'''
+    class Player_Struct(object):
+        def __init__(self, power_name):
+            self.client   = None
+            self.name     = ''
+            self.version  = ''
+            self.ready    = False
+            self.pname    = power_name
+            self.robotic  = False
+            self.assigned = False
+            self.passcode = randint(100, Token.opts.max_pos_int - 1)
+        def new_client(self, client, name, version):
+            self.name     = name
+            self.version  = version
+            self.client   = client
+            self.ready    = False
+            if self.assigned:
+                self.robotic  = True
+                self.assigned = False
+            else: self.robotic  = 'Human' not in name + version
+        def client_ready(self): return self.client and self.ready
+        def copy_client(self, struct):
+            self.name    = struct.name
+            self.ready   = struct.ready
+            self.client  = struct.client
+            self.version = struct.version
+            self.robotic = struct.robotic
     
     def __init__(self, server, game_id, variant):
         ''' Initializes the plethora of instance variables:
@@ -354,16 +380,8 @@ class Game(Verbose_Object):
         powers = self.judge.players()
         shuffle(powers)
         self.p_order        = powers
-        bound = Token.opts.max_pos_int
         for country in powers:
-            self.players[country] = {
-                'client'   : None,
-                'passcode' : randint(100, bound-1),
-                'name'     : '',
-                'version'  : '',
-                'ready'    : False,
-                'pname'    : self.judge.player_name(country),
-            }
+            self.players[country] = self.Player_Struct(self.judge.player_name(country))
     def prefix(self): return 'Game %d' % self.game_id
     prefix = property(fget=prefix)
     
@@ -374,12 +392,12 @@ class Game(Verbose_Object):
             or tries to give it to the oldest client in limbo.
         '''#'''
         player = self.players[country]
-        player['client'] = None
-        player['ready'] = True
+        player.client = None
+        player.ready = True
         if self.closed: pass
         elif self.judge.phase:
             self.broadcast(CCD(country))
-            pcode = 'Passcode for %s: %d' % (player['pname'], player['passcode'])
+            pcode = 'Passcode for %s: %d' % (player.pname, player.passcode)
             self.log_debug(6, pcode)
             if not self.judge.eliminated(country):
                 for client in self.clients:
@@ -393,18 +411,13 @@ class Game(Verbose_Object):
         self.log_debug(6, 'Offering %s to client #%d', country, client.client_id)
         msg = message.fold()
         client.country = country
-        slot = self.players[country]
-        slot['name']    = name    = msg[1][0]
-        slot['version'] = version = msg[2][0]
-        slot['client']  = client
-        slot['ready']   = False
-        slot['robotic'] = 'Human' not in name + version
+        self.players[country].new_client(client, msg[1][0], msg[2][0])
         client.send_list([YES(message), MAP(self.judge.map_name)])
     def players_unready(self):
         ''' A list of disconnected or unready players.'''
         return [country
             for country, struct in self.players.iteritems()
-            if not ((struct['client'] and struct['ready']) or self.judge.eliminated(country))
+            if not (struct.client_ready() or self.judge.eliminated(country))
         ]
     def disconnect(self, client):
         self.log_debug(6, 'Client #%d has disconnected', client.client_id)
@@ -415,17 +428,17 @@ class Game(Verbose_Object):
             self.clients.remove(client)
             if client.booted:
                 player = self.players[client.booted]
-                if player['client'] is client:
+                if player.client is client:
                     reason = 'booted'
                     opening = client.booted
                 else: reason = 'replaced'
-                name = player[self.started and 'pname' or 'name']
+                name = self.started and player.pname or player.name
                 self.admin('%s has been %s. %s', name, reason, self.has_need())
             elif client.country:
                 player = self.players[client.country]
                 if self.closed or not self.started:
                     self.admin('%s (%s) has disconnected. %s',
-                            player['name'], player['version'], self.has_need())
+                            player.name, player.version, self.has_need())
                 opening = client.country
                 client.country = None
             else: self.admin('An Observer has disconnected. %s', self.has_need())
@@ -453,8 +466,8 @@ class Game(Verbose_Object):
         robotic = {}
         for country, player in self.players.iteritems():
             if not self.judge.eliminated(country):
-                if not player['client']: disconnected[country] = player['passcode']
-                elif player['robotic']: robotic[country] = player['passcode']
+                if not player.client: disconnected[country] = player.passcode
+                elif player.robotic: robotic[country] = player.passcode
         msg = None
         slate = None
         if disconnected:
@@ -472,7 +485,7 @@ class Game(Verbose_Object):
         return False
     def players_needed(self):
         ''' Calculates the number of empty powers in the game.'''
-        return len([p for p in self.players.itervalues() if not p['client']])
+        return len([p for p in self.players.itervalues() if not p.client])
     def has_need(self):
         ''' Creates the line announcing connected and needed players.'''
         if self.closed: return ''
@@ -584,7 +597,7 @@ class Game(Verbose_Object):
     # Sending messages
     def send_hello(self, client):
         country = client.country
-        if country: passcode = self.players[country]['passcode']
+        if country: passcode = self.players[country].passcode
         else: country = OBS; passcode = 0
         variant = self.get_variant_list()
         client.send(HLO(country, passcode, variant))
@@ -609,8 +622,8 @@ class Game(Verbose_Object):
         for country, player in self.players.iteritems():
             stats = [
                 country,
-                [player['name']    or ' '],         # These must have a string.
-                [player['version'] or ' '],
+                [player.name    or ' '],         # These must have a string.
+                [player.version or ' '],
                 self.judge.score(country)
             ]
             elim = self.judge.eliminated(country)
@@ -632,7 +645,7 @@ class Game(Verbose_Object):
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
-            self.players[country]['ready'] = True
+            self.players[country].ready = True
             client.accept(message)
             missing = self.judge.missing_orders(country)
             if missing: client.send(missing)
@@ -646,7 +659,7 @@ class Game(Verbose_Object):
             folded = message.fold()
             recips = folded[2]
             for nation in recips:
-                if not self.players[nation]['client']:
+                if not self.players[nation].client:
                     client.send(CCD(nation))
                     break
                 elif self.judge.eliminated(nation):
@@ -658,7 +671,7 @@ class Game(Verbose_Object):
                 outgoing = FRM(msg_id, recips)
                 outgoing.extend(press)
                 for nation in recips:
-                    self.players[nation]['client'].send(outgoing)
+                    self.players[nation].client.send(outgoing)
                 client.accept(message)
         else: client.reject(message)
     def handle_MAP(self, client, message): client.send(MAP(self.judge.map_name))
@@ -699,7 +712,7 @@ class Game(Verbose_Object):
     def handle_NOT_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase and not self.judge.eliminated(country):
-            self.players[country]['ready'] = False
+            self.players[country].ready = False
             client.accept(message)
         else: client.reject(message)
     def handle_YES_MAP(self, client, message):
@@ -708,9 +721,9 @@ class Game(Verbose_Object):
             self.clients.append(client)
             if client.country:
                 struct = self.players[client.country]
-                struct['ready'] = True
+                struct.ready = True
                 self.admin('%s (%s) has connected. %s',
-                        struct['name'], struct['version'], self.has_need())
+                        struct.name, struct.version, self.has_need())
             else:
                 self.admin('An Observer has connected. %s', self.has_need())
                 if self.started: self.reveal_passcodes(client)
@@ -743,14 +756,13 @@ class Game(Verbose_Object):
         else:
             for country in self.p_order:
                 # Take the first open slot
-                if not self.players[country]['client']:
+                if not self.players[country].client:
                     self.offer_power(country, client, message)
                     break
             else:
                 # Wait for an opening
                 self.log_debug(6, 'Leaving client #%d in limbo', client.client_id)
                 self.limbo[client] = message
-                #msg = message.fold()
     def handle_IAM(self, client, message):
         country = message[2]
         passcode = message[5].value()
@@ -760,40 +772,32 @@ class Game(Verbose_Object):
         # Block attacks by the unscrupulous.
         if not self.started:
             # Check whether we have actually given out this passcode
-            info = slot.get('assigned')
-            if info and slot['passcode'] == passcode:
+            info = slot.assigned
+            if info and slot.passcode == passcode:
                 self.log_debug(6, 'Client #%d takes over %s', client.client_id, country)
-                old_client = slot['client']
+                old_client = slot.client
                 if old_client:
                     for new_country in self.p_order:
                         # Take the first open slot
                         new_slot = self.players[new_country]
-                        if not new_slot['client']:
+                        if not new_slot.client:
                             self.log_debug(6, 'Reassigning client #%d to %s',
                                     old_client.client_id, new_country)
                             old_client.country = new_country
-                            new_slot['client'] = old_client
-                            new_slot['ready'] = slot['ready']
-                            new_slot['name'] = slot['name']
-                            new_slot['version'] = slot['version']
-                            new_slot['robotic'] = slot['robotic']
+                            new_slot.copy_client(slot)
                             break
                     else: self.log_debug(1, 'No place to put old client #%d!', old_client.client_id)
                 
-                del slot['assigned']
-                slot['client'] = client
-                slot['name'] = info[0]
-                slot['version'] = info[1]
-                slot['robotic'] = True
+                slot.new_client(client, *info)
                 client.country = country
                 client.accept(message)
             else:
                 client.reject(message)
                 if client.country: self.open_position(country)
                 client.boot()
-        elif client.guesses < 3 and slot['passcode'] == passcode:
+        elif client.guesses < 3 and slot.passcode == passcode:
             # Be very careful here.
-            old_client = slot['client']
+            old_client = slot.client
             self.log_debug(9, 'Passcode check succeeded; switching from %r', client.country)
             
             if old_client is client and country == client.country:
@@ -815,10 +819,10 @@ class Game(Verbose_Object):
                 if client not in self.clients: self.clients.append(client)
                 if client.country: self.open_position(client.country)
                 client.country = country
-                slot['client'] = client
-                slot['ready'] = True
-                slot['robotic'] = False # Assume a human is taking over
-                slot['name'] += ' (taken over in %s)' % str(self.judge.turn())
+                slot.client = client
+                slot.ready = True
+                slot.robotic = False # Assume a human is taking over
+                slot.name += ' (taken over in %s)' % str(self.judge.turn())
                 client.accept(message)
                 if old_client: old_client.boot()
                 
@@ -840,18 +844,19 @@ class Game(Verbose_Object):
         result = []
         low_result = []
         for key, struct in self.players.iteritems():
-            names = (struct['name'], struct['version'])
-            if self.started: names += (struct['pname'], key.text)
+            names = (struct.name, struct.version)
+            if self.started: names += (struct.pname, key.text)
             
-            if name in names:
-                result.append(struct['client'])
+            if name in names: result.append(struct.client)
             elif name.lower() in [n.lower() for n in names]:
-                low_result.append(struct['client'])
+                low_result.append(struct.client)
         return result or low_result
     def eject(self, client, match):
         name = match.group(1)
         players = self.find_players(name)
         if len(players) == 1: players[0].boot()
+        elif players and not self.started:
+            for player in players: player.boot()
         else:
             status = players and 'Ambiguous' or 'Unknown'
             client.admin('%s player "%s"', status, name)
@@ -879,14 +884,14 @@ class Game(Verbose_Object):
             country = match.group(3)
             if country:
                 for token, struct in self.players.items():
-                    if country in (token.text.lower(), struct['pname'].lower()):
+                    if country in (token.text.lower(), struct.pname.lower()):
                         num = 1
                         power = token
-                        pcode = struct['passcode']
-                        if self.started and struct['client'] and not struct['client'].closed:
-                            client.admin('%s is still in the game.', struct['pname'])
+                        pcode = struct.passcode
+                        if self.started and struct.client and not struct.client.closed:
+                            client.admin('%s is still in the game.', struct.pname)
                             return
-                        else: struct['assigned'] = (bot_class.name, bot_class.version)
+                        else: struct.assigned = (bot_class.name, bot_class.version)
                         break
                 else:
                     client.admin('Unknown player: %s', country)

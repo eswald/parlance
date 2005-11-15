@@ -129,7 +129,7 @@ class Map_Bugfix(unittest.TestCase):
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
-    def test_island_province(self):
+    def test_island_Pale(self):
         "Check for The Pale in Hundred3, which is an island."
         from language    import Token, AMY
         options = config.variant_options('hundred3')
