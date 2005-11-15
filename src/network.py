@@ -4,7 +4,7 @@ import config, socket, select
 from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
-from language  import Message, Token, YES, REJ, ADM, OFF
+from language  import Message, Token, YES, REJ, ADM, OFF, MDF
 from functions import Verbose_Object
 from server    import Server, Client_Manager
 
@@ -310,7 +310,8 @@ class Service(Connection):
         self.close()
     
     def send(self, message):
-        self.log_debug(3, '%3s << %s', self.power_name(), message)
+        if message[0] is not MDF:
+            self.log_debug(3, '%3s << %s', self.power_name(), message)
         self.write(message)
     def send_list(self, message_list):
         for msg in message_list: self.send(msg)
