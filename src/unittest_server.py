@@ -426,6 +426,35 @@ class Server_Admin(ServerTestCase):
         self.assertAdminResponse(self.backup,
                 'become master %s' % self.server.options.password,
                 'Master powers granted.')
+    
+    def test_eject_multiple_unstarted(self):
+        "Multiple players of the same name can be ejected before the game starts."
+        self.connect_player(self.Fake_Player)
+        self.assertAdminResponse(self.master, 'eject Fake Player',
+                'Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.')
+    def test_eject_multiple_started(self):
+        "Multiple players of the same name cannot be ejected after the game starts."
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.assertAdminResponse(self.master, 'eject Fake Player',
+                'Ambiguous player "fake player"')
+    def test_eject_power_unstarted(self):
+        "Powers cannot be ejected by power name before the game starts."
+        game = self.server.default_game()
+        name = game.judge.player_name(game.p_order[2])
+        self.assertAdminResponse(self.master, 'eject ' + name,
+                'Unknown player "%s"' % name.lower())
+    def test_eject_power_started(self):
+        "Powers can be ejected by power name after the game starts."
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        self.connect_player(self.Fake_Player)
+        name = self.server.default_game().judge.player_name(self.robot.power)
+        self.assertAdminResponse(self.master, 'eject ' + name,
+                'Passcode for %s: %d' % (name, self.robot.pcode))
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):
