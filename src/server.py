@@ -209,6 +209,10 @@ class Server(Verbose_Object):
             'Begin an admin message with "Server:" to use the following commands, all of which are case-insensitive:',
         ] + [pattern['decription'] for pattern in self.commands]):
             client.admin(line)
+    def list_bots(self, client, match):
+        client.admin('Available types of bots:')
+        for bot_class in bots.itervalues():
+            client.admin('  %s - %s', bot_class.name, bot_class.description)
     def list_master(self, client, match):
         preface = client.mastery and 'As the game master, you may' or 'If you were the game master, you could'
         client.admin('%s begin an admin message with "Server:" to use the following commands:', preface)
@@ -261,6 +265,8 @@ class Server(Verbose_Object):
         'decription': '  help master - Lists commands that a game master can use'},
         {'pattern': re.compile('help'), 'command': list_help,
         'decription': '  help - Lists admin commands recognized by the server'},
+        {'pattern': re.compile('list bots'), 'command': list_bots,
+        'decription': '  list bots - Lists bots that can be started by a game master'},
         {'pattern': re.compile('shutdown (\w+)'), 'command': close,
         #'decription': '  shutdown <password> - Stops the server'},
         'decription': ' '},
@@ -894,10 +900,6 @@ class Game(Verbose_Object):
             self.server.manager.async_start(bot_class, num, callback,
                     game_id=self.game_id, power=power, passcode=pcode)
         else: client.admin('Unknown bot: %s', bot_name)
-    def list_bots(self, client, match):
-        client.admin('Available types of bots:')
-        for bot_class in bots.itervalues():
-            client.admin('  %s - %s', bot_class.name, bot_class.description)
     def set_press_level(self, client, match):
         cmd = match.group(1)
         if cmd == 'en':    new_level = 8000
@@ -925,8 +927,6 @@ class Game(Verbose_Object):
         'decription': '  start <bot> as <country> - Start a copy of <bot> to play <country>'},
         {'pattern': re.compile('start (an? |\d+ )?(\w+)()'), 'command': start_bot,
         'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
-        {'pattern': re.compile('list bots'), 'command': list_bots,
-        'decription': '  list bots - Lists bots that can be started'},
     ]
 
 
