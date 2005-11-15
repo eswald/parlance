@@ -16,6 +16,7 @@
      **/
 '''#'''
 
+import config
 from random       import random, randrange, shuffle
 from time         import ctime
 from player       import Player
@@ -27,77 +28,90 @@ from orders       import *
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10
 
-class DumbBot_Values:
+class DumbBot_Values(config.option_class):
     ''' Various constants that affect how the bot plays.
         These are just values that seemed right at the time
         there has been no attempt to optimise them for best play.
     '''#'''
     
-    # Importance of attacking centres we don't own, in Spring
-    proximity_spring_attack_weight = 7000
+    def __init__(self, section):
+        self.section = section
+        
+        # Importance of attacking centres we don't own, in Spring
+        self.proximity_spring_attack_weight = self.getint('spring attack', 7000)
+        
+        # Importance of defending our own centres in Spring
+        self.proximity_spring_defence_weight = self.getint('spring defence', 3000)
+        
+        # Same for fall.
+        self.proximity_fall_attack_weight = self.getint('fall attack', 6000)
+        self.proximity_fall_defence_weight = self.getint('fall defence', 4000)
+        
+        # Importance of proximity[n] in Spring
+        self.spring_proximity_weight = self.getint('spring proximity',
+                [400, 700, 30, 10, 6, 5, 4, 3, 2, 1])
+        
+        # Importance of our attack strength on a province in Spring
+        self.spring_strength_weight = self.getint('spring strength', 10000)
+        
+        # Importance of lack of competition for the province in Spring
+        self.spring_competition_weight = self.getint('spring competition', 10000)
+        
+        # Importance of proximity[n] in Fall
+        self.fall_proximity_weight = self.getint('fall proximity',
+                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
+        
+        # Importance of our attack strength on a province in Fall
+        self.fall_strength_weight = self.getint('fall strength', 10000)
+        
+        # Importance of lack of competition for the province in Fall
+        self.fall_competition_weight = self.getint('fall competition', 10000)
+        
+        # Importance of attacking opposing units
+        self.base_unit_weight = self.getint('unit attack', 20) / 100
+        
+        # Importance of vacating unattacked home SCs
+        self.home_vacation_weight = self.getint('home vacation', 0)
+        
+        # Importance of attacking another power's home supply centers
+        self.home_attack_weight = self.getint('home attack', 3)
+        
+        # Importance of defending or regaining our own home supply centers
+        self.home_defence_weight = self.getint('home defence', 4)
+        
+        # Importance of building in provinces we need to defend
+        self.build_defence_weight = self.getint('build defence', 10000)
+        
+        # Importance of proximity[n] when building
+        self.build_proximity_weight = self.getint('build proximity',
+                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
+        
+        # Importance of removing in provinces we don't need to defend
+        self.remove_defence_weight = self.getint('remove defence', 10000)
+        
+        # Importance of proximity[n] when removing
+        self.remove_proximity_weight = self.getint('remove proximity',
+                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
+        
+        # Percentage change of not automatically playing the best move
+        self.play_alternative = self.getint('play alternative', 75)
+        
+        # If not automatic, chance of playing best move
+        # if inferior move is nearly as good.
+        # Larger numbers mean less chance.
+        self.alternative_difference_modifier = self.getint('alternative modifier', 100)
+        
+        # Formula for power size. These are A,B,C in self.S = Ax^2 + Bx + C
+        # where x is centre count and S is size of power
+        self.size_square_coefficient = self.getint('square coefficient', 2)
+        self.size_coefficient = self.getint('size coefficient', -9)
+        self.size_constant = self.getint('size constant', 16)
     
-    # Importance of defending our own centres in Spring
-    proximity_spring_defence_weight = 3000
-    
-    # Same for fall.
-    proximity_fall_attack_weight = 6000
-    proximity_fall_defence_weight = 4000
-    
-    # Importance of proximity[n] in Spring
-    spring_proximity_weight = [100, 1000, 30, 10, 6, 5, 4, 3, 2, 1]
-    
-    # Importance of our attack strength on a province in Spring
-    spring_strength_weight = 10000
-    
-    # Importance of lack of competition for the province in Spring
-    spring_competition_weight = 10000
-    
-    # Importance of proximity[n] in Fall
-    fall_proximity_weight = [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1]
-    
-    # Importance of our attack strength on a province in Fall
-    fall_strength_weight = 10000
-    
-    # Importance of lack of competition for the province in Fall
-    fall_competition_weight = 10000
-    
-    # Importance of attacking opposing units
-    base_unit_weight = .2
-    
-    # Importance of vacating unattacked home SCs
-    home_vacation_weight = 1
-    
-    # Importance of attacking another power's home supply centers
-    home_attack_weight = 2
-    
-    # Importance of defending or regaining our own home supply centers
-    home_defence_weight = 3
-    
-    # Importance of building in provinces we need to defend
-    build_defence_weight = 10000
-    
-    # Importance of proximity[n] when building
-    build_proximity_weight = [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1]
-    
-    # Importance of removing in provinces we don't need to defend
-    remove_defence_weight = 10000
-    
-    # Importance of proximity[n] when removing
-    remove_proximity_weight = [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1]
-    
-    # Percentage change of not automatically playing the best move
-    play_alternative = 75
-    
-    # If not automatic, chance of playing best move
-    # if inferior move is nearly as good.
-    # Larger numbers mean less chance.
-    alternative_difference_modifier = 100
-    
-    # Formula for power size. These are A,B,C in S = Ax^2 + Bx + C
-    # where x is centre count and S is size of power
-    size_square_coefficient = 2
-    size_coefficient = -9
-    size_constant = 16
+    def getintlist(self, option, default):
+        strings = self.getlist(option, default)
+        try: result = map(int, strings)
+        except ValueError: result = default
+        return result
     
     # Hooks for mutation
     # These must return and accept a list of numbers.
@@ -235,7 +249,7 @@ class DumbBot(Player):
     
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
-        self.vals = DumbBot_Values()
+        self.vals = DumbBot_Values(self.name.lower())
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
         self.attitude = DefaultDict(1)
     def handle_SCO(self, message):
