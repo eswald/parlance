@@ -38,18 +38,19 @@ class Fake_Service(Service):
         self.player = None
         self.__super.__init__(client_id, None, server)
         self.player = player_class(self.handle_message, self.rep, **kwargs)
-        self.send_list(self.queue)
+        for msg in self.queue: self.handle_message(msg)
     def write(self, message):
-        if self.player:
-            self.player.handle_message(message)
-            if self.player.closed: self.close()
-        else: self.queue.append(message)
+        self.player.handle_message(message)
+        if self.player.closed: self.close()
     def close(self):
         if not self.closed: self.game.disconnect(self)
         self.closed = True
     def handle_message(self, message):
-        self.log_debug(4, '%3s >> %s', self.power_name(), message)
-        self.server.handle_message(self, message)
+        if self.player:
+            self.log_debug(4, '%3s >> %s', self.power_name(), message)
+            self.server.handle_message(self, message)
+        else: self.queue.append(message)
+    def set_rep(self, representation): self.player.rep = representation
 
 class ServerTestCase(unittest.TestCase):
     "Basic Server Functionality"
@@ -59,7 +60,7 @@ class ServerTestCase(unittest.TestCase):
         '''#'''
         name = 'Fake Player'
         def __init__(self, send_method, representation, **kwargs):
-            from language import NME, IAM
+            from language import NME, IAM, SEL
             self.log_debug(9, 'Fake player started')
             self.closed = False
             self.power = power = kwargs.get('power')
@@ -67,6 +68,7 @@ class ServerTestCase(unittest.TestCase):
             self.queue = []
             self.send = send_method
             self.rep = representation
+            if kwargs.has_key('game_id'): send_method(SEL(kwargs['game_id']))
             if power and pcode: send_method(IAM(power, pcode))
             else: send_method(NME(self.name, self.__class__.__name__))
         def close(self):
@@ -461,6 +463,11 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP('sailho'), player.queue)
+    def test_RM_change(self):
+        self.new_game('sailho')
+        newbie = self.connect_player(self.Fake_Player, game_id=0)
+        self.assertContains('AUS', newbie.rep)
+        self.failUnlessEqual(newbie.rep['AUS'], 0x4100)
 
 class Server_FullGames(ServerTestCase):
     def connect_server(self, *args, **kwargs):

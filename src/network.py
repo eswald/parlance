@@ -308,6 +308,9 @@ class Service(Connection):
         self.booted = self.country
         self.country = None
         self.close()
+    def set_rep(self, representation):
+        self.rep = representation
+        self.send_RM()
     
     def send(self, message):
         if message[0] is not MDF:

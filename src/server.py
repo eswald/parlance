@@ -175,9 +175,12 @@ class Server(Verbose_Object):
             if not game.closed: return game
         else: return self.start_game()
     def join_game(self, client, game_id):
-        if client.game.game_id != game_id < len(self.games):
+        if client.game.game_id == game_id: return True
+        elif game_id < len(self.games):
             client.game.disconnect(client)
-            client.game = self.games[game_id]
+            new_game = self.games[game_id]
+            client.game = new_game
+            client.set_rep(new_game.representation)
             return True
         else: return False
     def start_game(self, client=None, match=None):
@@ -388,7 +391,6 @@ class Game(Verbose_Object):
             pending acceptance of the map.
         '''#'''
         self.log_debug(6, 'Offering %s to client #%d', country, client.client_id)
-        client.send_list([YES(message), MAP(self.judge.map_name)])
         msg = message.fold()
         client.country = country
         slot = self.players[country]
@@ -397,6 +399,7 @@ class Game(Verbose_Object):
         slot['client']  = client
         slot['ready']   = False
         slot['robotic'] = 'Human' not in name + version
+        client.send_list([YES(message), MAP(self.judge.map_name)])
     def players_unready(self):
         ''' A list of disconnected or unready players.'''
         return [country
