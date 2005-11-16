@@ -529,12 +529,19 @@ class Server_Bugfix(ServerTestCase):
     def test_robotic_key_error(self):
         # Introduced in revision 93; crashes the server.
         self.connect_server([])
-        self.master = self.connect_player(self.Fake_Master)
-        self.master.admin('Server: become master')
-        self.master.admin('Server: start holdbot as'
+        master = self.connect_player(self.Fake_Master)
+        master.admin('Server: become master')
+        master.admin('Server: start holdbot as'
                 + self.server.default_game().p_order[0])
-        self.master.admin('Server: start 5 holdbots')
+        master.admin('Server: start 5 holdbots')
         self.connect_player(self.Fake_Player)
+    def test_hello_leak(self):
+        from language import HLO
+        self.connect_server([])
+        player = self.connect_player(self.Fake_Player)
+        player.send(HLO())
+        for message in player.queue:
+            if message[0] is HLO: self.fail('Server sent HLO before game start')
     
 if __name__ == '__main__': unittest.main()
 

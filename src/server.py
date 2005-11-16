@@ -676,7 +676,9 @@ class Game(Verbose_Object):
         else: client.reject(message)
     def handle_MAP(self, client, message): client.send(MAP(self.judge.map_name))
     def handle_MDF(self, client, message): client.send(self.judge.mdf)
-    def handle_HLO(self, client, message): self.send_hello(client)
+    def handle_HLO(self, client, message):
+        if self.started: self.send_hello(client)
+        else: client.reject(message)
     def handle_TME(self, client, message):
         if self.deadline: remain = self.deadline - time()
         else: remain = 0
