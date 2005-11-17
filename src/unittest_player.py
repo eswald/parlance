@@ -98,6 +98,33 @@ class PlayerTestCase(unittest.TestCase):
         self.send_hello()
         self.send(self.variant.start_sco)
         self.send(self.variant.start_now)
+    def assertContains(self, item, series):
+        self.failUnless(item in series, 'Expected %r among %r' % (item, series))
+
+class Player_Tests(PlayerTestCase):
+    class Test_Player(Player):
+        name = 'Test Player'
+        version = '$version$'
+        def handle_REJ_YES(self, message): self.send(HLO())
+        def generate_orders(self): pass
+    def test_press_response(self):
+        from xtended import ENG, FRA, GER
+        self.connect_player(self.Test_Player)
+        self.start_game()
+        self.replies = []
+        offer = PRP(PCE([ENG, FRA]))
+        self.send(FRM([FRA, 0], ENG, offer))
+        self.seek_reply(SND(Number, FRA, HUH(ERR() + offer)) + WRT([FRA, 0]))
+        self.seek_reply(SND(Number, FRA, TRY([])))
+    def test_validate_option(self):
+        self.connect_player(self.Test_Player)
+        self.player.client_opts.validate = False
+        self.send(REJ(YES))
+        self.assertContains(HLO(), self.replies)
+        self.failIf(self.player.closed)
+        self.player.client_opts.validate = True
+        self.send(REJ(YES))
+        self.failUnless(self.player.closed)
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):

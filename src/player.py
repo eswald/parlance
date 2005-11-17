@@ -8,11 +8,13 @@ from orders    import *
 class client_options(config.option_class):
     ''' Options for client behavior, including:
         - response      What to do when the Server sends something we don't understand
+        - validate      Whether to check the syntax of incoming messages
         - confirm       Whether to send admin messages reporting order submission
     '''#'''
     section = 'clients'
     def __init__(self, player_class):
         self.response    = self.getstring('invalid message response', 'ignore').lower()
+        self.validate    = self.getboolean('validate incoming messages', True)
         self.confirm     = self.getboolean('confirm order submission', False)
         functions = {
             int:  self.getint,
@@ -138,10 +140,12 @@ class Player(Verbose_Object):
         '''#'''
         self.log_debug(5, '<< %s', message)
         
-        # Ignore or die on invalid messages
-        if self.opts: level = self.opts.LVL
-        else:         level = -1
-        reply = message.validate(self.power, level, True)
+        if self.client_opts.validate:
+            # Check message syntax
+            if self.opts: level = self.opts.LVL
+            else:         level = -1
+            reply = message.validate(self.power, level, True)
+        else: reply = None
         if reply:
             self.handle_invalid(message, reply=reply)
         else:
