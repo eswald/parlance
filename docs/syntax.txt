@@ -217,7 +217,7 @@ message 60 [query]
 message 60 [thought]
 message 70 [help_request]
 message 80 [explain]
-message 100 IFF [sub condition] THN [sub message] [optional] ELS [sub message]
+message 100 IFF [sub offer] THN [sub message] [optional] ELS [sub message]
 message 120 FRM [sub power] [sub power_list] [sub message]
 message 8000 [string]
 
@@ -233,11 +233,6 @@ help_request 70 HOW [sub province_maybe_coast]
 help_request 70 HOW [sub power]
 
 explain 80 EXP [sub turn] [sub message]
-
-condition 100 [offer]
-condition 100 AND [sub condition] [sub condition]
-condition 100 ORR [sub condition] [sub condition]
-condition 100 NOT [sub condition]
 
 
 ; Press Replies
@@ -279,12 +274,12 @@ offer 110 YDO [sub power] [repeat] [sub unit_maybe_coast]
 ; offer 110 PPT [sub power] [sub power] [optional sub promise_list]
 offer 120 SND [sub power] [sub power_list] [sub message]
 offer 120 FWD [sub power_list] [sub power_list] [sub power]
-; offer 120 BCC [sub power_list] [sub power_list] [sub power]
+offer 120 BCC [sub power_list] [sub power_list] [sub power]
 
 multipart_offer 30 AND [repeat] [sub offer]
 multipart_offer 30 ORR [repeat] [sub offer]
 multipart_offer 50 CHO [sub num_range] [repeat] [sub offer]
-num_range 50 [number] [optional number]
+num_range 50 [number] [number]
 
 turn_range 90 [sub turn] [sub turn]
 turn_range 90 [turn]
