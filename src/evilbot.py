@@ -29,7 +29,7 @@ class EvilBot(DumbBot):
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
         self.friends = self.friend_sets[kwargs.get('game_id')]
-        if len(self.friends) >= 3: self.friendly = self.crazy_friendly
+        if len(self.friends) == 1: self.friendly = self.crazy_friendly
         if self.power: self.friends.add(self.power.key)
         EvilBot.laughs = 3
     def handle_HLO(self, message):
