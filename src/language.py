@@ -210,7 +210,7 @@ class Message(list):
             >>> eval(repr(IAM(Token('ENG', 0x4101), 42)))
             Message(IAM, BRA, Token('ENG', 0x4101), KET, BRA, Token(42), KET)
         '''#'''
-        return 'Message(' + ', '.join(map(repr, self)) + ')'
+        return 'Message(' + repr(self.fold()) + ')'
     def pack(self):
         ''' Produces a string of token numbers from a Message.
             >>> print map(lambda x: hex(ord(x)), NOT(GOF).pack())
