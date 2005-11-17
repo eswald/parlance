@@ -7,7 +7,7 @@
 <body>
 
 <p>Author:             Andrew Rose</p>
-<p>Date:               27-Oct-2005</p>
+<p>Date:               17-Nov-2005</p>
 <p>Status:             Draft</p>            
 
 <p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
@@ -156,7 +156,7 @@ following message structure.</p>
 
 
 
-<h2>3.2         The Initial Message (IM)</h2>
+<h2>3.2         <a name="IM">The Initial Message</a> (IM)</h2>
 
 <p>This is a fixed length message.</p>
 
@@ -197,7 +197,7 @@ and it is only sent once.</p>
 
 
 
-<h2>3.3         The Representation Message (RM)</h2> 
+<h2>3.3         <a name="RM">The Representation Message</a> (RM)</h2> 
 <pre>
 
 0                   1                   2                   3
@@ -255,7 +255,7 @@ the number of powers less 1.</p>
 is always sent precisely once, immediately following the IM.</p> 
 
 
-<h2>3.4         The Diplomacy Message (DM)</h2>
+<h2>3.4         <a name="DM">The Diplomacy Message</a> (DM)</h2>
 
 <p>This is a variable length message.</p>
 
@@ -285,7 +285,7 @@ chapter &ldquo;Language Representation&rdquo;.  It can be sent by
 either party following the RM.</p>
 
 
-<h2>3.5         The Final Message (FM)</h2>
+<h2>3.5         <a name="FM">The Final Message</a> (FM)</h2>
 <p>This is a fixed length message.</p>
 <pre>
 
@@ -308,7 +308,7 @@ receipt, the receiving party will immediately close the connection
 without sending a final message or error message.</p> 
 
 
-<h2>3.6         The Error Message (EM)</h2>
+<h2>3.6         <a name="EM">The Error Message</a> (EM)</h2>
 <p>This is a fixed length message.</p>
 <pre>
 
@@ -404,13 +404,13 @@ further subdivided in the future if appropriate.</p>
 and the token numbers within the category.</p>
 
 
-<h2>4.3         Integers (0x00 - 0x3F)</h2>
+<h2>4.3         <a name="Integers">Integers (0x00 - 0x3F)</a></h2>
 
 <p>The representable range of integers is -8192 to +8191.  They are
 coded as a 14-bit two's-complement value.  The top two bits of the
 category are always zero.</p>
 
-<h2>4.4         Miscellaneous (0x40)</h2>
+<h2>4.4         <a name="Miscellaneous">Miscellaneous (0x40)</a></h2>
 
 <ul>
 	<li>BRA 0x00  - The open bracket &lsquo;(&rsquo;</li>
@@ -418,7 +418,7 @@ category are always zero.</p>
 </ul>
 
 
-<h2>4.5         Powers (0x41)</h2> 
+<h2>4.5         <a name="Powers">Powers (0x41)</a></h2> 
 
 <ul>
 	<li>AUS 0x00</li>
@@ -431,7 +431,7 @@ category are always zero.</p>
 </ul>
 
 
-<h2>4.6         Unit Types (0x42)</h2>
+<h2>4.6         <a name="Unit_Types">Unit Types (0x42)</a></h2>
 
 <ul>
 	<li>AMY 0x00</li>
@@ -440,7 +440,7 @@ category are always zero.</p>
 </ul>
 
 
-<h2>4.7         Orders (0x43)</h2>
+<h2>4.7         <a name="Orders">Orders (0x43)</a></h2>
 
 <ul>
 	<li>CTO 0x20</li>
@@ -464,7 +464,7 @@ the next is valid in the retreats phase and the last is valid in the
 movement phase.</p> 
 
 
-<h2>4.8         Order Notes (0x44)</h2> 
+<h2>4.8         <a name="Order_Notes">Order Notes (0x44)</a></h2> 
 
 <ul>
 	<li>MBV 0x00</li> 
@@ -491,7 +491,7 @@ movement phase.</p>
 
 
 
-<h2>4.9         Results (0x45)</h2> 
+<h2>4.9         <a name="Results">Results (0x45)</a></h2> 
 
 <ul>
 	<li>SUC 0x00</li>
@@ -503,7 +503,7 @@ movement phase.</p>
 	<li>RET 0x06</li>
 </ul>
 
-<h2>4.10     Coasts (0x46)</h2> 
+<h2>4.10     <a name="Coasts">Coasts (0x46)</a></h2> 
 
 <ul>
 	<li>NCS 0x00</li> 
@@ -517,7 +517,7 @@ movement phase.</p>
 </ul>
 
 
-<h2>4.11     Phases (0x47)</h2> 
+<h2>4.11     <a name="Phases">Phases (0x47)</a></h2> 
 
 <ul>
 	<li>SPR 0x00</li>
@@ -527,7 +527,7 @@ movement phase.</p>
 	<li>WIN 0x04</li>
 </ul>
 
-<h2>4.12     Commands (0x48)</h2> 
+<h2>4.12     <a name="Commands">Commands (0x48)</a></h2> 
 
 <ul>
 	<li>CCD 0x00</li> 
@@ -567,7 +567,7 @@ movement phase.</p>
 	<li>PNG 0x22</li>
 </ul>
 
-<h2>4.13     Parameters (0x49)</h2> 
+<h2>4.13     <a name="Parameters">Parameters (0x49)</a></h2> 
 
 <ul>
 	<li>AOA 0x00</li>
@@ -586,7 +586,7 @@ movement phase.</p>
 	<li>DSD 0x0D</li>
 </ul>
 
-<h2>4.14     Press (0x4A)</h2> 
+<h2>4.14     <a name="Press">Press (0x4A)</a></h2> 
 
 <ul>
 	<li>ALY 0x00</li> 
@@ -627,7 +627,7 @@ movement phase.</p>
 	<li>CHO 0x23</li>
 </ul>
 
-<h2>4.15     Text (0x4B)</h2> 
+<h2>4.15     <a name="Text">Text (0x4B)</a></h2> 
 
 <p>The value is the ASCII code for a single letter.  Strings are not
 delimited with quotation marks or anything else.  There are no
@@ -635,11 +635,11 @@ situations in the language where one string runs directly into
 another.  Therefore, the end of a string can be identified when the
 first non-text token is received.</p> 
 
-<h2>4.16     Provinces (0x50 - 0x57)</h2>
+<h2>4.16     <a name="Provinces">Provinces (0x50 - 0x57)</a></h2>
 
 <p>There are eight province categories as defined here.</p>
 
-<h3>Inland non-SC category = 0x50</h3>
+<h3><a name="Inland_non-SC">Inland non-SC category = 0x50</a></h3>
 
 <ul>
 	<li>BOH 0x00</li>
@@ -651,7 +651,7 @@ first non-text token is received.</p>
 	<li>UKR 0x06</li>
 </ul>
 
-<h3>Inland SC category = 0x51</h3>
+<h3><a name="Inland_SC">Inland SC category = 0x51</a></h3>
 
 <ul>
 	<li>BUD 0x07</li>
@@ -663,7 +663,7 @@ first non-text token is received.</p>
 	<li>WAR 0x0D</li>
 </ul>
 
-<h3>Sea non-SC category = 0x52</h3>
+<h3><a name="Sea_non-SC">Sea non-SC category = 0x52</a></h3>
 
 <ul>
 	<li>ADR 0x0E</li>
@@ -687,11 +687,11 @@ first non-text token is received.</p>
 	<li>WES 0x20</li>
 </ul>
 
-<h3>Sea SC category = 0x53</h3>
+<h3><a name="Sea-SC">Sea SC category = 0x53</a></h3>
 
 <p>On the standard map there are no sea SCs.</p>
 
-<h3>Coastal non-SC category = 0x54</h3>
+<h3><a name="Coastal_non-SC">Coastal non-SC category = 0x54</a></h3>
 
 <ul>
 	<li>ALB 0x21</li>
@@ -711,7 +711,7 @@ first non-text token is received.</p>
 	<li>YOR 0x2F</li>
 </ul>
 
-<h3>Coastal SC category = 0x55</h3>
+<h3><a name="Coastal_SC">Coastal SC category = 0x55</a></h3>
 
 <ul>
 	<li>ANK 0x30</li>
@@ -740,12 +740,12 @@ first non-text token is received.</p>
 	<li>VEN 0x47</li>
 </ul>
 
-<h3>Bicoastal non-SC category = 0x56</h3>
+<h3><a name="Bicoastal_non-SC">Bicoastal non-SC category = 0x56</a></h3>
 
 <p>On the standard map there are no non-SC bicoastal
 provinces.</p>
 
-<h3>Bicoastal SC category = 0x57</h3>
+<h3><a name="Bicoastal_SC">Bicoastal SC category = 0x57</a></h3>
 
 <ul>
 	<li>BUL 0x48</li>
@@ -761,7 +761,7 @@ centre or not.  The next two bits can be used to determine province
 type.</p> 
 
 
-<h2>4.17     Reserved for AI use (0x58 - 0x5F)</h2>
+<h2>4.17     <a name="Reserved">Reserved for AI use (0x58 - 0x5F)</a></h2>
 
 <p>These categories will never be assigned another use.  AI writers
 are free to use these categories as they see fit.  However, they must
