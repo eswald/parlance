@@ -46,8 +46,6 @@ class Player(Verbose_Object):
         self.send_out  = send_method      # A function that accepts messages
         self.rep       = representation   # The representation message
         self.closed    = False # Whether the connection has ended, or should end
-        self.msg_queue = []    # A list of unprocessed messages
-        self.use_queue = False # Whether to save unprocessed messages
         self.in_game   = False # Whether the game is currently in progress
         self.submitted = False # Whether any orders have been submitted this turn
         self.map       = None  # The game board
@@ -113,20 +111,6 @@ class Player(Verbose_Object):
         self.send(SUB(order))
     def phase(self): return self.map.current_turn.phase()
     
-    def dequeue_message(self, command=None):
-        ''' Returns the first unhandled message from the server, or None.
-            If command is given, only messages starting with that token
-            or replying to that token will be considered.
-        '''#'''
-        if self.msg_queue:
-            if command:
-                for index in range(len(self.msg_queue)):
-                    if command in self.msg_queue[index][0:3]:
-                        return self.msg_queue.pop(index)
-                else: return None
-            else: return self.msg_queue.pop(0)
-        else: return None
-    
     def send_identity(self, game_id=None):
         ''' Registers the player with the server.
             Should send OBS, NME, or IAM.
@@ -146,7 +130,6 @@ class Player(Verbose_Object):
             Hands it off to a handle_XXX() method,
             where XXX is the first token of the message,
             if such a method is defined.
-            If no such method, queues it in self.msg_queue.
             
             Generally, message handling is sequential; that is,
             the event loop will wait for one message handler to finish
@@ -180,9 +163,6 @@ class Player(Verbose_Object):
             if hasattr(self, method_name):
                 try: getattr(self, method_name)(message)
                 except Exception, e: self.handle_invalid(message, error=e)
-            elif self.use_queue:
-                self.log_debug(7, 'Queuing unhandled message: ' + str(message))
-                self.msg_queue.append(message)
         self.log_debug(12, 'Finished %s message', message[0])
     
     def handle_invalid(self, message, error=None, reply=None):
