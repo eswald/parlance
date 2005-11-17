@@ -171,13 +171,13 @@ class Player(Verbose_Object):
     
     def handle_invalid(self, message, error=None, reply=None):
         response = self.client_opts.response
-        if response in ('print', 'warn', 'croak'):
+        if response in ('print', 'warn', 'carp', 'croak'):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
-        if response in ('huh', 'complain', 'croak'):
+        if response in ('huh', 'complain', 'carp', 'croak'):
             self.send(reply or HUH([ERR, message]))
-        if response in ('die', 'close', 'croak'): self.close()
-        if error and response not in ('print', 'close', 'huh', 'ignore'): raise
+        if response in ('die', 'close', 'carp', 'croak'): self.close()
+        if error and response not in ('print', 'close', 'huh', 'carp', 'ignore'): raise
     
     def handle_MAP(self, message):
         ''' Handles the MAP command, creating a new map if possible.
