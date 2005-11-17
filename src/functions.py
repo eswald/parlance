@@ -143,7 +143,9 @@ class Verbose_Object(object):
                     output = file(self.log_file, 'a')
                     self.__files[self.log_file] = output
                 output.write(line + linesep)
-            else: print line
+            else:
+                try: print line
+                except IOError: self.verbosity = 0 # Ignore broken pipes
     def prefix(self): return self.__class__.__name__
     prefix = property(fget=prefix)
 
