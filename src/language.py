@@ -146,47 +146,31 @@ class Message(list):
         from functions import rindex
         complaint = 'unbalanced parentheses in folded Message'
         if self.count(BRA) != self.count(KET): raise ValueError, complaint
-        series = _convert(self)
+        series = self.convert()
         while BRA in series:
             k = series.index(KET)
             try: b = rindex(series[:k], BRA)
             except ValueError: raise ValueError, complaint
             series[b:k+1] = [series[b+1:k]]
         return series
-    
-    def old_fold(self):
-        ''' Folds the token into a list, with bracketed sublists as lists.
-            Also converts text and number tokens to strings and integers.
+    def convert(self):
+        ''' Converts a Message into a list,
+            with embedded strings and tokens converted into Python values.
             
-            >>> NOT(GOF).fold()
-            [NOT, [GOF]]
-            >>> Message().fold()
-            []
-            >>> NME('name', -3).fold()
-            [NME, ['name'], [-3]]
-            >>> from translation import translate
-            >>> translate('(()(()()))()').fold()
-            [[[], [[], []]], []]
-            >>> translate('(()()))()(()').fold()
-            Traceback (most recent call last):
-                ...
-            ValueError: unbalanced parentheses in folded Message
-            >>> translate('NOT ( GOF').fold()
-            Traceback (most recent call last):
-                ...
-            ValueError: unbalanced parentheses in folded Message
+            >>> NME('version', -3).convert()
+            [NME, BRA, 'version', KET, BRA, -3, KET]
         '''#'''
-        if self.count(BRA) != self.count(KET):
-            raise ValueError, 'unbalanced parentheses in folded Message'
-        series = _convert(self)
-        while BRA in series:
-            i = series.index(BRA)
-            j = series.index(KET)
-            if i > j: raise ValueError, 'unbalanced parentheses in folded Message'
-            while BRA in series[i+1:j]:
-                i += 1 + series[i+1:j].index(BRA)
-            series[i:j+1] = [series[i+1:j]]
-        return series
+        result = []
+        text = ''
+        append = result.append
+        for token in self:
+            if token.is_text(): text += token.text
+            else:
+                if text: append(text); text = ''
+                if token.is_integer(): append(token.value())
+                else: append(token)
+        if text: append(text)
+        return result
     
     def __str__(self):
         ''' Returns a string representation of the message.
@@ -761,25 +745,6 @@ def _get_token_text(number):
     elif Token.opts.ignore_unknown:                   return '0x%04X' % number
     else: raise ValueError, 'unknown token number 0x%04X' % number
 
-def _convert(message):
-    ''' Converts a Message into a list,
-        with embedded strings and tokens converted into Python values.
-        
-        >>> _convert(NME('version', -3))
-        [NME, BRA, 'version', KET, BRA, -3, KET]
-    '''#'''
-    result = []
-    text = ''
-    append = result.append
-    for token in message:
-        if token.is_text(): text += token.text
-        else:
-            if text: append(text); text = ''
-            if token.is_integer(): append(token.value())
-            else: append(token)
-    if text: append(text)
-    return result
-
 def _tokenize(value, wrap=False):
     ''' Returns a list of Token instances based on a value.
         If wrap is true, lists and tuples will be wrapped in parentheses.
@@ -826,7 +791,6 @@ def _wrap(value):
 __test__ = {
     '_get_or_create_token':      _get_or_create_token,
     '_get_token_text':           _get_token_text,
-    '_convert':                  _convert,
     '_tokenize':                 _tokenize,
     '_wrap':                     _wrap,
 }
