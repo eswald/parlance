@@ -287,6 +287,7 @@ class Service(Connection):
         self.mastery   = False
         self.booted    = False
         self.server    = server
+        self.errors    = 0
         self.game      = server.default_game()
         self.rep       = self.game.representation
     def power_name(self):
@@ -296,7 +297,13 @@ class Service(Connection):
         if msg:
             self.log_debug(4, '%3s >> %s', self.power_name(), msg)
             try: self.server.handle_message(self, msg)
-            except: self.close(); raise
+            except Exception, e:
+                self.log_debug(1, 'Exception handling "%s": %s', message, e)
+                self.server.broadcast_admin('An error has occurred.  '
+                        'The server may be unreliable until it is restarted.')
+                self.errors += 1
+                if self.errors < 3: self.boot()
+                else: self.admin("Please don't do that again, whatever it was.")
     def close(self):
         if not self.closed:
             self.game.disconnect(self)
