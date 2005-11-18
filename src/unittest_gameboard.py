@@ -5,6 +5,7 @@
 import unittest
 import config
 from gameboard import Map, Turn, Province
+from language  import Token, AMY, FLT
 
 class Map_Variants(unittest.TestCase):
     "Validity checks for each of the known variants"
@@ -131,7 +132,6 @@ class Map_Bugfix(unittest.TestCase):
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_island_Pale(self):
         "Check for The Pale in Hundred3, which is an island."
-        from language    import Token, AMY
         options = config.variant_options('hundred3')
         game_map = Map(options=options)
         prov = Token('Pal', rep=options.rep)
@@ -141,10 +141,21 @@ class Map_Bugfix(unittest.TestCase):
         self.failUnless(coast.province.is_valid())
     def test_island_province(self):
         "Test whether Province can define island spaces."
-        from language    import AMY, FLT
         from xtended     import NAF, MAO, WES
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
+
+class Coast_Bugfix(unittest.TestCase):
+    "Tests to reproduce bugs related to the Coast class"
+    def test_infinite_convoy(self):
+        from functions import Verbose_Object
+        Verbose_Object.verbosity = 11
+        variant = config.variant_options('americas4')
+        board = Map(options=variant)
+        Alaska = Token('ALA', rep=variant.rep)
+        Oregon = board.coasts[(AMY, Token('ORE', rep=variant.rep), None)]
+        results = Oregon.collect_convoy_routes(Alaska, board)
+        self.failUnlessEqual(results, [])
 
 if __name__ == '__main__': unittest.main()
 

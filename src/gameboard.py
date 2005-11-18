@@ -686,6 +686,7 @@ class Province(Comparable):
         else: return None
     def can_convoy(self): return self.key.category_name() in ('Sea SC', 'Sea non-SC')
     def __str__(self): return self.name
+    def __repr__(self): return "Province('%s')" % self.name
     def tokenize(self): return [self.key]
     def __cmp__(self, other):
         ''' Compares Provinces with each other, or with their tokens.
@@ -698,7 +699,7 @@ class Province(Comparable):
     def exists(self): return bool(self.coasts)
 
 
-class Coast(Comparable):
+class Coast(Comparable, Verbose_Object):
     ''' A place where a unit can be.
         Each Province has one per unit type allowed there,
         with extra fleet Coasts for multi-coastal provinces.
@@ -736,6 +737,14 @@ class Coast(Comparable):
         else: return NotImplemented
     def __str__(self): return self.text
     def __repr__(self): return 'Coast(%s, %s, %s)' % self.key
+    def prefix(self):
+        if self.coastline:
+            line = self.coastline.text.lower()
+            if line[-1] == 's': line = line[:-1]
+            coast = ' (%s)' % line
+        else: coast = ''
+        return '%s %s%s' % (self.unit_type.text[0], self.province.name, coast)
+    prefix = property(fget=prefix)
     
     # Confirmation queries
     def is_valid(self):
@@ -764,6 +773,7 @@ class Coast(Comparable):
             []
         '''#'''
         if not self.routes.has_key(dest):
+            self.log_debug(11, 'Collecting convoy routes to %s', dest)
             self.routes[dest] = []
             spaces = board.spaces
             if self.province != dest in spaces:
@@ -775,6 +785,7 @@ class Coast(Comparable):
                         def reversed(seq): l = list(seq); l.reverse(); return tuple(l)
                         self.routes[dest] = [reversed(path) for path in result]
                     elif result is None: self.routes[dest] = self._collect_routes(dest, spaces)
+            self.log_debug(11, 'Routes found: %s', self.routes[dest])
         return self.routes[dest]
     def _collect_routes(self, dest, spaces):
         ''' Helper function for collect_convoy_routes(). '''
@@ -785,6 +796,8 @@ class Coast(Comparable):
         ]
         while possible:
             route = possible.pop()
+            self.log_debug(12, 'Considering %s',
+                    ' -> '.join([prov.name for prov in route]))
             here = route[-1]
             if dest in here.borders_out: path_list.append(route)
             seen = [p.key for p in route]

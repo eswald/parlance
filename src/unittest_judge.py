@@ -435,6 +435,32 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         client = self.Fake_Service(GER)
         self.judge.handle_NOT_SUB(client, NOT(SUB([(GER, AMY, RUH), MTO, BEL])))
 
+class Judge_Americas(DiplomacyAdjudicatorTestCase):
+    "Fixing bugs in the Americas4 map variant."
+    variant_name = 'americas4'
+    def test_major_problem(self):
+        ''' This situation started chewing up memory and CPU like mad.
+        '''#'''
+        from threading   import Thread
+        from translation import translate
+        rep = self.judge.map.rep
+        now = translate('''NOW ( FAL 1848 ) ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO ) ( MXC FLT NPO ) ( MXC FLT WCB )''', rep)
+        sub = translate('''SUB
+                ( ( MXC FLT WCB ) MTO ( NIC ECS ) )
+                ( ( MXC FLT NPO ) CVY ( MXC AMY ORE ) CTO ALA )
+                ( ( MXC FLT COM ) MTO GOT )
+                ( ( MXC AMY ORE ) CTO ALA VIA ( NPO ) )
+                ( ( MXC FLT MPO ) MTO GAL )
+        ''', rep) #'''
+        self.judge.map.handle_NOW(now)
+        self.judge.init_turn()
+        client = self.Fake_Service(Token('MXC', rep=rep))
+        thread = Thread(target=self.judge.handle_SUB, args=(client, sub))
+        thread.setDaemon(True)
+        thread.start()
+        thread.join(10)
+        if thread.isAlive(): self.fail('Convoy took too long.')
+
 class Judge_Errors(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
         - MBV: Order is OK
