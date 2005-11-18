@@ -32,7 +32,6 @@ class main_options(config.option_class):
         self.verbosity   = self.getint('output verbosity', 1)
 class server_options(config.option_class):
     ''' Options for the server, including:
-        - robin        Whether to conduct round-robin tournaments
         - takeover     Whether to allow taking over an existing power
         - snd_admin    Whether to send admin messages created by the server
         - fwd_admin    Whether to send admin messages from other players
@@ -40,13 +39,12 @@ class server_options(config.option_class):
     '''#'''
     section = 'server'
     def __init__(self):
-        self.robin     = self.getboolean('round-robin',            False)
         self.takeover  = self.getboolean('allow takeovers',        False)
         self.snd_admin = self.getboolean('send admin messages',    False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
         self.quit      = self.getboolean('close on disconnect',    False)
-        self.variant   = self.getstring( 'variant name',           'standard')
-        self.password  = self.getstring( 'admin command password', '_now34')
+        self.variant   = self.getstring( 'default variant',        'standard')
+        self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
 
 
