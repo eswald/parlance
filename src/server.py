@@ -137,7 +137,7 @@ class Server(Verbose_Object):
                 if method: method(client, message); break
             else:
                 self.log_debug(7, 'Missing message handler: %s', method_name)
-                client.send(HUH(message))
+                client.send(HUH([ERR, message]))
     def handle_ADM(self, client, message):
         text = message.fold()[2][0].lower()
         if text[0:7] == 'server:':

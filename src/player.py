@@ -337,9 +337,7 @@ class Player(Verbose_Object):
             except AttributeError: pass
 
         # If that fails, reply with HUH/TRY
-        reply = HUH(press)
-        reply.insert(2, ERR)
-        self.send_press(sender, reply, [mid])
+        self.send_press(sender, HUH([ERR, press]), [mid])
         self.send_press(sender, TRY(self.press_tokens))
     
     def send_press(self, recips, press, refs = None):

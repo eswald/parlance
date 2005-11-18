@@ -114,7 +114,7 @@ class Player_Tests(PlayerTestCase):
         self.replies = []
         offer = PRP(PCE([ENG, FRA]))
         self.send(FRM([FRA, 0], ENG, offer))
-        self.seek_reply(SND(Number, FRA, HUH(ERR() + offer)) + WRT([FRA, 0]))
+        self.seek_reply(SND(Number, FRA, HUH([ERR, offer])) + WRT([FRA, 0]))
         self.seek_reply(SND(Number, FRA, TRY([])))
     def test_validate_option(self):
         self.connect_player(self.Test_Player)
@@ -136,7 +136,7 @@ class Player_HoldBot(PlayerTestCase):
         self.replies = []
         offer = PRP(PCE([ENG, FRA]))
         self.send(FRM([FRA, 0], ENG, offer))
-        self.seek_reply(SND(Number, FRA, HUH(ERR() + offer)) + WRT([FRA, 0]))
+        self.seek_reply(SND(Number, FRA, HUH([ERR, offer])) + WRT([FRA, 0]))
         self.seek_reply(SND(Number, FRA, TRY([])))
 
 if __name__ == '__main__': unittest.main()
