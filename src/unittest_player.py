@@ -42,7 +42,7 @@ class PlayerTestCase(unittest.TestCase):
     
     game_options = {
             'syntax Level': 8000,
-            'variant name' : 'standard',
+            'default variant' : 'standard',
             'close on disconnect' : True,
             'use internal server' : True,
             'host' : '',

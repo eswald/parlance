@@ -155,7 +155,7 @@ def run_server():
             else:
                 config.variant_options(arg)
                 opts['variant'] = arg
-                opts['variant name'] = arg
+                opts['default variant'] = arg
     except:
         print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % (argv[0],)
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
