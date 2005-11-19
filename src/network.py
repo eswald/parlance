@@ -5,7 +5,7 @@ from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
 from language  import Message, Token, YES, REJ, ADM, OFF, MDF
-from functions import Verbose_Object
+from functions import Verbose_Object, s
 from server    import Server, Client_Manager
 
 
@@ -391,6 +391,8 @@ class ServerSocket(SocketWrapper):
         # Warning: Only to be used from run() or one of its calls
         del self.sockets[fd]
         if self.polling: self.polling.unregister(fd)
+        remain = len(self.sockets) - 1
+        self.log_debug(6, '%d client%s still connected.', remain, s(remain))
     def select(self, time_left):
         for fd, sock in self.sockets.items():
             if sock.closed: self.remove(fd)
