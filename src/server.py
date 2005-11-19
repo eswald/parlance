@@ -184,7 +184,7 @@ class Server(Verbose_Object):
         else: return False
     def start_game(self, client=None, match=None):
         if match and match.lastindex:
-            var_name = match.group(1)
+            var_name = match.group(2)
             try: variant = config.variant_options(var_name)
             except:
                 client.admin('Unknown variant "%s"', var_name)
@@ -255,7 +255,7 @@ class Server(Verbose_Object):
     commands = [
         {'pattern': re.compile('new game'), 'command': start_game,
         'decription': '  new game - Starts a new game of Standard Diplomacy'},
-        {'pattern': re.compile('new (\w+) game'), 'command': start_game,
+        {'pattern': re.compile('(new|start) (\w+) game'), 'command': start_game,
         'decription': '  new <variant> game - Starts a new game, with the <variant> map'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
@@ -853,7 +853,7 @@ class Game(Verbose_Object):
                 low_result.append(struct.client)
         return result or low_result
     def eject(self, client, match):
-        name = match.group(1)
+        name = match.group(2)
         players = self.find_players(name)
         if len(players) == 1: players[0].boot()
         elif players and not self.started:
@@ -937,7 +937,7 @@ class Game(Verbose_Object):
         'decription': '  pause - Stops deadline timers and phase transitions'},
         {'pattern': re.compile('resume'), 'command': resume,
         'decription': '  resume - Resumes deadline timers and phase transitions'},
-        {'pattern': re.compile('eject +(.+)'), 'command': eject,
+        {'pattern': re.compile('(eject|boot) +(.+)'), 'command': eject,
         'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
         {'pattern': re.compile('end game'), 'command': close,
         'decription': '  end game - Ends the game (without a winner)'},

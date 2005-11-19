@@ -440,6 +440,10 @@ class Server_Admin_Other(Server_Admin):
                 'become master %s' % self.server.options.password,
                 'Master powers granted.')
     
+    def test_eject_boot(self):
+        "Players can be ejected using 'boot' as well as 'eject'."
+        self.assertAdminResponse(self.master, 'boot Fake Player',
+                'Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_multiple_unstarted(self):
         "Multiple players of the same name can be ejected before the game starts."
         self.connect_player(self.Fake_Player)
@@ -482,6 +486,9 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(len(self.server.games), 2)
         self.connect_player(self.Fake_Player)
         self.failUnless(len(self.server.games[1].clients))
+    def test_start_game(self):
+        self.master.admin('Server: start standard game')
+        self.failUnlessEqual(len(self.server.games), 2)
     def test_second_connection(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
