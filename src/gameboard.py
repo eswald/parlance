@@ -712,7 +712,6 @@ class Coast(Comparable, Verbose_Object):
             - borders_out  A list of keys for coasts to which this unit could move
             - key          A tuple that uniquely specifies this coast
             - maybe_coast  (province, coast) for bicoastal provinces, province for others
-            - routes       province Token -> [[Province]] for attempted convoys
     '''#'''
     def __init__(self, unit_type, province, coastline, adjacencies):
         # Warning: a fake Coast can have a unit_type of None.
@@ -720,7 +719,6 @@ class Coast(Comparable, Verbose_Object):
         self.coastline   = coastline
         self.province    = province
         self.key         = (unit_type, province.key, coastline)
-        self.routes      = {}
         self.borders_in  = Set()
         self.borders_out = [location_key(unit_type, adj) for adj in adjacencies]
         if coastline:
@@ -758,43 +756,36 @@ class Coast(Comparable, Verbose_Object):
         elif category == 'Coastal':   return self.unit_type in (AMY, FLT)
         else:                         return False
     def exists(self): return self.unit_type and self in self.province.coasts
-    def collect_convoy_routes(self, dest, board):
-        ''' Collects possible convoy routes, saving them in routes[dest].
-            dest must be a province Token.
+    def convoy_routes(self, dest, board):
+        ''' Collects possible convoy routes.
+            dest must be a Province.
             Each route is a tuple of Province instances.
             Now collects only routes that currently have fleets.
         '''#'''
-        self.log_debug(11, 'Collecting convoy routes to %s', dest)
-        self.routes[dest] = []
-        spaces = board.spaces
-        if self.province != dest in spaces:
-            where = spaces[dest].is_coastal()
-            if where: self.routes[dest] = self._collect_routes(dest, spaces)
-        self.log_debug(11, 'Routes found: %s', self.routes[dest])
-        return self.routes[dest]
-    def _collect_routes(self, dest, spaces):
-        ''' Helper function for collect_convoy_routes(). '''
+        self.log_debug(11, 'Collecting convoy routes to %s', dest.name)
         path_list = []
-        possible = [(p,)
-            for p in [spaces[key] for key in self.province.borders_out]
-            if p.can_convoy() and len(p.units) > 0
-        ]
-        while possible:
-            route = possible.pop()
-            self.log_debug(12, 'Considering %s',
-                    ' -> '.join([prov.name for prov in route]))
-            here = route[-1]
-            if dest in here.borders_out: path_list.append(route)
-            seen = [p.key for p in route]
-            possible.extend([route + (p,)
-                for p in [spaces[key]
-                    for key in here.borders_out
-                    if key not in seen]
+        if self.province != dest and dest.is_coastal():
+            possible = [(p,)
+                for p in [board.spaces[key] for key in self.province.borders_out]
                 if p.can_convoy() and len(p.units) > 0
-            ])
-        # Sort shorter paths to the front,
-        # to speed up checking
-        path_list.sort(lambda x,y: cmp(len(x), len(y)))
+            ]
+            while possible:
+                route = possible.pop()
+                self.log_debug(12, 'Considering %s',
+                        ' -> '.join([prov.name for prov in route]))
+                here = route[-1]
+                if dest.key in here.borders_out: path_list.append(route)
+                seen = [p.key for p in route]
+                possible.extend([route + (p,)
+                    for p in [board.spaces[key]
+                        for key in here.borders_out
+                        if key not in seen]
+                    if p.can_convoy() and len(p.units) > 0
+                ])
+            # Sort shorter paths to the front,
+            # to speed up checking
+            path_list.sort(lambda x,y: cmp(len(x), len(y)))
+        self.log_debug(11, 'Routes found: %s', path_list)
         return path_list
     def matches(self, key):
         #print '\tmatches(%s, %s)' % (self.key, key)

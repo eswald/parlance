@@ -80,16 +80,12 @@ class UnitOrder(Comparable):
         return note
 
 class MovementPhaseOrder(UnitOrder):
-    def convoy_note(convoyed, destination, route_valid=bool):
+    routes = []
+    def convoy_note(convoyed, destination, routes, route_valid=bool):
         result = FAR
         if not (convoyed.exists() and convoyed.can_be_convoyed()): result = NSA
         elif destination.province.is_coastal():
-            routes = convoyed.coast.routes[destination.province.key]
-            def has_fleet(sea): return len(sea.units) > 0
-            for sea_list in routes:
-                if route_valid(sea_list) and all(sea_list, has_fleet):
-                    result = MBV
-                    break
+            if any(routes, route_valid): result = MBV
         #print 'convoy_note(%s, %s) => %s' % (convoyed, destination, result)
         return result
     convoy_note = staticmethod(convoy_note)
@@ -97,7 +93,7 @@ class MovementPhaseOrder(UnitOrder):
         if self.unit.can_be_convoyed():
             if self.path:
                 path_list = [[fleet.coast.province for fleet in self.path]]
-            else: path_list = self.unit.coast.routes.get(self.destination.province.key)
+            else: path_list = self.routes
             if path_list:
                 key = self.unit.key
                 def available(prov):
@@ -144,15 +140,17 @@ class MoveOrder(MovementPhaseOrder):
         dest = board.ordered_coast(unit, order[2], datc)
         if unit.can_be_convoyed() and datc.datc_4a3 != 'f':
             # Implicit convoys are allowed; check for them
-            unit.coast.collect_convoy_routes(dest.province.key, board)
-            if not unit.can_move_to(dest):
+            routes = unit.coast.convoy_routes(dest.province, board)
+            if not routes: result = klass(unit, dest)
+            elif not unit.can_move_to(dest):
                 # Can't move directly; attempt to convoy
                 result = ConvoyedOrder(unit, dest)
-            elif datc.datc_4a3 == 'e' or klass.convoy_note(unit, dest) != MBV:
+            elif datc.datc_4a3 == 'e' or klass.convoy_note(unit, dest, routes) != MBV:
                 # DPTG: Only convoy adjacent if it's explicit
                 # For other options, consider possible adjacent convoys
                 result = klass(unit, dest)
             else: result = klass(unit, dest, True)
+            result.routes = routes
         else: result = klass(unit, dest)
         result.order = order
         return result
@@ -181,14 +179,14 @@ class ConvoyingOrder(MovementPhaseOrder):
             else:
                 def has_this_fleet(route, fleet=self.unit.coast.province.key):
                     return fleet in route
-                note = self.convoy_note(self.supported, self.destination, has_this_fleet)
+                note = self.convoy_note(self.supported, self.destination, self.routes, has_this_fleet)
         return note
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0])
         mover = board.ordered_unit(nation, order[2])
         dest = board.ordered_coast(mover, order[4], datc)
-        mover.coast.collect_convoy_routes(dest.province.key, board)
         result = klass(unit, mover, dest)
+        result.routes = mover.coast.convoy_routes(dest.province, board)
         result.order = order
         return result
     create = classmethod(create)
@@ -228,16 +226,15 @@ class ConvoyedOrder(MovementPhaseOrder):
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV:
-            note = self.convoy_note(self.unit, self.destination)
+            note = self.convoy_note(self.unit, self.destination, self.routes)
             if note == MBV and self.path:
                 def real_prov(fleet): return fleet.coast.province.exists()
                 def at_sea(fleet):    return fleet.coast.province.can_convoy()
-                routes = self.unit.coast.routes[self.destination.province.key]
                 if   not all(self.path, real_prov):        note = NSP
                 elif not all(self.path, Unit.exists):      note = NSF
                 elif not all(self.path, at_sea):           note = NAS
                 elif not all(self.path, Unit.can_convoy):  note = NSF
-                elif self.path_key not in routes:          note = FAR
+                elif self.path_key not in self.routes:     note = FAR
         return note
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0])
@@ -246,8 +243,8 @@ class ConvoyedOrder(MovementPhaseOrder):
             path = [board.ordered_unit(nation, prov) for prov in order[4]]
             #for prov in path: print 'Convoying unit: %s' % prov
         else: path = None
-        unit.coast.collect_convoy_routes(dest.province.key, board)
         result = klass(unit, dest, path)
+        result.routes = unit.coast.convoy_routes(dest.province, board)
         result.order = order
         return result
     create = classmethod(create)
@@ -278,8 +275,10 @@ class SupportOrder(MovementPhaseOrder):
                 elif datc.datc_4b4 == 'e' and dest.coastline:
                     # Coastline specifications are ignored
                     dest = Coast(dest.unit_type, dest.province, None, [])
-            else: supported.coast.collect_convoy_routes(dest.province.key, board)
+                routes = []
+            else: routes = supported.coast.convoy_routes(dest.province, board)
             result = SupportMoveOrder(unit, supported, dest, legal_dest)
+            result.routes = routes
         else: result = SupportHoldOrder(unit, supported)
         result.order = order
         return result
@@ -328,7 +327,7 @@ class SupportMoveOrder(SupportOrder):
             else:
                 def has_not(route, prov=self.unit.coast.province.key):
                     return prov not in route
-                result = self.convoy_note(self.supported, self.destination, has_not)
+                result = self.convoy_note(self.supported, self.destination, self.routes, has_not)
                 if result != MBV: note = FAR
         return note
 
