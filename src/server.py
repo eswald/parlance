@@ -46,6 +46,7 @@ class server_options(config.option_class):
         self.variant   = self.getstring( 'default variant',        'standard')
         self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
+        self.bot_min   = self.getint(    'minimum player count for bots', 1)
 
 
 class Client_Manager(Verbose_Object):
@@ -874,6 +875,9 @@ class Game(Verbose_Object):
             If number is less than one, it will be added to
             the number of empty power slots in the client's game.
         '''#'''
+        if self.num_players() < self.server.options.bot_min:
+            client.admin('Recruit more players first.')
+            return
         bot_name = match.group(2)
         if bot_name[-1] == 's' and not bots.has_key(bot_name):
             bot_name = bot_name[:-1]
@@ -910,6 +914,10 @@ class Game(Verbose_Object):
             self.server.manager.async_start(bot_class, num, callback,
                     game_id=self.game_id, power=power, passcode=pcode)
         else: client.admin('Unknown bot: %s', bot_name)
+    def num_players(self):
+        from sets import Set
+        return len(Set([p.client.address
+            for p in self.players.values() if p.client]))
     def set_press_level(self, client, match):
         cmd = match.group(1)
         if cmd == 'en':    new_level = 8000

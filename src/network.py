@@ -277,11 +277,12 @@ class Client(Connection):
 class Service(Connection):
     ''' Connects a network player to the internal Server.'''
     is_server = True
-    def __init__(self, client_id, connection, server):
+    def __init__(self, client_id, connection, address, server):
         self.__super.__init__()
         self.sock      = connection
         self.client_id = client_id
         self.deadline  = time() + 30
+        self.address   = address
         self.country   = None
         self.guesses   = 0
         self.mastery   = False
@@ -380,7 +381,7 @@ class ServerSocket(SocketWrapper):
             self.log_debug(6, 'Connection from %s as client #%d',
                     addr, self.next_id)
             conn.setblocking(False)
-            self.add(Service(self.next_id, conn, self.server))
+            self.add(Service(self.next_id, conn, addr, self.server))
             self.next_id += 1
     def add(self, sock):
         fd = sock.fileno()

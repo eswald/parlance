@@ -36,7 +36,7 @@ class Fake_Service(Service):
     def __init__(self, client_id, server, player_class, **kwargs):
         self.queue = []
         self.player = None
-        self.__super.__init__(client_id, None, server)
+        self.__super.__init__(client_id, None, client_id, server)
         self.player = player_class(self.handle_message, self.rep, **kwargs)
         for msg in self.queue: self.handle_message(msg)
     def write(self, message):
@@ -163,6 +163,7 @@ class ServerTestCase(unittest.TestCase):
             'publish individual orders': False,
             'total years before setting draw': 3,
             'invalid message response': 'croak',
+            'minimum player count for bots': 2,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
@@ -293,7 +294,9 @@ class Server_Admin(ServerTestCase):
         self.assertContains(response, player.admin('Server: %s', command))
     def assertUnauthorized(self, player, command):
         self.assertAdminResponse(player, command, self.unauth)
-    
+
+class Server_Admin_Bots(Server_Admin):
+    "Starting bots with admin commands"
     def test_start_bot(self):
         "Bot starting actually works"
         game = self.server.default_game()
@@ -344,6 +347,16 @@ class Server_Admin(ServerTestCase):
     def test_start_multiple_bots(self):
         "Exactly enough bots can be started to fill up the game."
         self.assertAdminResponse(self.master, 'start holdbots', '4 bots started')
+    def test_start_bot_blocking(self):
+        "Bots can only be started in games with enough players."
+        self.backup.close()
+        self.robot.close()
+        self.master.admin('Ping.')
+        self.assertAdminResponse(self.master, 'start holdbots',
+                'Recruit more players first.')
+
+class Server_Admin_Other(Server_Admin):
+    "Other administrative messages handled by the server"
     
     def test_pause_master(self):
         "Whether a game master can pause the game"
@@ -482,10 +495,12 @@ class Server_Multigame(ServerTestCase):
         self.connect_player(self.Fake_Player)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):
+        game = self.server.default_game()
+        self.connect_player(self.Fake_Player)
         self.new_game()
         self.master.admin('Server: become master')
         self.master.admin('Server: start holdbot')
-        self.failUnlessEqual(len(self.server.games[0].clients), 2)
+        self.failUnlessEqual(len(game.clients), 3)
     def test_sailho_game(self):
         from language import MAP
         self.new_game('sailho')
