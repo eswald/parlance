@@ -101,21 +101,14 @@ else:
             self.mapwin = None
             self.units = {}
         def handle_MAP(self, message):
-            from config      import find_variant_file
-            from translation import read_message_file
             from language    import NOW, SCO
             self.__super.handle_MAP(message)
             if self.map.valid:
-                mapname = self.map.name
-                filename = 'map for ' + mapname
-                message = None
                 try:
-                    filename = find_variant_file(mapname, 'tty')
-                    message = read_message_file(filename, self.rep)
+                    message = self.map.opts.read_file('tty')
                     if message: self.show_map(message)
-                    else: self.output('Invalid message file %s', filename)
                 except Exception, e:
-                    self.output('Error reading %s: %s', filename, e)
+                    self.output('Error reading tty file for %s: %s', self.map.name, e)
                 # Just in case it works...
                 self.send(NOW())
                 self.send(SCO())

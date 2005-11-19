@@ -90,9 +90,9 @@ class syntax_options(option_class):
     '''#'''
     section = 'syntax'
     def __init__(self):
-        self.map_paths      = self.getstring('map path',        os.curdir + os.sep + 'variants').split(os.pathsep)
-        self.dcsp_file      = self.getstring('protocol file',  'docs' + os.sep + 'dcsp.html')
-        self.syntax_file    = self.getstring('syntax file',    'docs' + os.sep + 'syntax.txt')
+        self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
+        self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'dcsp.html'))
+        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.txt'))
         self.move_phases    = self.getlist('move phases',      'SPR,FAL')
         self.retreat_phases = self.getlist('retreat phases',   'SUM,AUT')
         self.build_phases   = self.getlist('build phases',     'WIN')
@@ -174,24 +174,17 @@ class variant_options:
         - start_now    The initial unit positions
         - seasons      The list of seasons in a year
     '''#'''
-    def __init__(self, variant_name):
+    def __init__(self, variant_name, description, files):
         ''' Finds and loads the variant files.
             This implementation requires rem, mdf, sco, and now files,
             as distributed by David Norman's server.
             Throws exceptions if something is wrong.
-            
-            >>> opts = variant_options('Standard')
-            
-            .>> opts.map_name
-            'standard'
-            .>> opts.start_now[21]
-            Token('ENG', 0x4101)
         '''#'''
         from language import SPR, SUM, FAL, AUT, WIN
-        from judge import Standard_Judge
-        self.judge_class = Standard_Judge
         self.variant     = variant_name
         self.map_name    = variant_name.lower()
+        self.description = description
+        self.files       = files
         self.rep         = self.get_representation()
         self.map_mdf     = self.read_file('mdf')
         self.start_sco   = self.read_file('sco')
@@ -199,16 +192,19 @@ class variant_options:
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
     def new_judge(self):
         from gameboard import Map
-        return self.judge_class(Map(options=self), game_options())
+        from judge import Standard_Judge
+        return Standard_Judge(Map(options=self), game_options())
     def get_representation(self):
-        filename = find_variant_file(self.variant, 'rem')
+        filename = self.files.get('rem')
         if filename: return read_representation_file(filename)
         else: return default_rep
     def read_file(self, extension):
         from translation import read_message_file
-        filename = find_variant_file(self.variant, extension)
+        filename = self.files.get(extension.lower())
         if filename: return read_message_file(filename, self.rep)
         else: return None
+    def open_file(self, extension):
+        return file(self.files[extension.lower()])
 
 
 syntax        = {}
@@ -218,16 +214,27 @@ default_rep   = {}
 token_names   = {}
 message_types = {}
 order_mask    = {}
-map_paths     = []
+variants      = {}
 
 # File parsing
-def find_variant_file(variant, extension):
-    filename = variant.lower() + os.extsep + extension
-    for path in map_paths:
-        fullname = os.path.join(path, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    else: raise IOError, 'Variant file %s not found' % filename
+def parse_variants(variant_file):
+    try: var_file = open(variant_file, 'rU', 1)
+    except IOError: raise IOError, "Could not find variants file '%s'" % variant_file
+    else:
+        name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
+        file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
+        for line in var_file:
+            match = name_pattern.search(line)
+            if match:
+                descrip, name = match.groups()
+                files = {}
+                while match:
+                    match = file_pattern.search(line, match.end())
+                    if match:
+                        ref, ext = match.groups()
+                        files[ext.lower()] = os.path.normpath(os.path.join(
+                            os.path.dirname(variant_file), ref))
+                variants[name] = variant_options(name, descrip, files)
 
 def parse_dcsp(proto_file):
     ''' Pulls token values and other constants from Andrew Rose's
@@ -412,9 +419,7 @@ def init_language():
         >>> language.KET.text
         ')'
     '''#'''
-    global map_paths
     opts = syntax_options()
-    map_paths = opts.map_paths
     parse_dcsp(opts.dcsp_file)
     
     # Masks to determine whether an order is valid during a given phase
@@ -432,6 +437,7 @@ def init_language():
         elif name in opts.retreat_phases: order_mask[token] = opts.retreat_phase
         elif name in opts.build_phases:   order_mask[token] = opts.build_phase
     
+    parse_variants(opts.variant_file)
     read_syntax(opts.syntax_file)
 init_language()
 
@@ -447,7 +453,7 @@ def extend_globals(globs):
         This takes several seconds, so only do it if necessary.
     '''#'''
     import gameboard, language
-    opts = variant_options('standard')
+    opts = variants['standard']
     standard_map = gameboard.Map(options=opts)
     extension = {
         'standard_map': standard_map,

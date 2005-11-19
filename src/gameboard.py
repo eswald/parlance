@@ -54,20 +54,14 @@ class Map(Verbose_Object):
         ''' Attempts to load a map based on its name.
             Returns True if successful, False if the name is unknown.
             Raises an error if the map doesn't match the representation message.
-            
-            >>> Map._Map__mdf_cache['dradnats'] = standard_map.mdf()
-            >>> Map('dradnats', config.default_rep).valid    # From cache
-            True
         '''#'''
-        # Look in the cache first
-        if self.__mdf_cache.has_key(name):
+        opts = config.variants.get(name)
+        if opts:
+            self.opts = opts
+            return not self.define(opts.map_mdf)
+        elif self.__mdf_cache.has_key(name):
             return not self.define(self.__mdf_cache[name])
-        else:
-            # Attempt to find the MDF among the map paths
-            from translation import read_message_file
-            try: filename = config.find_variant_file(name, 'mdf')
-            except IOError: return False
-            return not self.define(read_message_file(filename, self.rep))
+        else: return False
     def define(self, message):
         ''' Attempts to create a map from an MDF message.
             Returns True if successful, False otherwise.
@@ -150,7 +144,7 @@ class Map(Verbose_Object):
         self.spaces = provs
         self.coasts = coasts
         
-        self.read_names()
+        if self.opts: self.read_names()
         for prov in provs.itervalues():
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
         else: return ''
@@ -158,9 +152,7 @@ class Map(Verbose_Object):
         ''' Attempts to read the country and province names from a file.
             No big deal if it fails, but it's a nice touch.
         '''#'''
-        try:
-            filename = config.find_variant_file(self.name, 'nam')
-            name_file = open(filename, 'r', 1)
+        try: name_file = self.opts.open_file('nam')
         except IOError: return
         try:
             for line in name_file:
@@ -174,8 +166,8 @@ class Map(Verbose_Object):
                         self.spaces[token].name = fields[1]
                     else: self.log_debug(11, "Unknown token type for %r", token)
         except Exception, err:
-            self.log_debug(1, "Error parsing '%s': %s", filename, err)
-        else: self.log_debug(11, "Name file '%s' loaded", filename)
+            self.log_debug(1, "Error parsing name file: %s", err)
+        else: self.log_debug(11, "Name file loaded")
         name_file.close()
     def restart(self):
         if self.opts:

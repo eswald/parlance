@@ -100,7 +100,9 @@ class Server(Verbose_Object):
         self.manager   = client_manager
         self.games     = []
         self.closed    = False
-        self.start_game()
+        if not self.start_game():
+            self.log_debug(1, 'Unable to start default variant')
+            self.close()
     
     def deadline(self):
         now = time()
@@ -185,17 +187,17 @@ class Server(Verbose_Object):
     def start_game(self, client=None, match=None):
         if match and match.lastindex:
             var_name = match.group(2)
-            try: variant = config.variant_options(var_name)
-            except:
-                client.admin('Unknown variant "%s"', var_name)
-                return
-        else: variant = config.variant_options(self.options.variant)
-        game_id = len(self.games)
-        if client: client.admin('New game started, with id %s.', game_id)
-        game = Game(self, game_id, variant)
-        self.games.append(game)
-        self.manager.start_clients()
-        return game
+        else: var_name = self.options.variant
+        variant = config.variants.get(var_name)
+        if variant:
+            game_id = len(self.games)
+            if client: client.admin('New game started, with id %s.', game_id)
+            game = Game(self, game_id, variant)
+            self.games.append(game)
+            self.manager.start_clients()
+            return game
+        elif client: client.admin('Unknown variant "%s"', var_name)
+        return None
     def select_game(self, client, match):
         try: num = int(match.group(1))
         except ValueError:

@@ -10,7 +10,7 @@ from language  import Token, AMY, FLT
 class Map_Variants(unittest.TestCase):
     "Validity checks for each of the known variants"
     def define_variant(self, variant_name):
-        options = config.variant_options(variant_name)
+        options = config.variants[variant_name]
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_abstraction2_map(self):     self.define_variant('abstraction2')
@@ -125,14 +125,14 @@ class Map_Bugfix(unittest.TestCase):
              (yor(AMY edi lon lvp wal)(FLT edi nth lon))
             )
         '''#'''
-        options = config.variant_options('standard')
+        options = config.variants['standard']
         options.map_mdf = translate(mdf, options.rep)
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_island_Pale(self):
         "Check for The Pale in Hundred3, which is an island."
-        options = config.variant_options('hundred3')
+        options = config.variants['hundred3']
         game_map = Map(options=options)
         prov = Token('Pal', rep=options.rep)
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
@@ -144,11 +144,21 @@ class Map_Bugfix(unittest.TestCase):
         from xtended     import NAF, MAO, WES
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
+    def test_load_by_name(self):
+        opts = config.variants['standard']
+        game_map = Map('standard', opts.rep)
+        self.failUnless(game_map.valid)
+    def test_cache_name(self):
+        opts = config.variants['standard']
+        game_map = Map('testing', opts.rep)
+        game_map.define(opts.map_mdf)
+        new_map = Map('testing', opts.rep)
+        self.failUnless(new_map.valid)
 
 class Coast_Bugfix(unittest.TestCase):
     "Tests to reproduce bugs related to the Coast class"
     def test_infinite_convoy(self):
-        variant = config.variant_options('americas4')
+        variant = config.variants['americas4']
         board = Map(options=variant)
         Alaska = board.spaces[Token('ALA', rep=variant.rep)]
         Oregon = board.coasts[(AMY, Token('ORE', rep=variant.rep), None)]
