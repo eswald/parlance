@@ -148,8 +148,6 @@ class Map_Bugfix(unittest.TestCase):
 class Coast_Bugfix(unittest.TestCase):
     "Tests to reproduce bugs related to the Coast class"
     def test_infinite_convoy(self):
-        from functions import Verbose_Object
-        Verbose_Object.verbosity = 11
         variant = config.variant_options('americas4')
         board = Map(options=variant)
         Alaska = Token('ALA', rep=variant.rep)

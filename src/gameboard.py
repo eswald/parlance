@@ -759,40 +759,25 @@ class Coast(Comparable, Verbose_Object):
         else:                         return False
     def exists(self): return self.unit_type and self in self.province.coasts
     def collect_convoy_routes(self, dest, board):
-        ''' Collects possible convoy routes,
-            saving them in routes[dest].
+        ''' Collects possible convoy routes, saving them in routes[dest].
             dest must be a province Token.
             Each route is a tuple of Province instances.
-            
-            >>> Liverpool = standard_map.coasts[(AMY, LVP, None)]
-            >>> len(Liverpool.collect_convoy_routes(YOR, standard_map))
-            11
-            >>> len(Liverpool.routes[YOR][0])
-            3
-            >>> Liverpool.collect_convoy_routes(LVP, standard_map)
-            []
+            Now collects only routes that currently have fleets.
         '''#'''
-        if not self.routes.has_key(dest):
-            self.log_debug(11, 'Collecting convoy routes to %s', dest)
-            self.routes[dest] = []
-            spaces = board.spaces
-            if self.province != dest in spaces:
-                where = spaces[dest].is_coastal()
-                if where:
-                    # Collect paths from the reverse direction, if available.
-                    result = board.coasts[where].routes.get(self.province.key)
-                    if result:
-                        def reversed(seq): l = list(seq); l.reverse(); return tuple(l)
-                        self.routes[dest] = [reversed(path) for path in result]
-                    elif result is None: self.routes[dest] = self._collect_routes(dest, spaces)
-            self.log_debug(11, 'Routes found: %s', self.routes[dest])
+        self.log_debug(11, 'Collecting convoy routes to %s', dest)
+        self.routes[dest] = []
+        spaces = board.spaces
+        if self.province != dest in spaces:
+            where = spaces[dest].is_coastal()
+            if where: self.routes[dest] = self._collect_routes(dest, spaces)
+        self.log_debug(11, 'Routes found: %s', self.routes[dest])
         return self.routes[dest]
     def _collect_routes(self, dest, spaces):
         ''' Helper function for collect_convoy_routes(). '''
         path_list = []
         possible = [(p,)
             for p in [spaces[key] for key in self.province.borders_out]
-            if p.can_convoy()
+            if p.can_convoy() and len(p.units) > 0
         ]
         while possible:
             route = possible.pop()
@@ -805,7 +790,7 @@ class Coast(Comparable, Verbose_Object):
                 for p in [spaces[key]
                     for key in here.borders_out
                     if key not in seen]
-                if p.can_convoy()
+                if p.can_convoy() and len(p.units) > 0
             ])
         # Sort shorter paths to the front,
         # to speed up checking
