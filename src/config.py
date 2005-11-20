@@ -185,10 +185,10 @@ class variant_options:
         self.description = description
         self.files       = files
         self.rep         = rep or self.get_representation()
-        self.map_mdf     = self.read_file('mdf')
         self.start_sco   = self.read_file('sco')
         self.start_now   = self.read_file('now')
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
+        self.__mdf       = None
     def new_judge(self):
         from gameboard import Map
         from judge import Standard_Judge
@@ -204,6 +204,11 @@ class variant_options:
         else: return None
     def open_file(self, extension):
         return file(self.files[extension.lower()])
+    def get_mdf(self):
+        if not self.__mdf: self.__mdf = self.read_file('mdf')
+        return self.__mdf
+    def set_mdf(self, message): self.__mdf = message
+    map_mdf = property(fget=get_mdf, fset=set_mdf)
 
 
 syntax        = {}
