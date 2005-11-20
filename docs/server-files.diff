@@ -1,0 +1,451 @@
+diff aiserver/variants/abstraction2.rem pydip/variants/abstraction2.rem
+55c55
+< 522E:Ice
+---
+> 542E:Ice
+65c65
+< 5238:Sar
+---
+> 5438:Sar
+70c70
+< 533D:Ire
+---
+> 553D:Ire
+diff aiserver/variants/african2.mdf pydip/variants/african2.mdf
+8c8
+<   (UNO Ang Cha Eyg Gab Gre Irn Kha Mad Mor Nam Nga Sen Spa Tan Tim
+---
+>   (UNO Ang Cha Egy Gab Gre Irn Kha Mad Mor Nam Nga Sen Spa Tan Tim
+18c18
+<  (Ben(AMY Esd Eyg Tri)(FLT EMS Eyg ISE Tri))
+---
+>  (Ben(AMY Esd Egy Tri)(FLT EMS Egy ISE Tri))
+25c25
+<  (Dam(AMY Eyg Irq Mec Tur)(FLT EMS Eyg Tur))
+---
+>  (Dam(AMY Egy Irq Mec Tur)(FLT EMS Egy Tur))
+27c27
+<  (EMS(FLT Ben Dam Eyg Gre ISE Tur))
+---
+>  (EMS(FLT Ben Dam Egy Gre ISE Tur))
+29,30c29,30
+<  (Esd(AMY Ben Cha Eyg Kpl Tri Wsd))
+<  (Eyg(AMY Ben Dam Esd Kpl Mec)(FLT Ben Dam EMS Kpl Mec RSE))
+---
+>  (Esd(AMY Ben Cha Egy Kpl Tri Wsd))
+>  (Egy(AMY Ben Dam Esd Kpl Mec)(FLT Ben Dam EMS Kpl Mec RSE))
+48c48
+<  (Kpl(AMY Caf Cha Esd Eyg Kha Sud)(FLT Eyg Kha RSE))
+---
+>  (Kpl(AMY Caf Cha Esd Egy Kha Sud)(FLT Egy Kha RSE))
+55c55
+<  (Mec(AMY Dam Eyg Irq Riy Yem)(FLT Eyg RSE Yem))
+---
+>  (Mec(AMY Dam Egy Irq Riy Yem)(FLT Egy RSE Yem))
+71c71
+<  (RSE(FLT Eri Eyg GOA Kha Kpl Mec Yem))
+---
+>  (RSE(FLT Eri Egy GOA Kha Kpl Mec Yem))
+diff aiserver/variants/african2.rem pydip/variants/african2.rem
+33c33
+< 5219:Ita
+---
+> 5419:Ita
+44,45c44,45
+< 5324:Mad
+< 5325:Spa
+---
+> 5524:Mad
+> 5525:Spa
+67c67
+< 553B:Eyg
+---
+> 553B:Egy
+diff aiserver/variants/african2.sco pydip/variants/african2.sco
+7c7
+<     (UNO Ang Cha Eyg Gab Gre Irn Kha Mad Mor Nam Nga Sen Spa Tan Tim
+---
+>     (UNO Ang Cha Egy Gab Gre Irn Kha Mad Mor Nam Nga Sen Spa Tan Tim
+diff aiserver/variants/americas4.mdf pydip/variants/americas4.mdf
+1c1
+< MDF ( Arg Mxc Col Bra Chl Per Spn USA Ven Gbr )
+---
+> MDF ( Arg Mxc Col Brz Chl Per Spn USA Ven Gbr )
+5c5
+<   (Bra Bah Rdj Spa)
+---
+>   (Brz Bah Rdj Spa)
+19,20c19,20
+<    NCB NEC Nen New Nle Nmx NPO Nwt Nys Oax Ont Ori Pal Pam Par 
+<    PBA Pot Que RLP Rmo Rup SAO SAR SCH SEC Sne SOC SOY SPO Tar 
+---
+>    NCB NTH Nen New Nle Nmx NPO Nwt Nys Oax Ont Ori Pal Pam Par 
+>    PBA Pot Que RLP Rmo Rup SAO SAR SCH STH Sne SOC SOY SPO Tar 
+31c31
+<  (ARC(AMY BEA Gre LAB NAO Nwt))
+---
+>  (ARC(FLT BEA Gre LAB NAO Nwt))
+37c37
+<  (Atl(AMY Flo Msp Vir)(FLT Flo SEC Vir))
+---
+>  (Atl(AMY Flo Msp Vir)(FLT Flo STH Vir))
+48c48
+<  (Bis(AMY)(FLT SAR SCH SEC))
+---
+>  (Bis(AMY)(FLT SAR SCH STH))
+51c51
+<  (BTR(FLT NAO NEC SAR SEC))
+---
+>  (BTR(FLT NAO NTH SAR STH))
+82c82
+<  (Flo(AMY Atl Msp Nor)(FLT APP Atl FST Nor SCH SEC))
+---
+>  (Flo(AMY Atl Msp Nor)(FLT APP Atl FST Nor SCH STH))
+120c120
+<  (MAS(FLT Hal NAO NEC Nen))
+---
+>  (MAS(FLT Hal NAO NTH Nen))
+133c133
+<  (NAO(FLT ARC BTR GOS Gre Hal LAB MAO MAS NEC New SAR))
+---
+>  (NAO(FLT ARC BTR GOS Gre Hal LAB MAO MAS NTH New SAR))
+136,137c136,137
+<  (NEC(FLT BTR MAS NAO Nen Nyc SEC Vir (Was ECS)))
+<  (Nen(AMY Hal Mon Nyc Nys)(FLT Hal MAS NEC Nyc))
+---
+>  (NTH(FLT BTR MAS NAO Nen Nyc STH Vir (Was ECS)))
+>  (Nen(AMY Hal Mon Nyc Nys)(FLT Hal MAS NTH Nyc))
+145c145
+<  (Nyc(AMY Nen Nys Was)(FLT NEC Nen Nys (Was ECS)))
+---
+>  (Nyc(AMY Nen Nys Was)(FLT NTH Nen Nys (Was ECS)))
+166,167c166,167
+<  (SAR(FLT ACH Bis BTR ECB MAO NAO Pri SCH Sdo SEC))
+<  (SCH(FLT Bis (Cam NCS) Flo FST Hai NCB SAR Sdc Sdo SEC))
+---
+>  (SAR(FLT ACH Bis BTR ECB MAO NAO Pri SCH Sdo STH))
+>  (SCH(FLT Bis (Cam NCS) Flo FST Hai NCB SAR Sdc Sdo STH))
+171c171
+<  (SEC(FLT Atl Bis BTR Flo NEC SAR SCH Vir))
+---
+>  (STH(FLT Atl Bis BTR Flo NTH SAR SCH Vir))
+188,189c188,189
+<  (Vir(AMY Atl Chi Msp Was)(FLT Atl NEC SEC (Was ECS)))
+<  (Was(AMY Chi Nyc Nys Vir)((FLT ECS) NEC Nyc Vir)((FLT NCS) Chi EGL Nys))
+---
+>  (Vir(AMY Atl Chi Msp Was)(FLT Atl NTH STH (Was ECS)))
+>  (Was(AMY Chi Nyc Nys Vir)((FLT ECS) NTH Nyc Vir)((FLT NCS) Chi EGL Nys))
+diff aiserver/variants/americas4.now pydip/variants/americas4.now
+3c3
+< (Bra AMY Rdj) (Bra AMY Spa) (Bra FLT Bah) 
+---
+> (Brz AMY Rdj) (Brz AMY Spa) (Brz FLT Bah) 
+diff aiserver/variants/americas4.rem pydip/variants/americas4.rem
+5c5
+< 4103:Bra
+---
+> 4103:Brz
+15c15
+< 5003:ARC
+---
+> 5203:ARC
+81,82c81,82
+< 5245:NEC
+< 5246:New
+---
+> 5245:NTH
+> 5446:New
+89c89
+< 524D:SEC
+---
+> 524D:STH
+95,102c95,102
+< 5353:Bis
+< 5354:Eas
+< 5355:Gal
+< 5356:Gre
+< 5357:Haw
+< 5358:Jam
+< 5359:Mal
+< 535A:Pri
+---
+> 5553:Bis
+> 5554:Eas
+> 5555:Gal
+> 5556:Gre
+> 5557:Haw
+> 5558:Jam
+> 5559:Mal
+> 555A:Pri
+diff aiserver/variants/americas4.sco pydip/variants/americas4.sco
+4c4
+<     (Bra Bah Rdj Spa)
+---
+>     (Brz Bah Rdj Spa)
+diff aiserver/variants/chromatic.rem pydip/variants/chromatic.rem
+28,32c28,32
+< 5315:Bro
+< 5316:Gar
+< 5317:Mag
+< 5318:Mal
+< 5319:Sil
+---
+> 5515:Bro
+> 5516:Gar
+> 5517:Mag
+> 5518:Mal
+> 5519:Sil
+diff aiserver/variants/classical.rem pydip/variants/classical.rem
+30c30
+< 5217:Cyp
+---
+> 5417:Cyp
+61c61
+< 5336:Nax
+---
+> 5536:Nax
+diff aiserver/variants/hundred3.rem pydip/variants/hundred3.rem
+26c26
+< 5215:Pal
+---
+> 5415:Pal
+diff aiserver/variants/hundred31.rem pydip/variants/hundred31.rem
+26c26
+< 5215:Pal
+---
+> 5415:Pal
+diff aiserver/variants/hundred32.rem pydip/variants/hundred32.rem
+26c26
+< 5215:Pal
+---
+> 5415:Pal
+diff aiserver/variants/iberian2.mdf pydip/variants/iberian2.mdf
+8c8
+<  ( Ale BDV Bei Bra Cac Cad Cal Cas CBE CDM Cue EDG Gas GDA GDC 
+---
+>  ( Ale BDV Bei Brg Cac Cad Cal Cas CBE CDM Cue EDG Gas GDA GDC 
+18c18
+<  (Bei(AMY Ale Bra Cac Coi Por Sal))
+---
+>  (Bei(AMY Ale Brg Cac Coi Por Sal))
+20c20
+<  (Bra(AMY Bei Leo Lug Por Sal))
+---
+>  (Brg(AMY Bei Leo Lug Por Sal))
+41c41
+<  (Leo(AMY Ast Bra Lug Pal Sal Vid))
+---
+>  (Leo(AMY Ast Brg Lug Pal Sal Vid))
+45c45
+<  (Lug(AMY Ast Bra Leo Por Sdc Vig)(FLT Ast MCA Sdc))
+---
+>  (Lug(AMY Ast Brg Leo Por Sdc Vig)(FLT Ast MCA Sdc))
+54,55c54,55
+<  (Por(AMY Bei Bra Coi Lug Vig)(FLT Coi OAM OAN Vig))
+<  (Sal(AMY Bei Bra Cac Leo Seg Vid))
+---
+>  (Por(AMY Bei Brg Coi Lug Vig)(FLT Coi OAM OAN Vig))
+>  (Sal(AMY Bei Brg Cac Leo Seg Vid))
+diff aiserver/variants/iberian2.rem pydip/variants/iberian2.rem
+8c8
+< 5001:Bra
+---
+> 5001:Brg
+42,44c42,44
+< 5223:Tan
+< 5324:Bal
+< 5325:Ima
+---
+> 5423:Tan
+> 5524:Bal
+> 5525:Ima
+diff aiserver/variants/south_america32.mdf pydip/variants/south_america32.mdf
+3c3
+<   (bzl Blm Bra Man Rdj)
+---
+>   (bzl Blm Bsl Man Rdj)
+14c14
+<  (Blm(AMY Bra Guy Pnb Ror)(FLT BRZ Guy MAO Pnb))
+---
+>  (Blm(AMY Bsl Guy Pnb Ror)(FLT BRZ Guy MAO Pnb))
+16c16
+<  (Bra(AMY Blm Mgr Pnb Pnt Prg Rdj Ror Yun))
+---
+>  (Bsl(AMY Blm Mgr Pnb Pnt Prg Rdj Ror Yun))
+36c36
+<  (Mgr(AMY Bra Lap Man Ror Yun))
+---
+>  (Mgr(AMY Bsl Lap Man Ror Yun))
+42c42
+<  (Pnb(AMY Blm Bra Rdj)(FLT Blm BRZ Rdj))
+---
+>  (Pnb(AMY Blm Bsl Rdj)(FLT Blm BRZ Rdj))
+44,47c44,47
+<  (Pnt(AMY Bra Prg Rdj Sul))
+<  (Prg(AMY Bra Grc Lap Pnt Sfe Sul Yun))
+<  (Rdj(AMY Bra Pnb Pnt Sul)(FLT BRZ Pnb Sul SWA))
+<  (Ror(AMY Aba Blm Bra Crc Guy Man Mgr Osp))
+---
+>  (Pnt(AMY Bsl Prg Rdj Sul))
+>  (Prg(AMY Bsl Grc Lap Pnt Sfe Sul Yun))
+>  (Rdj(AMY Bsl Pnb Pnt Sul)(FLT BRZ Pnb Sul SWA))
+>  (Ror(AMY Aba Blm Bsl Crc Guy Man Mgr Osp))
+56c56
+<  (Yun(AMY Bra Lap Mgr Prg))
+---
+>  (Yun(AMY Bsl Lap Mgr Prg))
+diff aiserver/variants/south_america32.now pydip/variants/south_america32.now
+3c3
+< (bzl AMY Blm) (bzl AMY Bra) (bzl AMY Man) (bzl FLT Rdj) 
+---
+> (bzl AMY Blm) (bzl AMY Bsl) (bzl AMY Man) (bzl FLT Rdj) 
+diff aiserver/variants/south_america32.rem pydip/variants/south_america32.rem
+16c16
+< 510A:Bra
+---
+> 510A:Bsl
+30,31c30,31
+< 5318:Jua
+< 5319:Mal
+---
+> 5518:Jua
+> 5519:Mal
+diff aiserver/variants/south_america32.sco pydip/variants/south_america32.sco
+2c2
+<     (bzl Blm Bra Man Rdj)
+---
+>     (bzl Blm Bsl Man Rdj)
+diff aiserver/variants/south_america51.rem pydip/variants/south_america51.rem
+36c36
+< 531D:Jua
+---
+> 551D:Jua
+diff aiserver/variants/south_east_asia3.mdf pydip/variants/south_east_asia3.mdf
+10c10
+<  ( ANS ARA BAD Bro Cho Cja Cka COR Dal ECH Fuj GTH GTO Gux Hai 
+---
+>  ( ANS ARA BAD Bro ChB Cja Cka COR Dal ECH Fuj GTH GTO Gux Hai 
+16c16
+<  (Bag(AMY Bur Chi Cho Tha Udo War)(FLT Cho GTH (Tha ECS)))
+---
+>  (Bag(AMY Bur Chi ChB Tha Udo War)(FLT ChB GTH (Tha ECS)))
+22c22
+<  (Cam(AMY Cho Dal Lao Mek War)(FLT Cho GTH MAL Mek))
+---
+>  (Cam(AMY ChB Dal Lao Mek War)(FLT ChB GTH MAL Mek))
+25c25
+<  (Cho(AMY Bag Cam War)(FLT Bag Cam GTH))
+---
+>  (ChB(AMY Bag Cam War)(FLT Bag Cam GTH))
+36c36
+<  (GTH(FLT Bag Cam Cho MAL (Tha ECS)))
+---
+>  (GTH(FLT Bag Cam ChB MAL (Tha ECS)))
+87c87
+<  (War(AMY Bag Cam Cho Lao Udo))
+---
+>  (War(AMY Bag Cam ChB Lao Udo))
+diff aiserver/variants/south_east_asia3.rem pydip/variants/south_east_asia3.rem
+40c40
+< 521F:Suw
+---
+> 541F:Suw
+43,46c43,46
+< 5322:Mar
+< 5323:Med
+< 5324:Spi
+< 5325:Tai
+---
+> 5522:Mar
+> 5523:Med
+> 5524:Spi
+> 5525:Tai
+48c48
+< 5427:Cho
+---
+> 5427:ChB
+diff aiserver/variants/versailles3.rem pydip/variants/versailles3.rem
+49c49
+< 5328:Ire
+---
+> 5528:Ire
+diff aiserver/variants/world3.mdf pydip/variants/world3.mdf
+3c3
+<   (brz Bra Rdj Rec)
+---
+>   (brz Bsl Rdj Rec)
+35c35
+<  (Ama(AMY Bol Bra Col Per Ven))
+---
+>  (Ama(AMY Bol Bsl Col Per Ven))
+51c51
+<  (Bho(AMY Bra Rdj Sal))
+---
+>  (Bho(AMY Bsl Rdj Sal))
+54c54
+<  (Bol(AMY Ama Bra Chi Men Per Sap))
+---
+>  (Bol(AMY Ama Bsl Chi Men Per Sap))
+57c57
+<  (Bra(AMY Ama Bho Bol Guy Rdj Rec Sal Sap Ven))
+---
+>  (Bsl(AMY Ama Bho Bol Guy Rdj Rec Sal Sap Ven))
+94c94
+<  (Guy(AMY Bra Rec Ven)(FLT NWA Rec Ven))
+---
+>  (Guy(AMY Bsl Rec Ven)(FLT NWA Rec Ven))
+161,162c161,162
+<  (Rdj(AMY Bho Bra Sal Sap)(FLT Sal Sap WAO))
+<  (Rec(AMY Bra Guy Sal)(FLT Guy NWA Sal WAO))
+---
+>  (Rdj(AMY Bho Bsl Sal Sap)(FLT Sal Sap WAO))
+>  (Rec(AMY Bsl Guy Sal)(FLT Guy NWA Sal WAO))
+166c166
+<  (Sal(AMY Bho Bra Rdj Rec)(FLT Rdj Rec WAO))
+---
+>  (Sal(AMY Bho Bsl Rdj Rec)(FLT Rdj Rec WAO))
+169c169
+<  (Sap(AMY Bol Bra Men Rdj Uru)(FLT Rdj Uru WAO))
+---
+>  (Sap(AMY Bol Bsl Men Rdj Uru)(FLT Rdj Uru WAO))
+208c208
+<  (Ven(AMY Ama Bra Col Guy)(FLT (Col NCS) CSE Guy NWA))
+---
+>  (Ven(AMY Ama Bsl Col Guy)(FLT (Col NCS) CSE Guy NWA))
+diff aiserver/variants/world3.now pydip/variants/world3.now
+3c3
+< (brz AMY Bra) (brz AMY Rdj) (brz FLT Rec) 
+---
+> (brz AMY Bsl) (brz AMY Rdj) (brz FLT Rec) 
+diff aiserver/variants/world3.rem pydip/variants/world3.rem
+44c44
+< 5119:Bra
+---
+> 5119:Bsl
+65c65
+< 522E:Cis
+---
+> 542E:Cis
+76c76
+< 5239:Mad
+---
+> 5439:Mad
+88c88
+< 5245:Phi
+---
+> 5445:Phi
+108,111c108,111
+< 5359:Gbr
+< 535A:Ind
+< 535B:Jap
+< 535C:Nze
+---
+> 5559:Gbr
+> 555A:Ind
+> 555B:Jap
+> 555C:Nze
+diff aiserver/variants/world3.sco pydip/variants/world3.sco
+2c2
+<     (brz Bra Rdj Rec)
+---
+>     (brz Bsl Rdj Rec)
