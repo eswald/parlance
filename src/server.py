@@ -206,7 +206,10 @@ class Server(Verbose_Object):
             if self.join_game(client, num):
                 client.admin('Joined game #%d.', num)
             else: client.admin('Unknown game #%d.', num)
-    def list_variants(self, client, match): client.admin('Command accepted.')
+    def list_variants(self, client, match):
+        names = config.variants.keys()
+        names.sort()
+        client.admin('Known map variants: %s', expand_list(names))
     def list_help(self, client, match):
         for line in ([
             #'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',
@@ -261,8 +264,8 @@ class Server(Verbose_Object):
         'decription': '  new <variant> game - Starts a new game, with the <variant> map'},
         #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
         #'decription': '  select game <id> - Switches to game <id>, if it exists'},
-        #{'pattern': re.compile('help variants'), 'command': list_variants,
-        #'decription': '  help variants - Lists known variants'},
+        {'pattern': re.compile('list variants'), 'command': list_variants,
+        'decription': '  list variants - Lists known map variants'},
         {'pattern': re.compile('become master *(\w*)'), 'command': become_master,
         'decription': '  become master - Grants you power to use master commands'},
         {'pattern': re.compile('help master'), 'command': list_master,

@@ -358,6 +358,10 @@ class Server_Admin_Other(Server_Admin):
         self.assertAdminResponse(self.master, 'new unknown_variant game',
                 'Unknown variant "unknown_variant"')
         self.failUnlessEqual(len(self.server.games), 1)
+    def test_list_variants(self):
+        items = self.master.admin('Server: list variants')
+        self.assertContains('Map variants: ', items[0])
+        self.assertContains('standard', items[0])
     
     def test_duplicate_mastership(self):
         "Only one player should be a master at a time."
