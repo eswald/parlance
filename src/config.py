@@ -6,6 +6,7 @@
 
 import re, os
 import ConfigParser
+from functions import Verbose_Object
 
 # Various option classes.
 class option_class(object):
@@ -164,7 +165,7 @@ class game_options(option_class):
         # Touch:    1025 Only between powers with touching units
         # Backseat: 4128 Only non-map powers, and them broadcast-only
     # Tournaments (TRN)
-class variant_options:
+class variant_options(Verbose_Object):
     ''' Options set by the game variant.
         - map_name     The name to send in MAP messages
         - map_mdf      The map definition message
@@ -185,10 +186,8 @@ class variant_options:
         self.description = description
         self.files       = files
         self.rep         = rep or self.get_representation()
-        self.start_sco   = self.read_file('sco')
-        self.start_now   = self.read_file('now')
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
-        self.__mdf       = None
+        self.msg_cache  = {}
     def new_judge(self):
         from gameboard import Map
         from judge import Standard_Judge
@@ -199,16 +198,28 @@ class variant_options:
         else: return default_rep
     def read_file(self, extension):
         from translation import read_message_file
-        filename = self.files.get(extension.lower())
-        if filename: return read_message_file(filename, self.rep)
-        else: return None
-    def open_file(self, extension):
-        return file(self.files[extension.lower()])
-    def get_mdf(self):
-        if not self.__mdf: self.__mdf = self.read_file('mdf')
-        return self.__mdf
-    def set_mdf(self, message): self.__mdf = message
-    map_mdf = property(fget=get_mdf, fset=set_mdf)
+        result = self.msg_cache.get(extension)
+        if not result:
+            filename = self.files.get(extension)
+            if filename:
+                result = read_message_file(filename, self.rep)
+                self.msg_cache[extension] = result
+        return result
+    def cache_msg(self, extension, message):
+        result = self.msg_cache.get(extension)
+        if result and result != message:
+            self.log_debug(7, 'Changing cached "%s" message from "%s" to "%s"',
+                    extension, result, message)
+        self.msg_cache[extension] = message
+    def open_file(self, extension): return file(self.files[extension])
+    map_mdf = property(fget = lambda self: self.read_file('mdf'),
+            fset = lambda self, msg: self.cache_msg('mdf', msg))
+    start_now = property(fget = lambda self: self.read_file('now'),
+            fset = lambda self, msg: self.cache_msg('now', msg))
+    start_sco = property(fget = lambda self: self.read_file('sco'),
+            fset = lambda self, msg: self.cache_msg('sco', msg))
+    def prefix(self): return 'variant_options(%r)' % self.variant
+    prefix = property(fget=prefix)
 
 
 syntax        = {}
