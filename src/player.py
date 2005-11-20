@@ -185,7 +185,12 @@ class Player(Verbose_Object):
         '''#'''
         if self.use_map:
             from gameboard import Map
-            self.map = Map(message.fold()[1][0], self.rep)
+            mapname = message.fold()[1][0]
+            variant = config.variants.get(mapname)
+            if not variant:
+                variant = config.variant_options(mapname, mapname, {}, self.rep)
+                config.variants[mapname] = variant
+            self.map = Map(variant)
             if self.map.valid: self.accept(message)
             else:              self.send(MDF())
         else: self.accept(message)
@@ -337,7 +342,7 @@ class Player(Verbose_Object):
             except AttributeError: pass
 
         # If that fails, reply with HUH/TRY
-        self.send_press(sender, HUH([ERR, press]), [mid])
+        self.send_press(sender, HUH(ERR() + press), [mid])
         self.send_press(sender, TRY(self.press_tokens))
     
     def send_press(self, recips, press, refs = None):

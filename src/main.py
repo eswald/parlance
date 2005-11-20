@@ -153,7 +153,7 @@ def run_server():
                 opts['games'] = games
                 opts['number of games'] = games
             else:
-                config.variant_options(arg)
+                config.variants[arg]
                 opts['variant'] = arg
                 opts['default variant'] = arg
     except:

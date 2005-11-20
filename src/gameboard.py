@@ -17,7 +17,6 @@ class Map(Verbose_Object):
     ''' The map for the game, with various notes.
         Variables:
             - name:     The name used to request this map
-            - rep:      The token number <-> name dictionary
             - valid:    Whether the map has been correctly loaded
             - powers:   A map of Powers in the game (Token -> Power)
             - spaces:   A map of Provinces (Token -> Province)
@@ -25,43 +24,18 @@ class Map(Verbose_Object):
             - neutral:  A Power representing the neutral supply centers
     '''#'''
     
-    # Saved MDF messages for map names
-    __mdf_cache = {}
-    
-    def __init__(self, name=None, representation=None, options=None):
-        ''' Initializes the map from either a name and representation,
-            or an instance of config.variant_options.
+    def __init__(self, options):
+        ''' Initializes the map from an instance of config.variant_options.
         '''#'''
         self.powers  = []
         self.opts    = options
-        self.has_sco = False
-        if options:
-            self.name         = options.map_name
-            self.rep          = options.rep
-            self.valid        = not self.define(options.map_mdf)
-            self.current_turn = Turn(options.seasons)
-            self.restart()
-        elif name and representation:
-            self.name         = name
-            self.rep          = representation
-            self.valid        = self.load(name)
-            self.current_turn = Turn()
-        else: raise ValueError, 'Invalid arguments for Map()'
-    def __str__(self): return "Map('%s')" % self.name
+        self.name    = options.map_name
+        self.valid   = options.map_mdf and not self.define(options.map_mdf)
+        self.current_turn = Turn(options.seasons)
+        self.restart()
+    def __str__(self): return "Map(%r)" % self.name
     prefix = property(fget=__str__)
     
-    def load(self, name):
-        ''' Attempts to load a map based on its name.
-            Returns True if successful, False if the name is unknown.
-            Raises an error if the map doesn't match the representation message.
-        '''#'''
-        opts = config.variants.get(name)
-        if opts:
-            self.opts = opts
-            return not self.define(opts.map_mdf)
-        elif self.__mdf_cache.has_key(name):
-            return not self.define(self.__mdf_cache[name])
-        else: return False
     def define(self, message):
         ''' Attempts to create a map from an MDF message.
             Returns True if successful, False otherwise.
@@ -92,13 +66,6 @@ class Map(Verbose_Object):
             >>> m.define(mdf)
             ''
         '''#'''
-        
-        # Store the mdf, for future reference
-        if not self.__mdf_cache.has_key(self.name):
-            result = message.validate(None, -1, True)
-            if result: return 'Invalid MDF message: %s' % str(result)
-            self.__mdf_cache[self.name] = message
-        
         (mdf, powers, provinces, adjacencies) = message.fold()
         (centres, non_centres) = provinces
         pow_homes = {}
@@ -144,7 +111,7 @@ class Map(Verbose_Object):
         self.spaces = provs
         self.coasts = coasts
         
-        if self.opts: self.read_names()
+        self.read_names()
         for prov in provs.itervalues():
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
         else: return ''
@@ -153,12 +120,12 @@ class Map(Verbose_Object):
             No big deal if it fails, but it's a nice touch.
         '''#'''
         try: name_file = self.opts.open_file('nam')
-        except IOError: return
+        except: return
         try:
             for line in name_file:
                 fields = line.strip().split(':')
                 if fields[0]:
-                    token = Token(fields[0].upper(), rep=self.rep)
+                    token = Token(fields[0].upper(), rep=self.opts.rep)
                     if token.is_power():
                         self.powers[token].name = fields[1]
                         self.powers[token].adjective = fields[2]
@@ -170,19 +137,10 @@ class Map(Verbose_Object):
         else: self.log_debug(11, "Name file loaded")
         name_file.close()
     def restart(self):
-        if self.opts:
-            self.handle_SCO(self.opts.start_sco)
-            self.handle_NOW(self.opts.start_now)
-        else: raise UserWarning, 'Map.restart() can only be called on maps created with variant options.'
+        if self.opts.start_sco: self.handle_SCO(self.opts.start_sco)
+        if self.opts.start_now: self.handle_NOW(self.opts.start_now)
     
     # Information gathering
-    def mdf(self):
-        ''' Returns the message used to define the map.
-            >>> standard_map.mdf()[19]
-            Token('ENG', 0x4101)
-        '''#'''
-        if self.valid: return self.__mdf_cache[self.name]
-        else: return None
     def current_powers(self):
         ''' Returns a list of non-eliminated powers.
             >>> standard_map.powers[ITA].centers = []
@@ -397,6 +355,7 @@ class Map(Verbose_Object):
     def handle_MDF(self, message):
         ''' Handles the MDF command, loading province information.
         '''#'''
+        if not self.opts.map_mdf: self.opts.map_mdf = message
         self.valid = not self.define(message)
     def handle_SCO(self, message):
         ''' Handles the SCO command, loading center ownership information.

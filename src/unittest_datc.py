@@ -32,7 +32,7 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
         config.option_class.local_opts.update(self.game_options)
-        variant = config.variant_options(self.variant_name)
+        variant = config.variants[self.variant_name]
         self.judge = variant.new_judge()
         self.judge.start()
     def set_verbosity(self, verbosity):

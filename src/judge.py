@@ -86,9 +86,9 @@ class judge_options(config.option_class):
 class Standard_Judge(Judge):
     ''' Implementation of the Judge interface, for DAIDE rules.'''
     
-    def __init__(self, game_map, game_opts):
+    def __init__(self, variant_opts, game_opts):
         ''' Initializes instance variables.'''
-        super(Standard_Judge, self).__init__(game_map, game_opts)
+        super(Standard_Judge, self).__init__(variant_opts, game_opts)
         self.options = options = judge_options()
         self.datc = datc_options()
         self.last_orders = [REJ(ORD)]

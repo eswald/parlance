@@ -35,6 +35,8 @@ class NumberToken(object):
         if isinstance(other, Token): return other.is_integer()
         else: return NotImplemented
     def tokenize(self): return [self]
+    def __repr__(self): return 'NumberToken'
+    def __radd__(self, other): return other + ' #'
 Number = NumberToken()
 
 class PlayerTestCase(unittest.TestCase):
@@ -57,7 +59,7 @@ class PlayerTestCase(unittest.TestCase):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
         config.option_class.local_opts.update(self.game_options)
-        self.variant = config.variant_options('standard')
+        self.variant = config.variants['standard']
         opts = config.game_options()
         self.params = get_variant_list(opts)
         self.level = opts.LVL
@@ -125,6 +127,18 @@ class Player_Tests(PlayerTestCase):
         self.player.client_opts.validate = True
         self.send(REJ(YES))
         self.failUnless(self.player.closed)
+    def test_known_map(self):
+        self.connect_player(self.Test_Player)
+        self.seek_reply(NME(self.Test_Player.name, self.Test_Player.version))
+        self.send(MAP('fleet_rome'))
+        self.seek_reply(YES(MAP('fleet_rome')))
+    def test_unknown_map(self):
+        self.connect_player(self.Test_Player)
+        self.seek_reply(NME(self.Test_Player.name, self.Test_Player.version))
+        self.send(MAP('unknown'))
+        self.seek_reply(MDF())
+        self.send(config.variants['fleet_rome'].map_mdf)
+        self.seek_reply(YES(MAP('unknown')))
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):

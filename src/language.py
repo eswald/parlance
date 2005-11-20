@@ -233,6 +233,7 @@ class Message(list):
             'NOT GOF "name" 3'
         '''#'''
         list.extend(self, _tokenize(value))
+    def __add__(self, other): return Message(list.__add__(self, other))
     def __setslice__(self, from_index, to_index, value):
         ''' Replaces a portion of the Message, with Tokens.
             >>> from translation import translate

@@ -1,7 +1,7 @@
 import config, re
 from random    import randint, shuffle
 from time      import time
-from gameboard import Turn
+from gameboard import Map, Turn
 from functions import any, s, expand_list, Verbose_Object
 from language  import *
 
@@ -675,8 +675,6 @@ class Game(Verbose_Object):
                     self.players[nation].client.send(outgoing)
                 client.accept(message)
         else: client.reject(message)
-    def handle_MAP(self, client, message): client.send(MAP(self.judge.map_name))
-    def handle_MDF(self, client, message): client.send(self.judge.mdf)
     def handle_HLO(self, client, message):
         if self.started: self.send_hello(client)
         else: client.reject(message)
@@ -963,12 +961,12 @@ class Judge(Verbose_Object):
         None for games ended or not yet started.
     '''#'''
     
-    def __init__(self, game_map, game_opts):
+    def __init__(self, variant_opts, game_opts):
         ''' Initializes instance variables.'''
-        assert game_map.valid
-        self.map = game_map
-        self.mdf = game_map.mdf()
-        self.map_name = game_map.name
+        self.map = Map(variant_opts)
+        assert self.map.valid
+        self.mdf = variant_opts.map_mdf
+        self.map_name = variant_opts.map_name
         self.game_opts = game_opts
         self.game_end = None
         self.unready = True
@@ -990,6 +988,8 @@ class Judge(Verbose_Object):
         raise NotImplementedError
     
     # Interaction with players
+    def handle_MAP(self, client, message): client.send(MAP(self.map_name))
+    def handle_MDF(self, client, message): client.send(self.mdf)
     def handle_NOW(self, client, message): raise NotImplementedError
     def handle_SCO(self, client, message): raise NotImplementedError
     def handle_ORD(self, client, message): raise NotImplementedError

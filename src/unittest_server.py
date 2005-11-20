@@ -498,7 +498,7 @@ class Server_Multigame(ServerTestCase):
     def test_old_reconnect(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
-        for dummy in range(7): self.connect_player(self.Disconnector)
+        self.server.default_game().close()
         self.connect_player(self.Fake_Player)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):

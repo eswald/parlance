@@ -443,7 +443,7 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
         '''#'''
         from threading   import Thread
         from translation import translate
-        rep = self.judge.map.rep
+        rep = self.judge.map.opts.rep
         now = translate('''NOW ( FAL 1848 ) ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO ) ( MXC FLT NPO ) ( MXC FLT WCB )''', rep)
         sub = translate('''SUB
                 ( ( MXC FLT WCB ) MTO ( NIC ECS ) )

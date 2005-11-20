@@ -144,15 +144,10 @@ class Map_Bugfix(unittest.TestCase):
         from xtended     import NAF, MAO, WES
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
-    def test_load_by_name(self):
-        opts = config.variants['standard']
-        game_map = Map('standard', opts.rep)
-        self.failUnless(game_map.valid)
-    def test_cache_name(self):
-        opts = config.variants['standard']
-        game_map = Map('testing', opts.rep)
-        game_map.define(opts.map_mdf)
-        new_map = Map('testing', opts.rep)
+    def test_cache_mdf(self):
+        opts = config.variant_options('testing', 'Test map', {})
+        Map(opts).handle_MDF(config.variants['standard'].map_mdf)
+        new_map = Map(opts)
         self.failUnless(new_map.valid)
 
 class Coast_Bugfix(unittest.TestCase):

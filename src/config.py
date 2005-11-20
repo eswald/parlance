@@ -166,7 +166,6 @@ class game_options(option_class):
     # Tournaments (TRN)
 class variant_options:
     ''' Options set by the game variant.
-        - judge_class  The class of Judge to use
         - map_name     The name to send in MAP messages
         - map_mdf      The map definition message
         - rep          The representation dictionary
@@ -174,7 +173,7 @@ class variant_options:
         - start_now    The initial unit positions
         - seasons      The list of seasons in a year
     '''#'''
-    def __init__(self, variant_name, description, files):
+    def __init__(self, variant_name, description, files, rep=None):
         ''' Finds and loads the variant files.
             This implementation requires rem, mdf, sco, and now files,
             as distributed by David Norman's server.
@@ -185,7 +184,7 @@ class variant_options:
         self.map_name    = variant_name.lower()
         self.description = description
         self.files       = files
-        self.rep         = self.get_representation()
+        self.rep         = rep or self.get_representation()
         self.map_mdf     = self.read_file('mdf')
         self.start_sco   = self.read_file('sco')
         self.start_now   = self.read_file('now')
@@ -193,7 +192,7 @@ class variant_options:
     def new_judge(self):
         from gameboard import Map
         from judge import Standard_Judge
-        return Standard_Judge(Map(options=self), game_options())
+        return Standard_Judge(self, game_options())
     def get_representation(self):
         filename = self.files.get('rem')
         if filename: return read_representation_file(filename)
