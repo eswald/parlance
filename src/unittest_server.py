@@ -146,7 +146,6 @@ class ServerTestCase(unittest.TestCase):
             'close on disconnect' : True,
             'use internal server' : True,
             'host' : '',
-            'port' : 16719,
             'timeout for select() without deadline' : 5,
             'publish order sets': False,
             'publish individual orders': False,
@@ -160,46 +159,15 @@ class ServerTestCase(unittest.TestCase):
         config.option_class.local_opts.update(self.game_options)
         self.manager = None
         self.server = None
-        self.threads = []
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
-        for thread in self.threads:
-            while thread.isAlive(): thread.join(1)
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
     def connect_server(self, clients, games=1):
         config.option_class.local_opts.update({'number of games' : games})
         self.manager = manager = Fake_Manager(clients)
         self.server = manager.server
-    def connect_server_threaded(self, clients, games=1, poll=True, **kwargs):
-        from network import ServerSocket, Client
-        config.option_class.local_opts.update({'number of games' : games})
-        socket = ServerSocket()
-        if not poll: socket.polling = None
-        s_thread = socket.start()
-        self.server = server = socket.server
-        assert s_thread and server
-        self.threads.append(s_thread)
-        try:
-            for dummy in range(games):
-                assert not server.closed
-                threads = []
-                for player_class in clients:
-                    thread = Client(player_class, **kwargs).start()
-                    assert thread
-                    threads.append(thread)
-                for thread in threads:
-                    if thread.isAlive(): thread.join()
-        except:
-            self.threads.extend(threads)
-            server.close()
-            raise
     def connect_player(self, player_class, **kwargs):
         return self.manager.start_thread(player_class, **kwargs)
-    def connect_player_threaded(self, player_class):
-        from network import Client
-        client = Client(player_class)
-        self.threads.append(client.start())
-        return client.player
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
@@ -283,6 +251,12 @@ class Server_Admin_Bots(Server_Admin):
         self.master.admin('Ping.')
         self.assertAdminResponse(self.master, 'start holdbots',
                 'Recruit more players first.')
+    def test_start_bot_same_address(self):
+        "Players are only counted if they're from different computers."
+        for client in self.server.default_game().clients:
+            client.address = 'localhost'
+        self.assertAdminResponse(self.master, 'start holdbot',
+                'Recruit more players first.')
 
 class Server_Admin_Other(Server_Admin):
     "Other administrative messages handled by the server"
@@ -360,7 +334,7 @@ class Server_Admin_Other(Server_Admin):
         self.failUnlessEqual(len(self.server.games), 1)
     def test_list_variants(self):
         items = self.master.admin('Server: list variants')
-        self.assertContains('Map variants: ', items[0])
+        self.assertContains('Known map variants: ', items[0])
         self.assertContains('standard', items[0])
     
     def test_duplicate_mastership(self):

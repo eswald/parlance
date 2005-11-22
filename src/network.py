@@ -382,7 +382,7 @@ class ServerSocket(SocketWrapper):
             self.log_debug(6, 'Connection from %s as client #%d',
                     addr, self.next_id)
             conn.setblocking(False)
-            self.add(Service(self.next_id, conn, addr, self.server))
+            self.add(Service(self.next_id, conn, addr[0], self.server))
             self.next_id += 1
     def add(self, sock):
         fd = sock.fileno()

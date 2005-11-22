@@ -1,12 +1,12 @@
 ''' Unit tests for the Network module.
 '''#'''
 
-import unittest
+import unittest, config
 from time      import sleep
 from functions import Verbose_Object
 from unittest_server import ServerTestCase
 
-class Network_Basics(ServerTestCase):
+class NetworkTestCase(ServerTestCase):
     class Disconnector(ServerTestCase.Fake_Player):
         sleep_time = 14
         name = 'Loose connection'
@@ -18,10 +18,47 @@ class Network_Basics(ServerTestCase):
                 self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
                 self.close()
     
+    def setUp(self):
+        ServerTestCase.setUp(self)
+        self.threads = []
+    def tearDown(self):
+        ServerTestCase.tearDown(self)
+        for thread in self.threads:
+            while thread.isAlive(): thread.join(1)
+    def connect_server(self, clients, games=1, poll=True, **kwargs):
+        from network import ServerSocket, Client
+        config.option_class.local_opts.update({'number of games' : games})
+        socket = ServerSocket()
+        if not poll: socket.polling = None
+        s_thread = socket.start()
+        self.server = server = socket.server
+        assert s_thread and server
+        self.threads.append(s_thread)
+        try:
+            for dummy in range(games):
+                assert not server.closed
+                threads = []
+                for player_class in clients:
+                    thread = Client(player_class, **kwargs).start()
+                    assert thread
+                    threads.append(thread)
+                for thread in threads:
+                    if thread.isAlive(): thread.join()
+        except:
+            self.threads.extend(threads)
+            server.close()
+            raise
+    def connect_player(self, player_class):
+        from network import Client
+        client = Client(player_class)
+        self.threads.append(client.start())
+        return client.player
+
+class Network_Basics(NetworkTestCase):
     def test_timeout(self):
         "Thirty-second timeout for the Initial Message"
         self.set_verbosity(15)
-        self.connect_server_threaded([])
+        self.connect_server([])
         client = self.Fake_Client(False)
         client.open()
         sleep(45)
@@ -29,11 +66,11 @@ class Network_Basics(ServerTestCase):
     def test_full_connection(self):
         "Seven fake players, polling if possible"
         self.set_verbosity(15)
-        self.connect_server_threaded([self.Disconnector] * 7)
+        self.connect_server([self.Disconnector] * 7)
     def test_without_poll(self):
         "Seven fake players, selecting"
         self.set_verbosity(15)
-        self.connect_server_threaded([self.Disconnector] * 7, poll=False)
+        self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         "Seven fake players and an observer"
         from player  import Clock
@@ -75,9 +112,24 @@ class Network_Basics(ServerTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_verbosity(15)
-        self.connect_server_threaded([Fake_Restarter] + [self.Disconnector] * 6)
+        self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
+    def test_start_bot_blocking(self):
+        "Bot-starting cares about the IP address someone connects from."
+        def lazy_admin(self, line, *args):
+            from language import ADM
+            self.queue = []
+            self.send(ADM(self.name, str(line) % args))
+            sleep(15)
+            return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
+        self.connect_server([])
+        self.Fake_Master.admin = lazy_admin
+        master = self.connect_player(self.Fake_Master)
+        self.connect_player(self.Fake_Player)
+        master.admin('Server: become master')
+        self.assertContains('Recruit more players first.',
+                master.admin('Server: start holdbot'))
 
-class Network_Full_Games(ServerTestCase):
+class Network_Full_Games(NetworkTestCase):
     def connect_server(self, *args):
         ServerTestCase.connect_server(self, *args)
         while not self.server.closed: sleep(3); self.server.check()
