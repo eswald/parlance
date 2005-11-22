@@ -149,6 +149,24 @@ class Verbose_Object(object):
     def prefix(self): return self.__class__.__name__
     prefix = property(fget=prefix)
 
+def absolute_limit(time_limit):
+    ''' Converts a TME message number into a number of seconds.
+        Negative message numbers indicate hours; positive, seconds.
+    '''#'''
+    if time_limit < 0: result = -time_limit * 3600
+    else: result = time_limit
+    return result
+def relative_limit(seconds):
+    ''' Converts a number of seconds into a TME message number.
+        Negative message numbers indicate hours; positive, seconds.
+    '''#'''
+    from language import Token
+    max_int = Token.opts.max_pos_int
+    if seconds > max_int: result = -seconds // 3600
+    else: result = seconds
+    if -result > max_int: result = -max_int
+    return result
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)

@@ -138,6 +138,22 @@ class game_options(option_class):
             else:
                 self.PTL = 0
                 self.PDA = False
+    def get_params(self):
+        from functions import relative_limit
+        from language import LVL, MTL, RTL, BTL, AOA, DSD, PDA, NPR, NPB, PTL
+        params = [(LVL, self.LVL)]
+        if self.MTL: params.append((MTL, relative_limit(self.MTL)))
+        if self.RTL: params.append((RTL, relative_limit(self.RTL)))
+        if self.BTL: params.append((BTL, relative_limit(self.BTL)))
+        if self.AOA: params.append((AOA,))
+        if self.DSD: params.append((DSD,))
+        
+        if self.LVL >= 10:
+            if self.PDA: params.append((PDA,))
+            if self.NPR: params.append((NPR,))
+            if self.NPB: params.append((NPB,))
+            if self.PTL: params.append((PTL, relative_limit(self.PTL)))
+        return params
     
     # Idea for future expansion:
     # Press Types (SND?)

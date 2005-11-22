@@ -3,6 +3,7 @@ from random    import randint, shuffle
 from time      import time
 from gameboard import Map, Turn
 from functions import any, s, expand_list, Verbose_Object
+from functions import absolute_limit, relative_limit
 from language  import *
 
 import player, evilbot, dumbbot
@@ -360,10 +361,10 @@ class Game(Verbose_Object):
         self.time_checked   = None
         self.time_left      = None
         
-        move_limit = self.absolute_limit(game.MTL)
-        press_limit = self.absolute_limit(game.PTL)
-        build_limit = self.absolute_limit(game.BTL)
-        retreat_limit = self.absolute_limit(game.RTL)
+        move_limit = absolute_limit(game.MTL)
+        press_limit = absolute_limit(game.PTL)
+        build_limit = absolute_limit(game.BTL)
+        retreat_limit = absolute_limit(game.RTL)
         self.press_in = {
             Turn.move_phase    : press_limit < move_limit or not move_limit,
             Turn.retreat_phase : not retreat_limit,
@@ -523,24 +524,8 @@ class Game(Verbose_Object):
         if self.deadline:
             self.time_left = self.deadline - time()
             self.deadline = self.press_deadline = None
-            self.broadcast(NOT(TME(self.relative_limit(self.time_left))))
+            self.broadcast(NOT(TME(relative_limit(self.time_left))))
         self.paused = True
-    def absolute_limit(self, time_limit):
-        ''' Converts a TME message number into a number of seconds.
-            Negative message numbers indicate hours; positive, seconds.
-        '''#'''
-        if time_limit < 0: result = -time_limit * 3600
-        else: result = time_limit
-        return result
-    def relative_limit(self, seconds):
-        ''' Converts a number of seconds into a TME message number.
-            Negative message numbers indicate hours; positive, seconds.
-        '''#'''
-        max_int = Token.opts.max_pos_int
-        if seconds > max_int: result = -seconds // 3600
-        else: result = seconds
-        if -result > max_int: result = -max_int
-        return result
     def set_deadlines(self, seconds=None):
         ''' Sets the press_allowed flag and starts turn timers.
             Use seconds when the clock starts again after DSD.
@@ -552,7 +537,7 @@ class Game(Verbose_Object):
             self.time_checked = seconds
         self.deadline = self.press_deadline = self.time_left = None
         if seconds and not self.closed:
-            message = TME(self.relative_limit(seconds))
+            message = TME(relative_limit(seconds))
             if self.paused:
                 self.time_left = seconds
                 self.broadcast(NOT(message))
@@ -584,7 +569,7 @@ class Game(Verbose_Object):
             for second in [sec for sec in self.timers if remain < sec < self.time_checked]:
                 self.time_checked = second
                 for client in self.timers[second]:
-                    client.send(TME(self.relative_limit(second)))
+                    client.send(TME(relative_limit(second)))
             if now > self.deadline: self.run_judge()
             elif self.press_deadline and now > self.press_deadline:
                 self.press_allowed  = False
@@ -603,23 +588,8 @@ class Game(Verbose_Object):
         country = client.country
         if country: passcode = self.players[country].passcode
         else: country = OBS; passcode = 0
-        variant = self.get_variant_list()
+        variant = self.options.get_params()
         client.send(HLO(country, passcode, variant))
-    def get_variant_list(self):
-        game = self.options
-        variant = [(LVL, game.LVL)]
-        if game.MTL: variant.append((MTL, self.relative_limit(game.MTL)))
-        if game.RTL: variant.append((RTL, self.relative_limit(game.RTL)))
-        if game.BTL: variant.append((BTL, self.relative_limit(game.BTL)))
-        if game.AOA: variant.append((AOA,))
-        if game.DSD: variant.append((DSD,))
-        
-        if game.LVL >= 10:
-            if game.PDA: variant.append((PDA,))
-            if game.NPR: variant.append((NPR,))
-            if game.NPB: variant.append((NPB,))
-            if game.PTL: variant.append((PTL, self.relative_limit(game.PTL)))
-        return variant
     def summarize(self):
         ''' Sends the end-of-game SMR message.'''
         players = []
@@ -687,10 +657,10 @@ class Game(Verbose_Object):
         
         if len(message) == 1:
             # Request for amount of time left in the turn
-            if remain: client.send(TME(self.relative_limit(remain)))
+            if remain: client.send(TME(relative_limit(remain)))
             else:      client.reject(message)
         elif len(message) == 4 and message[2].is_integer():
-            request = self.absolute_limit(message[2].value())
+            request = absolute_limit(message[2].value())
             if request > max(self.limits.values()):
                 # Ignore requests greater than the longest time limit
                 client.reject(message)
@@ -709,7 +679,7 @@ class Game(Verbose_Object):
         if len(message) == 4: self.cancel_time_requests(client)
         elif message[4].is_integer():
             # Remove the request from the list, if it's there.
-            try: self.timers[self.absolute_limit(message[4].value())].remove(client)
+            try: self.timers[absolute_limit(message[4].value())].remove(client)
             except (ValueError, KeyError): reply = REJ
         else: reply = REJ
         client.send(reply(message))

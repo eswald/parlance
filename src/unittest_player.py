@@ -2,33 +2,9 @@
 '''#'''
 
 import unittest, config
-from functions import Verbose_Object
+from functions import Verbose_Object, relative_limit
 from player    import Player, HoldBot
 from language  import *
-
-def relative_limit(seconds):
-    ''' Converts a number of seconds into a TME message number.
-        Negative message numbers indicate hours; positive, seconds.
-    '''#'''
-    max_int = Token.opts.max_pos_int
-    if seconds > max_int: result = -seconds // 3600
-    else: result = seconds
-    if -result > max_int: result = -max_int
-    return result
-def get_variant_list(game_options):
-    variant = [(LVL, game_options.LVL)]
-    if game_options.MTL: variant.append((MTL, relative_limit(game_options.MTL)))
-    if game_options.RTL: variant.append((RTL, relative_limit(game_options.RTL)))
-    if game_options.BTL: variant.append((BTL, relative_limit(game_options.BTL)))
-    if game_options.AOA: variant.append((AOA,))
-    if game_options.DSD: variant.append((DSD,))
-    
-    if game_options.LVL >= 10:
-        if game_options.PDA: variant.append((PDA,))
-        if game_options.NPR: variant.append((NPR,))
-        if game_options.NPB: variant.append((NPB,))
-        if game_options.PTL: variant.append((PTL, self.relative_limit(game_options.PTL)))
-    return variant
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -61,7 +37,7 @@ class PlayerTestCase(unittest.TestCase):
         config.option_class.local_opts.update(self.game_options)
         self.variant = config.variants['standard']
         opts = config.game_options()
-        self.params = get_variant_list(opts)
+        self.params = opts.get_params()
         self.level = opts.LVL
         self.player = None
         self.replies = []
