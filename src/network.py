@@ -290,7 +290,7 @@ class Service(Connection):
         self.server    = server
         self.errors    = 0
         self.game      = server.default_game()
-        self.rep       = self.game.representation
+        self.rep       = self.game.variant.rep
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
     def check(self):

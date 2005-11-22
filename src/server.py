@@ -169,6 +169,10 @@ class Server(Verbose_Object):
             return True
         return False
     def handle_PNG(self, client, message): client.accept(message)
+    def handle_LST(self, client, message):
+        for game_id, game in enumerate(self.games):
+            client.send(LST(game_id, game.players_needed(),
+                game.variant.variant, game.options.get_params()))
     
     def default_game(self):
         games = list(self.games)
@@ -182,7 +186,7 @@ class Server(Verbose_Object):
             client.game.disconnect(client)
             new_game = self.games[game_id]
             client.game = new_game
-            client.set_rep(new_game.representation)
+            client.set_rep(new_game.variant.rep)
             return True
         else: return False
     def start_game(self, client=None, match=None):
@@ -346,7 +350,7 @@ class Game(Verbose_Object):
         
         self.server         = server
         self.game_id        = game_id
-        self.representation = variant.rep
+        self.variant        = variant
         
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts

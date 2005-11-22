@@ -426,6 +426,12 @@ class Server_Multigame(ServerTestCase):
         newbie = self.connect_player(self.Fake_Player, game_id=0)
         self.assertContains('AUS', newbie.rep)
         self.failUnlessEqual(newbie.rep['AUS'], 0x4100)
+    def test_LST_reply(self):
+        from language import LST
+        self.master.queue = []
+        self.master.send(LST())
+        params = self.server.default_game().options.get_params()
+        self.assertContains(LST(0, 6, 'standard', params), self.master.queue)
 
 class Server_Bugfix(ServerTestCase):
     "Test cases to reproduce bugs found."
