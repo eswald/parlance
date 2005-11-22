@@ -317,8 +317,9 @@ class Service(Connection):
         self.country = None
         self.close()
     def set_rep(self, representation):
-        self.rep = representation
-        self.send_RM()
+        if representation != self.rep:
+            self.rep = representation
+            self.send_RM()
     
     def send(self, message):
         if message[0] is MDF: text = 'MDF [...]'
