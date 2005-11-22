@@ -684,12 +684,15 @@ class Token(_tuple_Token):
         if isinstance(other, (Token, Message)): other = str(other)
         elif not isinstance(other, str): return NotImplemented
         quot = self.opts.quot_char
+        escape = self.opts.escape_char
         if self.is_text():
             if not other:                                       joint = quot
             elif other[-1] == quot: other = other[:-1];         joint = ''
             elif self.opts.squeeze_parens and other[-1] == '(': joint = quot
             else:                                               joint = ' ' + quot
-            if self.number == self.opts.quot_number:            joint += quot
+            if self.opts.double_quotes:
+                if self.number == self.opts.quot_number:        joint += quot
+            elif self.text in (escape, quot):                   joint += escape
             return other + joint + self.text + quot
         else:
             if not other: joint = ''
