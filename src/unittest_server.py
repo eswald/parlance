@@ -426,12 +426,28 @@ class Server_Multigame(ServerTestCase):
         newbie = self.connect_player(self.Fake_Player, game_id=0)
         self.assertContains('AUS', newbie.rep)
         self.failUnlessEqual(newbie.rep['AUS'], 0x4100)
+    
+    def test_SEL_reply(self):
+        from language import LST, SEL
+        self.master.queue = []
+        self.master.send(SEL())
+        params = self.server.default_game().options.get_params()
+        self.assertContains(LST(0, 6, 'standard', params), self.master.queue)
     def test_LST_reply(self):
         from language import LST
         self.master.queue = []
         self.master.send(LST())
         params = self.server.default_game().options.get_params()
         self.assertContains(LST(0, 6, 'standard', params), self.master.queue)
+    def test_multigame_LST_reply(self):
+        from language import LST
+        std_params = self.server.default_game().options.get_params()
+        self.new_game('sailho')
+        self.master.queue = []
+        self.master.send(LST())
+        sailho_params = self.server.default_game().options.get_params()
+        self.assertContains(LST(0, 6, 'standard', std_params), self.master.queue)
+        self.assertContains(LST(1, 4, 'sailho', sailho_params), self.master.queue)
 
 class Server_Bugfix(ServerTestCase):
     "Test cases to reproduce bugs found."

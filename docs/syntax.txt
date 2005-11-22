@@ -109,6 +109,7 @@ client_rejectable -1 ORD
 client_rejectable -1 SCO
 client_rejectable -1 TME
 client_rejectable -1 LST
+client_rejectable -1 SEL
 client_rejectable  0 MIS
 client_rejectable  0 SUB [repeat] [sub order]
 

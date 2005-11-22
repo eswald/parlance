@@ -166,13 +166,10 @@ class Server(Verbose_Object):
         if len(message) > 3:
             reply = self.join_game(client, message[2].value()) and YES or REJ
             client.send(reply(message))
-            return True
-        return False
+        else: client.game.send_listing(client)
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
-        for game_id, game in enumerate(self.games):
-            client.send(LST(game_id, game.players_needed(),
-                game.variant.variant, game.options.get_params()))
+        for game in self.games: game.send_listing(client)
     
     def default_game(self):
         games = list(self.games)
@@ -620,6 +617,9 @@ class Game(Verbose_Object):
             self.broadcast(ADM('Server', str(line) % args))
     
     # Press and administration
+    def send_listing(self, client):
+        client.send(LST(self.game_id, self.players_needed(),
+            self.variant.variant, self.options.get_params()))
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
