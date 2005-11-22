@@ -723,6 +723,7 @@ class Game(Verbose_Object):
         if message.fold()[1][1][0].lower() == self.judge.map_name:
             if client in self.clients: return # Ignore duplicate messages
             self.clients.append(client)
+            client.admin('Welcome.  This server accepts admin commands; send "Server: help" for details.')
             if client.country:
                 struct = self.players[client.country]
                 struct.ready = True
@@ -879,6 +880,7 @@ class Game(Verbose_Object):
             the number of empty power slots in the client's game.
         '''#'''
         if self.num_players() < self.server.options.bot_min:
+            client.admin('This server is not designed for solo games;')
             client.admin('Recruit more players first.')
             return
         bot_name = match.group(2)
