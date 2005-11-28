@@ -141,27 +141,29 @@ class Server(Verbose_Object):
                 self.log_debug(7, 'Missing message handler: %s', method_name)
                 client.send(HUH([ERR, message]))
     def handle_ADM(self, client, message):
-        text = message.fold()[2][0].lower()
-        if text[0:7] == 'server:':
-            for pattern in self.commands:
-                match = pattern['pattern'].search(text, 7)
-                if match:
-                    pattern['command'](self, client, match)
-                    break
-            else:
-                for pattern in client.game.commands:
-                    match = pattern['pattern'].search(text, 7)
-                    if match:
-                        if client.mastery:
-                            pattern['command'](client.game, client, match)
-                        else:
-                            client.admin('You are not authorized to do that.')
-                        break
-                else: client.admin('Unrecognized command: "%s"', text[7:])
+        line = message.fold()[2][0]
+        text = line.lower()
+        if text[0:7] == 'server:': self.seek_command(client, text[7:])
+        elif not re.search('[a-z]', line): self.seek_command(client, text)
         elif self.options.fwd_admin:
             if text[0:4] == 'all:': self.broadcast(message)
             else: client.game.broadcast(message)
         else: client.reject(message)
+    def seek_command(self, client, text):
+        for pattern in self.commands:
+            match = pattern['pattern'].search(text)
+            if match:
+                pattern['command'](self, client, match)
+                break
+        else:
+            for pattern in client.game.commands:
+                match = pattern['pattern'].search(text)
+                if match:
+                    if client.mastery:
+                        pattern['command'](client.game, client, match)
+                    else: client.admin('You are not authorized to do that.')
+                    break
+            else: client.admin('Unrecognized command: "%s"', text)
     def handle_SEL(self, client, message):
         if len(message) > 3:
             reply = self.join_game(client, message[2].value()) and YES or REJ
