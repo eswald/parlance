@@ -163,7 +163,15 @@ class Server(Verbose_Object):
                         pattern['command'](client.game, client, match)
                     else: client.admin('You are not authorized to do that.')
                     break
-            else: client.admin('Unrecognized command: "%s"', text)
+            else:
+                for pattern in self.local_commands:
+                    match = pattern['pattern'].search(text)
+                    if match:
+                        if client.address in ('localhost', '127.0.0.1'):
+                            pattern['command'](self, client, match)
+                        else: client.admin('You are not authorized to do that.')
+                        break
+                else: client.admin('Unrecognized command: "%s"', text)
     def handle_SEL(self, client, message):
         if len(message) > 3:
             reply = self.join_game(client, message[2].value()) and YES or REJ
@@ -231,14 +239,8 @@ class Server(Verbose_Object):
             client.admin(line)
     def close(self, client=None, match=None):
         ''' Tells clients to exit, and closes the server's sockets.'''
-        if client:
-            if match.group(1) == self.options.password:
-                self.broadcast_admin('The server has been killed.  Good-bye.')
-            else:
-                client.admin('Password incorrect.  Good-bye.')
-                client.boot()
-                return
         if not self.closed:
+            self.broadcast_admin('The server is shutting down.  Good-bye.')
             self.log_debug(10, 'Closing')
             self.broadcast(OFF())
             #self.__super.close()
@@ -278,9 +280,10 @@ class Server(Verbose_Object):
         'decription': '  help - Lists admin commands recognized by the server'},
         {'pattern': re.compile('list bots'), 'command': list_bots,
         'decription': '  list bots - Lists bots that can be started by a game master'},
-        {'pattern': re.compile('shutdown (\w+)'), 'command': close,
-        #'decription': '  shutdown <password> - Stops the server'},
-        'decription': ' '},
+    ]
+    local_commands = [
+        {'pattern': re.compile('shutdown'), 'command': close,
+        'decription': '  shutdown - Stops the server'},
     ]
 
 

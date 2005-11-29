@@ -258,6 +258,21 @@ class Server_Admin_Bots(Server_Admin):
         self.assertAdminResponse(self.master, 'start holdbot',
                 'Recruit more players first.')
 
+class Server_Admin_Local(Server_Admin):
+    "Admin commands restricted to local connections"
+    def setUp(self):
+        Server_Admin.setUp(self)
+        self.server.default_game().clients[1].address = '127.0.0.1'
+    def test_shutdown_master(self):
+        "Whether a game master can shut down the server"
+        self.assertUnauthorized(self.master, 'shutdown')
+        self.failIf(self.server.closed)
+    def test_shutdown_local(self):
+        "Whether a local connection can shut down the server"
+        self.assertAdminResponse(self.backup, 'shutdown',
+                'The server is shutting down.  Good-bye.')
+        self.failUnless(self.server.closed)
+
 class Server_Admin_Other(Server_Admin):
     "Other administrative messages handled by the server"
     
