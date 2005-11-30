@@ -242,6 +242,13 @@ class Server(Verbose_Object):
                 else: message = game.has_need()
             elif game.clients: message = 'Closed; %s' % game.has_need()
             if message: client.admin('Game %s: %s', game.game_id, message)
+    def list_powers(self, client, match):
+        for player in client.game.players.values():
+            if player.client:
+                client.admin('%s (%d): %s (%s), from %s', player.pname,
+                        player.passcode, player.name, player.version,
+                        player.client.address)
+            else: client.admin('%s (%d): None', player.pname, player.passcode)
     def list_master(self, client, match):
         preface = client.mastery and 'As the game master, you may' or 'If you were the game master, you could'
         client.admin('%s begin an admin message with "Server:" to use the following commands:', preface)
@@ -296,6 +303,8 @@ class Server(Verbose_Object):
         'decription': '  shutdown - Stops the server'},
         {'pattern': re.compile('status'), 'command': list_status,
         'decription': '  status - Displays the status of each game'},
+        {'pattern': re.compile('powers'), 'command': list_powers,
+        'decription': '  powers - Displays the power assignments for this game'},
     ]
 
 

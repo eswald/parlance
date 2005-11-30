@@ -273,9 +273,16 @@ class Server_Admin_Local(Server_Admin):
                 'The server is shutting down.  Good-bye.')
         self.failUnless(self.server.closed)
     def test_status_request(self):
-        "Whether a local connection can shut down the server"
+        "Whether a local connection can request game status information"
         self.assertAdminResponse(self.backup, 'status',
-                'Game 0: Have 3 players, need 4 to start.')
+                'Game 0: Have 3 players and 0 observers. Need 4 to start.')
+    def test_power_listing(self):
+        "Whether a local connection can power assignments"
+        game = self.server.default_game()
+        power = game.players[game.clients[1].country]
+        self.assertAdminResponse(self.backup, 'powers',
+                '%s (%d): Fake Human Player (Fake_Master), from 127.0.0.1'
+                % (power.pname, power.passcode))
 
 class Server_Admin_Other(Server_Admin):
     "Other administrative messages handled by the server"
