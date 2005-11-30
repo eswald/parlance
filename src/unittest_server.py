@@ -272,6 +272,10 @@ class Server_Admin_Local(Server_Admin):
         self.assertAdminResponse(self.backup, 'shutdown',
                 'The server is shutting down.  Good-bye.')
         self.failUnless(self.server.closed)
+    def test_status_request(self):
+        "Whether a local connection can shut down the server"
+        self.assertAdminResponse(self.backup, 'status',
+                'Game 0: Have 3 players, need 4 to start.')
 
 class Server_Admin_Other(Server_Admin):
     "Other administrative messages handled by the server"

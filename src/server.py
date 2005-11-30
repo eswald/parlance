@@ -232,6 +232,16 @@ class Server(Verbose_Object):
         client.admin('Available types of bots:')
         for bot_class in bots.itervalues():
             client.admin('  %s - %s', bot_class.name, bot_class.description)
+    def list_status(self, client, match):
+        for game in self.games:
+            message = None
+            if not game.closed:
+                if game.started:
+                    if game.paused: message = 'Paused'
+                    else: message = 'In progress'
+                else: message = game.has_need()
+            elif game.clients: message = 'Closed; %s' % game.has_need()
+            if message: client.admin('Game %s: %s', game.game_id, message)
     def list_master(self, client, match):
         preface = client.mastery and 'As the game master, you may' or 'If you were the game master, you could'
         client.admin('%s begin an admin message with "Server:" to use the following commands:', preface)
@@ -284,6 +294,8 @@ class Server(Verbose_Object):
     local_commands = [
         {'pattern': re.compile('shutdown'), 'command': close,
         'decription': '  shutdown - Stops the server'},
+        {'pattern': re.compile('status'), 'command': list_status,
+        'decription': '  status - Displays the status of each game'},
     ]
 
 
