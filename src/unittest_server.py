@@ -368,6 +368,9 @@ class Server_Admin_Other(Server_Admin):
     def test_help_caps(self):
         self.assertContains('  help - Lists admin commands recognized by the server',
                 self.master.admin('HELP'))
+    def test_help_server_caps(self):
+        self.assertContains('  help - Lists admin commands recognized by the server',
+                self.master.admin('SERVER: HELP'))
     
     def test_duplicate_mastership(self):
         "Only one player should be a master at a time."
