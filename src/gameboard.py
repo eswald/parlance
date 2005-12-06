@@ -686,13 +686,33 @@ class Coast(Comparable, Verbose_Object):
         else: return NotImplemented
     def __str__(self): return self.text
     def __repr__(self): return 'Coast(%s, %s, %s)' % self.key
-    def prefix(self):
+    
+    def coast_suffix(self):
+        from language import SCS, NCS, ECS, WCS, SEC, SWC, NEC, NWC
         if self.coastline:
             line = self.coastline.text.lower()
             if line[-1] == 's': line = line[:-1]
+            coastline = self.coastline
+            if   coastline is SCS: line = 'south coast'
+            elif coastline is NCS: line = 'north coast'
+            elif coastline is ECS: line = 'east coast'
+            elif coastline is WCS: line = 'west coast'
+            elif coastline is SEC: line = 'southeast coast'
+            elif coastline is SWC: line = 'southwest coast'
+            elif coastline is NEC: line = 'northeast coast'
+            elif coastline is NWC: line = 'northwest coast'
             coast = ' (%s)' % line
         else: coast = ''
-        return '%s %s%s' % (self.unit_type.text[0], self.province.name, coast)
+        return coast
+    def type_name(self):
+        "Text representation of the unit type"
+        token = self.unit_type
+        if   token is AMY: return 'Army'
+        elif token is FLT: return 'Fleet'
+        elif token:        return token.text
+        else:              return ''
+    def name(self): return self.province.name + self.coast_suffix()
+    def prefix(self): return '%s %s' % (self.type_name(), self.name())
     prefix = property(fget=prefix)
     
     # Confirmation queries
