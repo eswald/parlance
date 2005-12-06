@@ -374,6 +374,7 @@ class Game(Verbose_Object):
         self.server         = server
         self.game_id        = game_id
         self.variant        = variant
+        self.prefix         = 'Game %d' % game_id
         
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts
@@ -414,8 +415,6 @@ class Game(Verbose_Object):
         self.p_order        = powers
         for country in powers:
             self.players[country] = self.Player_Struct(self.judge.player_name(country))
-    def prefix(self): return 'Game %d' % self.game_id
-    prefix = property(fget=prefix)
     
     # Connecting and disconnecting players
     def open_position(self, country):

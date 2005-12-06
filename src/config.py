@@ -197,6 +197,7 @@ class variant_options(Verbose_Object):
             Throws exceptions if something is wrong.
         '''#'''
         from language import SPR, SUM, FAL, AUT, WIN
+        self.prefix      = 'variant_options(%r)' % variant_name
         self.variant     = variant_name
         self.map_name    = variant_name.lower()
         self.description = description
@@ -234,8 +235,6 @@ class variant_options(Verbose_Object):
             fset = lambda self, msg: self.cache_msg('now', msg))
     start_sco = property(fget = lambda self: self.read_file('sco'),
             fset = lambda self, msg: self.cache_msg('sco', msg))
-    def prefix(self): return 'variant_options(%r)' % self.variant
-    prefix = property(fget=prefix)
 
 
 syntax        = {}

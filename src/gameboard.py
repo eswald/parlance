@@ -30,11 +30,11 @@ class Map(Verbose_Object):
         self.powers  = []
         self.opts    = options
         self.name    = options.map_name
+        self.prefix  = options.variant + ' map'
         self.valid   = options.map_mdf and not self.define(options.map_mdf)
         self.current_turn = Turn(options.seasons)
         self.restart()
     def __str__(self): return "Map(%r)" % self.name
-    prefix = property(fget=__str__)
     
     def define(self, message):
         ''' Attempts to create a map from an MDF message.

@@ -91,11 +91,10 @@ class ServerTestCase(unittest.TestCase):
     class Fake_Client(Connection):
         ''' A fake Client to test the server timeout.'''
         is_server = False
-        def prefix(self): return 'Fake Client'
-        prefix = property(fget=prefix)
         
         def __init__(self, send_IM):
             'Initializes instance variables'
+            self.prefix = 'Fake Client'
             self.__super.__init__()
             self.initialize = send_IM
         def open(self):
@@ -155,7 +154,7 @@ class ServerTestCase(unittest.TestCase):
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
-        self.set_verbosity(0)
+        self.set_verbosity(20)
         config.option_class.local_opts.update(self.game_options)
         self.manager = None
         self.server = None

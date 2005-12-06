@@ -291,6 +291,7 @@ class Service(Connection):
         self.errors    = 0
         self.game      = server.default_game()
         self.rep       = self.game.variant.rep
+        self.prefix    = self.game.prefix + ', #' + str(client_id)
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
     def check(self):
@@ -331,8 +332,6 @@ class Service(Connection):
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
     def admin(self, line, *args): self.send(ADM('Server', str(line) % args))
-    def prefix(self): return self.game.prefix + ', #' + str(self.client_id)
-    prefix = property(fget=prefix)
 
 class ServerSocket(SocketWrapper):
     flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL

@@ -129,6 +129,10 @@ class Comparable(object):
     def __le__(self, other): return not self.__gt__(other)
     def __cmp__(self, other): return NotImplemented
 
+class settable_property(object):
+    def __init__(self, fget): self.fget = fget
+    def __get__(self, obj, type): return self.fget(obj)
+
 class Verbose_Object(object):
     __metaclass__ = autosuper
     log_file = None
@@ -147,7 +151,7 @@ class Verbose_Object(object):
                 try: print line
                 except IOError: self.verbosity = 0 # Ignore broken pipes
     def prefix(self): return self.__class__.__name__
-    prefix = property(fget=prefix)
+    prefix = settable_property(prefix)
 
 def absolute_limit(time_limit):
     ''' Converts a TME message number into a number of seconds.
