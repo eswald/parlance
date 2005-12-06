@@ -5,7 +5,7 @@
 import config
 from sets        import Set
 from itertools   import chain
-from functions   import Verbose_Object, Comparable, any, all
+from functions   import Verbose_Object, Comparable, any, all, Infinity
 from iaq         import DefaultDict #, Memoize
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
@@ -345,7 +345,7 @@ class Map(Verbose_Object):
             rank = new_rank
             result += 1
         # Inaccessible island
-        return len(self.spaces)  # Essentially infinity
+        return Infinity
     #distance = Memoize(distance) # Cache results; doesn't work for list args
     def units(self):
         return chain(*[country.units for country in self.powers.values()])

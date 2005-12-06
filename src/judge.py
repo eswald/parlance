@@ -3,7 +3,7 @@
 '''#'''
 import config
 from sets      import Set, ImmutableSet
-from functions import any, all, s
+from functions import any, all, s, Infinity
 from iaq       import DefaultDict
 from server    import Judge
 from orders    import *
@@ -976,7 +976,7 @@ class Numeric_Decision(Decision):
     def __init__(self, order):
         Decision.__init__(self, order)
         self.min_value = 0
-        self.max_value = Token.opts.max_token   # Essentially infinity
+        self.max_value = Infinity
     def decided(self):
         if self.max_value < self.min_value:
             print 'Error in %s, using' % self
@@ -984,7 +984,7 @@ class Numeric_Decision(Decision):
         #if self.max_value == self.min_value: print 'Decision made for ' + str(self)
         return self.max_value == self.min_value
     def state(self):
-        return 'minimum %d, maximum %d' % (self.min_value, self.max_value)
+        return 'minimum %d, maximum %s' % (self.min_value, self.max_value)
 class Attack_Decision(Numeric_Decision):
     # Strength of the attack
     __slots__ = ()

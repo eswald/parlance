@@ -129,6 +129,14 @@ class Comparable(object):
     def __le__(self, other): return not self.__gt__(other)
     def __cmp__(self, other): return NotImplemented
 
+class Infinity(object):
+    def __gt__(self, other): return True
+    def __lt__(self, other): return False
+    def __ge__(self, other): return True
+    def __le__(self, other): return False
+    def __str__(self): return 'Infinity'
+Infinity = Infinity()
+
 class settable_property(object):
     def __init__(self, fget): self.fget = fget
     def __get__(self, obj, type): return self.fget(obj)
