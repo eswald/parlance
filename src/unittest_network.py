@@ -130,6 +130,8 @@ class Network_Basics(NetworkTestCase):
                 master.admin('Server: start holdbot'))
 
 class Network_Full_Games(NetworkTestCase):
+    def change_option(self, name, value):
+        config.option_class.local_opts.update({name: value})
     def connect_server(self, *args):
         ServerTestCase.connect_server(self, *args)
         while not self.server.closed: sleep(3); self.server.check()
@@ -154,6 +156,16 @@ class Network_Full_Games(NetworkTestCase):
         self.set_verbosity(4)
         from player import HoldBot
         self.connect_server([HoldBot] * 7, 2)
+    def test_evilbots(self):
+        "Six drawing evilbots and a holdbot"
+        from player  import HoldBot
+        from evilbot import EvilBot
+        self.set_verbosity(4)
+        #self.change_option('move time limit', 10)
+        #self.change_option('validate incoming messages', False)
+        #self.change_option('publish individual orders', True)
+        self.connect_server([HoldBot, EvilBot, EvilBot,
+                EvilBot, EvilBot, EvilBot, EvilBot])
 
 if __name__ == '__main__': unittest.main()
 

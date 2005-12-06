@@ -469,9 +469,12 @@ class DumbBot(Player):
     def generate_movement_orders(self, values):
         ''' Generate the actual orders for a movement turn.'''
         self.log_debug(10, "Movement orders for %s" % self.map.current_turn)
-        our_units = [unit for unit in self.map.units if self.friendly(unit.nation)]
-        orders = OrderSet()
+        orders = self.dumb_movement(values, OrderSet(), self.power.units)
+        self.check_for_wasted_holds(orders, values)
+        return orders
+    def dumb_movement(self, values, orders, units):
         waiting = DefaultDict([])
+        our_units = list(units)
         
         while our_units:
             # Put our units into a random order. This is one of the ways
@@ -486,7 +489,6 @@ class DumbBot(Player):
                     if order: orders.add(order, unit.nation)
                     else: unordered.append(unit)
             our_units = unordered
-        self.check_for_wasted_holds(orders, values)
         return orders
     def check_for_wasted_holds(self, orders, values):
         ''' Replaces Hold orders with supports, if possible.'''
