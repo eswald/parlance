@@ -1,11 +1,10 @@
-''' Unit tests for the Gameboard module.
-    So far, just bug fixes.
+''' Unit tests for the Gameboard and Orders modules.
 '''#'''
 
 import unittest
 import config
 from gameboard import Map, Turn, Province
-from language  import Token, AMY, FLT
+from language  import Token, AMY, FLT, HLD, MTO, SUP, CVY, CTO, VIA, RTO, DSB, BLD, REM, WVE, SCS
 
 class Map_Variants(unittest.TestCase):
     "Validity checks for each of the known variants"
@@ -32,6 +31,12 @@ class Map_Variants(unittest.TestCase):
     def test_standard_map(self):         self.define_variant('standard')
     def test_versailles3_map(self):      self.define_variant('versailles3')
     def test_world3_map(self):           self.define_variant('world3')
+    def test_all_variant_maps(self):
+        for name, options in config.variants.iteritems():
+            game_map = Map(options=options)
+            if not game_map.valid:
+                err = game_map.define(options.map_mdf)
+                self.fail('%s map failed: %s' % (name, err))
 
 class Map_Bugfix(unittest.TestCase):
     "Tests to reproduce bugs related to the Map class"
@@ -159,6 +164,99 @@ class Coast_Bugfix(unittest.TestCase):
         Oregon = board.coasts[(AMY, Token('ORE', rep=variant.rep), None)]
         results = Oregon.convoy_routes(Alaska, board)
         self.failUnlessEqual(results, [])
+
+class Order_Strings(unittest.TestCase):
+    def check_order(self, order, result):
+        from xtended import standard_map, FRA
+        from judge   import datc_options
+        from orders  import UnitOrder
+        order = UnitOrder(order, standard_map.powers[FRA],
+                standard_map, datc_options())
+        self.failUnlessEqual(str(order), result)
+    def test_hold_string(self):
+        from xtended import standard_map, FRA, BRE
+        self.check_order([[FRA, FLT, BRE], HLD], 'Fleet Brest HOLD')
+    def test_hold_coastal(self):
+        from xtended import standard_map, FRA, SPA
+        self.check_order([[FRA, FLT, [SPA, SCS]], HLD],
+                'Fleet Spain (south coast) HOLD')
+    def test_move_string(self):
+        from xtended import standard_map, FRA, BRE, MAO
+        self.check_order([[FRA, FLT, BRE], MTO, MAO],
+                'Fleet Brest -> Mid-Atlantic Ocean')
+    def test_move_to_coast(self):
+        from xtended import standard_map, FRA, MAO, SPA
+        self.check_order([[FRA, FLT, MAO], MTO, [SPA, SCS]],
+                'Fleet Mid-Atlantic Ocean -> Spain (south coast)')
+    def test_move_from_coast(self):
+        from xtended import standard_map, FRA, MAO, SPA
+        self.check_order([[FRA, FLT, [SPA, SCS]], MTO, MAO],
+                'Fleet Spain (south coast) -> Mid-Atlantic Ocean')
+    
+    def test_support_hold_string(self):
+        from xtended import standard_map, FRA, BRE, MAO
+        self.check_order([[FRA, FLT, BRE], SUP, MAO, HLD],
+                'Fleet Brest SUPPORT Fleet Mid-Atlantic Ocean')
+    def test_support_hold_ambiguous(self):
+        # Perhaps not the best form, but it works.
+        from xtended import standard_map, FRA, BRE, GAS
+        self.check_order([[FRA, FLT, BRE], SUP, GAS, HLD],
+                'Fleet Brest SUPPORT  Gascony')
+    def test_support_hold_foreign(self):
+        from xtended import standard_map, FRA, BRE, LON
+        self.check_order([[FRA, FLT, BRE], SUP, LON, HLD],
+                'Fleet Brest SUPPORT English Fleet London')
+    def test_support_move_string(self):
+        from xtended import standard_map, FRA, PAR, MAR, GAS
+        self.check_order([[FRA, AMY, PAR], SUP, MAR, MTO, GAS],
+                'Army Paris SUPPORT Army Marseilles -> Gascony')
+    
+    def test_convoying_string(self):
+        from xtended import standard_map, FRA, BRE, MAR, GAS
+        self.check_order([[FRA, FLT, BRE], CVY, MAR, CTO, GAS],
+                'Fleet Brest CONVOY Army Marseilles -> Gascony')
+    def test_convoyed_string(self):
+        from xtended import standard_map, FRA, BRE, MAR, GAS
+        self.check_order([[FRA, AMY, MAR], CTO, GAS, VIA, [BRE]],
+                'Army Marseilles -> Brest -> Gascony')
+    def test_convoyed_long(self):
+        from xtended import standard_map, FRA, MAR, GAS, GOL, WES, MAO
+        self.check_order([[FRA, AMY, MAR], CTO, GAS, VIA, [GOL, WES, MAO]],
+                'Army Marseilles -> Gulf of Lyon -> Western Mediterranean Sea -> Mid-Atlantic Ocean -> Gascony')
+    
+    def test_retreat_string(self):
+        from xtended import standard_map, FRA, PAR, GAS
+        self.check_order([[FRA, AMY, PAR], RTO, GAS],
+                'Army Paris -> Gascony')
+    def test_disband_string(self):
+        from xtended import standard_map, FRA, PAR
+        self.check_order([[FRA, AMY, PAR], DSB],
+                'Army Paris DISBAND')
+    
+    def test_build_string(self):
+        from xtended import standard_map, FRA, PAR
+        self.check_order([[FRA, AMY, PAR], BLD],
+                'Builds an army in Paris')
+    def ftest_build_foreign(self):
+        from xtended import standard_map, GER, PAR
+        self.check_order([[GER, AMY, PAR], BLD],
+                'Builds a German army in Paris')
+    def test_remove_string(self):
+        from xtended import standard_map, FRA, PAR
+        self.check_order([[FRA, AMY, PAR], REM],
+                'Removes the army in Paris')
+    def ftest_remove_foreign(self):
+        from xtended import standard_map, GER, PAR
+        self.check_order([[GER, AMY, PAR], REM],
+                'Removes the German army in Paris')
+    def test_waive_string(self):
+        from xtended import standard_map, FRA
+        self.check_order([FRA, WVE],
+                'Waives a build')
+    def ftest_waive_foreign(self):
+        from xtended import standard_map, GER
+        self.check_order([GER, WVE],
+                'Waives a German build')
 
 if __name__ == '__main__': unittest.main()
 
