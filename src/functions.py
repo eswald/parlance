@@ -179,6 +179,38 @@ def relative_limit(seconds):
     if -result > max_int: result = -max_int
     return result
 
+class DefaultDict(dict):
+    ''' Shortcut for a self-initializing dictionary;
+        for example, to keep counts of something.
+        Taken from Peter Norvig's Infrequently Answered Questions,
+        at http://www.norvig.com/python-iaq.html
+        Modified to resemble Maxim Krikun's solution, at
+        http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/259173
+        
+        >>> d = DefaultDict(0)
+        >>> d['hello'] += 1
+        >>> d
+        {'hello': 1}
+        >>> d2 = DefaultDict([])
+        >>> d2[1].append('hello')
+        >>> d2[2].append('world')
+        >>> d2[1].append('there')
+        >>> d2
+        {1: ['hello', 'there'], 2: ['world']}
+    '''#'''
+    __slots__ = ('default',)
+    def __init__(self, default): self.default = default
+    def __getitem__(self, key):
+        try: result = dict.__getitem__(self, key)
+        except KeyError:
+            item = self.default
+            if callable(item): result = item()
+            else:
+                import copy
+                result = copy.deepcopy(item)
+            self[key] = result
+        return result
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)

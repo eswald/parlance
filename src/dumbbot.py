@@ -21,8 +21,7 @@ from random       import random, randrange, shuffle
 from time         import ctime
 from player       import Player
 from gameboard    import location_key
-from functions    import expand_list, all
-from iaq          import DefaultDict
+from functions    import DefaultDict, expand_list, all
 from orders       import *
 
 # The number of values in the proximity weightings

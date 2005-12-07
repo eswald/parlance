@@ -3,8 +3,7 @@
 '''#'''
 import config
 from sets      import Set, ImmutableSet
-from functions import any, all, s, Infinity
-from iaq       import DefaultDict
+from functions import DefaultDict, any, all, s, Infinity
 from server    import Judge
 from orders    import *
 #from orders    import UnitOrder, RemoveOrder, WaiveOrder, \

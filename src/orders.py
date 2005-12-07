@@ -5,7 +5,6 @@
 import config
 from operator    import lt, gt
 from functions   import any, all, autosuper, Comparable
-from iaq         import DefaultDict
 from gameboard   import Turn, Power, Coast, Unit
 from language    import *
 #from language    import Message, \
@@ -492,10 +491,10 @@ class OrderSet(dict):
         from itertools import chain
         return chain(*self.values())
     def __str__(self):
-        nations = DefaultDict([])
+        nations = {}
         for order in self:
             key = order.__author and order.__author.key
-            nations[key].append(order)
+            nations.setdefault(key, []).append(order)
         return '{ %s }' % '; '.join(['%s: %s' %
                 (nation, ', '.join(map(str, orders)))
             for nation, orders in nations.iteritems()])

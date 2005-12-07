@@ -5,8 +5,7 @@
 import config
 from sets        import Set
 from itertools   import chain
-from functions   import Verbose_Object, Comparable, any, all, Infinity
-from iaq         import DefaultDict #, Memoize
+from functions   import DefaultDict, Verbose_Object, Comparable, any, all, Infinity
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
 def location_key(unit_type, loc):
