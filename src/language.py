@@ -417,6 +417,9 @@ class _tuple_Token(tuple):
         return self[1]
     text = property(fget=__str__)
     number = property(fget=__int__)
+    
+    # Try to be atomic
+    def __iter__(self): raise AttributeError, 'Tokens are atomic.'
 
 class Token(_tuple_Token):
     ''' Embodies a single token, with both text and integer components.
