@@ -91,6 +91,7 @@ class syntax_options(option_class):
     '''#'''
     section = 'syntax'
     def __init__(self):
+        # os.path.abspath(__file__) would be useful here.
         self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
         self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'dcsp.html'))
         self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.txt'))

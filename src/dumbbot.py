@@ -16,6 +16,8 @@
      **/
 '''#'''
 
+__version__ = "$Revision$"
+
 import config
 from random       import random, randrange, shuffle
 from time         import ctime
@@ -239,7 +241,8 @@ class DumbBot(Player):
     
     # Items for the NME message
     name    = 'DumberBot'
-    version = '2p'
+    version = (__version__.replace('$Revision: ', '2r')
+                          .replace(' $', ''))
     
     print_csv = False
     attempt_convoys = True
