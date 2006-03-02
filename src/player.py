@@ -1,8 +1,10 @@
+from __future__ import division
+
 import config
 from cPickle   import dump, load
 from random    import randrange, shuffle
 from sets      import Set
-from functions import autosuper, Verbose_Object, version_string
+from functions import s, autosuper, Verbose_Object, version_string
 from orders    import *
 
 __version__ = "$Revision$"
@@ -513,13 +515,9 @@ class Ladder(Observer):
     def handle_SLO(self, message):
         self.winners = [message[2]]
     def handle_SMR(self, message):
-        from functions import s
-        from operator  import mul
-        
         player_list = message.fold()[2:]
         num_players = len(player_list)
         num_winners = 0
-        centers_held = 0
         participants = {}
         if self.winners:
             def won(power, centers, winners=self.winners):
@@ -531,32 +529,26 @@ class Ladder(Observer):
         # Information-gathering loop
         for player in player_list:
             power,name,version,centers = player[:4]
-            key = (name[0], version[0])
-            centers_held += centers
-            if won(power, centers): num_winners += 1
-            else: centers = -centers
-            participants.setdefault(key, []).append(centers)
+            stats = participants.setdefault((name[0], version[0]), [0,0])
+            if won(power, centers):
+                num_winners += 1
+                stats[0] += 1
+            else: stats[1] += 1
         
-        num_losers = (num_players - num_winners)
-        loss_factor = reduce(mul, range(2, num_players + 1), 1)
-        win_factor = (num_losers * loss_factor // num_winners) + centers_held
+        win_factor = num_players / num_winners
         scores = self.read_scores()
         self.log_debug(9, 'Initial scores:', scores)
         report = ['Ladder scores have been updated as follows:']
         
         # Scoring loop
-        for key, center_list in participants.iteritems():
-            diff = 0
-            for centers in center_list:
-                if centers > 0: diff += win_factor
-                else: diff -= loss_factor
-                diff -= abs(centers) * num_winners
+        for key, stat_list in participants.iteritems():
+            diff = (win_factor * stat_list[0]) - (stat_list[0] + stat_list[1])
             if scores.has_key(key): scores[key] += diff
             else: scores[key] = diff
             if diff < 0: gain = 'loses'
             else: gain = 'gains'
             change = abs(diff)
-            report.append('%s (%s) %s %d point%s, for a total of %d.'
+            report.append('%s (%s) %s %g point%s, for a total of %g.'
                 % (key[0], key[1], gain, change, s(change), scores[key]))
         
         # Report results
