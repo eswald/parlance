@@ -42,12 +42,12 @@ class EvilBot(DumbBot):
         self.__super.__init__(*args, **kwargs)
         self.game_id = game = kwargs.get('game_id')
         try:
-            self.log_debug(1, 'Acquiring init lock')
+            self.log_debug(11, 'Acquiring init lock')
             self.main_lock.acquire()
             if self.games.has_key(game): shared = self.games[game]
             else: self.games[game] = shared = self.shared_info()
         finally:
-            self.log_debug(1, 'Releasing init lock')
+            self.log_debug(11, 'Releasing init lock')
             self.main_lock.release()
         self.shared = shared
         if self.power: shared.friends.add(self.power.key)
@@ -63,22 +63,22 @@ class EvilBot(DumbBot):
         self.log_debug(10, "Movement orders for %s" % now)
         lock = self.shared.lock
         try:
-            self.log_debug(1, 'Acquiring movement lock')
+            self.log_debug(11, 'Acquiring movement lock')
             lock.acquire()
             turn = self.shared.turn
-            self.log_debug(1, 'Comparing %s with %s', turn, now)
+            self.log_debug(11, 'Comparing %s with %s', turn, now)
             if turn and turn == now.key:
-                self.log_debug(1, 'Using stored orders')
+                self.log_debug(11, 'Using stored orders')
                 orders = self.shared.orders
             else:
-                self.log_debug(1, 'Calculating new orders')
+                self.log_debug(11, 'Calculating new orders')
                 orders = self.dumb_movement(values, OrderSet(),
                         [u for u in self.map.units if self.friendly(u.nation)])
                 self.check_for_wasted_holds(orders, values)
                 self.shared.orders = orders
                 self.shared.turn = now.key
         finally:
-            self.log_debug(1, 'Releasing movement lock')
+            self.log_debug(11, 'Releasing movement lock')
             lock.release()
         return orders
     
@@ -95,13 +95,13 @@ class EvilBot(DumbBot):
         '''Laugh at the poor humans.'''
         lock = self.shared.lock
         try:
-            self.log_debug(1, 'Acquiring draw lock')
+            self.log_debug(11, 'Acquiring draw lock')
             lock.acquire()
             if self.power.units:
                 self.send_admin('Bwa' + '-ha' * self.shared.laughs + '!')
             self.shared.laughs += 1
         finally:
-            self.log_debug(1, 'Releasing draw lock')
+            self.log_debug(11, 'Releasing draw lock')
             lock.release()
         self.__super.handle_DRW(message)
     def handle_SLO(self, message):
