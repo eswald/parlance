@@ -1,4 +1,6 @@
-''' DumberBot - A Python version of David Norman's DumbBot.
+''' DumberBot - A Python version of David Norman's DumbBot
+    Modified by Eric Wald, 2004-2006
+    
     This file is released under the same terms as the original:
     
     /**
@@ -852,5 +854,3 @@ class DavidBot(DumbBot):
 if __name__ == "__main__":
     from main import run_player
     run_player(DumbBot)
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

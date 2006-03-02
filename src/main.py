@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+''' PyDip user interface (such as it is)
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    When run directly as a script, this module starts the server.
+'''#'''
+
 from sys import argv
 import config
 
@@ -89,5 +97,3 @@ def run_server():
         else: server.log_debug(1, 'Failed to open the server.')
 
 if __name__ == "__main__": run_server()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

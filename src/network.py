@@ -1,5 +1,10 @@
-''' Client <-> Server Communications
+''' PyDip client <-> server communications
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    This should be the only module that cares about the client-server protocol.
 '''#'''
+
 import config, socket, select
 from copy      import copy
 from time      import time, sleep
@@ -486,11 +491,3 @@ class ServerSocket(SocketWrapper):
     # For compatibility with other types of sockets
     def power_name(self): return '#' + str(self.next_id)
     def write(self, message): pass
-
-
-def _test():
-    import doctest, network
-    return doctest.testmod(network)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

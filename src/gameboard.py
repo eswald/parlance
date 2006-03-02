@@ -1,4 +1,7 @@
-''' DAIDE Gameboard Classes
+''' PyDip gameboard classes
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
     Defines classes to represent parts of the Diplomacy game.
 '''#'''
 
@@ -24,8 +27,7 @@ class Map(Verbose_Object):
     '''#'''
     
     def __init__(self, options):
-        ''' Initializes the map from an instance of config.variant_options.
-        '''#'''
+        ''' Initializes the map from an instance of config.variant_options.'''
         self.powers  = []
         self.opts    = options
         self.name    = options.map_name
@@ -352,8 +354,7 @@ class Map(Verbose_Object):
     
     # Message handlers
     def handle_MDF(self, message):
-        ''' Handles the MDF command, loading province information.
-        '''#'''
+        ''' Handles the MDF command, loading province information.'''
         if not self.opts.map_mdf: self.opts.map_mdf = message
         self.valid = not self.define(message)
     def handle_SCO(self, message):
@@ -470,8 +471,7 @@ class Turn(Comparable):
         self.season = season
         self.year   = year
     def advance(self):
-        ''' Changes to the next turn, advancing the year if appropriate.
-        '''#'''
+        ''' Changes to the next turn, advancing the year if appropriate.'''
         if self.season_list:
             seasons = len(self.season_list)
             self.season_index += 1
@@ -852,5 +852,3 @@ def _test():
     globs = config.extend_globals(gameboard.__dict__)
     return doctest.testmod(gameboard, globs=globs)
 if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

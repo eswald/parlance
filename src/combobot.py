@@ -1,4 +1,6 @@
-''' ComboBot - A diplomacy bot that evaluates unit combinations
+''' ComboBot - A PyDip bot that evaluates unit combinations
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
 '''#'''
 
 from random       import random
@@ -24,8 +26,7 @@ class ComboBot(DumbBot):
     description = 'ComboBot - A bot that considers unit combinations'
     
     def generate_movement_orders(self, values):
-        ''' Generate the actual orders for a movement turn.
-        '''#'''
+        ''' Generate the actual orders for a movement turn.'''
         self.log_debug(10, "Movement orders for %s", self.map.current_turn)
         self.log_debug(11, str(self.map.create_NOW()))
         
@@ -111,8 +112,7 @@ class ComboBot(DumbBot):
                 for next in fleets if next not in path], []))
     
     def combine_combos(self, combos, base=None):
-        ''' Gathers a list of complete order sets from the combos.
-        '''#'''
+        ''' Gathers a list of complete order sets from the combos.'''
         if base is None: base = ComboSet(self.power)
         results = []
         roots = list(combos)
@@ -206,14 +206,12 @@ class OrderCombo(object):
             return True
         def attackers(province, friendly=self.player.power.key,
                 spaces=self.player.map.spaces):
-            ''' Compiles a list of enemy units that can enter the province.
-            '''#'''
+            ''' Compiles a list of enemy units that can enter the province.'''
             bordering = [spaces[prov].units for prov in province.borders_in]
             return [u for u in sum(bordering, [])
                 if u and u.nation != friendly and u.can_move_to(province)]
         def occupied(province, friendly=self.player.power.key):
-            ''' Determines whether an enemy is in a space.
-            '''#'''
+            ''' Determines whether an enemy is in a space.'''
             return any(province.units, lambda unit: unit.nation != friendly)
         
         # Determine who can still be ordered
@@ -399,8 +397,7 @@ class ComboSet(object):
     # For the following functions, bias indicates whether to guess aggressively
     # or conservatively, such that foo_prob(x,True) >= foo_prob(x,False).
     def stay_prob(self, unit, bias, adjacent_units):
-        ''' How likely a unit is to stay in the province indicated.
-        '''#'''
+        ''' How likely a unit is to stay in the province indicated.'''
         result = ((1 - self.dislodge_prob(unit, not bias, adjacent_units))
                 * (1 - self.move_prob(unit, not bias, adjacent_units)))
         return result
@@ -450,8 +447,7 @@ class ComboSet(object):
         return self.attacked_prob(unit.coast.province, unit.nation,
                 strength, bias, adjacent_units)
     def move_prob(self, unit, bias, adjacent_units):
-        ''' How likely a unit is to move out of the province indicated.
-        '''#'''
+        ''' How likely a unit is to move out of the province indicated.'''
         order = self.unit_orders.get_order(unit)
         if order:
             if order.is_moving(): result = self.success_prob(order, bias, adjacent_units)
@@ -459,20 +455,16 @@ class ComboSet(object):
         else: result = bias and 1 or 0
         return result
     def destroy_prob(self, unit, bias, adjacent_units):
-        ''' How likely the given unit is to be destroyed.
-        '''#'''
+        ''' How likely the given unit is to be destroyed.'''
         return self.dislodge_prob(unit, bias, adjacent_units)
     def threat_prob(self, centre, bias, adjacent_units):
-        ''' How likely the given supply center is to have an enemy closer than a friend.
-        '''#'''
+        ''' How likely the given supply center is to have an enemy closer than a friend.'''
         return bias and 1 or 0
     def lost_prob(self, province, bias, adjacent_units):
-        ''' How likely the given province is to be taken by an enemy.
-        '''#'''
+        ''' How likely the given province is to be taken by an enemy.'''
         return bias and 1 or 0
     def success_prob(self, order, bias, adjacent_units):
-        ''' How likely the given order is to succeed.
-        '''#'''
+        ''' How likely the given order is to succeed.'''
         if order.is_moving():
             # Todo: Consider supports for or against
             probs = [1]
@@ -504,5 +496,3 @@ class ComboSet(object):
 if __name__ == "__main__":
     import main
     main.run_player(ComboBot)
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

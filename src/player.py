@@ -1,3 +1,8 @@
+''' PyDip client framework and simple clients
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+'''#'''
+
 from __future__ import division
 
 import config
@@ -39,7 +44,7 @@ class Player(Verbose_Object):
             MAP, MDF, HLO, DRW, SLO, OFF, SVE, LOD, and FRM
         Most of them do everything you will need,
         in combination with instance variables.
-    '''
+    '''#'''
     # Magic variables:
     name = None        # Set this to a string for all subclasses.
     version = None     # Set this to a string to allow registration as a player.
@@ -580,5 +585,3 @@ class Echo(Observer):
 if __name__ == "__main__":
     from main import run_player
     run_player(HoldBot, True, True)
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

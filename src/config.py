@@ -1,4 +1,7 @@
-''' DAIDE Configuration Manager
+''' PyDip configuration management
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
     Harfs files for constants and other information.
     The main configuration files are pydip.cfg in the current working directory,
     and ~/.pydiprc in the user's home directory.
@@ -15,7 +18,7 @@ __version__ = '1.0'
 class option_class(object):
     section = None
     user_config = ConfigParser.RawConfigParser()
-    user_config.read(['PyDip.cfg', os.path.expanduser('~/.pydiprc')])
+    user_config.read(['pydip.cfg', os.path.expanduser('~/.pydiprc')])
     local_opts = {}
     def update(self, option_dict):
         for key in option_dict:
@@ -90,8 +93,7 @@ class token_options(option_class):
         self.max_pos_int = (token_cats['Integers'][1] + 1) << 7
         self.max_neg_int = self.max_pos_int << 1
 class syntax_options(option_class):
-    ''' Options needed by this configuration script.
-    '''#'''
+    ''' Options needed by this configuration script.'''
     section = 'syntax'
     def __init__(self):
         # os.path.abspath(__file__) would be useful here.
@@ -122,7 +124,7 @@ class game_options(option_class):
                 else: raise ValueError, 'invalid HLO message'
         else:
             # Initialize from configuration files
-            self.LVL = self.getint('syntax Level',                    200)
+            self.LVL = self.getint('syntax Level',                    8000)
             self.BTL = self.getint('Build Time Limit',                0)
             self.RTL = self.getint('Retreat Time Limit',              0)
             self.MTL = self.getint('Move Time Limit',                 0)
@@ -504,5 +506,3 @@ def _test():
     import doctest, config
     return doctest.testmod(config)
 if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

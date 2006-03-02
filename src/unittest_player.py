@@ -1,4 +1,6 @@
-''' Unit tests for the Player module.
+''' Unit tests for the PyDip player module
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
 '''#'''
 
 import unittest, config
@@ -18,7 +20,7 @@ class NumberToken(object):
 Number = NumberToken()
 
 class PlayerTestCase(unittest.TestCase):
-    "Basic Player Functionality"
+    ''' Basic Player Functionality'''
     
     game_options = {
             'syntax Level': 8000,
@@ -132,5 +134,3 @@ class Player_HoldBot(PlayerTestCase):
         self.seek_reply(SND(Number, FRA, TRY([])))
 
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

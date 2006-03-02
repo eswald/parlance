@@ -1,12 +1,8 @@
-''' DATC (Diplomacy Adjudicator Test Cases)
-    DATC Version 2.4
-    SECTION 6
-    TEST CASES
-
+''' DATC Version 2.4, Section 6 Test Cases
     The DATC is copyright Lucas B. Kruijswijk
     http://web.inter.nl.net/users/L.B.Kruijswijk/
-
-    Parts of this file were modified from a jDip test case file.
+    PyDip implementation by Eric Wald, 2004-2006
+    Certain cases inspired by a jDip test suite
 '''#'''
 
 import unittest
@@ -286,7 +282,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         ])
     def test_6B2_infer(self):
         ''' 6.B.2.a  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NOT NECESSARY
-            Subject to issue 4.B.2 (infer_coast). 
+            Subject to issue 4.B.2 (infer_coast).
             This case moves to the only available coast.
             This is the preferred solution for DATC and DPTG.
         '''#'''
@@ -301,7 +297,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         ])
     def test_6B2_fail(self):
         ''' 6.B.2.c  MOVING WITH UNSPECIFIED COAST WHEN COAST IS NOT NECESSARY
-            Subject to issue 4.B.2 (infer_coast). 
+            Subject to issue 4.B.2 (infer_coast).
             This case marks the move as illegal.
             This seems to be the preferred solution for DAIDE.
         '''#'''
@@ -314,7 +310,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState(start_state)
     def test_6B3_change(self):
         ''' 6.B.3.a  MOVING WITH WRONG COAST WHEN COAST IS NOT NECESSARY
-            Subject to issue 4.B.3 (change_coast). 
+            Subject to issue 4.B.3 (change_coast).
             This case moves to the only possible coast.
         '''#'''
         self.judge.datc.datc_4b3 = 'a'
@@ -328,7 +324,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         ])
     def test_6B3_fail(self):
         ''' 6.B.3.b  MOVING WITH WRONG COAST WHEN COAST IS NOT NECESSARY
-            Subject to issue 4.B.3 (change_coast). 
+            Subject to issue 4.B.3 (change_coast).
             This case marks the move as illegal.
             This is the preferred solution for DATC.
         '''#'''
@@ -5208,5 +5204,3 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state)
 
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

@@ -1,6 +1,11 @@
-''' The Judge for the standard map.
-    Should work for most maps, but variants may want to re-implement it.
+''' PyDip Judge for the standard map
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    This should work for most maps, but variants may want to re-implement it.
+    Rule variants, in particular, will need a new Judge class.
 '''#'''
+
 import config
 from sets      import Set, ImmutableSet
 from functions import DefaultDict, any, all, s, Infinity
@@ -604,8 +609,7 @@ class Standard_Judge(Judge):
         if any(decisions, confused): return self.fallback(decisions)
         else: return self.Szykman(decisions)
     def circular(self, decisions):
-        ''' Resolution for circular movement: All moves succeed.
-        '''#'''
+        ''' Resolution for circular movement: All moves succeed.'''
         result = []
         self.log_debug(8, 'Applying circular movement rule.')
         for choice in decisions:
@@ -1122,12 +1126,3 @@ class Defend_Decision(Numeric_Decision):
                         self.min_value += 1
             if not head.passed: self.min_value = 0
         return self.decided()
-
-
-def _test():
-    import doctest, judge
-    globs = config.extend_globals(judge.__dict__)
-    return doctest.testmod(judge, globs=globs)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

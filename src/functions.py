@@ -1,4 +1,5 @@
-''' Functions of general applicability.
+''' Functions of general applicability
+    
     New functions may be added at any time,
     so "from functions import *" is discouraged.
 '''#'''
@@ -182,6 +183,7 @@ def relative_limit(seconds):
 class DefaultDict(dict):
     ''' Shortcut for a self-initializing dictionary;
         for example, to keep counts of something.
+        
         Taken from Peter Norvig's Infrequently Answered Questions,
         at http://www.norvig.com/python-iaq.html
         Modified to resemble Maxim Krikun's solution, at
@@ -212,8 +214,7 @@ class DefaultDict(dict):
         return result
 
 def version_string(revision, extra=None):
-    ''' Converts a Subversion revision string into a NME version string.
-    '''#'''
+    ''' Converts a Subversion revision string into a NME version string.'''
     import config
     if extra: main = extra + ' '
     else: main = ''
@@ -224,5 +225,3 @@ def _test():
     import doctest, functions
     return doctest.testmod(functions)
 if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

@@ -1,4 +1,6 @@
-''' Unit tests for the Gameboard and Orders modules.
+''' Unit tests for the PyDip gameboard and orders modules
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
 '''#'''
 
 import unittest
@@ -7,7 +9,7 @@ from gameboard import Map, Turn, Province
 from language  import Token, AMY, FLT, HLD, MTO, SUP, CVY, CTO, VIA, RTO, DSB, BLD, REM, WVE, SCS
 
 class Map_Variants(unittest.TestCase):
-    "Validity checks for each of the known variants"
+    ''' Validity checks for each of the known variants'''
     def define_variant(self, variant_name):
         options = config.variants[variant_name]
         game_map = Map(options=options)
@@ -39,19 +41,19 @@ class Map_Variants(unittest.TestCase):
                 self.fail('%s map failed: %s' % (name, err))
 
 class Map_Bugfix(unittest.TestCase):
-    "Tests to reproduce bugs related to the Map class"
+    ''' Tests to reproduce bugs related to the Map class'''
     def test_empty_UNO(self):
-        "Test whether Map can define maps with no non-home supply centers."
+        ''' Test whether Map can define maps with no non-home supply centers.'''
         from translation import translate
         # Almost Standard...
         mdf = '''
-            MDF (AUS ENG FRA GER ITA RUS TUR) 
+            MDF (AUS ENG FRA GER ITA RUS TUR)
             (((AUS bud tri vie)(ENG edi lon lvp)(FRA bre mar par)
               (GER ber kie mun)(ITA nap rom ven)(RUS mos sev stp war)
               (TUR ank con smy bel bul den gre hol nwy por rum ser spa swe tun)
-              (UNO)) 
-             (alb apu arm boh bur cly fin gal gas lvn naf pic pie pru ruh sil syr 
-              tus tyr ukr wal yor adr aeg bal bar bla gob eas ech hel ion iri gol 
+              (UNO))
+             (alb apu arm boh bur cly fin gal gas lvn naf pic pie pru ruh sil syr
+              tus tyr ukr wal yor adr aeg bal bar bla gob eas ech hel ion iri gol
               mao nao nth nwg ska tys wes))
             ((adr(FLT alb apu ven tri ion))
              (aeg(FLT gre (bul scs) con smy eas ion))
@@ -136,7 +138,7 @@ class Map_Bugfix(unittest.TestCase):
         game_map = Map(options=options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_island_Pale(self):
-        "Check for The Pale in Hundred3, which is an island."
+        ''' Check for The Pale in Hundred3, which is an island.'''
         options = config.variants['hundred3']
         game_map = Map(options=options)
         prov = Token('Pal', rep=options.rep)
@@ -145,7 +147,7 @@ class Map_Bugfix(unittest.TestCase):
         self.failUnless(coast.is_valid())
         self.failUnless(coast.province.is_valid())
     def test_island_province(self):
-        "Test whether Province can define island spaces."
+        ''' Test whether Province can define island spaces.'''
         from xtended     import NAF, MAO, WES
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
@@ -156,7 +158,7 @@ class Map_Bugfix(unittest.TestCase):
         self.failUnless(new_map.valid)
 
 class Coast_Bugfix(unittest.TestCase):
-    "Tests to reproduce bugs related to the Coast class"
+    ''' Tests to reproduce bugs related to the Coast class'''
     def test_infinite_convoy(self):
         variant = config.variants['americas4']
         board = Map(options=variant)
@@ -259,5 +261,3 @@ class Order_Strings(unittest.TestCase):
                 'Waives a German build')
 
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

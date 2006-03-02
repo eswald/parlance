@@ -1,8 +1,13 @@
-''' Text-to-Tokens DAIDE Translation
+''' PyDip text-to-tokens translation
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
     Exported functions: translate(), read_message_file()
 '''#'''
 
 from language import Message, Token
+
+__all__ = ['translate', 'read_message_file']
 
 def read_message_file(filename, rep=None):
     ''' Reads a Diplomacy message written in a text file.
@@ -159,11 +164,3 @@ def maybe_int(word):
     try:    n = int(word)
     except: return word
     else:   return n
-
-
-def _test():
-    import doctest, translation
-    return doctest.testmod(translation)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

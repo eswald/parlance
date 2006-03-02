@@ -1,9 +1,12 @@
-''' DAIDE Language Utilities
+''' PyDip language classes
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
     This package is designed to be used as "from language import *"
     but only after importing config somewhere.
     Doing so will import all DCSP tokens, with upper-case names,
     including BRA ('(') and KET (')').
-    It will also import the following:
+    It will also import the following classes:
         - Message: A list of network tokens, usually representing a diplomacy message.
         - Token: One unit of a message, containing both its name and number.
 '''#'''
@@ -543,12 +546,10 @@ class Token(_tuple_Token):
         '''#'''
         return self.category() == self.cats['Powers']
     def is_unit_type(self):
-        ''' Whether the token represents a type of unit.
-        '''#'''
+        ''' Whether the token represents a type of unit.'''
         return self.category() == self.cats['Unit_Types']
     def is_coastline(self):
-        ''' Whether the token represents a specific coastline of a province.
-        '''#'''
+        ''' Whether the token represents a specific coastline of a province.'''
         return self.category() == self.cats['Coasts']
     def is_supply(self):
         ''' Whether the token represents a province with a supply centre.
@@ -801,10 +802,3 @@ __test__ = {
     '_tokenize':                 _tokenize,
     '_wrap':                     _wrap,
 }
-
-def _test():
-    import doctest, language, config
-    return doctest.testmod(language)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

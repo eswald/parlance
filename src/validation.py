@@ -1,7 +1,9 @@
-''' DAIDE Diplomacy Message Validation
+''' PyDip Diplomacy Message validation
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
     
     Exported function: validate_expression()
-        -- Decides how much of a message conforms to syntax.
+        -- Determines how much of a message conforms to syntax.
     
     These functions could be optimized a bit more.
     The standard MDF message takes several CPU seconds to validate.
@@ -9,6 +11,8 @@
     followed closely by validate_option().
     I have a slightly faster version, but it fails the empty list tests.
 '''#'''
+
+__all__ = ['validate_expression']
 
 def validate_expression(msg, sub, syntax_level):
     ''' Tries to match the message with the given expression level.
@@ -203,11 +207,3 @@ def find_ket(msg):
         index += msg[index:].index(KET)
         level += msg[old_index:index].count(BRA) - 1
     return index
-
-
-def _test():
-    import doctest, validation, config
-    return doctest.testmod(validation)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

@@ -1,6 +1,9 @@
-''' Unit tests for the Judge module,
-    for situations not covered by the DATC.
-    These are usually simpler, and may test implementation-specific stuff.
+''' Non-DATC unit tests for the PyDip judge module
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    These are usually simpler than DATC,
+    and may test implementation-specific stuff.
 '''#'''
 
 import unittest
@@ -13,7 +16,7 @@ SWI = Token('SWI', 0x504B)
 class Judge_Movement(DiplomacyAdjudicatorTestCase):
     ''' Judge movement phase adjudication'''
     def test_army_move_inland(self):
-        "Army movement to adjacent inland sector"
+        ''' Army movement to adjacent inland sector'''
         #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
@@ -23,7 +26,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, WAR],
         ])
     def test_army_move_coastal(self):
-        "Army movement to adjacent coastal sector"
+        ''' Army movement to adjacent coastal sector'''
         self.init_state(SPR, 1901, [
             [RUS, AMY, SEV],
         ])
@@ -32,7 +35,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, RUM],
         ])
     def test_army_move_overland(self):
-        "Army movement to adjacent overland sector"
+        ''' Army movement to adjacent overland sector'''
         self.init_state(SPR, 1901, [
             [ITA, AMY, VEN],
         ])
@@ -41,7 +44,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [ITA, AMY, ROM],
         ])
     def test_fleet_move_coastal(self):
-        "Fleet movement to adjacent coastal sector"
+        ''' Fleet movement to adjacent coastal sector'''
         self.init_state(SPR, 1901, [
             [RUS, FLT, SEV],
         ])
@@ -50,7 +53,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, RUM],
         ])
     def test_fleet_move_sea(self):
-        "Fleet movement to adjacent sea sector"
+        ''' Fleet movement to adjacent sea sector'''
         self.init_state(SPR, 1901, [
             [RUS, FLT, BAR],
         ])
@@ -59,7 +62,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, NWG],
         ])
     def test_move_support(self):
-        "Movement with support to dislodge"
+        ''' Movement with support to dislodge'''
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
             [RUS, AMY, UKR],
@@ -74,7 +77,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [GER, AMY, WAR, MRT],
         ])
     def test_hold_support(self):
-        "Holding with support against supported attack"
+        ''' Holding with support against supported attack'''
         start_state = [
             [RUS, AMY, MOS],
             [RUS, AMY, UKR],
@@ -88,7 +91,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, PRU), SUP, (GER, AMY, WAR), HLD])
         self.assertMapState(start_state)
     def test_convoy(self):
-        "Basic convoy"
+        ''' Basic convoy'''
         #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
             [ENG, FLT, ECH],
@@ -101,7 +104,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BRE],
         ])
     def test_support_coastless(self):
-        "Support to move to an unspecified, ambiguous coast"
+        ''' Support to move to an unspecified, ambiguous coast'''
         steady_state = [
             [FRA, FLT, GOL],
             [GER, AMY, MAR],
@@ -116,7 +119,7 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state)
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
-    "Basic Judge Functionality"
+    ''' Basic Judge Functionality'''
     game_options = {'LVL': 0, 'PDA': True}
     def acceptable(self, country, message):
         client = self.Fake_Service(country)
@@ -137,7 +140,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
                 break
         else: raise self.failureException, 'No draw message in %s' % (messages,)
     def test_disordered_draws(self):
-        "Draws with different order still the same"
+        ''' Draws with different order still the same'''
         #self.judge.verbosity = 20
         self.judge.game_opts.PDA = True
         self.init_state(SPR, 1901, [
@@ -158,7 +161,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.acceptable(AUS, DRW([FRA, RUS, ENG]))
         self.assertDrawn(FRA, ENG, RUS)
     def test_retreat_coasts(self):
-        "Fleets retreat to specific coasts"
+        ''' Fleets retreat to specific coasts'''
         self.init_state(SPR, 1901, [
             [ENG, FLT, GAS],
             [FRA, AMY, PAR],
@@ -174,7 +177,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         ])
         self.assertRetreats(GAS, [BRE, MAO, (SPA, NCS)])
     def test_retreat_contested(self):
-        "Units cannot retreat to contested areas"
+        ''' Units cannot retreat to contested areas'''
         steady_state = [
             [FRA, AMY, PAR],
             [FRA, AMY, PIC],
@@ -196,7 +199,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, GAS],
         ])
     def test_multiple_builds(self):
-        "Only one unit can be built in a supply center"
+        ''' Only one unit can be built in a supply center'''
         steady_state = [
             [FRA, AMY, PAR],
         ]
@@ -208,7 +211,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, MAR],
         ])
     def test_waives(self):
-        "Builds can be waived without error"
+        ''' Builds can be waived without error'''
         steady_state = [
             [FRA, AMY, PAR],
         ]
@@ -220,7 +223,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, MAR],
         ])
     def test_retreat_into_mover(self):
-        "A unit cannot retreat into a province someone else moved into."
+        ''' A unit cannot retreat into a province someone else moved into.'''
         steady_state = [
             [TUR, FLT, BLA],
         ]
@@ -282,7 +285,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         ])
 
 class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
-    "Test cases to reproduce bugs that have been fixed."
+    ''' Test cases to reproduce bugs that have been fixed.'''
     def test_orderless_convoyee(self):
         'Error when convoying an army without an order'
         self.judge.datc.datc_4a3 = 'f'
@@ -294,7 +297,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, BLA), CVY, (TUR, AMY, ANK), CTO, SEV])
         self.assertMapState(steady_state)
     def test_retreat_past_attacker_full(self):
-        "Bug caused by checking a dislodger's province after moving it."
+        ''' Bug caused by checking a dislodger's province after moving it.'''
         steady_state = [
             [TUR, FLT, BLA],
             [TUR, FLT, CON],
@@ -381,7 +384,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(AUS, [(AUS, AMY, RUM), RTO, SEV])
         self.assertMapState(new_state)
     def test_retreat_past_attacker_simple(self):
-        "Condensed version of the problem above"
+        ''' Condensed version of the problem above'''
         steady_state = [
             [TUR, FLT, BLA],
         ]
@@ -436,11 +439,10 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.judge.handle_NOT_SUB(client, NOT(SUB([(GER, AMY, RUH), MTO, BEL])))
 
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
-    "Fixing bugs in the Americas4 map variant."
+    ''' Fixing bugs in the Americas4 map variant.'''
     variant_name = 'americas4'
     def test_major_problem(self):
-        ''' This situation started chewing up memory and CPU like mad.
-        '''#'''
+        ''' This situation started chewing up memory and CPU like mad.'''
         from threading   import Thread
         from translation import translate
         rep = self.judge.map.opts.rep
@@ -664,5 +666,3 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
     def ntest_nrs(self): pass
 
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

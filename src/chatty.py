@@ -1,3 +1,8 @@
+''' Chatty - PyDip chat-only observer clients
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+'''#'''
+
 from player    import Observer
 from threading import Thread
 
@@ -94,7 +99,7 @@ else:
             self.output('The server has closed.')
             self.__super.handle_OFF(message)
     class MapChat(Cursed):
-        ''' Even better: This one displays a map.'''
+        ''' An even better interface for the admin chat, displaying a map.'''
         def __init__(self, *args):
             self.__super.__init__(*args)
             self.use_map = True
@@ -236,5 +241,3 @@ else:
 if __name__ == "__main__":
     from main import run_player
     run_player(MapChat, False, False)
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

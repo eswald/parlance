@@ -1,4 +1,6 @@
-''' Unit tests for the Server module.
+''' Unit tests for the PyDip server module
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
 '''#'''
 
 import unittest, config
@@ -30,8 +32,7 @@ class Fake_Manager(Client_Manager):
         for client in self.players: client.write(message)
 
 class Fake_Service(Service):
-    ''' Connects the Server straight to a player.
-    '''#'''
+    ''' Connects the Server straight to a player.'''
     def __init__(self, client_id, server, player_class, **kwargs):
         self.queue = []
         self.player = None
@@ -52,7 +53,7 @@ class Fake_Service(Service):
     def set_rep(self, representation): self.player.rep = representation
 
 class ServerTestCase(unittest.TestCase):
-    "Basic Server Functionality"
+    ''' Basic Server Functionality'''
     class Fake_Player(Verbose_Object):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
@@ -172,7 +173,7 @@ class ServerTestCase(unittest.TestCase):
                 'Expected %r among %r' % (item, series))
 
 class Server_Admin(ServerTestCase):
-    "Administrative messages handled by the server"
+    ''' Administrative messages handled by the server'''
     unauth = 'You are not authorized to do that.'
     game_options = {}
     game_options.update(ServerTestCase.game_options)
@@ -192,22 +193,22 @@ class Server_Admin(ServerTestCase):
         self.assertAdminResponse(player, command, self.unauth)
 
 class Server_Admin_Bots(Server_Admin):
-    "Starting bots with admin commands"
+    ''' Starting bots with admin commands'''
     def test_start_bot(self):
-        "Bot starting actually works"
+        ''' Bot starting actually works'''
         game = self.server.default_game()
         count = len(game.clients)
         self.master.admin('Server: start holdbot')
         self.failUnless(len(game.clients) > count)
         self.failIf(game.clients[-1].closed)
     def test_start_bot_master(self):
-        "Whether a game master can start new bots"
+        ''' Whether a game master can start new bots'''
         self.assertAdminResponse(self.master, 'start holdbot', '1 bot started')
     def test_start_bot_client(self):
-        "Only a game master should start new bots"
+        ''' Only a game master should start new bots'''
         self.assertUnauthorized(self.robot, 'start holdbot')
     def test_start_bot_replacement(self):
-        "The master can start a bot to replace a disconnected power."
+        ''' The master can start a bot to replace a disconnected power.'''
         game = self.server.default_game()
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
@@ -219,7 +220,7 @@ class Server_Admin_Bots(Server_Admin):
                 '1 bot started')
         self.failUnless(game.players[out.power.key].client)
     def test_start_bot_country(self):
-        "The master can start a bot to take a specific country."
+        ''' The master can start a bot to take a specific country.'''
         from xtended import ITA
         game = self.server.default_game()
         old_client = game.players[ITA].client
@@ -229,7 +230,7 @@ class Server_Admin_Bots(Server_Admin):
         new_client = game.players[ITA].client
         self.failUnless(new_client and new_client.client_id != old_id)
     def test_start_bot_illegal(self):
-        "Bots cannot be started to take over players still in the game."
+        ''' Bots cannot be started to take over players still in the game.'''
         from xtended import ITA
         game = self.server.default_game()
         self.connect_player(self.Fake_Player)
@@ -241,42 +242,42 @@ class Server_Admin_Bots(Server_Admin):
                 'Italy is still in the game.')
         self.failUnlessEqual(game.players[ITA].client.client_id, old_client)
     def test_start_multiple_bots(self):
-        "Exactly enough bots can be started to fill up the game."
+        ''' Exactly enough bots can be started to fill up the game.'''
         self.assertAdminResponse(self.master, 'start holdbots', '4 bots started')
     def test_start_bot_blocking(self):
-        "Bots can only be started in games with enough players."
+        ''' Bots can only be started in games with enough players.'''
         self.backup.close()
         self.robot.close()
         self.master.admin('Ping.')
         self.assertAdminResponse(self.master, 'start holdbots',
                 'Recruit more players first.')
     def test_start_bot_same_address(self):
-        "Players are only counted if they're from different computers."
+        ''' Players are only counted if they're from different computers.'''
         for client in self.server.default_game().clients:
             client.address = 'localhost'
         self.assertAdminResponse(self.master, 'start holdbot',
                 'Recruit more players first.')
 
 class Server_Admin_Local(Server_Admin):
-    "Admin commands restricted to local connections"
+    ''' Admin commands restricted to local connections'''
     def setUp(self):
         Server_Admin.setUp(self)
         self.server.default_game().clients[1].address = '127.0.0.1'
     def test_shutdown_master(self):
-        "Whether a game master can shut down the server"
+        ''' Whether a game master can shut down the server'''
         self.assertUnauthorized(self.master, 'shutdown')
         self.failIf(self.server.closed)
     def test_shutdown_local(self):
-        "Whether a local connection can shut down the server"
+        ''' Whether a local connection can shut down the server'''
         self.assertAdminResponse(self.backup, 'shutdown',
                 'The server is shutting down.  Good-bye.')
         self.failUnless(self.server.closed)
     def test_status_request(self):
-        "Whether a local connection can request game status information"
+        ''' Whether a local connection can request game status information'''
         self.assertAdminResponse(self.backup, 'status',
                 'Game 0: Have 3 players and 0 observers. Need 4 to start.')
     def test_power_listing(self):
-        "Whether a local connection can power assignments"
+        ''' Whether a local connection can power assignments'''
         game = self.server.default_game()
         power = game.players[game.clients[1].country]
         self.assertAdminResponse(self.backup, 'powers',
@@ -284,23 +285,23 @@ class Server_Admin_Local(Server_Admin):
                 % (power.pname, power.passcode))
 
 class Server_Admin_Other(Server_Admin):
-    "Other administrative messages handled by the server"
+    ''' Other administrative messages handled by the server'''
     
     def test_pause_master(self):
-        "Whether a game master can pause the game"
+        ''' Whether a game master can pause the game'''
         self.assertAdminResponse(self.master, 'pause', 'Game paused.')
     def test_pause_backup(self):
-        "Whether a backup game master can pause the game"
+        ''' Whether a backup game master can pause the game'''
         self.master.close()
         self.backup.admin('Ping')
         self.become_master(self.backup)
         self.assertAdminResponse(self.backup, 'pause', 'Game paused.')
     def test_pause_robot(self):
-        "Only a game master should pause the game"
+        ''' Only a game master should pause the game'''
         self.assertUnauthorized(self.robot, 'pause')
     
     def test_press_enable(self):
-        "Whether the enable press option works"
+        ''' Whether the enable press option works'''
         from language import FRM, PCE, PRP, SND, YES
         self.assertAdminResponse(self.master, 'enable press', 'Press level set to 8000.')
         sender = self.connect_player(self.Fake_Player)
@@ -314,7 +315,7 @@ class Server_Admin_Other(Server_Admin):
         msg = FRM([sender.power, 0], recipient.power, offer)
         self.assertContains(msg, recipient.queue)
     def test_press_disable(self):
-        "Whether the disable press option works"
+        ''' Whether the disable press option works'''
         from language import ERR, HUH, PCE, PRP, SND
         self.assertAdminResponse(self.master, 'disable press', 'Press level set to 0.')
         sender = self.connect_player(self.Fake_Player)
@@ -326,20 +327,20 @@ class Server_Admin_Other(Server_Admin):
         sender.send(msg)
         self.assertContains(HUH([ERR, msg]), sender.queue)
     def test_press_master(self):
-        "Whether a game master can enable press"
+        ''' Whether a game master can enable press'''
         self.assertAdminResponse(self.master, 'enable press', 'Press level set to 8000.')
     def test_press_backup(self):
-        "Whether a backup game master can enable press"
+        ''' Whether a backup game master can enable press'''
         self.master.close()
         self.backup.admin('Ping')
         self.become_master(self.backup)
         self.assertAdminResponse(self.backup, 'enable press', 'Press level set to 8000.')
     def test_press_robot(self):
-        "Only a game master should enable press"
+        ''' Only a game master should enable press'''
         self.assertUnauthorized(self.robot, 'enable press')
     
     def test_cleanup(self):
-        "Someone can connect to an abandoned game and end it."
+        ''' Someone can connect to an abandoned game and end it.'''
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
@@ -372,26 +373,26 @@ class Server_Admin_Other(Server_Admin):
                 self.master.admin('SERVER: HELP'))
     
     def test_duplicate_mastership(self):
-        "Only one player should be a master at a time."
+        ''' Only one player should be a master at a time.'''
         self.assertAdminResponse(self.backup, 'become master',
                 'This game already has a master.')
     def test_master_password(self):
-        "A second player can become master with the right password"
+        ''' A second player can become master with the right password'''
         self.assertAdminResponse(self.backup,
                 'become master %s' % self.server.options.password,
                 'Master powers granted.')
     
     def test_eject_boot(self):
-        "Players can be ejected using 'boot' as well as 'eject'."
+        ''' Players can be ejected using 'boot' as well as 'eject'.'''
         self.assertAdminResponse(self.master, 'boot Fake Player',
                 'Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_multiple_unstarted(self):
-        "Multiple players of the same name can be ejected before the game starts."
+        ''' Multiple players of the same name can be ejected before the game starts.'''
         self.connect_player(self.Fake_Player)
         self.assertAdminResponse(self.master, 'eject Fake Player',
                 'Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_multiple_started(self):
-        "Multiple players of the same name cannot be ejected after the game starts."
+        ''' Multiple players of the same name cannot be ejected after the game starts.'''
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
@@ -399,13 +400,13 @@ class Server_Admin_Other(Server_Admin):
         self.assertAdminResponse(self.master, 'eject Fake Player',
                 'Ambiguous player "fake player"')
     def test_eject_power_unstarted(self):
-        "Powers cannot be ejected by power name before the game starts."
+        ''' Powers cannot be ejected by power name before the game starts.'''
         game = self.server.default_game()
         name = game.judge.player_name(game.p_order[2])
         self.assertAdminResponse(self.master, 'eject ' + name,
                 'Unknown player "%s"' % name.lower())
     def test_eject_power_started(self):
-        "Powers can be ejected by power name after the game starts."
+        ''' Powers can be ejected by power name after the game starts.'''
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
@@ -484,7 +485,7 @@ class Server_Multigame(ServerTestCase):
         self.assertContains(LST(1, 4, 'sailho', sailho_params), self.master.queue)
 
 class Server_Bugfix(ServerTestCase):
-    "Test cases to reproduce bugs found."
+    ''' Test cases to reproduce bugs found.'''
     def test_robotic_key_error(self):
         # Introduced in revision 93; crashes the server.
         self.connect_server([])
@@ -509,5 +510,3 @@ class Server_Bugfix(ServerTestCase):
         self.assertContains(ADM(sender.name, 'Ping.'), recipient.queue)
     
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

@@ -1,12 +1,10 @@
-''' DATC (Diplomacy Adjudicator Test Cases)
-    DATC Version 2.4
-    SECTION 4
-    TEST CASES
-
+''' DATC Version 2.4, Section 4 Test Cases
     The DATC is copyright Lucas B. Kruijswijk
     http://web.inter.nl.net/users/L.B.Kruijswijk/
+    PyDip implementation by Eric Wald, 2004-2006
 
     This file tests each DATC option separately.
+    Most tests are based on section 6 test cases.
 '''#'''
 
 import unittest
@@ -1343,7 +1341,7 @@ class DATC_4_C(DiplomacyAdjudicatorTestCase):
         ])
 
 class DATC_4_D(DiplomacyAdjudicatorTestCase):
-    "4.D.  TOO MANY AND TOO FEW ORDERS"
+    ''' 4.D.  TOO MANY AND TOO FEW ORDERS'''
     
     def _test_4D1_(self):
         '4.D.1.  MULTIPLE ORDER SETS WITH DEFINED ORDER'
@@ -1374,7 +1372,7 @@ class DATC_4_D(DiplomacyAdjudicatorTestCase):
         self.judge.datc.datc_4d9 = 'ab'
 
 class DATC_4_E(DiplomacyAdjudicatorTestCase):
-    "4.E.  MISCELLANEOUS ISSUES"
+    ''' 4.E.  MISCELLANEOUS ISSUES'''
     
     def _test_4E1_(self):
         '4.E.1.  ILLEGAL ORDERS'
@@ -1397,5 +1395,3 @@ class DATC_4_E(DiplomacyAdjudicatorTestCase):
 
 
 if __name__ == '__main__': unittest.main()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

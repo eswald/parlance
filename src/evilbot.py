@@ -1,9 +1,6 @@
-''' EvilBot - A cheating diplomacy bot that plays multiple positions.
-    
-    This software may be reused for non-commercial purposes without
-    charge, and without notifying the author. Use of any part of this
-    software for commercial purposes without permission from the Author
-    is prohibited.
+''' EvilBot - A cheating diplomacy bot that plays multiple positions
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
 '''#'''
 
 from thread       import allocate_lock
@@ -117,5 +114,3 @@ class EvilBot(DumbBot):
 if __name__ == "__main__":
     import main
     main.run_player(EvilBot)
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

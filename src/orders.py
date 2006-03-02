@@ -1,5 +1,9 @@
-''' DAIDE Gameboard Classes
-    Defines classes to represent parts of the Diplomacy game.
+''' PyDip unit orders
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    Note that these classes actually contain quite a bit of the functionality
+    that you might expect to find in the Judge.
 '''#'''
 
 import config
@@ -291,8 +295,7 @@ class SupportHoldOrder(SupportOrder):
     def __str__(self):
         return '%s SUPPORT %s' % (self.unit.coast.prefix, self.supported_name())
     def matches(self, order_set):
-        ''' Whether the order is matched by the supported unit.
-        '''#'''
+        ''' Whether the order is matched by the supported unit.'''
         return (self.supported.exists()
                 and not order_set.is_moving(self.supported)
                 and self.supported.coast.province != self.unit.coast.province)
@@ -657,16 +660,3 @@ class OrderSet(dict):
         for unit in board.units:
             if not self.get_order(unit):
                 self.add(order_class(unit), unit.nation)
-
-
-def _test():
-    ''' Exercises the doctests above.
-        For convenience and time, standard_map and its tokens
-        are added to the global dictionary.
-    '''#'''
-    import doctest, orders
-    globs = config.extend_globals(orders.__dict__)
-    return doctest.testmod(orders, globs=globs)
-if __name__ == "__main__": _test()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1

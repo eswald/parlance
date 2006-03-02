@@ -1,3 +1,11 @@
+''' PyDip game server
+    Copyright (C) 2004-2006 Eric Wald
+    Licensed under the Open Software License version 3.0
+    
+    Do not run this module directly; instead, run the main module.
+    That avoids having a duplicate server module imported elsewhere.
+'''#'''
+
 import config, re
 from random    import randint, shuffle
 from time      import time
@@ -17,7 +25,6 @@ bots = {
 class main_options(config.option_class):
     ''' Options used to start clients and the server, including:
         - verbosity    How much debug or logging information to display
-        - internal     Whether to start the internal server
         - external     A list of external programs to start each game
         - clients      A list of internal clients to start each game
         - countries    A mapping of country -> passcode to start as
@@ -29,7 +36,6 @@ class main_options(config.option_class):
         self.countries   = {}
         self.external    = []
         self.fill        = None
-        self.internal    = self.getboolean('use internal server', False)
         self.verbosity   = self.getint('output verbosity', 1)
 class server_options(config.option_class):
     ''' Options for the server, including:
@@ -47,7 +53,7 @@ class server_options(config.option_class):
         self.variant   = self.getstring( 'default variant',        'standard')
         self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
-        self.bot_min   = self.getint(    'minimum player count for bots', 1)
+        self.bot_min   = self.getint(    'minimum player count for bots', 0)
 
 
 class Client_Manager(Verbose_Object):
@@ -1015,9 +1021,3 @@ class Judge(Verbose_Object):
             or False if it is still in the game.
         '''#'''
         raise NotImplementedError
-
-if __name__ == "__main__":
-    from main import run_server
-    run_server()
-
-# vim: sts=4 sw=4 et tw=75 fo=crql1
