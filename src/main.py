@@ -16,7 +16,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                     if allow_country: countries[arg[:3]] = int(arg[4:])
                     else: raise ValueError
                 elif arg[:2] == '-v': Verbose_Object.verbosity = int(arg[2:])
-                elif opts.has_key('host'): raise ValueError
+                elif arg[0] == '-' or opts.has_key('host'): raise ValueError
                 else:
                     index = arg.find(':')
                     if index >= 0:
