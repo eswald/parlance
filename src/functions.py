@@ -144,7 +144,7 @@ class settable_property(object):
 class Verbose_Object(object):
     __metaclass__ = autosuper
     log_file = None
-    verbosity = 0
+    verbosity = 1
     __files = {}
     def log_debug(self, level, line, *args):
         if level <= self.verbosity:
