@@ -1,9 +1,6 @@
-#!/usr/bin/env python
 ''' PyDip user interface (such as it is)
     Copyright (C) 2004-2006 Eric Wald
     Licensed under the Open Software License version 3.0
-    
-    When run directly as a script, this module starts the server.
 '''#'''
 
 from sys import argv
@@ -96,4 +93,4 @@ def run_server():
         if server.open(): server.run()
         else: server.log_debug(1, 'Failed to open the server.')
 
-if __name__ == "__main__": run_server()
+# Todo: Use a full option-parsing system, instead of this ad-hoc stuff.

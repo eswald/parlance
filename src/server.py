@@ -2,7 +2,7 @@
     Copyright (C) 2004-2006 Eric Wald
     Licensed under the Open Software License version 3.0
     
-    Do not run this module directly; instead, run the main module.
+    Do not run this module directly; instead, run the package module.
     That avoids having a duplicate server module imported elsewhere.
 '''#'''
 
