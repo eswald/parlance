@@ -10,7 +10,10 @@ from thread       import allocate_lock
 from operator     import add
 from sets         import Set
 from orders       import OrderSet
+from functions    import version_string
 from dumbbot      import DumbBot
+
+__version__ = "$Revision$"
 
 class EvilBot(DumbBot):
     ''' Based on the DumbBot algorithm, but allies with other instances.
@@ -19,7 +22,7 @@ class EvilBot(DumbBot):
     
     # Items for the NME message
     name    = 'EvilBot'
-    version = '0.1'
+    version = version_string(__version__)
     description = 'A cheating scumball'
     
     # Static variables

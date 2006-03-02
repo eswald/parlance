@@ -2,8 +2,10 @@ import config
 from cPickle   import dump, load
 from random    import randrange, shuffle
 from sets      import Set
-from functions import autosuper, Verbose_Object
+from functions import autosuper, Verbose_Object, version_string
 from orders    import *
+
+__version__ = "$Revision$"
 
 class client_options(config.option_class):
     ''' Options for client behavior, including:
@@ -384,7 +386,7 @@ class Player(Verbose_Object):
 class HoldBot(Player):
     ''' A simple bot to hold units in position.'''
     name = 'HoldBot'
-    version = 'Python HoldBot v0.2'
+    version = version_string(__version__, name)
     description = 'Just holds its position'
     
     class Cycler:

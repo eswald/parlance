@@ -6,6 +6,8 @@ from functions import Verbose_Object, relative_limit
 from player    import Player, HoldBot
 from language  import *
 
+__version__ = "$Revision$"
+
 class NumberToken(object):
     def __eq__(self, other):
         if isinstance(other, Token): return other.is_integer()
@@ -82,7 +84,7 @@ class PlayerTestCase(unittest.TestCase):
 class Player_Tests(PlayerTestCase):
     class Test_Player(Player):
         name = 'Test Player'
-        version = '$version$'
+        version = version_string(__version__)
         def handle_REJ_YES(self, message): self.send(HLO())
         def generate_orders(self): pass
     def test_press_response(self):

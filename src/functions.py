@@ -211,6 +211,15 @@ class DefaultDict(dict):
             self[key] = result
         return result
 
+def version_string(revision, extra=None):
+    ''' Converts a Subversion revision string into a NME version string.
+    '''#'''
+    import config
+    if extra: main = extra + ' '
+    else: main = ''
+    return revision.replace(' $', '').replace('$Revision: ',
+            'PyDip %s%s.' % (main, config.__version__))
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)

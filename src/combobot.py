@@ -5,8 +5,10 @@ from random       import random
 from sets         import Set
 from copy         import copy
 from dumbbot      import DumbBot
-from functions    import sublists, any
+from functions    import sublists, any, version_string
 from orders       import *
+
+__version__ = "$Revision$"
 
 class ComboBot(DumbBot):
     ''' Based on the DumbBot, but with a different movement algorithm.
@@ -18,7 +20,7 @@ class ComboBot(DumbBot):
     
     # Items for the NME message
     name    = 'ComboBot'
-    version = '0.1'
+    version = version_string(__version__)
     description = 'ComboBot - A bot that considers unit combinations'
     
     def generate_movement_orders(self, values):

@@ -16,15 +16,15 @@
      **/
 '''#'''
 
-__version__ = "$Revision$"
-
 import config
 from random       import random, randrange, shuffle
 from time         import ctime
 from player       import Player
 from gameboard    import location_key
-from functions    import DefaultDict, expand_list, all
+from functions    import DefaultDict, expand_list, all, version_string
 from orders       import *
+
+__version__ = "$Revision$"
 
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10
@@ -191,7 +191,8 @@ class Province_Values(object):
         self.adjacent_units    = DefaultDict(DefaultDict([]))
 
 class DumbBot(Player):
-    ''' From the original C file:
+    ''' The main DumbBot algorithm.
+        From the original C file:
         /**
          * How it works.
          *
@@ -241,8 +242,7 @@ class DumbBot(Player):
     
     # Items for the NME message
     name    = 'DumberBot'
-    version = (__version__.replace('$Revision: ', '2r')
-                          .replace(' $', ''))
+    version = version_string(__version__)
     
     print_csv = False
     attempt_convoys = True
@@ -829,7 +829,7 @@ class DavidBot(DumbBot):
     
     # Items for the NME message
     name    = 'DumbBot'
-    version = '2p'
+    version = version_string(__version__)
     attempt_convoys = False
     check_best = False
     description = "A mimic of David Norman's DumbBot"
