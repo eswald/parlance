@@ -8,7 +8,6 @@
         config      -- Loads constants from various configuration files.
         dumbbot     -- A client ported from David Norman's DumbBot code
         gameboard   -- Classes for game elements: Map, Unit, Province, Power.
-        human       -- Clients that interact with real people.
         judge       -- Move parser and adjudicator.
         language    -- Classes to parse and use the modified DPP language.
         main        -- The program core.  Instantiates and controls components.
@@ -32,7 +31,6 @@ __all__ = [
     'evilbot',
     'functions',
     'gameboard',
-    'human',
     'judge',
     'language',
     'main',

@@ -158,10 +158,11 @@ class Connection(SocketWrapper):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
             
-            >>> from language import *
+            >>> c = Connection()
+            >>> c.rep = {0x4101: 'Sth'}
             >>> msg = [HLO.number, BRA.number, 0x4101, KET.number]
-            >>> unpack_message(pack('!HHHH', *msg), {0x4101: 'Eng'})
-            Message(HLO, BRA, Token('Eng', 0x4101), KET)
+            >>> c.unpack_message(pack('!HHHH', *msg))
+            Message([HLO, [Token('Sth', 0x4101)]])
         '''#'''
         return Message([Token(x, rep=self.rep)
             for x in unpack('!' + 'H'*(len(data)//2), data)])

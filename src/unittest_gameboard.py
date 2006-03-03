@@ -12,7 +12,7 @@ class Map_Variants(unittest.TestCase):
     ''' Validity checks for each of the known variants'''
     def define_variant(self, variant_name):
         options = config.variants[variant_name]
-        game_map = Map(options=options)
+        game_map = Map(options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_abstraction2_map(self):     self.define_variant('abstraction2')
     def test_african2_map(self):         self.define_variant('african2')
@@ -35,7 +35,7 @@ class Map_Variants(unittest.TestCase):
     def test_world3_map(self):           self.define_variant('world3')
     def test_all_variant_maps(self):
         for name, options in config.variants.iteritems():
-            game_map = Map(options=options)
+            game_map = Map(options)
             if not game_map.valid:
                 err = game_map.define(options.map_mdf)
                 self.fail('%s map failed: %s' % (name, err))
@@ -135,12 +135,12 @@ class Map_Bugfix(unittest.TestCase):
         options = config.variants['standard']
         options.map_mdf = translate(mdf, options.rep)
         options.map_name = 'standard_empty_UNO'
-        game_map = Map(options=options)
+        game_map = Map(options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_island_Pale(self):
         ''' Check for The Pale in Hundred3, which is an island.'''
         options = config.variants['hundred3']
-        game_map = Map(options=options)
+        game_map = Map(options)
         prov = Token('Pal', rep=options.rep)
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
         coast = game_map.coasts[(AMY, prov, None)]
@@ -161,7 +161,7 @@ class Coast_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Coast class'''
     def test_infinite_convoy(self):
         variant = config.variants['americas4']
-        board = Map(options=variant)
+        board = Map(variant)
         Alaska = board.spaces[Token('ALA', rep=variant.rep)]
         Oregon = board.coasts[(AMY, Token('ORE', rep=variant.rep), None)]
         results = Oregon.convoy_routes(Alaska, board)
@@ -259,5 +259,73 @@ class Order_Strings(unittest.TestCase):
         from xtended import standard_map, GER
         self.check_order([GER, WVE],
                 'Waives a German build')
+
+class Gameboard_Doctests(unittest.TestCase):
+    ''' Tests that were once doctests, but no longer work as such.'''
+    def test_map_define(self):
+        ''' Test the creation of a new map from a simple MDF.'''
+        from language import MDF, NCS, UNO
+        from xtended import standard_map, ENG, FRA, \
+                EDI, LON, BRE, PAR, BEL, HOL, SPA, NWY, ECH, NTH, PIC
+        
+        mdf = MDF([ENG, FRA], ([
+            (ENG, EDI, LON),
+            (FRA, BRE, PAR),
+            ([ENG, FRA], BEL, HOL),
+            (UNO, SPA, NWY),
+        ], [ECH, NTH, PIC]), [
+            (EDI, [AMY, LON], [FLT, NTH]),
+            (LON, [AMY, EDI], [FLT, NTH, ECH]),
+            (BRE, [AMY, PAR, PIC, SPA], [FLT, ECH, PIC, (SPA, NCS)]),
+            (PAR, [AMY, PAR, SPA, PIC]),
+            (BEL, [AMY, PIC, HOL], [FLT, NTH, ECH, PIC, HOL]),
+            (HOL, [AMY, BEL], [FLT, NTH]),
+            (SPA, [AMY, PAR, BRE], [(FLT, NCS), BRE]),
+            (NWY, [AMY], [FLT, NTH]),
+            (ECH, [FLT, NTH, BRE, LON, BEL, PIC]),
+            (NTH, [FLT, ECH, BEL, HOL, LON, NWY, EDI]),
+            (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
+        ])
+        
+        self.failIf(mdf.validate(None, -1, True), 'Invalid MDF message')
+        m = Map(config.variant_options('simplified',
+            'Small board for testing purposes', {}, config.default_rep))
+        self.failIf(m.valid, 'Map valid before MDF')
+        result = m.define(mdf)
+        self.failIf(result, result)
+    def test_turn_compare_lt(self):
+        from language import SPR, FAL
+        spring = Turn()
+        spring.set(SPR, Token(1901))
+        fall = Turn()
+        fall.set(FAL, Token(1901))
+        self.failUnlessEqual(cmp(spring, fall), -1)
+    def test_turn_compare_gt(self):
+        from language import SPR, FAL
+        spring = Turn()
+        spring.set(SPR, Token(1901))
+        fall = Turn()
+        fall.set(FAL, Token(1901))
+        self.failUnlessEqual(cmp(fall, spring.key), 1)
+    def test_turn_compare_eq(self):
+        from language import SPR, FAL
+        spring = Turn()
+        spring.set(SPR, Token(1901))
+        fall = Turn()
+        fall.set(FAL, Token(1901))
+        self.failUnlessEqual(cmp(fall, fall.key), 0)
+    def test_turn_compare_list(self):
+        from language import SPR
+        self.failUnless(Turn() < [SPR, 1901])
+    def test_turn_phase_hex(self):
+        from language import SUM
+        t = Turn()
+        t.set(SUM, 1901)
+        self.failUnlessEqual(t.phase(), 0x40)
+    def test_turn_phase_name(self):
+        from language import SUM
+        t = Turn()
+        t.set(SUM, 1901)
+        self.failUnlessEqual(t.phase(), Turn.retreat_phase)
 
 if __name__ == '__main__': unittest.main()

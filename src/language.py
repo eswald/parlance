@@ -106,11 +106,6 @@ class Message(list):
         if self.count(BRA) != self.count(KET):
             if self[0] == PRN: return False
             else: return PRN(self)
-        # Commented out to reduce time consumption.
-        # The most common cases are caught above;
-        # other mismatches result in HUH messages.
-        #try: self.fold()
-        #except ValueError: return PRN(self)
         else:
             if not country: syntax_level = -1
             if from_server: base_expression = 'server_command'
@@ -118,6 +113,11 @@ class Message(list):
             index, valid = _validate(self, base_expression, syntax_level)
             if valid and index == len(self): return False
             else:
+                if index < len(self) and self[index] == KET:
+                    submsg = self[:index + 1]
+                    if submsg.count(BRA) != submsg.count(KET):
+                        if self[0] == PRN: return False
+                        else: return PRN(self)
                 result = HUH(self)
                 result.insert(index + 2, ERR)
                 return result
@@ -193,9 +193,9 @@ class Message(list):
             Note: Can get long, if used improperly.
             
             >>> eval(repr(NOT(GOF)))
-            Message(NOT, BRA, GOF, KET)
-            >>> eval(repr(IAM(Token('ENG', 0x4101), 42)))
-            Message(IAM, BRA, Token('ENG', 0x4101), KET, BRA, Token(42), KET)
+            Message([NOT, [GOF]])
+            >>> eval(repr(IAM(Token('STH', 0x4101), 42)))
+            Message([IAM, [Token('STH', 0x4101)], [42]])
         '''#'''
         return 'Message(' + repr(self.fold()) + ')'
     def pack(self):
@@ -212,7 +212,7 @@ class Message(list):
             >>> m = Message(NOT)
             >>> m.append(GOF)
             >>> m
-            Message(NOT, GOF)
+            Message([NOT, GOF])
             >>> m.append('name')
             >>> str(m)
             'NOT GOF ( "name" )'
@@ -307,11 +307,11 @@ class _object_Token(object):
             '3'
             >>> str(Token(-3))
             '-3'
-            >>> Eng = Token("ENG", 0x4101)
-            >>> Eng
-            Token('ENG', 0x4101)
-            >>> str(Eng)
-            'ENG'
+            >>> South = Token("STH", 0x4101)
+            >>> South
+            Token('STH', 0x4101)
+            >>> str(South)
+            'STH'
         '''#'''
         return self.text
     def __int__(self):
@@ -397,11 +397,11 @@ class _tuple_Token(tuple):
             '3'
             >>> str(Token(-3))
             '-3'
-            >>> Eng = Token("ENG", 0x4101)
-            >>> Eng
-            Token('ENG', 0x4101)
-            >>> str(Eng)
-            'ENG'
+            >>> South = Token("STH", 0x4101)
+            >>> South
+            Token('STH', 0x4101)
+            >>> str(South)
+            'STH'
         '''#'''
         return self[0]
     def __int__(self):
@@ -451,11 +451,11 @@ class Token(_tuple_Token):
             Traceback (most recent call last):
                 ...
             OverflowError: int too large to convert to Token
-            >>> rep={'Eng': 0x4101, 0x4101: 'Eng'}
-            >>> Token('Eng', rep=rep)
-            Token('Eng', 0x4101)
+            >>> rep={'STH': 0x4101, 0x4101: 'Sth'}
+            >>> Token('STH', rep=rep)
+            Token('STH', 0x4101)
             >>> Token(0x4101, rep=rep)
-            Token('Eng', 0x4101)
+            Token('Sth', 0x4101)
         '''#'''
         if number != None:
             return _get_or_create_token(klass, str(name), int(number))
@@ -637,8 +637,8 @@ class Token(_tuple_Token):
             'KET'
             >>> eval(repr(YES)) == Token('YES')
             True
-            >>> repr(Token('ENG', 0x4101))
-            "Token('ENG', 0x4101)"
+            >>> repr(Token('STH', 0x4101))
+            "Token('STH', 0x4101)"
         '''#'''
         from config import default_rep
         name = self.__class__.__name__
@@ -661,7 +661,7 @@ class Token(_tuple_Token):
             Arguments are individually wrapped in parentheses.
             
             >>> NOT(GOF)
-            Message(NOT, BRA, GOF, KET)
+            Message([NOT, [GOF]])
             >>> print YES(MAP('name'))
             YES ( MAP ( "name" ) )
             >>> print IAM(Token('ENG', 0x4101), 3)

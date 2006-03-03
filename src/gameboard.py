@@ -39,33 +39,9 @@ class Map(Verbose_Object):
     
     def define(self, message):
         ''' Attempts to create a map from an MDF message.
-            Returns True if successful, False otherwise.
-            
-            >>> mdf = MDF([ENG, FRA], ([
-            ...     (ENG, EDI, LON),
-            ...     (FRA, BRE, PAR), 
-            ...     ([ENG, FRA], BEL, HOL), 
-            ...     (UNO, SPA, NWY), 
-            ... ], [ECH, NTH, PIC]), [
-            ...     (EDI, [AMY, LON], [FLT, NTH]),
-            ...     (LON, [AMY, EDI], [FLT, NTH, ECH]),
-            ...     (BRE, [AMY, PAR, PIC, SPA], [FLT, ECH, PIC, (SPA, NCS)]),
-            ...     (PAR, [AMY, PAR, SPA, PIC]),
-            ...     (BEL, [AMY, PIC, HOL], [FLT, NTH, ECH, PIC, HOL]),
-            ...     (HOL, [AMY, BEL], [FLT, NTH]),
-            ...     (SPA, [AMY, PAR, BRE], [(FLT, NCS), BRE]),
-            ...     (NWY, [AMY], [FLT, NTH]),
-            ...     (ECH, [FLT, NTH, BRE, LON, BEL, PIC]),
-            ...     (NTH, [FLT, ECH, BEL, HOL, LON, NWY, EDI]),
-            ...     (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
-            ... ])
-            >>> print mdf.validate(None, -1, True)
-            False
-            >>> m = Map('simplified', config.default_rep)
-            >>> m.valid
-            False
-            >>> m.define(mdf)
-            ''
+            Returns a string indicating a failure reason,
+            which is empty if creation succeeded.
+            Note: This routine does not set self.valid.
         '''#'''
         (mdf, powers, provinces, adjacencies) = message.fold()
         (centres, non_centres) = provinces
@@ -369,7 +345,7 @@ class Map(Verbose_Object):
             >>> print standard_map.spaces[NWY].owner
             UNO
             >>> print standard_map.spaces[EDI].owner
-            ENG
+            England
         '''#'''
         if self.valid:
             sc_dist = message.fold()[1:]

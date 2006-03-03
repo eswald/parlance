@@ -4,7 +4,7 @@
 '''#'''
 
 import unittest, config
-from functions import Verbose_Object, relative_limit
+from functions import Verbose_Object, relative_limit, version_string
 from player    import Player, HoldBot
 from language  import *
 

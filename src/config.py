@@ -375,8 +375,10 @@ def read_representation_file(rep_file_name):
         >>> rep = read_representation_file('variants/sailho.rem')
         >>> rep['NTH']
         16640
+        
+        # This used to be 'Psy'; it was probably changed for consistency.
         >>> rep[0x563B]
-        'Psy'
+        'PSY'
         >>> len(rep)
         128
     '''#'''
@@ -490,7 +492,7 @@ def extend_globals(globs):
     '''#'''
     import gameboard, language
     opts = variants['standard']
-    standard_map = gameboard.Map(options=opts)
+    standard_map = gameboard.Map(opts)
     extension = {
         'standard_map': standard_map,
         'standard_sco': opts.start_sco,

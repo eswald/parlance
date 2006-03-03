@@ -452,14 +452,20 @@ class Observer(Player):
         ''' Try to politely decline invitations,
             without producing too many false positives.
             
-            >>> p = Echo(lambda x: None, {})
-            << OBS
+            >>> class Responder:
+            ...     def __init__(self):
+            ...         self.player = Echo(self.send_back, {})
+            ...     def send_back(self, msg):
+            ...         if msg[0] is ADM:
+            ...             self.player.handle_ADM(msg)
+            >>> p = Responder().player
+            Echo: << OBS
             >>> p.handle_ADM(ADM('Server',
             ...     'An Observer has connected. Have 5 players and 1 observers. Need 2 to start'))
             >>> p.handle_ADM(ADM('Geoff', 'Does the observer want to play?'))
-            << ADM ( "Observer" ) ( "Sorry; I'm just a bot." )
+            Echo: << ADM ( "Observer" ) ( "Sorry; I'm just a bot." )
             >>> p.handle_ADM(ADM('Geoff', 'Are you sure about that?'))
-            << ADM ( "Observer" ) ( "Yes, I'm sure." )
+            Echo: << ADM ( "Observer" ) ( "Yes, I'm sure." )
             >>> p.handle_ADM(ADM('DanM', 'Do any other observers care to jump in?'))
         '''#'''
         import re
@@ -467,18 +473,18 @@ class Observer(Player):
         s = message.fold()[2][0]
         if self.admin_state == 0:
             if '?' in s and s.find('bserver') > 0:
-                self.send_admin(sorry)
                 self.admin_state = 1
+                self.send_admin(sorry)
         elif self.admin_state == 1:
             if s == sorry: self.admin_state = 2
         elif self.admin_state == 2:
+            self.admin_state = 3
             if '?' in s:
                 result = re.match('[Aa]re you (sure|positive|really a bot|for real)', s)
                 if result: self.send_admin("Yes, I'm %s." % result.group(1))
                 elif re.match('[Rr]eally', s): self.send_admin("Yup.")
-                elif re.match('[Wh]o', s): self.send_admin("Eric.")
+                elif re.match('[Ww]ho', s): self.send_admin("Eric.")
             elif re.match('[Nn]ot .*again'): self.send_admin("Fine, I'll shut up now.")
-            self.admin_state = 3
 
 class Sizes(Observer):
     ''' An observer that simply prints power sizes.'''

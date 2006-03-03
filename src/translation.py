@@ -14,7 +14,7 @@ def read_message_file(filename, rep=None):
         >>> from config import default_rep
         >>> msg = read_message_file('variants/standard.sco', default_rep)
         >>> msg.fold()[2]
-        [Token('ENG', 0x4101), Token('LVP', 0x553B), Token('EDI', 0x5536), Token('LON', 0x553A)]
+        [ENG, LVP, EDI, LON]
     '''#'''
     message_file = open(filename, 'r', 1)
     text = ' '.join(message_file.readlines())
@@ -32,7 +32,7 @@ def translate(text, rep=None):
         >>> Token.opts.double_quotes = True;  str(translate(s))
         'NME ( "name\\\\""KET""BRA" ) ( " \\\\" )'
         >>> Token.opts.double_quotes = False; str(translate(s))
-        'NME ( "name""" ) ( "KETBRA""" )'
+        'NME ( "name\\\\"" ) ( "KETBRA\\\\"" )'
     '''#'''
     if Token.opts.double_quotes: return translate_doubled_quotes(text, rep)
     else:                        return translate_backslashed(text, rep)
@@ -42,7 +42,7 @@ def translate_doubled_quotes(text, rep):
         doubling quotation marks to escape them.
         
         >>> translate_doubled_quotes('NOT ( GOF KET', {})
-        Message(NOT, BRA, GOF, KET)
+        Message([NOT, [GOF]])
         >>> str(translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n', {}))
         'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
         >>> translate_doubled_quotes('YES " NOT ', {})
@@ -87,7 +87,7 @@ def translate_backslashed(text, rep):
         using backslashes to escape quotation marks.
         
         >>> translate_backslashed('NOT ( GOF KET', {})
-        Message(NOT, BRA, GOF, KET)
+        Message([NOT, [GOF]])
         >>> str(translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n', {}))
         'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
         >>> translate_backslashed('YES " NOT ', {})

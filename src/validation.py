@@ -19,7 +19,6 @@ def validate_expression(msg, sub, syntax_level):
         Returns the number of tokens in the best match,
         and whether the full match is valid.
         
-        >>> from language import *
         >>> Eng = Token('ENG', 0x4101)
         >>> validate_expression([ORR, BRA, DRW, KET, BRA, SLO, BRA, Eng, KET, KET], 'multipart_offer', 200)
         (10, True)
@@ -59,7 +58,6 @@ def validate_option(msg, item_list, syntax_level):
         Returns the number of tokens in the best match,
         and whether the full match is valid.
         
-        >>> from language import *
         >>> validate_option([BRA, KET, BRA, YES, Token(-3)],
         ...     ['repeat', 'cat', 'Miscellaneous', YES, 'number'], 200)
         (5, True)
@@ -148,7 +146,6 @@ def count_subs(msg, sub, repeat, syntax_level):
         Returns a tuple: (index,valid) where index is the last matched
         expression, and valid is whether it ended on an exact boundary.
         
-        >>> from language import *
         >>> Eng = Token('ENG', 0x4101)
         >>> Fra = Token('FRA', 0x4102)
         >>> msg = [
@@ -191,7 +188,6 @@ def find_ket(msg):
         
         Now obsolete, but useful to compare the algorithm above.
         
-        >>> from language import *
         >>> find_ket([BRA, NOT, BRA, GOF, KET, KET, BRA, DRW, KET])
         5
         >>> find_ket([BRA, BRA, GOF, KET, BRA, DRW, KET, KET])

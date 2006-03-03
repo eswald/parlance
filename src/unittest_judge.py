@@ -7,6 +7,7 @@
 '''#'''
 
 import unittest
+import config
 from sets      import Set
 from unittest_datc import DiplomacyAdjudicatorTestCase
 from language  import *
@@ -139,6 +140,7 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
                 self.failUnlessEqual(winners, Set(msg[2:-1]))
                 break
         else: raise self.failureException, 'No draw message in %s' % (messages,)
+    
     def test_disordered_draws(self):
         ''' Draws with different order still the same'''
         #self.judge.verbosity = 20
@@ -283,6 +285,79 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
                 [GER, AMY, RUH],
         ])
+
+class Judge_Doctests(unittest.TestCase):
+    ''' Tests that were once in doctest format.'''
+    def setUp(self):
+        from functions import Verbose_Object
+        Verbose_Object.verbosity = 0
+    
+    def test_startup(self):
+        variant = config.variants['standard']
+        judge = variant.new_judge()
+        messages = judge.start()
+        self.failUnlessEqual([msg[0] for msg in messages], [SCO, NOW])
+        self.failUnlessEqual(judge.phase, 0x20)
+    def test_attack_calculation(self):
+        from orders import MoveOrder
+        from judge import Move_Decision, Path_Decision, Attack_Decision
+        
+        Rome = standard_map.coasts[(AMY, ROM, None)]
+        Venice = standard_map.coasts[(AMY, VEN, None)]
+        Trieste = standard_map.coasts[(AMY, TRI, None)]
+        Rome.province.entering = []
+        
+        Rome_unit = Rome.province.units[0]
+        Venice_unit = Venice.province.units[0]
+        Rome_unit.decisions = {}
+        Venice_unit.decisions = {}
+        Rome_unit.supports = []
+        
+        Rome_order = MoveOrder(Rome_unit, Venice)
+        Venice_order = MoveOrder(Venice_unit, Trieste)
+        move = Move_Decision(Venice_order)
+        path = Path_Decision(Rome_order, None, False, False)
+        move.passed = True
+        path.passed = True
+        
+        choice = Attack_Decision(Rome_order)
+        choice.init_deps()
+        self.assertEqual(choice.depends, [path, move])
+        self.failUnless(choice.calculate())
+        self.failUnlessEqual(choice.min_value, 1)
+        self.failUnlessEqual(choice.max_value, 1)
+    def test_move_calculation(self):
+        from orders import MoveOrder
+        from judge import Move_Decision, Attack_Decision, Prevent_Decision, Hold_Decision
+        
+        Vienna = standard_map.coasts[(AMY, VIE, None)]
+        Galicia = standard_map.coasts[(AMY, GAL, None)]
+        Warsaw = standard_map.coasts[(AMY, WAR, None)]
+        Vienna.province.entering = []
+        
+        Vienna_unit = Vienna.province.units[0]
+        Warsaw_unit = Warsaw.province.units[0]
+        Vienna_unit.decisions = {}
+        Warsaw_unit.decisions = {}
+        #Vienna_unit.supports = []
+        
+        Vienna_order = MoveOrder(Vienna_unit, Galicia)
+        Warsaw_order = MoveOrder(Warsaw_unit, Galicia)
+        attack = Attack_Decision(Vienna_order)
+        attack.min_value = attack.max_value = 1
+        prevent = Prevent_Decision(Warsaw_order)
+        prevent.min_value = prevent.max_value = 1
+        
+        Galicia.province.hold = hold = Hold_Decision(None)
+        hold.min_value = hold.max_value = 0
+        Galicia.province.entering = [Warsaw_unit, Vienna_unit]
+        choice = Move_Decision(Vienna_order)
+        choice.init_deps()
+        
+        self.assertEqual(choice.depends, [attack, hold, prevent])
+        self.failUnless(choice.calculate())
+        self.failUnless(choice.failed)
+        self.failIf(choice.passed)
 
 class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
     ''' Test cases to reproduce bugs that have been fixed.'''

@@ -216,14 +216,7 @@ class Standard_Judge(Judge):
     
     # Turn processing
     def start(self):
-        ''' Starts the game, returning SCO and NOW messages.
-            >>> from config import game_options
-            >>> j = Standard_Judge(standard_map, game_options())
-            >>> [msg[0] for msg in j.start()]
-            [SCO, NOW]
-            >>> hex(j.phase)
-            '0x20'
-        '''#'''
+        ''' Starts the game, returning SCO and NOW messages.'''
         self.unready = Set()
         self.static = 0
         self.init_turn()
@@ -814,32 +807,6 @@ class Move_Decision(Tristate_Decision):
         self.depends.extend([unit.decisions[Decision.PREVENT]
             for unit in self.into.entering if unit != self.order.unit])
     def calculate(self):
-        ''' Move decision logic
-            >>> Vienna = standard_map.coasts[(AMY, VIE, None)]
-            >>> Vienna.set_order([MTO, GAL], standard_map)
-            >>> Warsaw = standard_map.coasts[(AMY, WAR, None)]
-            >>> Warsaw.set_order([MTO, GAL], standard_map)
-            >>> Warsaw.decisions = {}; Vienna.decisions = {}
-            >>> attack = Attack_Decision(Vienna)
-            >>> attack.min_value = attack.max_value = 1
-            >>> prevent = Prevent_Decision(Warsaw)
-            >>> prevent.min_value = prevent.max_value = 1
-            >>> Galicia = standard_map.spaces[GAL]
-            >>> Galicia.hold = hold = Hold_Decision(None)
-            >>> hold.min_value = hold.max_value = 0
-            >>> Galicia.entering = [Warsaw, Vienna]
-            >>> choice = Move_Decision(Vienna)
-            >>> choice.init_deps()
-            >>> for dep in choice.depends: print dep
-            ... 
-            Attack decision for (AMY VIE); minimum 1, maximum 1
-            Hold decision for None; minimum 0, maximum 0
-            Prevent decision for (AMY WAR); minimum 1, maximum 1
-            >>> choice.calculate()
-            True
-            >>> print choice
-            Move decision for (AMY VIE); Failed
-        '''#'''
         #print 'Calculating %s:' % str(self)
         #for dep in self.depends: print '+ ' + str(dep)
         attack = self.depends[0]
@@ -999,26 +966,6 @@ class Attack_Decision(Numeric_Decision):
         moves = [other.decisions.get(Decision.MOVE) for other in self.into.units]
         self.depends = [path] + heads + moves + unit.supports
     def calculate(self):
-        ''' Attack decision, support code
-            >>> Rome = standard_map.coasts[(AMY, ROM, None)]
-            >>> Rome.set_order([MTO, VEN], standard_map)
-            >>> Venice = standard_map.coasts[(AMY, VEN, None)]
-            >>> Venice.set_order([MTO, TRI], standard_map)
-            >>> Rome.decisions = {}; Venice.decisions = {}
-            >>> Move_Decision(Venice).passed = True
-            >>> Path_Decision(Rome).passed = True
-            >>> Rome.supports = []
-            >>> choice = Attack_Decision(Rome)
-            >>> choice.init_deps()
-            >>> for dep in choice.depends: print dep
-            ... 
-            Path decision for (AMY ROM); Passed
-            Move decision for (AMY VEN); Passed
-            >>> choice.calculate()
-            True
-            >>> print choice
-            Attack decision for (AMY ROM); minimum 1, maximum 1
-        '''#'''
         attacked = self.into.units
         index1 = 1 + len(self.battles())
         index2 = index1 + len(attacked)
