@@ -414,6 +414,14 @@ class Server_Admin_Other(Server_Admin):
         name = self.server.default_game().judge.player_name(self.robot.power)
         self.assertAdminResponse(self.master, 'eject ' + name,
                 'Passcode for %s: %d' % (name, self.robot.pcode))
+    
+    def test_who(self):
+        ''' Player names can be listed, without reference to power.'''
+        response = self.master.admin('Server: who')
+        self.assertEqual(response, [
+                'Fake Human Player (Fake_Master) x2',
+                'Fake Player (Fake_Player)',
+        ], response)
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):

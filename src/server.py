@@ -10,7 +10,7 @@ import config, re
 from random    import randint, shuffle
 from time      import time
 from gameboard import Map, Turn
-from functions import any, s, expand_list, Verbose_Object
+from functions import any, s, expand_list, DefaultDict, Verbose_Object
 from functions import absolute_limit, relative_limit
 from language  import *
 
@@ -870,6 +870,19 @@ class Game(Verbose_Object):
         else:
             status = players and 'Ambiguous' or 'Unknown'
             client.admin('%s player "%s"', status, name)
+    def list_players(self, client, match):
+        names = DefaultDict(0)
+        playing = 0
+        for player in self.players.values():
+            if player.client:
+                playing += 1
+                names['%s (%s)' % (player.name, player.version)] += 1
+        lines = [(num > 1 and '%s x%d' % (name, num) or name)
+                for name, num in names.items()]
+        lines.sort()
+        for line in lines: client.admin(line)
+        observing = len(self.clients) - playing
+        if observing: client.admin('Observers: %d' % observing)
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')
         else: self.pause(); client.admin('Game paused.')
@@ -941,6 +954,8 @@ class Game(Verbose_Object):
         client.admin('Press level set to %d.', new_level)
     
     commands = [
+        {'pattern': re.compile('who'), 'command': list_players,
+        'decription': '  who - Lists the player names (but not power assignments)'},
         {'pattern': re.compile('(en|dis)able +press'), 'command': set_press_level,
         'decription': '  enable/disable press - Allows or blocks press between powers'},
         {'pattern': re.compile('pause'), 'command': stop_time,
