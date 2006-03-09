@@ -55,6 +55,11 @@ class server_options(config.option_class):
         self.games     = self.getint(    'number of games',        1)
         self.bot_min   = self.getint(    'minimum player count for bots', 0)
 
+class Command(object):
+    def __init__(self, pattern, callback, help):
+        self.pattern = re.compile(pattern)
+        self.command = callback
+        self.description = help
 
 class Client_Manager(Verbose_Object):
     def __init__(self):
@@ -157,24 +162,22 @@ class Server(Verbose_Object):
         else: client.reject(message)
     def seek_command(self, client, text):
         for pattern in self.commands:
-            match = pattern['pattern'].search(text)
+            match = pattern.pattern.search(text)
             if match:
-                pattern['command'](self, client, match)
+                pattern.command(self, client, match)
                 break
         else:
             for pattern in client.game.commands:
-                match = pattern['pattern'].search(text)
+                match = pattern.pattern.search(text)
                 if match:
-                    if client.mastery:
-                        pattern['command'](client.game, client, match)
-                    else: client.admin('You are not authorized to do that.')
+                    pattern.command(client.game, client, match)
                     break
             else:
                 for pattern in self.local_commands:
-                    match = pattern['pattern'].search(text)
+                    match = pattern.pattern.search(text)
                     if match:
                         if client.address in ('localhost', '127.0.0.1'):
-                            pattern['command'](self, client, match)
+                            pattern.command(self, client, match)
                         else: client.admin('You are not authorized to do that.')
                         break
                 else: client.admin('Unrecognized command: "%s"', text)
@@ -232,7 +235,8 @@ class Server(Verbose_Object):
         for line in ([
             #'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',
             'Begin an admin message with "Server:" to use the following commands, all of which are case-insensitive:',
-        ] + [pattern['decription'] for pattern in self.commands]):
+        ] + [pattern.description for pattern in self.commands]
+        + [pattern.description for pattern in client.game.commands]):
             client.admin(line)
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
@@ -255,11 +259,6 @@ class Server(Verbose_Object):
                         player.passcode, player.name, player.version,
                         player.client.address)
             else: client.admin('%s (%d): None', player.pname, player.passcode)
-    def list_master(self, client, match):
-        preface = client.mastery and 'As the game master, you may' or 'If you were the game master, you could'
-        client.admin('%s begin an admin message with "Server:" to use the following commands:', preface)
-        for line in [pattern['decription'] for pattern in client.game.commands]:
-            client.admin(line)
     def close(self, client=None, match=None):
         ''' Tells clients to exit, and closes the server's sockets.'''
         if not self.closed:
@@ -271,46 +270,32 @@ class Server(Verbose_Object):
             self.manager.close_threads()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
-    def become_master(self, client, match):
-        guess = match.group(1)
-        if client.mastery: client.admin('You are already a game master.')
-        elif client.guesses < 3 and guess == self.options.password:
-            client.mastery = True
-            client.admin('Master powers granted.')
-        elif guess:
-            client.admin('Password incorrect.')
-            client.guesses += 1
-        elif any(client.game.clients, lambda c: c.mastery and not c.closed):
-            client.admin('This game already has a master.')
-        else:
-            client.mastery = True
-            client.admin('Master powers granted.')
+    def veto_admin(self, client, match):
+        pass
     
     commands = [
-        {'pattern': re.compile('new game'), 'command': start_game,
-        'decription': '  new game - Starts a new game of Standard Diplomacy'},
-        {'pattern': re.compile('(new|start) (\w+) game'), 'command': start_game,
-        'decription': '  new <variant> game - Starts a new game, with the <variant> map'},
-        #{'pattern': re.compile('select game #?(\w+)'), 'command': select_game,
-        #'decription': '  select game <id> - Switches to game <id>, if it exists'},
-        {'pattern': re.compile('list variants'), 'command': list_variants,
-        'decription': '  list variants - Lists known map variants'},
-        {'pattern': re.compile('become master *(\w*)'), 'command': become_master,
-        'decription': '  become master - Grants you power to use master commands'},
-        {'pattern': re.compile('help master'), 'command': list_master,
-        'decription': '  help master - Lists commands that a game master can use'},
-        {'pattern': re.compile('help'), 'command': list_help,
-        'decription': '  help - Lists admin commands recognized by the server'},
-        {'pattern': re.compile('list bots'), 'command': list_bots,
-        'decription': '  list bots - Lists bots that can be started by a game master'},
+        Command(r'(veto|cancel) ([a-z ]+)', veto_admin,
+            '  veto [<command>] - Cancels recent admin commands'),
+        Command(r'new game', start_game,
+            '  new game - Starts a new game of Standard Diplomacy'),
+        Command(r'(new|start) (\w+) game', start_game,
+            '  new <variant> game - Starts a new game, with the <variant> map'),
+        #Command(r'select game #?(\w+)', select_game,
+        #    '  select game <id> - Switches to game <id>, if it exists'),
+        Command(r'list variants', list_variants,
+            '  list variants - Lists known map variants'),
+        Command(r'help', list_help,
+            '  help - Lists admin commands recognized by the server'),
+        Command(r'list bots', list_bots,
+            '  list bots - Lists bots that can be started by the server'),
     ]
     local_commands = [
-        {'pattern': re.compile('shutdown'), 'command': close,
-        'decription': '  shutdown - Stops the server'},
-        {'pattern': re.compile('status'), 'command': list_status,
-        'decription': '  status - Displays the status of each game'},
-        {'pattern': re.compile('powers'), 'command': list_powers,
-        'decription': '  powers - Displays the power assignments for this game'},
+        Command(r'shutdown', close,
+            '  shutdown - Stops the server'),
+        Command(r'status', list_status,
+            '  status - Displays the status of each game'),
+        Command(r'powers', list_powers,
+            '  powers - Displays the power assignments for this game'),
     ]
 
 
@@ -437,8 +422,7 @@ class Game(Verbose_Object):
             pcode = 'Passcode for %s: %d' % (player.pname, player.passcode)
             self.log_debug(6, pcode)
             if not self.judge.eliminated(country):
-                for client in self.clients:
-                    if client.mastery: client.admin(pcode)
+                for client in self.clients: client.admin(pcode)
                 if self.options.DSD: self.pause()
         elif self.limbo: self.offer_power(country, *self.limbo.popitem())
     def offer_power(self, country, client, message):
@@ -460,7 +444,6 @@ class Game(Verbose_Object):
         self.log_debug(6, 'Client #%d has disconnected', client.client_id)
         self.cancel_time_requests(client)
         opening = None
-        client.mastery = False
         if client in self.clients:
             self.clients.remove(client)
             if client.booted:
@@ -898,8 +881,8 @@ class Game(Verbose_Object):
             the number of empty power slots in the client's game.
         '''#'''
         if self.num_players() < self.server.options.bot_min:
-            client.admin('This server is not designed for solo games;')
-            client.admin('Recruit more players first.')
+            #client.admin('This server is not designed for solo games;')
+            client.admin('Recruit more players first, or use your own bots.')
             return
         bot_name = match.group(2)
         if bot_name[-1] == 's' and not bots.has_key(bot_name):
@@ -954,22 +937,22 @@ class Game(Verbose_Object):
         client.admin('Press level set to %d.', new_level)
     
     commands = [
-        {'pattern': re.compile('who'), 'command': list_players,
-        'decription': '  who - Lists the player names (but not power assignments)'},
-        {'pattern': re.compile('(en|dis)able +press'), 'command': set_press_level,
-        'decription': '  enable/disable press - Allows or blocks press between powers'},
-        {'pattern': re.compile('pause'), 'command': stop_time,
-        'decription': '  pause - Stops deadline timers and phase transitions'},
-        {'pattern': re.compile('resume'), 'command': resume,
-        'decription': '  resume - Resumes deadline timers and phase transitions'},
-        {'pattern': re.compile('(eject|boot) +(.+)'), 'command': eject,
-        'decription': '  eject <player> - Disconnect <player> (either name or country) from the game'},
-        {'pattern': re.compile('end game'), 'command': close,
-        'decription': '  end game - Ends the game (without a winner)'},
-        {'pattern': re.compile('start (an? )?(\w+) as (\w+)'), 'command': start_bot,
-        'decription': '  start <bot> as <country> - Start a copy of <bot> to play <country>'},
-        {'pattern': re.compile('start (an? |\d+ )?(\w+)()'), 'command': start_bot,
-        'decription': '  start <number> <bot> - Invites <number> copies of <bot> into the game'},
+        Command(r'who', list_players,
+            '  who - Lists the player names (but not power assignments)'),
+        Command(r'(en|dis)able +press *(level +\d+)?', set_press_level,
+            '  enable/disable press - Allows or blocks press between powers'),
+        Command(r'pause', stop_time,
+            '  pause - Stops deadline timers and phase transitions'),
+        Command(r'resume|unpause', resume,
+            '  resume - Resumes deadline timers and phase transitions'),
+        Command(r'(eject|boot) +(.+)', eject,
+            '  eject <player> - Disconnect <player> (either name or country) from the game'),
+        Command(r'end game', close,
+            '  end game - Ends the game (without a winner)'),
+        Command(r'start (an? )?(\w+) as (\w+)', start_bot,
+            '  start <bot> as <country> - Start a copy of <bot> to play <country>'),
+        Command(r'start (an? |\d+ )?(\w+)()', start_bot,
+            '  start <number> <bot> - Invites <number> copies of <bot> into the game'),
     ]
 
 

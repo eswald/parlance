@@ -1,0 +1,15 @@
+0 : No Press
+10 : Peace and Alliances
+20 : Order proposals
+30 : Multipart Offers
+40 : Sharing out the Supply Centres
+50 : Nested Multipart Offers
+60 : Queries and Insistences
+70 : Requests for suggestions
+80 : Accusations
+90 : Future discussions
+100 : Conditionals
+110 : Puppets and Favours
+120 : Forwarding Press
+130 : Explanations
+8000 : Free Text
