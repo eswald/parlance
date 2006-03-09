@@ -60,6 +60,28 @@ class Command(object):
         self.pattern = re.compile(pattern)
         self.command = callback
         self.description = help
+class DelayedAction(object):
+    def __init__(self, action=None, veto_action=None, veto_line=None, terms=(), *args):
+        self.callback = action
+        self.veto_callback = veto_action
+        self.veto_line = veto_line
+        self.terms = terms
+        self.args = args
+        self.when = time() + 20
+    def veto(self, client):
+        ''' Cancels the action, calling the veto action if it was given.
+            The veto callback may return a true value to block the cancellation,
+            which should be a string explaining why it was blocked.
+        '''#'''
+        block = self.veto_callback and self.veto_callback(client, *self.args)
+        if block:
+            client.admin(block)
+        else:
+            if self.veto_line:
+                client.game.admin('%s has vetoed %s', client.name(), self.veto_line)
+            client.game.actions.remove(self)
+    def call(self):
+        if self.callback: self.callback(*self.args)
 
 class Client_Manager(Verbose_Object):
     def __init__(self):
@@ -118,7 +140,8 @@ class Server(Verbose_Object):
     
     def deadline(self):
         now = time()
-        time_left = [game.max_time(now) for game in self.games if game.deadline]
+        time_left = [t for t in [game.max_time(now) for game in self.games]
+            if t is not None]
         if time_left: return max([0, min(time_left)])
         elif any(self.games, lambda x: not x.closed): return None
         else: return 0
@@ -227,6 +250,7 @@ class Server(Verbose_Object):
             if self.join_game(client, num):
                 client.admin('Joined game #%d.', num)
             else: client.admin('Unknown game #%d.', num)
+    
     def list_variants(self, client, match):
         names = config.variants.keys()
         names.sort()
@@ -264,18 +288,16 @@ class Server(Verbose_Object):
         if not self.closed:
             self.broadcast_admin('The server is shutting down.  Good-bye.')
             self.log_debug(10, 'Closing')
+            for game in self.games:
+                if not game.closed: game.close()
             self.broadcast(OFF())
             #self.__super.close()
             self.closed = True
             self.manager.close_threads()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
-    def veto_admin(self, client, match):
-        pass
     
     commands = [
-        Command(r'(veto|cancel) ([a-z ]+)', veto_admin,
-            '  veto [<command>] - Cancels recent admin commands'),
         Command(r'new game', start_game,
             '  new game - Starts a new game of Standard Diplomacy'),
         Command(r'(new|start) (\w+) game', start_game,
@@ -318,6 +340,7 @@ class Game(Verbose_Object):
             self.robotic  = False
             self.assigned = False
             self.passcode = randint(100, Token.opts.max_pos_int - 1)
+            self.replaced = []
         def new_client(self, client, name, version):
             self.name     = name
             self.version  = version
@@ -379,6 +402,7 @@ class Game(Verbose_Object):
         self.press_deadline = None
         self.time_checked   = None
         self.time_left      = None
+        self.actions        = []
         
         move_limit = absolute_limit(game.MTL)
         press_limit = absolute_limit(game.PTL)
@@ -474,7 +498,7 @@ class Game(Verbose_Object):
                     self.server.options.quit)
             if self.server.options.quit: self.close()
             else: self.open_position(opening)
-    def close(self, client=None, match=None):
+    def close(self):
         self.log_debug(10, 'Closing')
         self.deadline = None
         self.judge.phase = None
@@ -563,23 +587,32 @@ class Game(Verbose_Object):
                 self.broadcast(message)
     def max_time(self, now):
         ''' Returns the number of seconds before the next event.
-            Only valid if self.deadline is not None.
+            May return None if there is no next event scheduled.
         '''#'''
         if self.ready(): return 0
-        timers = [sec for sec in self.timers if sec < self.time_checked]
-        timers.append(self.press_deadline and self.limits['press'] or 0)
-        return (self.deadline - max(timers)) - now
+        result = None
+        if self.deadline:
+            timers = [sec for sec in self.timers if sec < self.time_checked]
+            timers.append(self.press_deadline and self.limits['press'] or 0)
+            result = self.deadline - max(timers)
+        if self.actions:
+            next_action = min([a.when for a in self.actions])
+            if result: result = min(next_action, result)
+            else: result = next_action
+        return result - now
     def cancel_time_requests(self, client):
         ''' Removes the client from the list of time requests.'''
         for client_list in self.timers.itervalues():
             while client in client_list: client_list.remove(client)
     def check_flags(self):
-        ''' Checks deadlines, time requests, and wait flags,
+        ''' Checks deadlines, time requests, wait flags, and delayed actions,
             running the judge and sending notifications when appropriate.
         '''#'''
+        now = time()
+        for act in list(self.actions):
+            if act.when <= now: act.call(); self.actions.remove(act)
         if self.ready(): self.run_judge()
         elif self.deadline:
-            now = time()
             remain = self.deadline - now
             for second in [sec for sec in self.timers if remain < sec < self.time_checked]:
                 self.time_checked = second
@@ -597,6 +630,10 @@ class Game(Verbose_Object):
         self.broadcast_list(self.judge.run())
         if self.judge.phase: self.set_deadlines()
         else: self.close()
+    def queue_action(self, action, client, line):
+        self.actions.append(action)
+        self.admin('%s is %s', client.name(), line)
+        self.admin('(You may veto within twenty seconds.)')
     
     # Sending messages
     def send_hello(self, client):
@@ -609,9 +646,12 @@ class Game(Verbose_Object):
         ''' Sends the end-of-game SMR message.'''
         players = []
         for country, player in self.players.iteritems():
+            name = player.name or '""'
+            if player.replaced:
+                name += ' (replaced in %s)' % expand_list(player.replaced)
             stats = [
                 country,
-                [player.name    or ' '],         # These must have a string.
+                [name],
                 [player.version or ' '],
                 self.judge.score(country)
             ]
@@ -815,7 +855,7 @@ class Game(Verbose_Object):
                 slot.client = client
                 slot.ready = True
                 slot.robotic = False # Assume a human is taking over
-                slot.name += ' (taken over in %s)' % str(self.judge.turn())
+                slot.replaced.append(str(self.judge.turn()))
                 client.accept(message)
                 if old_client: old_client.boot()
                 
@@ -832,7 +872,7 @@ class Game(Verbose_Object):
         if client in self.clients: client.reject(message)
         else: client.send_list([YES(message), MAP(self.judge.map_name)])
     
-    # Commands for the master of a game
+    # Game-specific admin commands
     def find_players(self, name):
         result = []
         low_result = []
@@ -868,12 +908,14 @@ class Game(Verbose_Object):
         if observing: client.admin('Observers: %d' % observing)
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')
-        else: self.pause(); client.admin('Game paused.')
+        else:
+            self.pause()
+            self.admin('%s has paused the game.', client.name())
     def resume(self, client, match):
         if self.paused:
             self.paused = False
             if self.time_left: self.set_deadlines(self.time_left)
-            client.admin('Game resumed.')
+            self.admin('%s has resumed the game.', client.name())
         else: client.admin('The game is not currently paused.')
     def start_bot(self, client, match):
         ''' Starts the specified number of the specified kind of bot.
@@ -935,8 +977,24 @@ class Game(Verbose_Object):
                 return
         self.options.LVL = new_level
         client.admin('Press level set to %d.', new_level)
+    def end_game(self, client, match):
+        if self.closed: client.admin('The game is already over.')
+        else:
+            action = DelayedAction(self.close, None,
+                    'ending the game.', ('end', 'close'))
+            self.queue_action(action, client, 'ending the game.')
+    def veto_admin(self, client, match):
+        word = match.groups()[1]
+        if word: actions = [a for a in self.actions if word in a.terms]
+        else: actions = list(self.actions)
+        if actions:
+            for vetoed in actions: vetoed.veto(client)
+        else: client.admin('%s to veto.',
+                word and ('No %s commands' % word) or 'Nothing')
     
     commands = [
+        Command(r'(veto|cancel) (\w+)', veto_admin,
+            '  veto [<command>] - Cancels recent admin commands'),
         Command(r'who', list_players,
             '  who - Lists the player names (but not power assignments)'),
         Command(r'(en|dis)able +press *(level +\d+)?', set_press_level,
@@ -947,7 +1005,7 @@ class Game(Verbose_Object):
             '  resume - Resumes deadline timers and phase transitions'),
         Command(r'(eject|boot) +(.+)', eject,
             '  eject <player> - Disconnect <player> (either name or country) from the game'),
-        Command(r'end game', close,
+        Command(r'end game', end_game,
             '  end game - Ends the game (without a winner)'),
         Command(r'start (an? )?(\w+) as (\w+)', start_bot,
             '  start <bot> as <country> - Start a copy of <bot> to play <country>'),

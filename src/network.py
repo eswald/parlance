@@ -300,6 +300,9 @@ class Service(Connection):
         self.prefix    = self.game.prefix + ', #' + str(client_id)
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
+    def name(self):
+        return (self.country and self.game.players[self.country].name
+                or 'An observer')
     def check(self):
         msg = self.read()
         if msg:

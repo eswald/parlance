@@ -172,11 +172,12 @@ def absolute_limit(time_limit):
 def relative_limit(seconds):
     ''' Converts a number of seconds into a TME message number.
         Negative message numbers indicate hours; positive, seconds.
+        Negative times are cropped to zero.
     '''#'''
     from language import Token
     max_int = Token.opts.max_pos_int
     if seconds > max_int: result = -seconds // 3600
-    else: result = seconds
+    else: result = max(0, seconds)
     if -result > max_int: result = -max_int
     return result
 

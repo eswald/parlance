@@ -4,7 +4,7 @@
 '''#'''
 
 import unittest, config
-from time      import sleep
+from time      import sleep, time
 from functions import absolute_limit, Verbose_Object
 from network   import Connection, Service
 from server    import Server, Client_Manager
@@ -32,7 +32,9 @@ class Fake_Manager(Client_Manager):
         for client in self.players: client.write(message)
 
 class Fake_Service(Service):
-    ''' Connects the Server straight to a player.'''
+    ''' Connects the Server straight to a player.
+        It would probably be a bad idea to mix this with network Services.
+    '''#'''
     def __init__(self, client_id, server, player_class, **kwargs):
         self.queue = []
         self.player = None
@@ -176,6 +178,13 @@ class ServerTestCase(unittest.TestCase):
         self.server = manager.server
     def connect_player(self, player_class, **kwargs):
         return self.manager.start_thread(player_class, **kwargs)
+    def wait_for_actions(self):
+        game = self.server.default_game()
+        while game.actions:
+            remain = game.max_time(time())
+            if remain > 0: sleep(remain)
+            game.check_flags()
+    
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
@@ -192,6 +201,10 @@ class Server_Admin(ServerTestCase):
         self.master = self.connect_player(self.Fake_Master)
         self.backup = self.connect_player(self.Fake_Master)
         self.robot  = self.connect_player(self.Fake_Player)
+    def start_game(self):
+        game = self.server.default_game()
+        while not game.started: self.connect_player(self.Fake_Player)
+        return game
     def assertAdminResponse(self, player, command, response):
         self.assertContains(response, player.admin('Server: %s', command))
     def assertAdminVetoable(self, player, command, response):
@@ -206,7 +219,7 @@ class Server_Admin_Bots(Server_Admin):
         count = len(game.clients)
         self.assertAdminVetoable(self.master, 'start holdbot',
                 'Fake Human Player is starting a HoldBot.')
-        sleep(21)
+        self.wait_for_actions()
         self.failUnless(len(game.clients) > count)
         self.failIf(game.clients[-1].closed)
     def test_start_bot_veto(self):
@@ -216,21 +229,18 @@ class Server_Admin_Bots(Server_Admin):
         self.master.admin('Server: start holdbot')
         self.assertAdminResponse(self.robot, 'veto start',
                 'Fake Player has vetoed the HoldBot.')
-        sleep(21)
+        self.wait_for_actions()
         self.failIf(len(game.clients) > count)
     def test_start_bot_replacement(self):
         ''' The master can start a bot to replace a disconnected power.'''
-        game = self.server.default_game()
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        out = self.connect_player(self.Fake_Player)
+        game = self.start_game()
+        out = self.robot
         out.close()
         self.master.admin('Ping.')
         name = game.judge.player_name(out.power)
         self.assertAdminVetoable(self.master, 'start holdbot as' + out.power,
                 'Fake Human Player is starting a HoldBot as %s.' % name)
-        sleep(21)
+        self.wait_for_actions()
         self.failUnless(game.players[out.power.key].client)
     def test_start_bot_country(self):
         ''' The master can start a bot to take a specific country.'''
@@ -240,27 +250,23 @@ class Server_Admin_Bots(Server_Admin):
         old_id = old_client and old_client.client_id
         self.assertAdminVetoable(self.master, 'start holdbot as italy',
                 'Fake Human Player is starting a HoldBot as Italy.')
-        sleep(21)
+        self.wait_for_actions()
         new_client = game.players[ITA].client
         self.failUnless(new_client and new_client.client_id != old_id)
     def test_start_bot_illegal(self):
         ''' Bots cannot be started to take over players still in the game.'''
         from xtended import ITA
-        game = self.server.default_game()
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        game = self.start_game()
         old_client = game.players[ITA].client.client_id
         self.assertAdminResponse(self.master, 'start holdbot as Italy',
                 'Italy is still in the game.')
-        sleep(21)
+        self.wait_for_actions()
         self.failUnlessEqual(game.players[ITA].client.client_id, old_client)
     def test_start_multiple_bots(self):
         ''' Exactly enough bots can be started to fill up the game.'''
         self.assertAdminVetoable(self.master, 'start holdbots',
                 'Fake Human Player is starting four instances of HoldBot.')
-        sleep(21)
+        self.wait_for_actions()
         self.failUnless(self.server.default_game().started)
     def test_start_bot_blocking(self):
         ''' Bots can only be started in games with enough players.'''
@@ -331,11 +337,10 @@ class Server_Admin_Press(Server_Admin):
         from xtended  import LON, PAR
         self.assertAdminVetoable(self.master, 'enable press',
                 'Fake Human Player is enabling press level 8000.')
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        sleep(21)
+        self.wait_for_actions()
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         
         # Level 10 succeeds
         offer = PRP(PCE([sender.power, recipient.power]))
@@ -352,11 +357,10 @@ class Server_Admin_Press(Server_Admin):
         from xtended  import LON, PAR
         self.assertAdminVetoable(self.master, 'enable press level 40',
                 'Fake Human Player is enabling press level 40.')
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        sleep(21)
+        self.wait_for_actions()
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         
         # Level 10 succeeds
         offer = PRP(PCE([sender.power, recipient.power]))
@@ -374,11 +378,10 @@ class Server_Admin_Press(Server_Admin):
         self.assertAdminVetoable(self.master,
                 'enable press level Sharing out the supply centres',
                 'Fake Human Player is enabling press level 40.')
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        sleep(21)
+        self.wait_for_actions()
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         
         # Level 10 succeeds
         offer = PRP(PCE([sender.power, recipient.power]))
@@ -394,11 +397,10 @@ class Server_Admin_Press(Server_Admin):
         from language import PCE, PRP
         self.assertAdminVetoable(self.master, 'disable press',
                 'Fake Human Player is disabling press.')
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        sleep(21)
+        self.wait_for_actions()
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         
         # Level 10 fails
         offer = PRP(PCE([sender.power, recipient.power]))
@@ -407,10 +409,9 @@ class Server_Admin_Press(Server_Admin):
         ''' A vetoed enable press command blocks disabled press.'''
         from language import ERR, HUH, PRP, SCD, SND
         from xtended  import LON, PAR
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         self.master.admin('Server: enable press')
         offer = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
         sender.queue = []
@@ -418,15 +419,14 @@ class Server_Admin_Press(Server_Admin):
         sender.send(msg)
         self.assertAdminResponse(self.robot, 'veto enable press',
                 'Fake Player has vetoed the press level change.')
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains(HUH([ERR, msg]), sender.queue)
     def test_press_window_pass(self):
         ''' A vetoed disable press command passes enabled press.'''
         from language import FRM, SND, PCE, PRP, YES
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         self.master.admin('Server: disble press')
         sender.queue = []
         recipient.queue = []
@@ -435,39 +435,37 @@ class Server_Admin_Press(Server_Admin):
         sender.send(msg)
         self.assertAdminResponse(self.robot, 'veto disable press',
                 'Fake Player has vetoed the press level change.')
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains(YES(msg), sender.queue)
         msg = FRM([sender.power, 0], recipient.power, offer)
         self.assertContains(msg, recipient.queue)
     def test_press_timeout_block(self):
         ''' A non-vetoed disable press command blocks press immediately.'''
         from language import ERR, HUH, FRM, SND, PCE, PRP
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         self.master.admin('Server: enable press')
         sender.queue = []
         offer = PRP(PCE([sender.power, recipient.power]))
         msg = SND(0, recipient.power, offer)
         sender.send(msg)
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains(HUH([ERR, msg]), sender.queue)
     def test_press_timeout_pass(self):
         ''' A non-vetoed enable press command enables press immediately.'''
         from language import PRP, SCD, SND, YES
         from xtended  import LON, PAR
-        sender = self.connect_player(self.Fake_Player)
-        recipient = self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        sender = self.backup
+        recipient = self.robot
+        self.start_game()
         self.master.admin('Server: disble press')
         sender.queue = []
         recipient.queue = []
         offer = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
         msg = SND(0, recipient.power, offer)
         sender.send(msg)
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains(YES(msg), sender.queue)
         msg = FRM([sender.power, 0], recipient.power, offer)
         self.assertContains(msg, recipient.queue)
@@ -477,15 +475,15 @@ class Server_Admin_Eject(Server_Admin):
         ''' Players can be ejected from the game.'''
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.',
                 self.master.queue)
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
-        self.master.admin('Server: start holdbots')
+        self.start_game()
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
-        sleep(21)
+        self.wait_for_actions()
         name = self.server.default_game().judge.player_name(self.robot.power)
         self.assertContains('Passcode for %s: %d' % (name, self.robot.pcode),
                 self.master.queue)
@@ -494,15 +492,12 @@ class Server_Admin_Eject(Server_Admin):
         self.connect_player(self.Fake_Player)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting two instances of Fake Player from the game.')
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.',
                 self.master.queue)
     def test_eject_multiple_started(self):
         ''' Multiple players of the same name cannot be ejected after the game starts.'''
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        self.start_game()
         self.assertAdminResponse(self.master, 'eject Fake Player',
                 'Ambiguous player "fake player"')
     def test_eject_power_unstarted(self):
@@ -513,14 +508,11 @@ class Server_Admin_Eject(Server_Admin):
                 'Unknown player "%s"' % name.lower())
     def test_eject_power_started(self):
         ''' Powers can be ejected by power name after the game starts.'''
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        self.start_game()
         name = self.server.default_game().judge.player_name(self.robot.power)
         self.assertAdminVetoable(self.master, 'eject ' + name,
                 'Fake Human Player is ejecting %s from the game.' % name)
-        sleep(21)
+        self.wait_for_actions()
         self.assertContains('Passcode for %s: %d' % (name, self.robot.pcode),
                 self.master.queue)
     
@@ -529,7 +521,7 @@ class Server_Admin_Eject(Server_Admin):
         self.master.admin('Server: eject Fake Player')
         self.assertAdminResponse(self.backup, 'veto eject',
                 'Fake Human Player has vetoed the player ejection.')
-        sleep(21)
+        self.wait_for_actions()
         self.failIf('Fake Human Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
                 in self.master.queue)
     def test_eject_self_veto(self):
@@ -537,7 +529,7 @@ class Server_Admin_Eject(Server_Admin):
         self.master.admin('Server: eject Fake Player')
         self.assertAdminResponse(self.robot, 'veto eject',
                 'Fake Player has vetoed the player ejection.')
-        sleep(21)
+        self.wait_for_actions()
         self.failIf('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
                 in self.master.queue)
     def test_boot_player_unstarted(self):
@@ -549,7 +541,7 @@ class Server_Admin_Eject(Server_Admin):
         self.master.admin('Server: boot Fake Player')
         self.assertAdminResponse(self.robot, 'veto boot',
                 "You can't veto your own booting.")
-        sleep(21)
+        self.wait_for_actions()
         self.failUnless('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
                 in self.master.queue)
 
@@ -557,46 +549,43 @@ class Server_Admin_Other(Server_Admin):
     ''' Other administrative messages handled by the server'''
     help_line = '  help - Lists admin commands recognized by the server'
     
-    def test_pause_message(self):
-        ''' Whether a player can pause the game'''
-        self.master.admin('Server: start holdbots')
-        self.assertAdminVetoable(self.master, 'pause',
-                'Fake Human Player is pausing the game.')
+    def test_pause(self):
+        ''' Players can pause the game.'''
+        self.start_game()
+        self.assertAdminResponse(self.master, 'pause',
+                'Fake Human Player has paused the game.')
         self.assertEqual(self.master.get_time(), None)
-    def test_pause_veto(self):
-        ''' Whether a second player can veto a pause action'''
-        self.master.admin('Server: start holdbots')
+    def test_resume(self):
+        ''' Players can resume a paused game.'''
+        self.start_game()
         start = self.master.get_time()
         self.master.admin('Server: pause')
         sleep(7)
-        self.assertAdminResponse(self.robot, 'veto pause',
-                'Fake Player has vetoed the game pause.')
+        self.assertAdminResponse(self.master, 'resume',
+                'Fake Human Player has resumed the game.')
         end = self.master.get_time()
-        self.failUnless(6 <= start - end <= 8)
+        self.failUnless(0 <= start - end <= 2,
+                'Time difference: %g' % (start - end))
     
     def test_end_cleanup(self):
         ''' Someone can connect to an abandoned game and end it.'''
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
-        self.connect_player(self.Fake_Player)
+        game = self.start_game()
         self.master.close()
         self.backup.close()
         self.robot.admin('Ping')
-        game = self.server.default_game()
         new_master = self.connect_player(self.Fake_Master,
                 power=self.master.power, passcode=self.master.pcode)
         self.assertAdminVetoable(new_master, 'end game',
                 'Fake Human Player is ending the game.')
-        sleep(21)
+        self.wait_for_actions()
         self.failUnless(game.closed)
     def test_end_veto(self):
         ''' An end game command can be vetoed.'''
-        self.master.admin('Server: start holdbots')
+        game = self.start_game()
         self.master.admin('Server: end game')
         self.assertAdminResponse(self.robot, 'veto end game',
                 'Fake Player has vetoed ending the game.')
-        sleep(21)
+        self.wait_for_actions()
         self.failIf(game.closed)
     
     def test_unknown_variant(self):
@@ -655,7 +644,7 @@ class Server_Multigame(ServerTestCase):
         self.connect_player(self.Fake_Player)
         self.new_game()
         self.master.admin('Server: start holdbot')
-        sleep(21)
+        self.wait_for_actions()
         self.failUnlessEqual(len(game.clients), 3)
     def test_sailho_game(self):
         from language import MAP
