@@ -160,8 +160,13 @@ class Server(Verbose_Object):
     
     def handle_message(self, client, message):
         'Processes a single message from any client.'
-        reply = message.validate(client.country, client.game.options.LVL)
-        if reply: client.send(reply)
+        syntax = client.game.syntax_levels
+        reply = message.validate(client.country, min(syntax))
+        if reply:
+            if (len(syntax) > 1 and
+                    not message.validate(client.country, max(syntax))):
+                client.game.held_press.append((client, message))
+            else: client.send(reply)
         else:
             method_name = 'handle_'+message[0].text
             # Special handling for common prefixes
@@ -368,7 +373,7 @@ class Game(Verbose_Object):
             - options          The game_options instance for this game
             - judge            The judge, handling orders and adjudication
             - press_allowed    Whether press is allowed right now
-            - started     Whether the game has started yet
+            - started          Whether the game has started yet
             - closed           Whether the server is trying to shut down
             
             # Timing and press information
@@ -393,6 +398,8 @@ class Game(Verbose_Object):
         
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts
+        self.held_press     = []
+        self.syntax_levels  = [game.LVL]
         self.press_allowed  = False
         self.started        = False
         self.closed         = False
@@ -411,8 +418,8 @@ class Game(Verbose_Object):
         retreat_limit = absolute_limit(game.RTL)
         self.press_in = {
             Turn.move_phase    : press_limit < move_limit or not move_limit,
-            Turn.retreat_phase : not retreat_limit,
-            Turn.build_phase   : not build_limit,
+            Turn.retreat_phase : not game.NPR,
+            Turn.build_phase   : not game.NPB,
         }
         
         self.limits = {
@@ -1003,16 +1010,36 @@ class Game(Verbose_Object):
         return len(Set([p.client.address
             for p in self.players.values() if p.client]))
     def set_press_level(self, client, match):
-        cmd = match.group(1)
-        if cmd == 'en':    new_level = 8000
-        elif cmd == 'dis': new_level = 0
-        else:
-            try: new_level = int(cmd)
+        cmd, level = match.groups()
+        if level:
+            try: new_level = int(level[6:])
             except ValueError:
-                client.admin('Invalid press level "%s"', cmd)
+                client.admin('Invalid press level %r', level[6:])
                 return
+        elif cmd == 'en': new_level = 8000
+        elif cmd == 'dis': new_level = 0
+        old_level = self.options.LVL
         self.options.LVL = new_level
-        client.admin('Press level set to %d.', new_level)
+        if new_level == old_level:
+            client.admin('The press level is already %d', old_level)
+            return
+        self.syntax_levels.append(new_level)
+        self.queue_action(client, self.fix_level, new_level and
+                ('enabling press level %d.' % new_level) or 'disabling press.',
+                self.restore_level, 'the press level change.',
+                ('enable', 'disable', 'press', 'level'))
+    def fix_level(self):
+        self.syntax_levels.pop(0)
+        self.check_held_press()
+    def restore_level(self, client):
+        self.syntax_levels.pop()
+        self.options.LVL = self.syntax_levels[0]
+        self.check_held_press()
+    def check_held_press(self):
+        old_press = self.held_press
+        self.held_press = []
+        for client, message in old_press:
+            self.server.handle_message(client, message)
     def end_game(self, client, match):
         if self.closed: client.admin('The game is already over.')
         else:
