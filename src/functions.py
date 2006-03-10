@@ -290,6 +290,14 @@ def num2name(number):
     if hundreds: result = result and (hundreds + ' ' + result) or hundreds
     return result or 'zero'
 
+def instances(number, name, article=True):
+    if article and number == 1:
+        if name[0] in "aeiouAEIOU": prefix = 'an '
+        else: prefix = 'a '
+    elif number > 1: prefix = '%s instances of ' % num2name(number)
+    else: prefix = ''
+    return prefix + name
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)

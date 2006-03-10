@@ -11,7 +11,7 @@ from random    import randint, shuffle
 from time      import time
 from gameboard import Map, Turn
 from functions import any, s, expand_list, DefaultDict, Verbose_Object
-from functions import absolute_limit, relative_limit, num2name
+from functions import absolute_limit, relative_limit, num2name, instances
 from language  import *
 
 import player, evilbot, dumbbot
@@ -879,20 +879,42 @@ class Game(Verbose_Object):
         for key, struct in self.players.iteritems():
             names = (struct.name, struct.version)
             if self.started: names += (struct.pname, key.text)
-            
-            if name in names: result.append(struct.client)
-            elif name.lower() in [n.lower() for n in names]:
-                low_result.append(struct.client)
+            for item in names:
+                if name == item:
+                    result.append((struct.client, item))
+                elif name == item.lower():
+                    low_result.append((struct.client, item))
         return result or low_result
     def eject(self, client, match):
-        name = match.group(2)
+        verb, name = match.groups()
         players = self.find_players(name)
-        if len(players) == 1: players[0].boot()
-        elif players and not self.started:
-            for player in players: player.boot()
+        if (len(players) == 1) or (players and not self.started):
+            if verb == 'boot':
+                veto_action = self.block_boot
+                veto_verb = 'booting'
+                terms = ('boot', 'booting')
+            else:
+                veto_action = None
+                veto_verb = 'ejection'
+                terms = ('eject', 'ejection')
+            
+            action = DelayedAction(self.boot_players, veto_action,
+                    'the player %s.' % veto_verb, terms,
+                    [c for c,n in players])
+            names = DefaultDict(0)
+            for c,n in players: names[n] += 1
+            itemlist = [(num,nam) for nam,num in names.items()]
+            itemlist.sort()
+            self.queue_action(action, client, '%sing %s from the game.' %
+                    (verb, expand_list([instances(num, nam, False)
+                        for num,nam in itemlist])))
         else:
             status = players and 'Ambiguous' or 'Unknown'
-            client.admin('%s player "%s"', status, name)
+            client.admin('%s player "%s"', status, name.capitalize())
+    def block_boot(self, client, players):
+        if client in players: return "You can't veto your own booting."
+    def boot_players(self, players):
+        for client in players: client.boot()
     def list_players(self, client, match):
         names = DefaultDict(0)
         playing = 0
@@ -961,9 +983,7 @@ class Game(Verbose_Object):
                     ('start', 'bot', 'bots', name, name + 's'),
                     bot_class, num, power, pcode)
             self.queue_action(action, client,
-                    'starting %s %s%s.' % ((num == 1) and
-                        (name[0] in "aeiouAEIOU" and 'an' or 'a') or
-                        ('%s instances of' % num2name(num)), name,
+                    'starting %s%s.' % (instances(num, name),
                         power and ' as %s' % pname or ''))
         else: client.admin('Unknown bot: %s', bot_name)
     def start_bot_class(self, bot_class, number, power, pcode):
@@ -998,7 +1018,7 @@ class Game(Verbose_Object):
                     'ending the game.', ('end', 'close'))
             self.queue_action(action, client, 'ending the game.')
     def veto_admin(self, client, match):
-        word = match.groups()[1]
+        word = match.group(2)
         if word: actions = [a for a in self.actions if word in a.terms]
         else: actions = list(self.actions)
         if actions:

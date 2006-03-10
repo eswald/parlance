@@ -206,7 +206,18 @@ class Server_Admin(ServerTestCase):
         while not game.started: self.connect_player(self.Fake_Player)
         return game
     def assertAdminResponse(self, player, command, response):
-        self.assertContains(response, player.admin('Server: %s', command))
+        from language import ADM
+        if command:
+            self.assertContains(response, player.admin('Server: %s', command))
+        else:
+            self.assertContains(response,
+                [msg.fold()[2][0] for msg in player.queue if msg[0] is ADM])
+    def failIfAdminContains(self, player, substring):
+        from language import ADM
+        messages = [msg.fold()[2][0] for msg in player.queue if msg[0] is ADM]
+        for item in messages:
+            if substring in item:
+                self.fail('%r found within %s' % (substring, messages))
     def assertAdminVetoable(self, player, command, response):
         self.assertEqual([response, '(You may veto within twenty seconds.)'],
                 player.admin('Server: %s', command))
@@ -476,45 +487,49 @@ class Server_Admin_Eject(Server_Admin):
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
         self.wait_for_actions()
-        self.assertContains('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.',
-                self.master.queue)
+        self.assertAdminResponse(self.master, None,
+                'Fake Player (Fake_Player) has disconnected. '
+                'Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
-        self.start_game()
+        from player import HoldBot
+        game = self.server.default_game()
+        while not game.started: self.connect_player(HoldBot)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
         self.wait_for_actions()
-        name = self.server.default_game().judge.player_name(self.robot.power)
-        self.assertContains('Passcode for %s: %d' % (name, self.robot.pcode),
-                self.master.queue)
+        name = game.judge.player_name(self.robot.power)
+        self.assertAdminResponse(self.master, None,
+                'Passcode for %s: %d' % (name, self.robot.pcode))
     def test_eject_multiple_unstarted(self):
         ''' Multiple players of the same name can be ejected before the game starts.'''
         self.connect_player(self.Fake_Player)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting two instances of Fake Player from the game.')
         self.wait_for_actions()
-        self.assertContains('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.',
-                self.master.queue)
+        self.assertAdminResponse(self.master, None,
+                'Fake Player (Fake_Player) has disconnected. '
+                'Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_multiple_started(self):
         ''' Multiple players of the same name cannot be ejected after the game starts.'''
         self.start_game()
         self.assertAdminResponse(self.master, 'eject Fake Player',
-                'Ambiguous player "fake player"')
+                'Ambiguous player "Fake player"')
     def test_eject_power_unstarted(self):
         ''' Powers cannot be ejected by power name before the game starts.'''
         game = self.server.default_game()
         name = game.judge.player_name(game.p_order[2])
         self.assertAdminResponse(self.master, 'eject ' + name,
-                'Unknown player "%s"' % name.lower())
+                'Unknown player "%s"' % name)
     def test_eject_power_started(self):
         ''' Powers can be ejected by power name after the game starts.'''
-        self.start_game()
-        name = self.server.default_game().judge.player_name(self.robot.power)
+        game = self.start_game()
+        name = game.judge.player_name(self.robot.power)
         self.assertAdminVetoable(self.master, 'eject ' + name,
                 'Fake Human Player is ejecting %s from the game.' % name)
         self.wait_for_actions()
-        self.assertContains('Passcode for %s: %d' % (name, self.robot.pcode),
-                self.master.queue)
+        self.assertAdminResponse(self.master, None,
+                'Passcode for %s: %d' % (name, self.robot.pcode))
     
     def test_eject_player_veto(self):
         ''' Player ejection can be vetoed by a third party.'''
@@ -522,16 +537,14 @@ class Server_Admin_Eject(Server_Admin):
         self.assertAdminResponse(self.backup, 'veto eject',
                 'Fake Human Player has vetoed the player ejection.')
         self.wait_for_actions()
-        self.failIf('Fake Human Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
-                in self.master.queue)
+        self.failIfAdminContains(self.master, 'disconnected')
     def test_eject_self_veto(self):
         ''' Player ejection can be vetoed by the ejected player.'''
         self.master.admin('Server: eject Fake Player')
         self.assertAdminResponse(self.robot, 'veto eject',
                 'Fake Player has vetoed the player ejection.')
         self.wait_for_actions()
-        self.failIf('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
-                in self.master.queue)
+        self.failIfAdminContains(self.master, 'disconnected')
     def test_boot_player_unstarted(self):
         ''' Players can be ejected using 'boot' as well as 'eject'.'''
         self.assertAdminVetoable(self.master, 'boot Fake Player',
@@ -542,8 +555,9 @@ class Server_Admin_Eject(Server_Admin):
         self.assertAdminResponse(self.robot, 'veto boot',
                 "You can't veto your own booting.")
         self.wait_for_actions()
-        self.failUnless('Fake Player (Fake_Player) has disconnected. Have 2 players and 0 observers. Need 5 to start.'
-                in self.master.queue)
+        self.assertAdminResponse(self.master, None,
+                'Fake Player (Fake_Player) has disconnected. '
+                'Have 2 players and 0 observers. Need 5 to start.')
 
 class Server_Admin_Other(Server_Admin):
     ''' Other administrative messages handled by the server'''
@@ -619,6 +633,7 @@ class Server_Multigame(ServerTestCase):
     def new_game(self, variant=None):
         self.master.admin('Server: new%s game' %
                 (variant and ' '+variant or ''))
+        return self.server.default_game()
     def test_new_game(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
@@ -634,9 +649,9 @@ class Server_Multigame(ServerTestCase):
         self.connect_player(self.Fake_Player)
         self.failUnlessEqual(len(self.server.games[1].clients), 2)
     def test_old_reconnect(self):
-        self.new_game()
+        game = self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
-        self.server.default_game().close()
+        game.close()
         self.connect_player(self.Fake_Player)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):
@@ -674,10 +689,10 @@ class Server_Multigame(ServerTestCase):
     def test_multigame_LST_reply(self):
         from language import LST
         std_params = self.server.default_game().options.get_params()
-        self.new_game('sailho')
+        game = self.new_game('sailho')
         self.master.queue = []
         self.master.send(LST())
-        sailho_params = self.server.default_game().options.get_params()
+        sailho_params = game.options.get_params()
         self.assertContains(LST(0, 6, 'standard', std_params), self.master.queue)
         self.assertContains(LST(1, 4, 'sailho', sailho_params), self.master.queue)
 
