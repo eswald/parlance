@@ -222,6 +222,74 @@ def version_string(revision, extra=None):
     return revision.replace(' $', '').replace('$Revision: ',
             'PyDip %s%s.' % (main, config.__version__))
 
+def num2name(number):
+    ''' Converts an integer into an English phrase.
+        >>> num2name(2000)
+        'two thousand'
+        >>> num2name(1900)
+        'nineteen hundred'
+        >>> num2name(816)
+        'eight hundred sixteen'
+        >>> num2name(1)
+        'one'
+        >>> num2name(42)
+        'forty-two'
+    '''#'''
+    
+    # Large numbers
+    if number == 1000: return 'a thousand'
+    if 1000 < number < 1000000 and not number % 1000:
+        return num2name(number // 1000) + ' thousand'
+    if number == 100: return 'a hundred'
+    if 100 < number < 10000 and not number % 100:
+        return num2name(number // 100) + ' hundred'
+    if number > 1000: return str(number)
+    
+    # Tables
+    names = {
+        0: None,
+        1: 'one',
+        2: 'two',
+        3: 'three',
+        4: 'four',
+        5: 'five',
+        6: 'six',
+        7: 'seven',
+        8: 'eight',
+        9: 'nine',
+        10: 'ten',
+        11: 'eleven',
+        12: 'twelve',
+        13: 'thirteen',
+        14: 'forteen',
+        15: 'fifteen',
+        16: 'sixteen',
+        17: 'seventeen',
+        18: 'eighteen',
+        19: 'nineteen',
+        20: 'twenty',
+        30: 'thirty',
+        40: 'forty',
+        50: 'fifty',
+        60: 'sixty',
+        70: 'seventy',
+        80: 'eighty',
+        90: 'ninety',
+    }
+    
+    # Small numbers
+    hundreds = tens = None
+    if number >= 100:
+        hundreds = names[number // 100] + ' hundred'
+        number %= 100
+    if number >= 20:
+        tens = names[number - (number % 10)]
+        number %= 10
+    result = names[number]
+    if tens: result = result and (tens + '-' + result) or tens
+    if hundreds: result = result and (hundreds + ' ' + result) or hundreds
+    return result or 'zero'
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)

@@ -178,8 +178,8 @@ class ServerTestCase(unittest.TestCase):
         self.server = manager.server
     def connect_player(self, player_class, **kwargs):
         return self.manager.start_thread(player_class, **kwargs)
-    def wait_for_actions(self):
-        game = self.server.default_game()
+    def wait_for_actions(self, game=None):
+        if not game: game = self.server.default_game()
         while game.actions:
             remain = game.max_time(time())
             if remain > 0: sleep(remain)
@@ -640,11 +640,12 @@ class Server_Multigame(ServerTestCase):
         self.connect_player(self.Fake_Player)
         self.failUnlessEqual(len(self.server.games[0].clients), 2)
     def test_old_bot_connect(self):
+        ''' Starting a bot connects it to your game, not the current one.'''
         game = self.server.default_game()
         self.connect_player(self.Fake_Player)
         self.new_game()
         self.master.admin('Server: start holdbot')
-        self.wait_for_actions()
+        self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
     def test_sailho_game(self):
         from language import MAP

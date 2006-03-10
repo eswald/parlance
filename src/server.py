@@ -11,7 +11,7 @@ from random    import randint, shuffle
 from time      import time
 from gameboard import Map, Turn
 from functions import any, s, expand_list, DefaultDict, Verbose_Object
-from functions import absolute_limit, relative_limit
+from functions import absolute_limit, relative_limit, num2name
 from language  import *
 
 import player, evilbot, dumbbot
@@ -940,8 +940,9 @@ class Game(Verbose_Object):
                         num = 1
                         power = token
                         pcode = struct.passcode
+                        pname = struct.pname
                         if self.started and struct.client and not struct.client.closed:
-                            client.admin('%s is still in the game.', struct.pname)
+                            client.admin('%s is still in the game.', pname)
                             return
                         else: struct.assigned = (bot_class.name, bot_class.version)
                         break
@@ -954,14 +955,27 @@ class Game(Verbose_Object):
                 except TypeError: num = default_num
                 if num < 1: num += self.players_needed()
             
-            # Client.open() needs to be in a separate thread from the polling
-            def callback(success, failure):
-                text = '%d bot%s started' % (success, s(success))
-                if failure: text += '; %d bot%s failed to start' % (failure, s(failure))
-                client.admin(text)
-            self.server.manager.async_start(bot_class, num, callback,
-                    game_id=self.game_id, power=power, passcode=pcode)
+            name = bot_class.name
+            action = DelayedAction(self.start_bot_class, None,
+                    'the %s%s.' % (name, s(num)),
+                    ('start', 'bot', 'bots', name, name + 's'),
+                    bot_class, num, power, pcode)
+            self.queue_action(action, client,
+                    'starting %s %s%s.' % ((num == 1) and
+                        (name[0] in "aeiouAEIOU" and 'an' or 'a') or
+                        ('%s instances of' % num2name(num)), name,
+                        power and ' as %s' % pname or ''))
         else: client.admin('Unknown bot: %s', bot_name)
+    def start_bot_class(self, bot_class, number, power, pcode):
+        # Client.open() needs to be in a separate thread from the polling
+        self.log_debug(11, 'Attempting to start %s %s%s',
+                num2name(number), bot_class.name, s(number))
+        def callback(success, failure):
+            if failure:
+                self.admin('%d bot%s failed to start',
+                        num2name(failure).capitalize(), s(failure))
+        self.server.manager.async_start(bot_class, number, callback,
+                game_id=self.game_id, power=power, passcode=pcode)
     def num_players(self):
         from sets import Set
         return len(Set([p.client.address
