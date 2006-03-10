@@ -53,6 +53,7 @@ class server_options(config.option_class):
         self.variant   = self.getstring( 'default variant',        'standard')
         self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
+        self.veto_time = self.getint(    'time allowed for vetos', 20)
         self.bot_min   = self.getint(    'minimum player count for bots', 0)
 
 class Command(object):
@@ -61,13 +62,13 @@ class Command(object):
         self.command = callback
         self.description = help
 class DelayedAction(object):
-    def __init__(self, action=None, veto_action=None, veto_line=None, terms=(), *args):
+    def __init__(self, action, veto_action, veto_line, terms, delay, *args):
         self.callback = action
         self.veto_callback = veto_action
         self.veto_line = veto_line
         self.terms = terms
         self.args = args
-        self.when = time() + 20
+        self.when = time() + delay
     def veto(self, client):
         ''' Cancels the action, calling the veto action if it was given.
             The veto callback may return a true value to block the cancellation,
@@ -630,10 +631,13 @@ class Game(Verbose_Object):
         self.broadcast_list(self.judge.run())
         if self.judge.phase: self.set_deadlines()
         else: self.close()
-    def queue_action(self, action, client, line):
-        self.actions.append(action)
-        self.admin('%s is %s', client.name(), line)
-        self.admin('(You may veto within twenty seconds.)')
+    def queue_action(self, client, action_callback, action_line,
+            veto_callback, veto_line, veto_terms, *args):
+        delay = self.server.options.veto_time
+        self.actions.append(DelayedAction(action_callback, veto_callback,
+            veto_line, veto_terms, delay, *args))
+        self.admin('%s is %s', client.name(), action_line)
+        self.admin('(You may veto within %s seconds.)', num2name(delay))
     
     # Sending messages
     def send_hello(self, client):
@@ -898,16 +902,16 @@ class Game(Verbose_Object):
                 veto_verb = 'ejection'
                 terms = ('eject', 'ejection')
             
-            action = DelayedAction(self.boot_players, veto_action,
-                    'the player %s.' % veto_verb, terms,
-                    [c for c,n in players])
             names = DefaultDict(0)
             for c,n in players: names[n] += 1
             itemlist = [(num,nam) for nam,num in names.items()]
             itemlist.sort()
-            self.queue_action(action, client, '%sing %s from the game.' %
+            self.queue_action(client, self.boot_players,
+                    '%sing %s from the game.' %
                     (verb, expand_list([instances(num, nam, False)
-                        for num,nam in itemlist])))
+                        for num,nam in itemlist])),
+                    veto_action, 'the player %s.' % veto_verb, terms,
+                    [c for c,n in players])
         else:
             status = players and 'Ambiguous' or 'Unknown'
             client.admin('%s player "%s"', status, name.capitalize())
@@ -978,13 +982,11 @@ class Game(Verbose_Object):
                 if num < 1: num += self.players_needed()
             
             name = bot_class.name
-            action = DelayedAction(self.start_bot_class, None,
-                    'the %s%s.' % (name, s(num)),
+            self.queue_action(client, self.start_bot_class, 'starting %s%s.' %
+                    (instances(num, name), power and ' as %s' % pname or ''),
+                    None, 'the %s%s.' % (name, s(num)),
                     ('start', 'bot', 'bots', name, name + 's'),
                     bot_class, num, power, pcode)
-            self.queue_action(action, client,
-                    'starting %s%s.' % (instances(num, name),
-                        power and ' as %s' % pname or ''))
         else: client.admin('Unknown bot: %s', bot_name)
     def start_bot_class(self, bot_class, number, power, pcode):
         # Client.open() needs to be in a separate thread from the polling
@@ -1014,9 +1016,8 @@ class Game(Verbose_Object):
     def end_game(self, client, match):
         if self.closed: client.admin('The game is already over.')
         else:
-            action = DelayedAction(self.close, None,
-                    'ending the game.', ('end', 'close'))
-            self.queue_action(action, client, 'ending the game.')
+            self.queue_action(client, self.close, 'ending the game.',
+                    None, 'ending the game.', ('end', 'close'))
     def veto_admin(self, client, match):
         word = match.group(2)
         if word: actions = [a for a in self.actions if word in a.terms]

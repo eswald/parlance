@@ -191,7 +191,9 @@ class ServerTestCase(unittest.TestCase):
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
-    game_options = {}
+    game_options = {
+        'time allowed for vetos': 3,
+    }
     game_options.update(ServerTestCase.game_options)
     game_options['close on disconnect'] = False
     
@@ -219,7 +221,9 @@ class Server_Admin(ServerTestCase):
             if substring in item:
                 self.fail('%r found within %s' % (substring, messages))
     def assertAdminVetoable(self, player, command, response):
-        self.assertEqual([response, '(You may veto within twenty seconds.)'],
+        from functions import num2name
+        self.assertEqual([response, '(You may veto within %s seconds.)' %
+                    num2name(self.game_options['time allowed for vetos'])],
                 player.admin('Server: %s', command))
 
 class Server_Admin_Bots(Server_Admin):

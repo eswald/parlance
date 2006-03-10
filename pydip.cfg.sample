@@ -36,6 +36,7 @@ close on disconnect = no
 default variant = standard
 ; admin command password = ' '
 number of games = 1
+time allowed for vetos = 20
 minimum player count for bots = 0
 
 
