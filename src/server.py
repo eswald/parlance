@@ -1010,11 +1010,11 @@ class Game(Verbose_Object):
         return len(Set([p.client.address
             for p in self.players.values() if p.client]))
     def set_press_level(self, client, match):
-        cmd, level = match.groups()
-        if level:
-            try: new_level = int(level[6:])
-            except ValueError:
-                client.admin('Invalid press level %r', level[6:])
+        cmd, specific, level = match.groups()
+        if specific:
+            try: new_level = config.press_levels[level]
+            except KeyError:
+                client.admin('Invalid press level %r', level.capitalize())
                 return
         elif cmd == 'en': new_level = 8000
         elif cmd == 'dis': new_level = 0
@@ -1059,7 +1059,7 @@ class Game(Verbose_Object):
             '  veto [<command>] - Cancels recent admin commands'),
         Command(r'who', list_players,
             '  who - Lists the player names (but not power assignments)'),
-        Command(r'(en|dis)able +press *(level +\d+)?', set_press_level,
+        Command(r'(en|dis)able +press *(level +(\d+|[a-z ]+))?', set_press_level,
             '  enable/disable press - Allows or blocks press between powers'),
         Command(r'pause', stop_time,
             '  pause - Stops deadline timers and phase transitions'),

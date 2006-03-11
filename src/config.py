@@ -100,6 +100,7 @@ class syntax_options(option_class):
         self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
         self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'dcsp.html'))
         self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.txt'))
+        self.levels_file    = self.getstring('press level file', os.path.join('docs', 'press_levels.txt'))
         self.move_phases    = self.getlist('move phases',      'SPR,FAL')
         self.retreat_phases = self.getlist('retreat phases',   'SUM,AUT')
         self.build_phases   = self.getlist('build phases',     'WIN')
@@ -251,6 +252,7 @@ token_names   = {}
 message_types = {}
 order_mask    = {}
 variants      = {}
+press_levels  = {}
 
 # File parsing
 def parse_variants(variant_file):
@@ -443,6 +445,26 @@ def read_syntax(syntax_file):
                 syntax.setdefault(sub,[]).append((level,option))
         syn_file.close()
 
+def read_levels(level_file):
+    ''' Reads the file containing press levels, filling the press_levels dict.'''
+    try: lev_file = open(level_file, 'rU', 1)
+    except IOError:
+        raise IOError, "Could not find press level file '%s'" % level_file
+    else:
+        for line in lev_file:
+            words = line.split(':', 1)
+            if len(words) == 2:
+                try: num = int(words[0])
+                except ValueError: continue
+                press_levels[str(num)] = num
+                press_levels[words[1].strip().lower()] = num
+        lev_file.close()
+    if not press_levels:
+        # Reasonable default for missing file
+        for i in range(0, 200, 10):
+            press_levels[str(i)] = i
+        press_levels['8000'] = 8000
+
 def init_language():
     ''' Initializes the various tables,
         and exports the token names into the language module.
@@ -477,6 +499,7 @@ def init_language():
     
     parse_variants(opts.variant_file)
     read_syntax(opts.syntax_file)
+    read_levels(opts.levels_file)
 init_language()
 
 

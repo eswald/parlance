@@ -396,6 +396,7 @@ class Server_Admin_Press(Server_Admin):
         ''' The enable press admin command works with a verbal level'''
         from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
+        print config.press_levels
         self.assertAdminVetoable(self.master,
                 'enable press level Sharing out the supply centres',
                 'Fake Human Player is enabling press level 40.')

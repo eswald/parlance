@@ -160,6 +160,7 @@ quot char = "
 variants file = docs/variants.html
 protocol file = docs/dcsp.html
 syntax file = docs/syntax.txt
+press level file = docs/press_levels.txt
 move phases = SPR, FAL
 retreat phases = SUM, AUT
 build phases = WIN
