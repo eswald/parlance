@@ -128,7 +128,7 @@ class Network_Basics(NetworkTestCase):
         master = self.connect_player(self.Fake_Master)
         self.connect_player(self.Fake_Player)
         master.admin('Server: become master')
-        self.assertContains('Recruit more players first.',
+        self.assertContains('Recruit more players first, or use your own bots.',
                 master.admin('Server: start holdbot'))
 
 class Network_Full_Games(NetworkTestCase):

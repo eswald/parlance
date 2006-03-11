@@ -607,7 +607,7 @@ class Game(Verbose_Object):
             next_action = min([a.when for a in self.actions])
             if result: result = min(next_action, result)
             else: result = next_action
-        return result - now
+        return result and result - now
     def cancel_time_requests(self, client):
         ''' Removes the client from the list of time requests.'''
         for client_list in self.timers.itervalues():
