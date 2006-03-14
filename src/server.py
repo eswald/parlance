@@ -650,7 +650,7 @@ class Game(Verbose_Object):
     def send_hello(self, client):
         country = client.country
         if country: passcode = self.players[country].passcode
-        else: country = OBS; passcode = 0
+        else: country = UNO; passcode = 0
         variant = self.options.get_params()
         client.send(HLO(country, passcode, variant))
     def summarize(self):
