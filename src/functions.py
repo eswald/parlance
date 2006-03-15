@@ -298,6 +298,35 @@ def instances(number, name, article=True):
     else: prefix = ''
     return prefix + name
 
+def fails(test_function):
+    ''' Marks a test as failing, notifying the user when it succeeds.
+        >>> class DummyTestCase:
+        ...     failureException = AssertionError
+        ...     def fail(self, line=None):
+        ...         raise self.failureException(line or 'Test case failed!')
+        >>> d = DummyTestCase()
+        >>> def test_failure(self):
+        ...     self.fail('This test should fail silently.')
+        >>> fails(test_failure)(d)
+        >>> def test_failure(self):
+        ...     pass
+        >>> fails(test_failure)(d)
+        Traceback (most recent call last):
+            ...
+        AssertionError: Test unexpectedly passed
+        >>> def test_failure(self):
+        ...     raise ValueError('Errors propogate through.')
+        >>> fails(test_failure)(d)
+        Traceback (most recent call last):
+            ...
+        ValueError: Errors propogate through.
+    '''#'''
+    def test_wrapper(test_case):
+        try: test_function(test_case)
+        except test_case.failureException: pass
+        else: test_case.fail('Test unexpectedly passed')
+    return test_wrapper
+
 def _test():
     import doctest, functions
     return doctest.testmod(functions)
