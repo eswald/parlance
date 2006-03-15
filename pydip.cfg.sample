@@ -33,6 +33,7 @@ allow takeovers = no
 send admin messages = no
 forward admin messages = no
 close on disconnect = no
+randomize power assignments = yes
 default variant = standard
 ; admin command password = ' '
 number of games = 1

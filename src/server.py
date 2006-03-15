@@ -50,6 +50,7 @@ class server_options(config.option_class):
         self.snd_admin = self.getboolean('send admin messages',    False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
         self.quit      = self.getboolean('close on disconnect',    False)
+        self.shuffle   = self.getboolean('randomize power assignments', True)
         self.variant   = self.getstring( 'default variant',        'standard')
         self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
@@ -434,7 +435,7 @@ class Game(Verbose_Object):
         self.players        = {}
         self.limbo          = {}
         powers = self.judge.players()
-        shuffle(powers)
+        if server.options.shuffle: shuffle(powers)
         self.p_order        = powers
         for country in powers:
             self.players[country] = self.Player_Struct(self.judge.player_name(country))
