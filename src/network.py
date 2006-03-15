@@ -392,7 +392,7 @@ class ServerSocket(SocketWrapper):
                     addr, self.next_id)
             
             # Required by the DCSP document
-            try: sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            try: conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
             conn.setblocking(False)
             self.add(Service(self.next_id, conn, addr[0], self.server))
