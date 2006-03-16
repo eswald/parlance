@@ -1062,7 +1062,7 @@ class Game(Verbose_Object):
     commands = [
         Command(r'(veto|cancel|reject) (\w+)', veto_admin,
             '  veto [<command>] - Cancels recent admin commands'),
-        Command(r'who', list_players,
+        Command(r'who|list players', list_players,
             '  who - Lists the player names (but not power assignments)'),
         Command(r'(en|dis)able +press *(level +(\d+|[a-z ]+))?', set_press_level,
             '  enable/disable press - Allows or blocks press between powers'),
