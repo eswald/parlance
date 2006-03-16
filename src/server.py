@@ -638,7 +638,10 @@ class Game(Verbose_Object):
         if self.deadline: self.log_debug(10, 'Running the judge with %f seconds left', self.deadline - time())
         else: self.log_debug(10, 'Running the judge')
         self.broadcast_list(self.judge.run())
-        if self.judge.phase: self.set_deadlines()
+        if self.judge.phase:
+            self.set_deadlines()
+            for player in self.players.itervalues():
+                if player.client: player.ready = True
         else: self.close()
     def queue_action(self, client, action_callback, action_line,
             veto_callback, veto_line, veto_terms, *args):

@@ -71,6 +71,8 @@ client_command -1 REJ [sub server_rejectable]
 client_command -1 YES [sub server_acceptable]
 client_command -1 MAP
 client_command -1 MDF
+client_command -1 PRN [sub any]
+client_command -1 HUH [sub any]
 
 ; Client commands that can recieve YES responses
 client_acceptable -1 IAM [sub power] [sub number]
@@ -148,6 +150,7 @@ server_command    -1 LST [sub game_id] [sub number] [sub string] [sub variant_li
 server_command  0 MIS [repeat] [sub unit_maybe_coast]
 server_command  0 MIS [repeat] [sub unit_retreat]
 server_command  0 MIS [sub number]
+server_command  0 MIS
 server_command  0 THX [sub order] [sub order_note]
 server_command 10 FRM [sub message_id] [sub power_list] [press]
 

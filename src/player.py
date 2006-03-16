@@ -224,8 +224,9 @@ class Player(Verbose_Object):
     def missing_orders(self):
         return self.orders.missing_orders(self.phase(), self.power)
     def handle_MIS(self, message):
-        self.log_debug(7, 'Missing orders for %s: %s; %s',
-                self.power, message, self.missing_orders())
+        if len(message) > 1:
+            self.log_debug(7, 'Missing orders for %s: %s; expected %s',
+                    self.power, message, self.missing_orders())
     def handle_THX(self, message):
         ''' Complains about rejected orders, and tries to fix some of them.'''
         folded = message.fold()

@@ -97,6 +97,12 @@ class ServerTestCase(unittest.TestCase):
             times = [absolute_limit(msg[2].value())
                     for msg in self.queue if msg[0] is TME]
             return times and times[0] or None
+        def hold_all(self):
+            from language import HLD, MIS, SUB, TME
+            self.send(MIS())
+            units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
+            orders = [[unit, HLD] for unit in units]
+            for unit in units: self.send(SUB(*orders))
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     class Fake_Client(Connection):
@@ -173,8 +179,10 @@ class ServerTestCase(unittest.TestCase):
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
+    def set_option(self, option, value):
+        config.option_class.local_opts.update({option: value})
     def connect_server(self, clients=(), games=1):
-        config.option_class.local_opts.update({'number of games' : games})
+        self.set_option('number of games', games)
         self.manager = manager = Fake_Manager(clients)
         self.server = manager.server
         self.game = self.server.default_game()
@@ -216,6 +224,41 @@ class ServerTestCase(unittest.TestCase):
     def assertContains(self, item, series):
         self.failUnless(item in series,
                 'Expected %r among %r' % (item, series))
+
+class Server_Basics(ServerTestCase):
+    ''' Basic Server Functionality'''
+    def test_GOF_each_turn(self):
+        ''' GOF should be assumed for each player each turn.'''
+        from language import GOF, NOT
+        self.set_option('Move Time Limit', 15)
+        self.connect_server()
+        players = []
+        while not self.game.started:
+            players.append(self.connect_player(self.Fake_Player))
+        flagger = players[0]
+        turn = self.game.judge.turn
+        start_phase = turn().key
+        flagger.send(NOT(GOF))
+        for player in players: player.hold_all()
+        self.game.check_flags()
+        self.failUnlessEqual(start_phase, turn().key)
+        sleep(flagger.get_time() + 1)
+        self.game.check_flags()
+        next_phase = turn().key
+        self.failIfEqual(start_phase, next_phase)
+        for player in players: player.hold_all()
+        self.game.check_flags()
+        self.failIfEqual(next_phase, turn().key)
+    def test_empty_MIS(self):
+        ''' Server replies to MIS with MIS when no orders are outstanding.'''
+        from language import MIS
+        self.connect_server()
+        sender = self.connect_player(self.Fake_Player)
+        self.start_game()
+        sender.hold_all()
+        sender.queue = []
+        sender.send(MIS())
+        self.assertContains(MIS(), sender.queue)
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
@@ -737,8 +780,7 @@ class Server_Bugfix(ServerTestCase):
         '''#'''
         from language import PCE, PRP
         from gameboard import Turn
-        config.option_class.local_opts.update({
-                'No Press during Retreats': True})
+        self.set_option('No Press during Retreats', True)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
@@ -753,8 +795,7 @@ class Server_Bugfix(ServerTestCase):
         '''#'''
         from language import PCE, PRP
         from gameboard import Turn
-        config.option_class.local_opts.update({
-                'No Press during Retreats': False})
+        self.set_option('No Press during Retreats', False)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)

@@ -190,7 +190,7 @@ class Standard_Judge(Judge):
         if country and self.phase and not self.eliminated(country):
             missing = self.missing_orders(country)
             if missing: client.send(missing)
-            else: client.reject(message)
+            else: client.send(MIS())
         else: client.reject(message)
     
     # Support functions for the above
