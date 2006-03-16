@@ -305,6 +305,8 @@ class Server(Verbose_Object):
         else: self.log_debug(11, 'Duplicate close() call')
     
     commands = [
+        Command(r'help', list_help,
+            '  help - Lists admin commands recognized by the server'),
         Command(r'new game', start_game,
             '  new game - Starts a new game of Standard Diplomacy'),
         Command(r'(new|start) (\w+) game', start_game,
@@ -313,8 +315,6 @@ class Server(Verbose_Object):
         #    '  select game <id> - Switches to game <id>, if it exists'),
         Command(r'list variants', list_variants,
             '  list variants - Lists known map variants'),
-        Command(r'help', list_help,
-            '  help - Lists admin commands recognized by the server'),
         Command(r'list bots', list_bots,
             '  list bots - Lists bots that can be started by the server'),
     ]
@@ -1060,10 +1060,10 @@ class Game(Verbose_Object):
                 word and ('No %s commands' % word) or 'Nothing')
     
     commands = [
+        Command(r'who|list players', list_players,
+            '  list players - Lists the player names (but not power assignments)'),
         Command(r'(veto|cancel|reject) (\w+)', veto_admin,
             '  veto [<command>] - Cancels recent admin commands'),
-        Command(r'who|list players', list_players,
-            '  who - Lists the player names (but not power assignments)'),
         Command(r'(en|dis)able +press *(level +(\d+|[a-z ]+))?', set_press_level,
             '  enable/disable press - Allows or blocks press between powers'),
         Command(r'pause', stop_time,
