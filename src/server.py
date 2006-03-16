@@ -1053,11 +1053,12 @@ class Game(Verbose_Object):
         else: actions = list(self.actions)
         if actions:
             for vetoed in actions: vetoed.veto(client)
-        else: client.admin('%s to veto.',
+        else:
+            client.admin('%s to %s.', match.group(1),
                 word and ('No %s commands' % word) or 'Nothing')
     
     commands = [
-        Command(r'(veto|cancel) (\w+)', veto_admin,
+        Command(r'(veto|cancel|reject) (\w+)', veto_admin,
             '  veto [<command>] - Cancels recent admin commands'),
         Command(r'who', list_players,
             '  who - Lists the player names (but not power assignments)'),
