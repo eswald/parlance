@@ -3,7 +3,7 @@
 	<META name="author" content="David Norman"/>
 	<META name="description" content="Defines the syntax for messages between DAIDE clients and servers."/>
 	<META name="keywords" content="Diplomacy artificial intelligence DAIDE DPP message syntax">
-	<TITLE>DPP Message Syntax</TITLE>
+	<TITLE>DAIDE Message Syntax</TITLE>
 </HEAD>
 <BODY>
 <h1>Diplomacy AI Development Environment Message Syntax</h1>
@@ -45,14 +45,39 @@ more consistent.</p>
 
 <h3>Common terms</h3>
 
+<!--
+Embedded in this document is a BNF-like formal syntax specification.
+The language elements are found in H4 headers, and in B wrappers at the
+beginning of LI elements.  Each has a "word = message" structure, except
+that it may contain named anchors, it may be prefixed by an option tag
+wrapped in braces, the operator may instead be "+=" or "-=", and the
+message portion may be empty.
+
+Specifications using the "=" operator are only legal at the given syntax
+level or above.  Those using the "+=" operator are legal at any syntax
+level, but should be removed by the server at lower syntax levels.
+Those using the "-=" operator should be removed at all syntax levels.
+Some specifications use the "!=" operator; they were either legal or
+under consideration at some point, but are not legal now, and should be
+ignored while parsing the document.
+
+<h4>message = server_message</h4>
+<h4>message = client_message</h4>
+<h4>server_message = server_command</h4>
+<h4>client_message = client_command</h4>
+<h4>client_message = client_request</h4>
+-->
+
 <p>There are a number of terms which are used by a lot of commands.
 They are:</p>
 
 <ul>
+	<!-- <h4>power = Powers</h4> -->
 	<li>Power &mdash; can be one of <b>AUS, ENG, FRA, GER, ITA, RUS, TUR</b>.
 	These may be changed for variants other than Standard;
 	<a href="#MAP">see the <b>MAP</b> token</a> for details.</li>
 
+	<!-- <h4>province = Provinces</h4> -->
 	<li>Province &mdash; can be one of <b>ADR, AEG, ALB, ANK, APU, ARM,
 	BAL, BAR, BEL, BER, BLA, BOH, BRE, BUD, BUL, BUR, CLY, CON, DEN,
 	EAS, ECH, EDI, FIN, GAL, GAS, GOB, GOL, GRE, HEL, HOL, ION, IRI,
@@ -62,14 +87,21 @@ They are:</p>
 	WAL, WAR, WES, YOR.</b> Alternative abbreviations may not be used.
 	These may be changed for variants other than Standard;
 	<a href="#MAP">see the <b>MAP</b> token</a> for details.</li>
+	<!-- Note: The BNF portion of this document could be stricter on
+	non-SC provinces, sea provinces, and bicoastal provinces, but
+	the order notes are a much friendlier way to catch mistakes. -->
 
+	<!-- <h4>coast = Coasts</h4> -->
 	<li>Coast &mdash; can be one of <b>NCS, NEC, ECS, SEC</b>;
 	in great need, <b>SCS, SWC, WCS, NWC</b> might be accepted.</li>
 
+	<!-- <h4>season = Seasons</h4> -->
 	<li>Season and Phase &mdash; can be one of <b>SPR</b> (Spring
 	Moves), <b>SUM</b> (Spring retreats), <b>FAL</b> (Fall Moves),
 	<b>AUT</b> (Fall retreats), <b>WIN</b> (Adjustments).</li>
 
+	<!-- <h4>unit_type = AMY</h4> -->
+	<!-- <h4>unit_type = FLT</h4> -->
 	<li>Unit type &mdash; can be one of <b>AMY, FLT</b>.</li>
 </ul>
 
@@ -98,7 +130,21 @@ up and running, ordering, retrieving results, and general game management.</p>
 
 <h3>(i) Starting the game.</h3>
 
-<h4><a name="NME">NME</a> ('name') ('version')</h4>
+<!-- Commands added by the PyDip software:
+<h4>server_command = PNG [(any_token_sequence)]</h4>
+<h4>client_command = PNG [(any_token_sequence)]</h4>
+<h4>client_command = SEL (game_id)</h4>
+<h4>client_request = SEL</h4>
+<h4>client_request = LST</h4>
+<h4>server_message = LST (game_id) (players_needed) ('variant_name') (variant)</h4>
+<h4>players_needed = number</h4>
+<h4>game_id != 'string'</h4>
+<h4>game_id = number</h4>
+-->
+
+<h4><a name="NME">client_command = NME</a> ('name') ('version')</h4>
+<!-- <h4>server_message = YES (client_command)</h4> -->
+<!-- <h4>server_message = REJ (client_command)</h4> -->
 
 <p>This should be sent by the client to the server as soon as it has
 connected. It contains the name and version of the client. Both
@@ -111,7 +157,7 @@ letters, numbers and underscore. The server will respond with
 records when the game ends. It is not possible for a client to request
 information about which client is playing each power.</p>
 
-<h4><a name="OBS">OBS</a></h4>
+<h4><a name="OBS">client_command = OBS</a></h4>
 
 <p>This is sent by the client to the server in place of <b>NME</b>, to
 indicate that the connected client is actually just an observer, and
@@ -119,7 +165,8 @@ doesn't wish to take part in the game. Observers are informed of the
 game progress as turns process, but may take no part in the game. The
 server will respond with <b>YES (OBS)</b>.</p>
 
-<h4><a name="IAM">IAM</a> (power) (passcode)</h4>
+<h4><a name="IAM">client_command = IAM</a> (power) (passcode)</h4>
+<!-- <h4>passcode = number</h4> -->
 
 <p>This is sent by the client to the server in place of <b>NME</b>, to
 indicate that the client is rejoining the game following a loss of
@@ -137,7 +184,7 @@ been received, the client will be treated the same as an observer,
 except that if the game is in progress, no results messages (<b>ORD</b>,
 <b>NOW</b> and <b>SCO</b>) will be sent.</p>
 
-<h4><a name="MAP">MAP</a> ('name')</h4>
+<h4><a name="MAP">server_command = MAP</a> ('name')</h4>
 
 <p>Once the client has joined the game, the <b>MAP</b> token is sent to
 specify the map which is to be used, as soon as the <b>HLO</b> or
@@ -148,9 +195,12 @@ before, then this will be the same map again. The Standard map is called
 can include only letters, numbers and underscore. Map names are not case
 sensitive.</p>
 
+<!-- <h4>client_message = MAP</h4> -->
 <p>The client may request another copy of the <b>MAP</b> message at any
 time, by sending <b>MAP</b> with no parameters.</p>
 
+<!-- <h4>client_message = YES (server_command)</h4> -->
+<!-- <h4>client_message = REJ (server_command)</h4> -->
 <p>The client should respond with <b>YES (MAP ('name'))</b> if it is to
 play on the map, or <b>REJ (MAP ('name'))</b> if the client can not cope
 with the requested map.</p>
@@ -159,59 +209,92 @@ with the requested map.</p>
 <b>YES (MAP ('name'))</b> or <b>REJ (MAP ('name'))</b>, it can request
 the map definition with:</p>
 
-<h4><a name="MDF">MDF</a></h4>
+<h4><a name="MDF">client_message = MDF</a></h4>
 
 <p>The server will reply with the map definition of the form:</p>
 
-<h4>MDF (powers) (provinces) (adjacencies)<!-- (rails) --></h4>
+<h4>server_message = MDF (powers) (provinces) (adjacencies)</h4>
 
+<!-- <h4>powers = power power ...</h4> -->
 <p><b>(powers)</b> is the list of powers. For example, <b>(AUS ENG FRA GER ITA RUS TUR)</b>.</p>
-<p><b>(provinces)</b> is the list of provinces. This is broken further into two sections &mdash; <b>((supply centres) (non supply centres))</b>.</p>
-<p><b>(supply centres)</b> is of the form <b>((power centre centre ...) (power centre centre ...) ...)</b> where <b>centre</b> is a supply centre province, and <b>power</b> is the power for which the centre is a home centre. <b>power</b> is <b>UNO</b> for neutral supply centres. Also, in the case of a variant where a supply centre is a home centre for two or more powers, <b>power</b> may be of the form <b>(power power ...)</b>. Note that the home centres are the locations where a power may build new units, but are not necessarily the location where the units start the game.</p>
-<p><b>(non supply centres)</b> is the list of all non-supply-centre provinces.</p>
+
+<!-- <h4>provinces = (supply_centres) (non_supply_centres)</h4> -->
+<p><b>(provinces)</b> is the list of provinces. This is broken further
+into two sections &mdash; <b>((supply_centres)
+(non_supply_centres))</b>.</p>
+
+<!-- <h4>supply_centres = (mdf_power centre centre ...) (mdf_power centre centre ...) ...</h4> -->
+<!-- <h4>centre = Inland_SC</h4> -->
+<!-- <h4>centre = Sea_SC</h4> -->
+<!-- <h4>centre = Coastal_SC</h4> -->
+<!-- <h4>centre = Bicoastal_SC</h4> -->
+<!-- <h4>mdf_power = power</h4> -->
+<!-- <h4>mdf_power = UNO</h4> -->
+<!-- <h4>mdf_power = (power power ...)</h4> -->
+<p><b>(supply_centres)</b> is of the form <b>((power centre centre ...)
+(power centre centre ...) ...)</b> where <b>centre</b> is a supply
+centre province, and <b>power</b> is the power for which the centre is a
+home centre. <b>power</b> is <b>UNO</b> for neutral supply centres.
+Also, in the case of a variant where a supply centre is a home centre
+for two or more powers, <b>power</b> may be of the form <b>(power power
+...)</b>. Note that the home centres are the locations where a power may
+build new units, but are not necessarily the location where the units
+start the game.</p>
+
+<!-- <h4>non_supply_centres = province province ...</h4> -->
+<p><b>(non_supply_centres)</b> is the list of all non-supply-centre provinces.</p>
+
+<!-- <h4>adjacencies = (prov_adj) (prov_adj) ...</h4> -->
 <p><b>(adjacencies)</b> is the list of what is next to what. It is of the form <b>((prov_adj) (prov_adj) ...)</b>.</p>
+
+<!-- <h4>prov_adj = province (coast_adj) (coast_adj) ...</h4> -->
+<!-- <h4>prov_adj != (province property property ...) (coast_adj) (coast_adj) ...</h4> -->
+<!-- <h4>coast_adj = mdf_unit adj_prov adj_prov ...</h4> -->
 <p><b>(prov_adj)</b> is of the form <b>(province (unit adj_prov adj_prov ...) (unit adj_prov adj_prov ...) ...)</b><!-- or <b>((province property property ...) (unit adj_prov adj_prov ...) (unit adj_prov adj_prov ...) ...)</b>-->.</p>
+
 <!--<p><b>property</b> is one of:</p>
 <ul>
-	<li><b>ICE</b> &mdash; the province is an ice sector:
+	<li><b>property != ICE</b> &mdash; the province is an ice sector:
 	it is only open during spring and summer</li>
-	<li><b>HAR</b> &mdash; the province is a port or harbor:
+	<li><b>property != HAR</b> &mdash; the province is a port or harbor:
 	both armies and fleets can be there, but fleets there can convoy</li>
 </ul>
 -->
-<p><b>unit</b> is one of:</p>
 
+<p><b>unit</b> is one of:</p>
 <ul>
-	<li><b>AMY</b> &mdash; list of provinces an army can move to</li>
-	<li><b>FLT</b> &mdash; list of provinces a fleet can move to</li>
-	<li><b>(FLT coast)</b> &mdash; list of provinces a fleet can move to
-	from the given coast.</li>
+	<li><b>mdf_unit = AMY</b> &mdash; list of provinces an army can move to</li>
+	<li><b>mdf_unit = FLT</b> &mdash; list of provinces a fleet can move to</li>
+	<li><b>mdf_unit = (FLT coast)</b> &mdash; list of provinces a
+	fleet can move to from the given coast.</li>
 </ul>
 
 <p><b>adj_prov</b> is one of:</p>
-
 <ul>
-	<li><b>province</b> &mdash; a province which can be moved to</li>
-	<li><b>(province coast)</b> &mdash; a coast of a province that can be moved to</li>
-	<!--<li><b>(province border_type)</b> &mdash; a province which can
-	be moved to only through a special type of border</li>-->
+	<li><b>adj_prov = province</b> &mdash; a province that can be moved to</li>
+	<li><b>adj_prov = (province coast)</b> &mdash; a coast of a province
+	that can be moved to</li>
+	<!--<li><b>adj_prov != (province border_type)</b> &mdash; a province
+	that can be moved to only through a special type of border</li>-->
 </ul>
+
 <!--<p><b>border_type</b> is one of:</p>
 <ul>
-	<li><b>DIF</b> &mdash; the border is difficult-passable:
-	moves through it have an attack strength of zero, and support may
-	not be given through it</li>
-	<li><b>(CNL province)</b> &mdash; the border is a canal:
-	the owner of the unit in <b>province</b> must give permission to
-	move through it</li>
+	<li><b>border_type != DIF</b> &mdash; the border is
+	difficult-passable: moves through it have an attack strength of
+	zero, and support may not be given through it</li>
+	<li><b>border_type != (CNL province)</b> &mdash; the border
+	is a canal: the owner of the unit in <b>province</b> must give
+	permission to move through it</li>
 </ul>
 -->
 
 <p>You can tell the type of province from its adjacencies. An inland
 province only has army adjacencies. A sea province only has fleet
-adjacencies. A coastal province has both. A multi-coastal province has
+adjacencies. A coastal province has both. A bicoastal province has
 entries for each coast.</p>
 
+<!-- <h4>coast_adj = AMY</h4> -->
 <p>Note that for a land province surrounded by sea, there will be an
 <b>AMY</b> entrance with no provinces listed.</p>
 
@@ -221,7 +304,7 @@ carriage returns added for clarity):</p>
 <pre><b>
 MDF (AUS ENG FRA GER ITA RUS TUR)
 (((AUS TRI BUD VIE) (ENG LON LVP EDI) ...
-(UNO POR SPA BEL...)) (ADR AEG ALB APU ...))
+(UNO POR SPA BEL ...)) (ADR AEG ALB APU ...))
 ((ANK (FLT ARM BLA CON) (AMY CON SMY ARM))
 (ADR (FLT ION ALB TRI VEN APU))
 (CON (AMY BUL SMY ANK) (FLT BLA (BUL ECS) (BUL SCS) AEG SMY ANK))
@@ -257,43 +340,53 @@ but the actual map is the same as another variant.</p>
 supply centres in the game. So for a map which has 34 or 35 centres, the
 victory condition is 18 centres.</p>
 
-<h4><a name="HLO">HLO</a> (power) (passcode) (variant)</h4>
+<h4><a name="HLO">server_message = HLO</a> (power) (passcode) (variant)</h4>
+<!-- <h4>server_message = HLO (UNO) (passcode) (variant)</h4> -->
+<!-- <h4>variant = (variant_option) (variant_option) ...</h4> -->
 
 <p>The server sends this to each client when the game starts.
 <b>power</b> is the power to be played by this client, or UNO for an
 observer. <b>passcode</b> is an integer value which is required to
 rejoin the game. <b>variant</b> is of the form
-<b>(variant option) (variant option)...</b>, and contains the details of
+<b>(variant_option) (variant_option) ...</b>, and contains the details of
 any options for the game. For example:</p>
 
 <p><b>HLO (ENG) (1234) ((LVL 20) (MTL 1200))</b>
 <br>You are England. Your passcode is 1234. This is a level 20 game, with
 20 minutes (1200 seconds) per movement turn.</p>
 
-<p><b>variant option</b> can be any of the following:</p>
-
+<p><b>variant_option</b> can be any of the following:</p>
 <ul>
-	<li><b>LVL n</b> &mdash; game is of syntax level n. This variant
-	option will always be specified.</li>
-	<li><b>MTL seconds</b> &mdash; maximum number of seconds available
-	for movement turns. If not specified, there is no time limit.</li>
-	<li><b>RTL seconds</b> &mdash; maximum number of seconds available
-	for retreat turns. If not specified, there is no time limit.</li>
-	<li><b>BTL seconds</b> &mdash; maximum number of seconds available
-	for build turns. If not specified, there is no time limit.</li>
-	<li><b>DSD</b> &mdash; deadline stops on disconnection. If a player
-	disconnects when it has orders due, the deadline timer stops.</li>
-	<li><b>AOA</b> &mdash; any orders accepted. Any orders which match
-	the syntax for an order will be accepted, whether they are legal or
-	not. If not specified, then only orders which could be valid will be
-	accepted.</li>
+	<!-- <h4>n = number</h4> -->
+	<li><b>variant_option = LVL n</b> &mdash; game is of syntax
+	level n. This variant option will always be specified.</li>
+	<!-- <h4>seconds = number</h4> -->
+	<li><b>variant_option = MTL seconds</b> &mdash; maximum number
+	of seconds available for movement turns. If not specified, there
+	is no time limit.</li>
+	<li><b>variant_option = RTL seconds</b> &mdash; maximum number
+	of seconds available for retreat turns. If not specified, there
+	is no time limit.</li>
+	<li><b>variant_option = BTL seconds</b> &mdash; maximum number
+	of seconds available for build turns. If not specified, there is
+	no time limit.</li>
+	<li><b>variant_option = DSD</b> &mdash; deadline stops on
+	disconnection. If a player disconnects when it has orders due,
+	the deadline timer stops.</li>
+	<li><b>variant_option = AOA</b> &mdash; any orders accepted. Any
+	orders which match the syntax for an order will be accepted,
+	whether they are legal or not. If not specified, then only
+	orders which could be valid will be accepted.</li>
 </ul>
 
+<!-- <h4>variant_option != Parameters any_token_sequence</h4> -->
 <p>The variant options will always be specified in the order they appear
 in this document.  <!-- Other parameters may appear as a <b>variant
 option</b>; if so, this message syntax may be changed according to the rules
 for each parameter. --> </p>
 
+<!-- <h4>client_request = HLO</h4> -->
+<!-- <h4>server_message = REJ (client_request)</h4> -->
 <p>The client can send the command <b>HLO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the <b>HLO</b> message, or <b>REJ (HLO)</b> if the game hasn't
@@ -301,7 +394,9 @@ started.</p>
 
 <h3>(ii) Current Position</h3>
 
-<h4><a name="NOW">NOW</a> (turn) (unit) (unit) ...</h4>
+<h4><a name="NOW">server_message = NOW</a> (turn) (unit) (unit) ...</h4>
+<!-- <h4>turn = season number</h4> -->
+<!-- <h4>unit = power unit_type adj_prov</h4> -->
 
 <p>This is sent from the server to the client at the start of the game,
 and after every turn. It indicates the current turn, and the current
@@ -309,32 +404,41 @@ unit positions. For example, at the start of the game:</p>
 
 <p><b>NOW (SPR 1901) (AUS FLT TRI) (AUS AMY BUD) (AUS AMY VIE) (ENG FLT LON) ...</b></p>
 
-<p>Units in bicoastal provinces have a province and coast bracketed
+<p>Fleets in bicoastal provinces have a province and coast bracketed
 together. For example:</p>
 
 <p><b>(RUS FLT (STP SCS))</b></p>
 
+<!-- <h4>server_message = NOW (turn) (mrt_unit) (mrt_unit) ...</h4> -->
+<!-- <h4>mrt_unit = unit</h4> -->
+<!-- <h4>mrt_unit = unit MRT (province_list)</h4> -->
+<!-- <h4>province_list = adj_prov adj_prov ...</h4> -->
 <p>Before a retreat turn, units may have a list of retreat options,
 prefixed by <b>MRT</b> (Must retreat to). For example:</p>
 
 <p><b>(ENG FLT NTH MRT (LON YOR EDI NWG))</b></p>
 
+<!-- <h4>province_list = </h4> -->
 <p>If you have no possible retreats, then the unit will still be listed,
 and you still must order the disband. For example:</p>
 
 <p><b>(ENG FLT NTH MRT ())</b></p>
 
 <p>Retreat options will include a coast if a fleet can retreat to a
-multi-coastal province. For example,</p>
+bicoastal province. For example,</p>
 
 <p><b>(TUR FLT CON MRT (BLA SMY (BUL ECS) (BUL SCS)))</b></p>
 
+<!-- <h4>client_request = NOW</h4> -->
 <p>The client can send the command <b>NOW</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the latest <b>NOW</b> message, or <b>REJ (NOW)</b> if the game hasn't
 started.</p>
 
-<h4><a name="SCO">SCO</a> (power centre centre...) (power centre centre...) ...</h4>
+<h4><a name="SCO">server_message = SCO</a> (power centre centre ...) (power centre centre ...) ...</h4>
+<!-- <h4>server_message = SCO (sco_power centre centre ...) (sco_power centre centre ...) ...</h4> -->
+<!-- <h4>sco_power = power</h4> -->
+<!-- <h4>sco_power = UNO</h4> -->
 
 <p>This is sent from the Server to each client at the start of the game,
 and after each Fall Retreat turn (or Fall Movement turn if there are no
@@ -346,12 +450,13 @@ the start of the game:</p>
 	BER MUN) (ITA ROM NAP VEN) (RUS STP MOS WAR SEV) (TUR ANK CON SMY)
 	(UNO NWY SWE DEN HOL BEL SPA POR TUN GRE SER RUM BUL)</b></p>
 
+<!-- <h4>client_request = SCO</h4> -->
 <p>The client can send the command <b>SCO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the latest <b>SCO</b> message, or <b>REJ (SCO)</b> if the game hasn't
 started.</p>
 
-<h4><a name="HST">HST</a> (turn)</h4>
+<h4><a name="HST">client_request = HST</a> (turn)</h4>
 
 <p>Any previous turn's results may be requested by sending the
 <b>HST</b> command to the server with the turn as a parameter (for
@@ -362,6 +467,7 @@ be sent after every <b>HST</b> command, not just those where supply
 centre ownership changes. <b>REJ (HST (turn))</b> is sent if the
 requested turn doesn't exist.</p>
 
+<!-- <h4>client_request = HST</h4> -->
 <!-- p>The server may optionally support retrieving the results of every
 turn so far, by sending <b>HST</b> with no parameters. It will respond
 with one <b>ORD</b> and one <b>NOW</b> message per turn, plus one
@@ -372,40 +478,59 @@ recalculated.  If the server does not support this, it will send
 
 <h3>(iii) Submitting orders</h3>
 
-<h4><a name="SUB">SUB</a> (order) (order) ...</h4>
+<h4><a name="SUB">client_request = SUB</a> (order) (order) ...</h4>
+<!-- <h4>client_request != SUB (loose_order) (loose_order) ...</h4> -->
 
 <p>This is sent from the player to the server, to submit orders for the
 next turn. <b>order</b> can take the following form:</p>
-
 <ul>
 	<li>Movement phase orders:<ul>
-		<li><b>(unit) HLD</b> &mdash; Hold</li>
-		<li><b>(unit) MTO province</b> &mdash; Move</li>
-		<li><b>(unit) SUP (unit)</b> &mdash; Support to hold</li>
-		<li><b>(unit) SUP (unit) MTO prov_no_coast</b> &mdash; Support to move</li>
-		<li><b>(unit) CVY (unit) CTO province</b> &mdash; Convoy</li>
-		<li><b>(unit) CTO province VIA (sea_province sea_province ...)</b> &mdash; Move by convoy</li>
+		<!-- <h4>loose_order = ordered_unit HLD</h4> -->
+		<li><b>order = (unit) HLD</b> &mdash; Hold</li>
+		<!-- <h4>loose_order = ordered_unit MTO adj_prov</h4> -->
+		<!-- <h4>order = (unit) MTO adj_prov</h4> -->
+		<li><b>order = (unit) MTO province</b> &mdash; Move</li>
+		<!-- <h4>loose_order = ordered_unit SUP ordered_unit</h4> -->
+		<li><b>order = (unit) SUP (unit)</b> &mdash; Support to hold</li>
+		<!-- <h4>loose_order = ordered_unit SUP ordered_unit MTO adj_prov</h4> -->
+		<li><b>order = (unit) SUP (unit) MTO prov_no_coast</b> &mdash; Support to move</li>
+		<!-- <h4>loose_order = ordered_unit CVY ordered_unit CTO adj_prov</h4> -->
+		<li><b>order = (unit) CVY (unit) CTO province</b> &mdash; Convoy</li>
+		<!-- <h4>loose_order = ordered_unit CTO adj_prov [VIA (province province ...)]</h4> -->
+		<li><b>order = (unit) CTO province VIA (sea_province sea_province ...)</b> &mdash; Move by convoy</li>
 	</ul></li>
 
 	<li>Retreat phase orders:<ul>
-		<li><b>(unit) RTO province</b> &mdash; Retreat to</li>
-		<li><b>(unit) DSB</b> &mdash; Disband unit</li>
+		<!-- <h4>loose_order = ordered_unit RTO adj_prov</h4> -->
+		<!-- <h4>order = (unit) RTO adj_prov</h4> -->
+		<li><b>order = (unit) RTO province</b> &mdash; Retreat to</li>
+		<!-- <h4>loose_order = ordered_unit DSB</h4> -->
+		<li><b>order = (unit) DSB</b> &mdash; Disband unit</li>
 	</ul></li>
 
 	<li>Build phase orders:<ul>
-		<li><b>(unit) BLD</b> &mdash; Build unit</li>
-		<li><b>(unit) REM</b> &mdash; Remove unit</li>
-		<li><b>power WVE</b> &mdash; Waive build</li>
+		<!-- <h4>loose_order = ordered_unit BLD</h4> -->
+		<li><b>order = (unit) BLD</b> &mdash; Build unit</li>
+		<!-- <h4>loose_order = ordered_unit REM</h4> -->
+		<li><b>order = (unit) REM</b> &mdash; Remove unit</li>
+		<!-- <h4>loose_order = WVE</h4> -->
+		<li><b>order = power WVE</b> &mdash; Waive build</li>
 	</ul></li>
 </ul>
 
+<!-- <h4>ordered_unit = (unit)</h4> -->
+<!-- <h4>ordered_unit = province</h4> -->
+<!-- <h4>ordered_unit = (adj_prov)</h4> -->
+<!-- <h4>ordered_unit = (power adj_prov)</h4> -->
+<!-- <h4>ordered_unit = (unit_type adj_prov)</h4> -->
 <p><b>unit</b> is a unit, and must be in the form as given by <a href="#NOW">the <b>NOW</b> command</a> &mdash; that is, <b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
 <p><b>province</b> is any province. For a fleet moving to a bicoastal province, it must be of the form <b>(province coast)</b>.</p>
+<!-- <h4>prov_no_coast = province</h4> -->
 <p><b>prov_no_coast</b> is a province with no coast specification.</p>
+<!-- <h4>sea_province = province</h4> -->
 <p><b>sea_province</b> is a province where a fleet may be to convoy.</p>
 
 <p>Examples:</p>
-
 <ul>
 	<li><b>SUB ((ENG AMY LVP) HLD) ((ENG FLT LON) MTO NTH) ((ENG FLT EDI) SUP (ENG FLT LON) MTO NTH)</b></li>
 	<li><b>SUB ((ENG FLT BAR) MTO (STP NCS)) ((ENG FLT NWY) SUP (ENG FLT BAR) MTO STP)</b></li>
@@ -421,31 +546,33 @@ next turn. <b>order</b> can take the following form:</p>
 right order through the orders, with a <b>THX</b> message. This is of
 the format:</p>
 
-<h4><a name="THX">THX</a> (order) (note)</h4>
+<h4><a name="THX">server_message = THX</a> (order) (note)</h4>
+<!-- <h4>server_message = THX (loose_order) (note)</h4> -->
 
 <p><b>order</b> is the order as submitted. <b>note</b> is one of the following:</p>
-
 <ul>
-	<li><b>MBV</b> &mdash; Order is okay</li>
-	<li><b>FAR</b> &mdash; Not adjacent</li>
-	<li><b>NSP</b> &mdash; No such province</li>
-	<li><b>NSU</b> &mdash; No such unit</li>
-	<li><b>NAS</b> &mdash; Not at sea (for a convoying fleet)</li>
-	<li><b>NSF</b> &mdash; No such fleet (in <b>VIA</b> section of
-	<b>CTO</b> or the unit performing a <b>CVY</b>)</li>
-	<li><b>NSA</b> &mdash; No such army (for unit being ordered to
-	<b>CTO</b> or for unit being <b>CVY</b>ed)</li>
-	<li><b>NYU</b> &mdash; Not your unit</li>
-	<li><b>NRN</b> &mdash; No retreat needed for this unit</li>
-	<li><b>NVR</b> &mdash; Not a valid retreat space</li>
-	<li><b>YSC</b> &mdash; Not your supply centre</li>
-	<li><b>ESC</b> &mdash; Not an empty supply centre</li>
-	<li><b>HSC</b> &mdash; Not a home supply centre</li>
-	<li><b>NSC</b> &mdash; Not a supply centre</li>
-	<li><b>CST</b> &mdash; No coast specified for fleet build in a bicoastal province, or an attempt to build a fleet inland or an army at sea.</li>
-	<li><b>NMB</b> &mdash; No more builds allowed</li>
-	<li><b>NMR</b> &mdash; No more removals allowed</li>
-	<li><b>NRS</b> &mdash; Not the right season</li>
+	<li><b>note = MBV</b> &mdash; Order is okay</li>
+	<li><b>note = FAR</b> &mdash; Not adjacent</li>
+	<li><b>note = NSP</b> &mdash; No such province</li>
+	<li><b>note = NSU</b> &mdash; No such unit</li>
+	<li><b>note = NAS</b> &mdash; Not at sea (for a convoying fleet)</li>
+	<li><b>note = NSF</b> &mdash; No such fleet (in <b>VIA</b>
+	section of <b>CTO</b> or the unit performing a <b>CVY</b>)</li>
+	<li><b>note = NSA</b> &mdash; No such army (for unit being
+	ordered to <b>CTO</b> or for unit being <b>CVY</b>ed)</li>
+	<li><b>note = NYU</b> &mdash; Not your unit</li>
+	<li><b>note = NRN</b> &mdash; No retreat needed for this unit</li>
+	<li><b>note = NVR</b> &mdash; Not a valid retreat space</li>
+	<li><b>note = YSC</b> &mdash; Not your supply centre</li>
+	<li><b>note = ESC</b> &mdash; Not an empty supply centre</li>
+	<li><b>note = HSC</b> &mdash; Not a home supply centre</li>
+	<li><b>note = NSC</b> &mdash; Not a supply centre</li>
+	<li><b>note = CST</b> &mdash; No coast specified for fleet build
+	in a bicoastal province, or an attempt to build a fleet inland
+	or an army at sea.</li>
+	<li><b>note = NMB</b> &mdash; No more builds allowed</li>
+	<li><b>note = NMR</b> &mdash; No more removals allowed</li>
+	<li><b>note = NRS</b> &mdash; Not the right season</li>
 </ul>
 
 <p>Alternatively, it will reply with <b>REJ (SUB (order) (order) ...)</b>
@@ -455,14 +582,17 @@ if the game has not started.</p>
 rejected by the server, and a corrected order should be submitted in its
 place.</p>
 
+<!-- <h4>client_command = NOT (SUB (loose_order))</h4> -->
+<!-- <h4>client_command = NOT (SUB)</h4> -->
 <p>Movement and retreat orders can be changed by giving a new order for
 a unit. Builds and retreats can be cancelled by ordering
 <b>NOT (SUB (order))</b>. Alternatively, an entire turn's orders can be
 cleared with <b>NOT (SUB)</b>.</p>
 
-<h4><a name="MIS">MIS</a> (unit) (unit) ...</h4>
-<h4>MIS (unit MRT (province list)) (unit MRT (province list)) ...</h4>
-<h4>MIS (number)</h4>
+<h4><a name="MIS">server_message = MIS</a> (unit) (unit) ...</h4>
+<h4>server_message = MIS (unit MRT (province_list)) (unit MRT (province_list)) ...</h4>
+<h4>server_message = MIS (number)</h4>
+<!-- <h4>number = Integers</h4> -->
 
 <p>This command can be sent by the Server immediately after the last
 <b>THX</b> message following a <b>SUB</b> command. It indicates that it
@@ -477,10 +607,11 @@ negative, it indicates that you must order that many more builds.</p>
 <p>The first two forms of the <b>MIS</b> command use exactly the same
 parameter format as <a href="#NOW">the <b>NOW</b> command</a>.</p>
 
+<!-- <h4>client_request = MIS</h4> -->
 <p>The player may request a copy of the current <b>MIS</b> command by
 sending <b>MIS</b> with no parameters.</p>
 
-<h4><a name="GOF">NOT (GOF)</a></h4>
+<h4><a name="GOF">client_command = NOT (GOF)</a></h4>
 
 <p>This is sent by the player to the server. It tells the server not to
 process orders until the deadline. It is the equivalent of set wait on
@@ -488,7 +619,7 @@ the judges. The server will reply with <b>YES (NOT (GOF))</b>, or
 <b>REJ (NOT (GOF))</b> if the game has not started or the power has been
 eliminated.</p>
 
-<h4>GOF</h4>
+<h4>client_command = GOF</h4>
 
 <p>Go ahead and process orders when everybody is in. Server will reply
 with <b>REJ (GOF)</b> if the game has not started, or <b>YES (GOF)</b>
@@ -503,36 +634,39 @@ set or orders (that is, <b>GOF</b> is assumed).</p>
 
 <h3>(iv) Results</h3>
 
-<h4><a name="ORD">ORD</a> (turn) (order) (result)</h4>
+<h4><a name="ORD">server_message = ORD</a> (turn) (order) (result)</h4>
 
 <p>This is sent by the Server when the turn has processed. <b>turn</b>
-is the turn which has just processed. <b>order</b> has the same format
+is the turn which has just processed, with the same format
 as in <a href="#NOW">the <b>NOW</b> command</a>.</p>
 
 <p><b>order</b> is an order submitted by a player. One <b>ORD</b>
 message is sent per unit for a movement phase, one per retreat for a
-retreat phase, and one per build/disband/waive for a build phase . It
+retreat phase, and one per build, disband, or waive for a build phase.  It
 has exactly the same format as in the <a href="#SUB"><b>SUB</b></a> and
-<a href=#THX><b>THX</b></a> commands.</p>
+<a href=#THX><b>THX</b></a> commands<!--, except that loosely-specified
+orders will be more fully specified-->.</p>
 
 <p><b>result</b> is the result of the order. It can be one of the following:</p>
-
 <ul>
-	<li><b>SUC</b> &mdash; Order succeeded</li>
-	<li><b>BNC</b> &mdash; Move bounced</li>
-	<li><b>CUT</b> &mdash; Support cut</li>
-	<li><b>DSR</b> &mdash; Move via convoy failed due to dislodged
-	convoying fleet</li>
-	<li><b>NSO</b> &mdash; No such order (for a support, convoying
-	fleet, or convoyed army)</li>
+	<!-- <h4>result = order_result</h4> -->
+	<li><b>order_result = SUC</b> &mdash; Order succeeded</li>
+	<li><b>order_result = BNC</b> &mdash; Move bounced</li>
+	<li><b>order_result = CUT</b> &mdash; Support cut</li>
+	<li><b>order_result = DSR</b> &mdash; Move via convoy failed due
+	to dislodged convoying fleet</li>
+	<li><b>order_result = NSO</b> &mdash; No such order (for a
+	support, convoying fleet, or convoyed army)</li>
+	<!-- <h4>{AOA} order_result = note</h4> -->
 </ul>
 
 <p>In addition, a second token may be included:</p>
-
 <ul>
+	<!-- <h4>result = order_result RET</h4> -->
 	<li><b>RET</b> &mdash; Unit was dislodged and must retreat.</li>
 </ul>
 
+<!-- <h4>result = RET</h4> -->
 <p>In the case of a unit which was convoying or holding, <b>RET</b> may
 be the only token.</p>
 
@@ -555,6 +689,7 @@ been updated) and a <b>NOW</b> message.</p>
 any retreats). The <b>NOW</b> message indicates which is the next
 turn.</p>
 
+<!-- <h4>client_request = ORD</h4> -->
 <p>The previous turn's results may be requested by sending an <b>ORD</b>
 command to the server with no parameters. The server will reply by
 resending the last movement turn's <b>ORD</b> message, and any
@@ -563,7 +698,7 @@ the game has not started or the first turn has not yet processed.</p>
 
 <h3>(v) Saving and Loading a game</h3>
 
-<h4><a name="SVE">SVE</a> ('gamename')</h4>
+<h4><a name="SVE">server_command = SVE</a> ('gamename')</h4>
 
 <p>The Server can send this at any point. It is a request for the client
 to save the current game with the name given. <b>gamename</b> will never
@@ -575,7 +710,7 @@ later date. Once the game is saved, the client should respond with
 then it should respond with <b>REJ (SVE ('gamename')).</b> Once the game
 has been saved, the client should continue playing.</p>
 
-<h4><a name="LOD">LOD</a> ('gamename')</h4>
+<h4><a name="LOD">server_command = LOD</a> ('gamename')</h4>
 
 <p>The server can send this to the client instead of sending a
 <b>HLO</b> message. It indicates that the game specified is to be loaded
@@ -598,14 +733,14 @@ game. All that needs to be stored is the power being played, the
 passcode as provided by the <b>HLO</b> command, and details of past
 press and alliances that the client wishes to store.</p>
 
-<h4><a name="OFF">OFF</a></h4>
+<h4><a name="OFF">server_message = OFF</a></h4>
 
 <p>This command is sent by the Server, and indicates that the client
 should exit. The client should exit without replying.</p>
 
 <h3>(vi) Deadlines</h3>
 
-<h4><a name="TME">TME</a> (seconds)</h4>
+<h4><a name="TME">server_message = TME</a> (seconds)</h4>
 
 <p>This message is sent by the server, in games where there is a time
 limit for the turn. It indicates the number of seconds until the next
@@ -613,6 +748,7 @@ deadline. It is sent immediately after each turn has processed (that is,
 after the <b>ORD</b>, <b>SCO</b> (where appropriate), and <b>NOW</b>
 messages).</p>
 
+<!-- <h4>client_command = TME (seconds)</h4> -->
 <p>In addition, the client can request <b>TME</b> to be sent at other
 times. To do this, the client sends <b>TME (seconds)</b> to the server.
 The server responds with <b>YES (TME (seconds))</b> to confirm this, or
@@ -621,12 +757,15 @@ than the length of the longest deadline, or if there are no deadlines.
 The server will then send <b>TME (seconds)</b> to the client,
 <b>seconds</b> seconds before the deadline, every turn.</p>
 
+<!-- <h4>client_command = NOT (TME (seconds))</h4> -->
+<!-- <h4>client_command = NOT (TME)</h4> -->
 <p>The client can cancel such requests with <b>NOT (TME (seconds))</b>
 for a specific request, or <b>NOT (TME)</b> for all requests.  The
 Server will respond with <b>YES (NOT (...))</b> if the request was
 cancelled, or <b>REJ (NOT (...))</b> if the specified request was not
 found or if the Server cannot cancel time requests.</p>
 
+<!-- <h4>client_request = TME</h4> -->
 <p>Also, the client can send the message <b>TME</b> with no parameters.
 The Server will respond with <b>TME (seconds)</b> where <b>seconds</b>
 is the time to the next deadline, or <b>REJ (TME)</b> if there are no
@@ -636,7 +775,13 @@ deadlines.</p>
 
 <h3>(vii) Errors and Failures</h3>
 
-<h4><a name="PRN">PRN</a> (message)</h4>
+<h4><a name="PRN">server_message = PRN</a> (message)</h4>
+<!-- <h4>server_message = PRN (bad_bracketed_sequence)</h4> -->
+<!-- <h4>bad_bracketed_sequence = any_token_sequence ( any_token_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = any_token_sequence ( bad_bracketed_sequence ) any_token_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = any_token_sequence ) any_token_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = any_token_sequence ) bad_bracketed_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = bad_bracketed_sequence ( any_token_sequence</h4> -->
 
 <p>This message is sent from the server to the client, and indicates
 that <b>message</b> was received from the client by the server, but does
@@ -644,7 +789,15 @@ not have a correct set of parentheses. The <b>PRN</b> message will also
 not have matching parentheses. The client should cope with this. No
 reply should be sent to the server.</p>
 
-<h4><a name="HUH">HUH</a> (message)</h4>
+<h4><a name="HUH">server_message = HUH</a> (message)</h4>
+<!-- <h4>server_message = HUH (error_sequence)</h4> -->
+<!-- <h4>error_sequence = ERR</h4> -->
+<!-- <h4>error_sequence = (error_sequence)</h4> -->
+<!-- <h4>error_sequence = any_token_sequence error_sequence any_token_sequence</h4> -->
+<!-- <h4>any_token_sequence = </h4> -->
+<!-- <h4>any_token_sequence = (any_token_sequence)</h4> -->
+<!-- <h4>any_token_sequence = any_token_sequence any_token_sequence</h4> -->
+<!-- <h4>any_token_sequence = Token</h4> (meaning any token except BRA, KET, or possibly ERR) -->
 
 <p>This message is sent from the server to the client, and means that
 the server determined that <b>message</b> had a syntax error in it. The
@@ -655,7 +808,8 @@ first offending token.</p>
 Diplomacy AI Development Environment syntax which is not available at
 the syntax level for the current game.</p>
 
-<h4><a name="CCD">CCD</a> (power)</h4>
+<h4><a name="CCD">server_message = CCD</a> (power)</h4>
+<!-- <h4>server_message = NOT (CCD (power))</h4> -->
 
 <p>This message is sent from the server to the client, and indicates
 that the specified power has been declared to be in Civil Disorder.
@@ -664,7 +818,7 @@ orders in by the deadline, or because the TCP/IP connection to the
 client has been broken. If the power returns, the server will send the
 command <b>NOT (CCD (power))</b>.</p>
 
-
+<!-- <h4>server_message = NOT (TME (seconds))</h4> -->
 <p>If the game is of the <b>DSD</b> variant, then when a power
 disconnects which has not yet submitted orders, then server sends
 <b>NOT (TME (seconds))</b> immediately after the <b>CCD</b> message to
@@ -674,7 +828,8 @@ when the timer restarts.</p>
 
 <h3>(viii) Admin Messages</h3>
 
-<h4><a name="ADM">ADM</a> ('name') ('message')</h4>
+<h4><a name="ADM">client_request = ADM</a> ('name') ('message')</h4>
+<!-- <h4>server_message = ADM ('name') ('message')</h4> -->
 
 <p>This message is sent from the Client to the Server, and contains an
 admin message &mdash; that is, a message to do with the running of the
@@ -688,34 +843,39 @@ to the Client with <b>REJ (ADM ('name') ('message'))</b>.</p>
 
 <h3>(ix) End of the game</h3>
 
-<h4><a name="SLO">SLO</a> (power)</h4>
+<h4><a name="SLO">server_message = SLO</a> (power)</h4>
 
 <p>This command is sent from the server to the client, and indicates
 that the game has ended due to a solo by the specified power.  It is
 sent after the <b>SCO</b> message and before the <b>NOW</b> message.</p>
 
-<h4><a name="DRW">DRW</a></h4>
+<h4><a name="DRW">client_command = DRW</a></h4>
 
 <p>This command is sent by the player to the server, to indicate that
 the player would accept a DIAS draw at this point. The server responds
 with <b>YES (DRW)</b>, or <b>REJ (DRW)</b> if the game has not
 started.</p>
 
+<!-- <h4>server_message = DRW</h4> -->
+<!-- <h4>server_message != DRW (power power ...)</h4> -->
 <p><b>DRW</b> can also be sent from the server to the client, to
 indicate that a draw has been declared.  This will happen as soon as all
 non-eliminated players have simultaneously indicated that they will
-accept a draw at that point.</b></p>
+accept a draw at that point.</p>
 
 <p>If a turn processes after <b>DRW</b> is sent from the player to the
 server, then the command is ignored. The player must resend the command
 each turn if it continues to want a draw.</p>
 
+<!-- <h4>client_command = NOT (DRW)</h4> -->
 <p>If the player changes its mind, it can clear its request for a draw
 with <b>NOT (DRW)</b>. The server will respond with
 <b>YES (NOT (DRW))</b>, or <b>REJ (NOT (DRW))</b> if the game has not
 started.</p>
 
-<h4><a name="SMR">SMR</a> (turn) (power ('name') ('version') centers [year_of_elimination]) (power ('name') ('version') centers [year_of_elimination]) ...</h4>
+<h4><a name="SMR">server_message = SMR</a> (turn) (power ('name') ('version') centers [year_of_elimination]) (power ('name') ('version') centers [year_of_elimination]) ...</h4>
+<!-- <h4>centers = number</h4> -->
+<!-- <h4>year_of_elimination = number</h4> -->
 
 <p>This message is sent from the Server to the client immediately after
 the <b>SLO</b> or <b>DRW</b> message, and informs the client as to who
@@ -731,16 +891,17 @@ dropped to 0 centers.</p>
 
 <h3>(i) Extending the HLO command.</h3>
 
-<p>In addition to the previous <b>variant options</b>, the following may
+<p>In addition to the previous <b>variant_option</b>s, the following may
 also be given at the start of the game:</p>
 
 <ul>
-	<li><b>PDA</b> &mdash; Partial draws are allowed (that is, NoDIAS).</li>
-	<li><b>NPR</b> &mdash; No press during retreat phases</li>
-	<li><b>NPB</b> &mdash; No press during build phases</li>
-	<li><b>PTL seconds</b> &mdash; number of seconds before a movement
-	deadline that all press between powers must stop. If not
-	specified, then 0.</li>
+	<li><b>variant_option = PDA</b> &mdash; Partial draws are
+	allowed (that is, NoDIAS).</li>
+	<li><b>variant_option = NPR</b> &mdash; No press during retreat phases</li>
+	<li><b>variant_option = NPB</b> &mdash; No press during build phases</li>
+	<li><b>variant_option = PTL seconds</b> &mdash; number of
+	seconds before a movement deadline that all press between powers
+	must stop. If not specified, then 0.</li>
 </ul>
 
 
@@ -749,7 +910,7 @@ also be given at the start of the game:</p>
 <p>In a <b>PDA</b> variant game, the player can send the <b>DRW</b>
 command with a parameter &mdash; the list of powers in the draw:</p>
 
-<h4>DRW (power power ...)</h4>
+<h4>{PDA} client_command = DRW (power power ...)</h4>
 
 <p>If all surviving powers submit a <b>DRW</b> command with the same
 list of powers on the same turn, then a draw is immediately declared
@@ -763,6 +924,7 @@ including those powers.</p>
 <b>REJ (DRW (power power ...))</b> if the game has not started, or
 if the list of powers includes an eliminated power.</p>
 
+<!-- <h4>{PDA} server_message = DRW (power power ...)</h4> -->
 <p>When a draw is declared in a <b>PDA</b> variant game, the draw
 message includes a parameter &mdash; the list of powers in the agreed
 draw.</p>
@@ -771,12 +933,14 @@ draw.</p>
 <b>PDA</b> game &mdash; it is the same as sending a <b>DRW</b> command
 listing all surviving powers.</p>
 
+<!-- <h4>{PDA} client_command = NOT (DRW (power power ...))</h4> -->
 <p>You can cancel a partial draw request with <b>NOT (DRW (power power ...))</b>.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
-<h4><a name="SND">SND</a> (message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>SND (message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
+<h4><a name="SND">client_command = SND</a> (message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
+<h4>client_command = SND (message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
+<!-- <h4>message_id = number</h4> -->
 
 <p>These are sent by the player to the server, to send
 <b>press_message</b> to the list of <b>power</b>s given. The recipient
@@ -790,21 +954,21 @@ otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
 
-<h4>CCD (power)</h4>
+<h4>server_message = CCD (power)</h4>
 
 <p><b>power</b> is in civil disorder, and so can not receive press. If
 multiple powers are listed in the <b>SND</b> command, and you receive
 a <b>CCD</b> reply, then the message has not been sent to anybody
-(including the ones that are not in <b></b>civil disorder).</p>
+(including the ones that are not in civil disorder).</p>
 
-<h4><a name="OUT">OUT</a> (power)</h4>
+<h4><a name="OUT">server_message = OUT</a> (power)</h4>
 
 <p><b>power</b> has been eliminated from the game. If multiple
 powers are listed in the <b>SND</b> command, and you receive a
 <b>OUT</b> reply, then the message has not been sent to anybody
 (including the ones that have not been eliminated).</p>
 
-<h4>HUH (SND (power power ...) (press_message))</h4>
+<h4>server_message = HUH (SND (power power ...) (press_message))</h4>
 
 <p>Syntax of the <b>SND</b> message is illegal. This may be a genuine
 syntax error, or it may be because <b>press_message</b> contains a token which
@@ -812,21 +976,21 @@ is not allowed at the language level of the game. <b>ERR</b> is inserted
 immediately before the first token to cause an error.
 <a href="#HUH">See <b>HUH</b></a> in Level 0 for details.</p>
 
-<h4>REJ (SND (power power ...) (press_message))</h4>
+<h4>server_message = REJ (SND (power power ...) (press_message))</h4>
 
 <p>Either the game has not started, or it is a retreat phase in a
 <b>NPR</b> variant game, or a build phase in a <b>NPB</b> variant game,
 or the sending power has been eliminated.</p>
 
-<h4>YES (SND (power power ...) (press_message))</h4>
+<h4>server_message = YES (SND (power power ...) (press_message))</h4>
 
 <p>The message was sent successfully.</p>
 
 <p>When the message is sent successfully, the target players will
 receive the message in one of the following forms:</p>
 
-<h4><a name="FRM">FRM</a> (power message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>FRM (power message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
+<h4><a name="FRM">server_message = FRM</a> (power message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
+<h4>server_message = FRM (power message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
 
 <p>The first <b>power</b> is the power which sent the message, and
 the <b>message_id</b> provided by that power. The <b>power</b> list,
@@ -860,6 +1024,7 @@ powers may not be included in either power list.  This offer is
 continuous.</p>
 
 <h4><a name="DRW_press">offer = DRW</a></h4>
+<!-- <h4>{PDA} offer = DRW (power power ...)</h4> -->
 
 <p>Propose a Draw. In the case of a <b>PDA</b> game, this may also be
 <b>DRW (power power ...)</b>. The list of powers does
@@ -909,6 +1074,17 @@ message informing the other player as to what you can understand. This
 is done with:</p>
 
 <h4><a name="TRY">press_message = TRY</a> (tokens)</h4>
+<!-- <h4>tokens = press_token press_token ...</h4> -->
+<!-- <h4>press_token = PRP</h4> -->
+<!-- <h4>press_token = PCE</h4> -->
+<!-- <h4>press_token = ALY</h4> -->
+<!-- <h4>press_token = VSS</h4> -->
+<!-- <h4>press_token = DRW</h4> -->
+<!-- <h4>press_token = SLO</h4> -->
+<!-- <h4>press_token = NOT</h4> -->
+<!-- <h4>press_token = YES</h4> -->
+<!-- <h4>press_token = REJ</h4> -->
+<!-- <h4>press_token = BWX</h4> -->
 
 <p>List all of the tokens which you can process when received in the
 <b>press_message</b> part of a <b>FRM</b> message. <b>Tokens</b> should be a
@@ -916,15 +1092,15 @@ subset of <b>PRP PCE ALY VSS DRW SLO NOT YES REJ BWX.</b> In addition,
 the following tokens from higher levels may also be included if they can
 be processed by the client: <b>XDO DMZ AND ORR SCD OCC CHO INS
 	QRY THK FCT IDK SUG WHT HOW EXP SRY FOR IFF THN ELS <!-- IOU UOM -->
-	XOY YDO FRM FWD BCC SND</b></p>
+	XOY YDO FRM FWD BCC SND POB WHY</b></p>
 
 <p>You do not need to list <b>TRY</b> or <b>HUH</b> in <b>tokens</b>,
 and you must not send a <b>HUH</b> message in response to a <b>TRY</b>
 or <b>HUH</b> message.</p>
 
+<!-- <h4>tokens = </h4> -->
 <p>A client which can not process Press (that is, which is only designed to
 work at Level 0) should respond to any <b>FRM</b> message with:</p>
-
 <ul>
 	<li><b>SND (message_id) (power) (HUH (ERR press_message)) WRT (power message_id)</b></li>
 	<li><b>SND (message_id) (power) (TRY ())</b></li>
@@ -943,6 +1119,8 @@ may also reorder the tokens.</p>
 
 
 <h2><a name="level20">Level 20</a> : Order Proposals</h2>
+<!-- <h4>press_token += XDO</h4> -->
+<!-- <h4>press_token += DMZ</h4> -->
 
 <p>In level 20, we add two new forms for <b>offer</b>.</p>
 
@@ -964,16 +1142,19 @@ continuous.</p>
 <p>Both of these are responded to using the responses in level 10.</p>
 
 <h2><a name="level30">Level 30</a> : Multipart Offers</h2>
+<!-- <h4>press_token += AND</h4> -->
+<!-- <h4>press_token += ORR</h4> -->
 
+<!-- <h4>press_message = PRP (multipart_offer)</h4> -->
 <p>Level 30 adds the ability to offer multiple things in one offer.</p>
 
-<h4><a name="AND">offer = AND</a> (offer) (offer) ...</h4>
+<h4><a name="AND">multipart_offer = AND</a> (offer) (offer) ...</h4>
 
 <p>These offers are made as a group, and you should accept or reject
 them as a group. This is usually used for offers such as &ldquo;I
 support you and you support me&rdquo;.</p>
 
-<h4><a name="ORR">offer = ORR</a> (offer) (offer) ...</h4>
+<h4><a name="ORR">multipart_offer = ORR</a> (offer) (offer) ...</h4>
 
 <p>These alternative offers are made. You must accept or reject them as
 a group, and then use further press (if necessary) to decide which part
@@ -985,6 +1166,8 @@ they may not both appear in the same message, and neither of them may
 appear more than once.</p>
 
 <h2><a name="level40">Level 40</a> : Sharing out the Supply Centres</h2>
+<!-- <h4>press_token += SCD</h4> -->
+<!-- <h4>press_token += OCC</h4> -->
 
 <p>Level 40 adds the ability to discuss who will gain which supply
 centres and provinces.</p>
@@ -999,6 +1182,9 @@ distribution of centres.  This offer is a long term plan, and doesn't
 necessarily indicate that the centres will be taken this turn.</p>
 
 <h4><a name="OCC">offer = OCC</a> (unit) (unit) ...</h4>
+<!-- <h4>offer = OCC (occ_unit) (occ_unit) ...</h4> -->
+<!-- <h4>occ_unit = unit</h4> -->
+<!-- <h4>occ_unit = power UNT province</h4> -->
 
 <p>This is a suggestion that a power place a particular unit in a
 particular location. <b>unit</b> is in the same format as for
@@ -1010,7 +1196,9 @@ this turn.</p>
 
 
 <h2><a name="level50">Level 50</a> : Nested Multipart Offers</h2>
+<!-- <h4>press_token += CHO</h4> -->
 
+<!-- <h4>offer = multipart_offer</h4> -->
 <p>Level 50 allows <b>AND</b> and <b>ORR</b> to be
 nested. So you can do the following:</p>
 
@@ -1019,6 +1207,8 @@ nested. So you can do the following:</p>
 <p>It also adds a new multi-part offer.</p>
 
 <h4><a name="CHO">offer = CHO</a> (minimum maximum) (offer) (offer) ...</h4>
+<!-- <h4>minimum = number</h4> -->
+<!-- <h4>maximum = number</h4> -->
 
 <p><b>minimum</b> and <b>maximum</b> are numbers.  This is a proposal to
 accept between <b>minimum</b> and <b>maximum</b> of the proposed offers.
@@ -1030,6 +1220,12 @@ means to choose exactly that many.  For example:</p>
 
 
 <h2><a name="level60">Level 60</a> : Queries and Insistences</h2>
+<!-- <h4>press_token += INS</h4> -->
+<!-- <h4>press_token += QRY</h4> -->
+<!-- <h4>press_token += THK</h4> -->
+<!-- <h4>press_token += FCT</h4> -->
+<!-- <h4>press_token += IDK</h4> -->
+<!-- <h4>press_token += SUG</h4> -->
 
 <p>In Level 60, we add the ability to insist on a proposal, and to ask
 questions.</p>
@@ -1113,6 +1309,8 @@ applies to <b>FCT (QRY (offer))</b> and <b>FCT (offer)</b>.</p>
 
 
 <h2><a name="level70">Level 70</a> : Requests for suggestions</h2>
+<!-- <h4>press_token += WHT</h4> -->
+<!-- <h4>press_token += HOW</h4> -->
 
 <p>In Level 70, we add the ability to ask for suggestions. Suggestions come in two forms:</p>
 
@@ -1123,6 +1321,7 @@ sending or a receiving powers unit. In the former case, it is a
 request for a suggestion. In the latter case, it is a request for
 information.</p>
 
+<!-- <h4>reply = IDK (WHT (unit))</h4> -->
 <p><b>WHT</b> messages should be replied to using <b>PRP</b>, <b>INS</b>
 to propose or insist on a move (as if it was an initial
 proposal/insistence, rather than a response to a <b>WHT</b>),
@@ -1130,9 +1329,8 @@ proposal/insistence, rather than a response to a <b>WHT</b>),
 or with <b>BWX (WHT (unit))</b> if the receiving power doesn't want to
 tell.</p>
 
-<!-- <h4>reply = IDK (WHT (unit))</h4> -->
-
 <h4><a name="HOW">press_message = HOW</a> (province)</h4>
+<!-- <h4>reply = IDK (HOW (province))</h4> -->
 
 <p>How do you think we should attack <b>province</b>? This should be
 responded to with <b>PRP</b> or <b>INS</b> to propose or insist on
@@ -1142,15 +1340,16 @@ power doesn't have a suggestion, or with <b>BWX (HOW (province))</b> if
 the receiving power doesn't want to tell.</p>
 
 <h4>press_message = HOW (power)</h4>
+<!-- <h4>reply = IDK (HOW (power))</h4> -->
 
 <p>How do you think we should attack <b>power</b>? Responses are the
 same as for <b>HOW (province)</b>. <b>power</b> may not be an
 eliminated power.</p>
 
-<!-- h4>reply = IDK (HOW (province))</h4 -->
-
 
 <h2><a name="level80">Level 80</a> : Accusations</h2>
+<!-- <h4>press_token += EXP</h4> -->
+<!-- <h4>press_token += SRY</h4> -->
 
 <p>Level 80 adds the ability to accuse another power of going back on its word.</p>
 
@@ -1176,9 +1375,9 @@ eliminated power.</p>
 
 <p>There is nothing to explain &mdash; they don't conflict.</p>
 
-<!-- h4>reply = WHY (EXP (turn) (press_message))</h4>
+<!-- <h4>reply != WHY (EXP (turn) (press_message))</h4>
 
-<p>Why do you think conflict?</p -->
+<p>Why do you think conflict?</p> -->
 
 <p>In addition, the following is available.</p>
 
@@ -1192,13 +1391,15 @@ common for the next message to be <b>INS (NOT (PCE (power power ...))</b>.</p>
 
 
 <h2><a name="level90">Level 90</a> : Future discussions</h2>
+<!-- <h4>press_token += FOR</h4> -->
 
 <p>Level 90 adds the ability to talk about the future. To do this, one
 command is added:</p>
 
 <h4><a name="FOR">offer = FOR</a> (turn) (offer)</h4>
-
 <h4>offer = FOR ((start_turn) (end_turn)) (offer)</h4>
+<!-- <h4>start_turn = turn</h4> -->
+<!-- <h4>end_turn = turn</h4> -->
 
 <p>For the <b>turn</b> specified, or for all turns from
 <b>start_turn</b> to <b>end_turn</b> inclusive, <b>offer</b> applies.
@@ -1206,16 +1407,20 @@ command is added:</p>
 <b>FOR</b> overrides any timing indicated by <b>offer</b>.</p>
 
 <h2><a name="level100">Level 100</a> : Conditionals</h2>
+<!-- <h4>press_token += IFF</h4> -->
+<!-- <h4>press_token += THN</h4> -->
+<!-- <h4>press_token += ELS</h4> -->
 
 <p>Level 100 adds the ability to make a conditional offer.</p>
 
 <h4><a name="IFF">press_message = IFF</a> (condition) THN (press_message) [ELS (press_message)]</h4>
-<!-- h4>reply = IFF (condition) THN (reply) [ELS (reply)]</h4>
-<h4>offer = IFF (condition) THN (offer) [ELS (offer)]</h4 -->
+<!-- <h4>reply = IFF (condition) THN (reply) [ELS (reply)]</h4> -->
+<!-- <h4>offer != IFF (condition) THN (offer) [ELS (offer)]</h4> -->
 
 <p>If the <b>condition</b> is met, then the <b>THN</b> applies;
 otherwise, the <b>ELS</b> part (if any) applies.</p>
 
+<!-- <h4>condition = offer</h4> -->
 <p>A <b>condition</b> takes the same format as an <b>offer</b>.</p>
 
 <p><b>IFF</b> is often used in conjunction with <b>FOR</b>. For example:</p>
@@ -1229,16 +1434,21 @@ the receiving power would prefer the <b>THN</b> part to the <b>ELS</b>
 part.</p>
 
 <h2><a name="level110">Level 110</a> : Puppets and Favours</h2>
+<!-- <h4>press_token -= IOU</h4> -->
+<!-- <h4>press_token -= UOM</h4> -->
+<!-- <h4>press_token += XOY</h4> -->
+<!-- <h4>press_token += YDO</h4> -->
+<!-- <h4>press_token -= PPT</h4> -->
 
 <p>Level 110 adds the ability to trade in favours, and to become a
 puppet of another power.</p>
 
 <!-- Removed: Specific cases of X owes Y.
-<h4><a name="IOU">offer = IOU</a></h4>
+<h4><a name="IOU">offer != IOU</a></h4>
 
 <p>I owe you.</p>
 
-<h4><a name="UOM">offer = UOM</a></h4>
+<h4><a name="UOM">offer != UOM</a></h4>
 
 <p>You owe me.</p>
 -->
@@ -1263,15 +1473,19 @@ entered by the owning power. The power may not be an eliminated
 power.</p>
 
 <!-- PPT: Puppet, from Daniel Loeb's original document.
-<h4><a name="PPT">offer = PPT</a> (power) (power) [(ability ability ...)]</h4>
+<h4><a name="PPT">offer != PPT</a> (power) (power) [(promise promise ...)]</h4>
 
-<p>The first listed <b>power</b> becomes a puppet of the second.  <b>ability</b> is a power granted by the puppet, and may be one of:</p>
-
+<p>The first listed <b>power</b> becomes a puppet of the second.
+<b>promise</b> is a power granted by the puppet, and may be one of:</p>
 <ul>
-	<li><b>XDO</b> &mdash; The puppet will perform any orders requested by the master.</li>
-	<li><b>SCD</b> &mdash; The puppet will accept any supply center distribution requested by the master.</li>
-	<li><b>SND</b> &mdash; The puppet will send any press requested by the master (Level 120 required).</li>
-	<li><b>FRM</b> &mdash; The puppet will forward all press to the master (Level 120 required).</li>
+	<li><b>promise != XDO</b> &mdash; The puppet will perform
+	any orders requested by the master.</li>
+	<li><b>promise != SCD</b> &mdash; The puppet will accept
+	any supply center distribution requested by the master.</li>
+	<li><b>promise != SND</b> &mdash; The puppet will send any
+	press requested by the master (Level 120 required).</li>
+	<li><b>promise != FRM</b> &mdash; The puppet will forward
+	all press to the master (Level 120 required).</li>
 </ul>
 
 <p>Conditions on the puppetship may be placed in FOR or IFF offers.  For example:</p>
@@ -1292,6 +1506,10 @@ power.</p>
 
 
 <h2><a name="level120">Level 120</a> : Forwarding Press</h2>
+<!-- <h4>press_token += FRM</h4> -->
+<!-- <h4>press_token += FWD</h4> -->
+<!-- <h4>press_token += BCC</h4> -->
+<!-- <h4>press_token += SND</h4> -->
 
 <p>Level 120 adds the ability to forward press from one power to
 another. This adds three extra commands to the message syntax:</p>
@@ -1345,6 +1563,8 @@ should not forward a message that already contains the segment
 <b>(FRM (you) (power you are forwarding to) (press_message))</b>.</p>
 
 <h2><a name="level130">Level 130</a> : Explanations</h2>
+<!-- <h4>press_token += POB</h4> -->
+<!-- <h4>press_token += WHY</h4> -->
 
 <p>Level 130 adds the ability to ask why a power thinks something. In
 response to a <b>THK</b> or <b>FCT</b> message, you can reply with:</p>
@@ -1361,7 +1581,8 @@ other message which gives further information (most notably a <b>FRM</b>
 message if someone has told you). Finally, there is one new response
 available:</p>
 
-<h4><a name="POB">reply = POB</a> (WHY (...))</h4>
+<h4><a name="POB">reply = POB</a> (WHY (THK (offer)))</h4>
+<h4>reply = POB (WHY (FCT (offer)))</h4>
 
 <p>The position on the board, or the previous moves, suggests/implies it.</p>
 
@@ -1387,8 +1608,10 @@ make it worthwhile.</p>
 
 <h2><a name="level8000">Level 8000</a> : Free Text</h2>
 
-This level allows natural language press.  Both <b>press_message</b> and
-<b>reply</b> can be any string of ASCII characters.
+<!-- <h4>press_message = 'string'</h4> -->
+<!-- <h4>reply = 'string'</h4> -->
+<p>This level allows natural language press.  Both <b>press_message</b> and
+<b>reply</b> can be any string of ASCII characters.</p>
 
 
 <h2><a name="appA">Appendix A</a> : Complete List of Tokens</h2>
@@ -1626,7 +1849,7 @@ various reasons.</p>
 <tr><td>YES</td><td>0x481C</td><td>Command / Press</td><td>Server to Client</td><td>Accept</td></tr>
 <tr><td>YOR</td><td>0x542F</td><td>Province</td><td>Coastal</td><td>Yorkshire</td></tr>
 <tr><td>YSC</td><td>0x4413</td><td>Order Note</td><td>THX</td><td>Not Your Supply Centre</td></tr>
-<tr><td>integer</td><td>0x0000-0x3FFF</td><td>Parameter</td><td>Various</td><td>Used for years, number of builds, etc.</td></tr>
+<tr><td></td><td>0x0000 - 0x3FFF</td><td>Integer</td><td>Various</td><td>Used for years, number of builds, etc.</td></tr>
 </table>
 
 
@@ -1758,8 +1981,10 @@ various reasons.</p>
 <li><a href="http://www.ellought.demon.co.uk/dipai/">David's Diplomacy AI Page</a></li>
 <li><a href="http://www.spencersoft.com/diplomacy/daide/">Greg's DAIDE Tournament Director Page</a></li>
 <li><a href="http://groups.yahoo.com/group/dipai/">Yahoo! [dipai] group</a></li>
+<li><a href="http://www.brainshell.org/diplomacy/">Eric's Diplomacy Page</a></li>
 </ul>
 -->
 
+<!-- vim: set tw=72 noet ts=8 sw=8 sts=0 noai inde= indk= fo=q : -->
 </BODY>
 </HTML>
