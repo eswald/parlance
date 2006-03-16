@@ -940,7 +940,9 @@ class Game(Verbose_Object):
         lines.sort()
         for line in lines: client.admin(line)
         observing = len(self.clients) - playing
-        if observing: client.admin('Observers: %d' % observing)
+        if observing:
+            client.admin('%s observer%s',
+                    num2name(observing).capitalize(), s(observing))
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')
         else:
