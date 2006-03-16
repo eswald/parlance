@@ -436,6 +436,7 @@ class Game(Verbose_Object):
         self.limbo          = {}
         powers = self.judge.players()
         if server.options.shuffle: shuffle(powers)
+        else: powers.sort()
         self.p_order        = powers
         for country in powers:
             self.players[country] = self.Player_Struct(self.judge.player_name(country))
