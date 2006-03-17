@@ -59,8 +59,7 @@ Embedded in this document is a BNF-like formal syntax specification.
 The language elements are found in H4 headers, and in B wrappers at the
 beginning of LI elements.  Each has a "word = message" structure, except
 that it may contain named anchors, it may be prefixed by an option tag
-wrapped in braces, the operator may instead be "+=" or "-=", and the
-message portion may be empty.
+wrapped in braces, and the operator may instead be "+=" or "-=".
 
 Specifications using the "=" operator are only legal at the given syntax
 level or above.  Those using the "+=" operator are legal at any syntax
@@ -450,13 +449,12 @@ together. For example:</p>
 <!-- <h4>server_message = NOW (turn) (mrt_unit) (mrt_unit) ...</h4> -->
 <!-- <h4>mrt_unit = unit</h4> -->
 <!-- <h4>mrt_unit = unit MRT (province_list)</h4> -->
-<!-- <h4>province_list = adj_prov adj_prov ...</h4> -->
+<!-- <h4>province_list = [adj_prov adj_prov ...]</h4> -->
 <p>Before a retreat turn, units may have a list of retreat options,
 prefixed by <b>MRT</b> (Must retreat to). For example:</p>
 
 <p><b>(ENG FLT NTH MRT (LON YOR EDI NWG))</b></p>
 
-<!-- <h4>province_list = </h4> -->
 <p>If a unit has no possible retreats, then it will still be listed,
 and the player still must order the disband. For example:</p>
 
@@ -823,10 +821,8 @@ reply should be sent to the server.</p>
 <!-- <h4>error_sequence = ERR</h4> -->
 <!-- <h4>error_sequence = (error_sequence)</h4> -->
 <!-- <h4>error_sequence = any_token_sequence error_sequence any_token_sequence</h4> -->
-<!-- <h4>any_token_sequence = </h4> -->
-<!-- <h4>any_token_sequence = (any_token_sequence)</h4> -->
-<!-- <h4>any_token_sequence = any_token_sequence any_token_sequence</h4> -->
-<!-- <h4>any_token_sequence = Token</h4> (meaning any token except BRA, KET, or possibly ERR) -->
+<!-- <h4>any_token_sequence = [Token Token ...]</h4> (meaning any token except BRA, KET, or possibly ERR) -->
+<!-- <h4>any_token_sequence = any_token_sequence (any_token_sequence) any_token_sequence</h4> -->
 
 <p>This message is sent from the server to the client, and means that
 the server determined that <b>message</b> had a syntax error in it. The
@@ -1114,7 +1110,7 @@ send a second message informing the other player as to what it
 <em>can</em> understand. This is done with:</p>
 
 <h4><a name="TRY">press_message = TRY</a> (tokens)</h4>
-<!-- <h4>tokens = press_token press_token ...</h4> -->
+<!-- <h4>tokens = [press_token press_token ...]</h4> -->
 <!-- <h4>press_token = PRP</h4> -->
 <!-- <h4>press_token = PCE</h4> -->
 <!-- <h4>press_token = ALY</h4> -->
@@ -1138,7 +1134,6 @@ be processed by the player: <b>XDO DMZ AND ORR SCD OCC CHO INS
 and should not send a <b>HUH</b> message in response to a <b>TRY</b>
 or <b>HUH</b> message.</p>
 
-<!-- <h4>tokens = </h4> -->
 <p>A player which can not process Press (that is, which is only designed to
 work at Level 0) should respond to any <b>FRM</b> message with:</p>
 <ul>
