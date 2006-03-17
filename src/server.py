@@ -456,7 +456,7 @@ class Game(Verbose_Object):
             pcode = 'Passcode for %s: %d' % (player.pname, player.passcode)
             self.log_debug(6, pcode)
             if not self.judge.eliminated(country):
-                for client in self.clients: client.admin(pcode)
+                #self.admin(pcode)
                 if self.options.DSD: self.pause()
         elif self.limbo: self.offer_power(country, *self.limbo.popitem())
     def offer_power(self, country, client, message):
