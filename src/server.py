@@ -510,7 +510,7 @@ class Game(Verbose_Object):
             else: self.open_position(opening)
     def close(self):
         self.log_debug(10, 'Closing')
-        self.deadline = None
+        self.pause()
         self.judge.phase = None
         if not self.closed:
             self.closed = True
