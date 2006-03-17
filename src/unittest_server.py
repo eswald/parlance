@@ -259,6 +259,27 @@ class Server_Basics(ServerTestCase):
         sender.queue = []
         sender.send(MIS())
         self.assertContains(MIS(), sender.queue)
+    def test_missing_orders_CCD(self):
+        ''' Failing to submit orders on time results in a CCD message.'''
+        from language import CCD
+        self.set_option('Move Time Limit', 5)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        sleep(player.get_time() + 1)
+        self.game.check_flags()
+        self.assertContains(CCD(player.power), player.queue)
+    def test_submitted_orders_CCD(self):
+        ''' Submitting orders on time avoids a CCD message.'''
+        from language import CCD
+        self.set_option('Move Time Limit', 5)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        player.hold_all()
+        sleep(player.get_time() + 1)
+        self.game.check_flags()
+        self.failIf(CCD(player.power) in player.queue)
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
