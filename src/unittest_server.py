@@ -669,11 +669,19 @@ class Server_Admin_Other(Server_Admin):
                 'Fake Human Player is ending the game.')
         self.wait_for_actions()
         self.failUnless(game.closed)
-    def test_end_veto(self):
-        ''' An end game command can be vetoed.'''
+    def test_end_veto_end(self):
+        ''' An end game command can be vetoed with "veto end game".'''
         game = self.start_game()
         self.master.admin('Server: end game')
         self.assertAdminResponse(self.robot, 'veto end game',
+                'Fake Player has vetoed ending the game.')
+        self.wait_for_actions()
+        self.failIf(game.closed)
+    def test_end_veto(self):
+        ''' An end game command can be vetoed with "veto".'''
+        game = self.start_game()
+        self.master.admin('Server: end game')
+        self.assertAdminResponse(self.robot, 'veto',
                 'Fake Player has vetoed ending the game.')
         self.wait_for_actions()
         self.failIf(game.closed)

@@ -210,7 +210,7 @@ class Server(Verbose_Object):
                             pattern.command(self, client, match)
                         else: client.admin('You are not authorized to do that.')
                         break
-                else: client.admin('Unrecognized command: "%s"', text)
+                else: client.admin('Unrecognized command: "%s"', text.strip())
     def handle_SEL(self, client, message):
         if len(message) > 3:
             reply = self.join_game(client, message[2].value()) and YES or REJ
@@ -1065,7 +1065,7 @@ class Game(Verbose_Object):
     commands = [
         Command(r'who|list players', list_players,
             '  list players - Lists the player names (but not power assignments)'),
-        Command(r'(veto|cancel|reject) (\w+)', veto_admin,
+        Command(r'(veto|cancel|reject) *(\w*)', veto_admin,
             '  veto [<command>] - Cancels recent admin commands'),
         Command(r'(en|dis)able +press *(level +(\d+|[a-z ]+))?', set_press_level,
             '  enable/disable press - Allows or blocks press between powers'),
