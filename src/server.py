@@ -280,9 +280,11 @@ class Server(Verbose_Object):
                 if game.started:
                     if game.paused: message = 'Paused'
                     else: message = 'In progress'
-                else: message = game.has_need()
-            elif game.clients: message = 'Closed; %s' % game.has_need()
-            if message: client.admin('Game %s: %s', game.game_id, message)
+                else: message = 'Forming'
+            elif game.clients: message = 'Closed'
+            if message:
+                client.admin('Game %s: %s; %s', game.game_id,
+                        message, game.has_need())
     def list_powers(self, client, match):
         for player in client.game.players.values():
             if player.client:
@@ -480,6 +482,7 @@ class Game(Verbose_Object):
         opening = None
         if client in self.clients:
             self.clients.remove(client)
+            need = self.closed and ' ' or self.has_need()
             if client.booted:
                 player = self.players[client.booted]
                 if player.client is client:
@@ -487,15 +490,15 @@ class Game(Verbose_Object):
                     opening = client.booted
                 else: reason = 'replaced'
                 name = self.started and player.pname or player.name
-                self.admin('%s has been %s. %s', name, reason, self.has_need())
+                self.admin('%s has been %s. %s', name, reason, need)
             elif client.country:
                 player = self.players[client.country]
                 if self.closed or not self.started:
                     self.admin('%s (%s) has disconnected. %s',
-                            player.name, player.version, self.has_need())
+                            player.name, player.version, need)
                 opening = client.country
                 client.country = None
-            else: self.admin('An Observer has disconnected. %s', self.has_need())
+            else: self.admin('An Observer has disconnected. %s', need)
         elif client.country:
             # Rejected the map
             opening = client.country
@@ -542,7 +545,6 @@ class Game(Verbose_Object):
         return len([p for p in self.players.itervalues() if not p.client])
     def has_need(self):
         ''' Creates the line announcing connected and needed players.'''
-        if self.closed: return ''
         observing = len([True for client in self.clients if not client.country])
         have      = len(self.clients) - observing
         needed    = len(self.players) - have
@@ -550,6 +552,8 @@ class Game(Verbose_Object):
         if not self.started:
             if needed: need = 'Need %d to start.' % needed
             else: need = 'Game on!'
+        elif needed and not self.closed:
+            need = '%d player%s disconnected.' % (needed, s(needed))
         return 'Have %d player%s and %d observer%s. %s' % (
                 have, s(have), observing, s(observing), need)
     def check_start(self):

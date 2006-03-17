@@ -404,7 +404,7 @@ class Server_Admin_Local(Server_Admin):
     def test_status_request(self):
         ''' Whether a local connection can request game status information'''
         self.assertAdminResponse(self.backup, 'status',
-                'Game 0: Have 3 players and 0 observers. Need 4 to start.')
+                'Game 0: Forming; Have 3 players and 0 observers. Need 4 to start.')
     def test_power_listing(self):
         ''' Whether a local connection can power assignments'''
         game = self.game
@@ -559,7 +559,7 @@ class Server_Admin_Press(Server_Admin):
 
 class Server_Admin_Eject(Server_Admin):
     def test_eject_player_unstarted(self):
-        ''' Players can be ejected from the game.'''
+        ''' Players can be ejected from a forming game.'''
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
         self.wait_for_actions()
@@ -569,14 +569,13 @@ class Server_Admin_Eject(Server_Admin):
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
         from player import HoldBot
+        from language import CCD
         game = self.game
         while not game.started: self.connect_player(HoldBot)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
                 'Fake Human Player is ejecting Fake Player from the game.')
         self.wait_for_actions()
-        name = game.judge.player_name(self.robot.power)
-        self.assertAdminResponse(self.master, None,
-                'Passcode for %s: %d' % (name, self.robot.pcode))
+        self.assertContains(CCD(self.robot.power), self.master.queue)
     def test_eject_multiple_unstarted(self):
         ''' Multiple players of the same name can be ejected before the game starts.'''
         self.connect_player(self.Fake_Player)
@@ -599,13 +598,13 @@ class Server_Admin_Eject(Server_Admin):
                 'Unknown player "%s"' % name)
     def test_eject_power_started(self):
         ''' Powers can be ejected by power name after the game starts.'''
+        from language import CCD
         game = self.start_game()
         name = game.judge.player_name(self.robot.power)
         self.assertAdminVetoable(self.master, 'eject ' + name,
                 'Fake Human Player is ejecting %s from the game.' % name)
         self.wait_for_actions()
-        self.assertAdminResponse(self.master, None,
-                'Passcode for %s: %d' % (name, self.robot.pcode))
+        self.assertContains(CCD(self.robot.power), self.master.queue)
     
     def test_eject_player_veto(self):
         ''' Player ejection can be vetoed by a third party.'''
