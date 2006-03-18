@@ -2403,7 +2403,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
         self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
         self.assertMapState(steady_state)
-    test_6F16 = fails(test_6F16)
+    #test_6F16 = fails(test_6F16)
     def test_6F17(self):
         "6.F.17.b  PANDIN'S EXTENDED PARADOX"
         steady_state = [
@@ -2522,7 +2522,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ION, MRT],
             [TUR, FLT, ION],
         ])
-    test_6F20_any = fails(test_6F20_any)
+    #test_6F20_any = fails(test_6F20_any)
     def test_6F20_all(self):
         "6.F.20.b.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
@@ -2671,7 +2671,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
         self.assertMapState(steady_state + [
         ])
-    test_6F23 = fails(test_6F23)
+    #test_6F23 = fails(test_6F23)
     def test_6F24(self):
         "6.F.24.b  SECOND ORDER PARADOX WITH NO RESOLUTION"
         steady_state = [
