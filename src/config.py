@@ -99,8 +99,7 @@ class syntax_options(option_class):
         # os.path.abspath(__file__) would be useful here.
         self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
         self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'dcsp.html'))
-        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.txt'))
-        self.levels_file    = self.getstring('press level file', os.path.join('docs', 'press_levels.txt'))
+        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'dpp_syntax.html'))
         self.move_phases    = self.getlist('move phases',      'SPR,FAL')
         self.retreat_phases = self.getlist('retreat phases',   'SUM,AUT')
         self.build_phases   = self.getlist('build phases',     'WIN')
@@ -244,7 +243,6 @@ class variant_options(Verbose_Object):
             fset = lambda self, msg: self.cache_msg('sco', msg))
 
 
-syntax        = {}
 token_cats    = {}
 error_strings = {}
 default_rep   = {}
@@ -350,7 +348,7 @@ def parse_dcsp(proto_file):
                         token_cats[descrip.replace(' ', '_')] = last_cat
                         rep_item = True
                         last_cat <<= 8
-                    else: print 'Bad line: ' + line
+                    else: print 'Bad line in protocol file: ' + line
                 elif line.find(' 0x') > 0:
                     match = re.match('.*(\w\w\w) (0x\w\w)', line)
                     name = match.group(1).upper()
@@ -403,78 +401,39 @@ def read_representation_file(rep_file_name):
     else: return default_rep
 
 def read_syntax(syntax_file):
-    ''' Reads the DPP language file, filling the syntax global dictionary.
-        syntax will have expression names as keys; values in the form
-            [(level, [item, ...]), ...]
-        
-        >>> if not syntax: read_syntax('docs/syntax.txt')
-        ... 
-        >>> syntax['thought']
-        [(60, [THK, 'sub', 'main_offer']), (60, [FCT, 'sub', 'main_offer'])]
-        >>> syntax['unit_adjacency']
-        [(-1, [AMY]), (-1, ['cat', 'Unit_Types', 'repeat', 'province_maybe_coast']), (-1, ['sub', 'unit_coast', 'repeat', 'province_maybe_coast'])]
-    '''#'''
-    from language import Token
+    ''' Opens the Message Syntax file, passing it to the validation module.'''
+    from validation import parse_syntax_file
+    levels = None
+    
     try: syn_file = open(syntax_file, 'rU', 1)
-    except IOError: raise IOError, "Could not find protocol file '%s'" % syntax_file
-    else:
-        for line in syn_file:
-            comment = line.find(';')
-            if comment >= 0: words = line[:comment].split()
-            else: words = line.split()
-            if words:
-                sub = words.pop(0)
-                if sub[0] == '{': continue # Ignore variables, for now
-                level = int(words.pop(0))
-                option = []
-                append = option.append
-                bracketed = False
-                for item in words:
-                    if item[0] == '[':
-                        if item[-1] == ']':
-                            append(item[1:-1])
-                        else:
-                            append(item[1:])
-                            bracketed = True
-                    elif bracketed:
-                        if item[-1] == ']':
-                            if len(item) > 1: append(item[:-1])
-                            bracketed = False
-                        else: append(item)
-                    else: append(Token(item))
-                syntax.setdefault(sub,[]).append((level,option))
-        syn_file.close()
-
-def read_levels(level_file):
-    ''' Reads the file containing press levels, filling the press_levels dict.'''
-    try: lev_file = open(level_file, 'rU', 1)
     except IOError:
-        raise IOError, "Could not find press level file '%s'" % level_file
+        raise IOError, "Failed to find syntax file %r" % syntax_file
     else:
-        for line in lev_file:
-            words = line.split(':', 1)
-            if len(words) == 2:
-                try: num = int(words[0])
-                except ValueError: continue
-                press_levels[str(num)] = num
-                press_levels[words[1].strip().lower()] = num
-        lev_file.close()
-    if not press_levels:
-        # Reasonable default for missing file
-        for i in range(0, 200, 10):
+        levels = parse_syntax_file(syn_file)
+        syn_file.close()
+    
+    if levels:
+        # Expand press levels to be useful to the Game class
+        for i,name in levels:
+            press_levels[i] = name
             press_levels[str(i)] = i
-        press_levels['8000'] = 8000
+            press_levels[name.lower()] = i
+    else:
+        # Set reasonable press levels if the file is missing or unparsable
+        for i in range(0, 200, 10) + [8000]:
+            press_levels[i] = str(i)
+            press_levels[str(i)] = i
 
 def init_language():
     ''' Initializes the various tables,
         and exports the token names into the language module.
         
-        >>> if not syntax: init_language()
-        ... 
+        >>> if not variants:
+        ...     init_language()
         >>> import language
         >>> language.YES is language._cache['YES']
         1
-        >>> language.Token.opts.quot_number == language.Token(Token.opts.quot_char).number
+        >>> language.Token.opts.quot_number == language.Token(language.Token.opts.quot_char).number
         1
         >>> language.KET.text
         ')'
@@ -499,7 +458,6 @@ def init_language():
     
     parse_variants(opts.variant_file)
     read_syntax(opts.syntax_file)
-    read_levels(opts.levels_file)
 init_language()
 
 

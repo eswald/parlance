@@ -291,7 +291,7 @@ class Gameboard_Doctests(unittest.TestCase):
             (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
         ])
         
-        self.failIf(mdf.validate(None, -1, True), 'Invalid MDF message')
+        self.failIf(mdf.validate(0, True), 'Invalid MDF message')
         m = Map(config.variant_options('simplified',
             'Small board for testing purposes', {}, config.default_rep))
         self.failIf(m.valid, 'Map valid before MDF')

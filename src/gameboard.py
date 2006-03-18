@@ -160,7 +160,7 @@ class Map(Verbose_Object):
             >>> fk.build()
             >>> fk.retreat([])
             >>> then = standard_map.create_NOW()
-            >>> print then.validate(None, 0, True)
+            >>> print then.validate(0, True)
             False
             >>> then = then.fold()
             >>> for item in then:

@@ -162,10 +162,10 @@ class Server(Verbose_Object):
     def handle_message(self, client, message):
         'Processes a single message from any client.'
         syntax = client.game.syntax_levels
-        reply = message.validate(client.country, min(syntax))
+        reply = message.validate(min(syntax))
         if reply:
             if (len(syntax) > 1 and
-                    not message.validate(client.country, max(syntax))):
+                    not message.validate(max(syntax))):
                 client.game.held_press.append((client, message))
             else: client.send(reply)
         else:
@@ -181,6 +181,9 @@ class Server(Verbose_Object):
             else:
                 self.log_debug(7, 'Missing message handler: %s', method_name)
                 client.send(HUH([ERR, message]))
+    def handle_HUH(self, client, message):
+        self.log_debug(7, 'Client #%d complained about message: %s',
+                client.client_id, message)
     def handle_ADM(self, client, message):
         line = message.fold()[2][0]
         text = line.lower()
@@ -707,7 +710,7 @@ class Game(Verbose_Object):
             subject to various caveats listed in the syntax document.
         '''#'''
         country = client.country
-        if self.press_allowed and not self.judge.eliminated(country):
+        if country and self.press_allowed and not self.judge.eliminated(country):
             folded = message.fold()
             recips = folded[2]
             for nation in recips:

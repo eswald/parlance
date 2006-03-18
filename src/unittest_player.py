@@ -47,7 +47,7 @@ class PlayerTestCase(unittest.TestCase):
         self.replies = []
     def handle_message(self, message):
         #print message
-        reply = message.validate(self.player and self.player.power, self.level)
+        reply = message.validate(self.level)
         self.failIf(reply, reply)
         self.replies.append(message)
     def tearDown(self):

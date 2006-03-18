@@ -309,11 +309,11 @@ class Service(Connection):
             self.log_debug(4, '%3s >> %s', self.power_name(), msg)
             try: self.server.handle_message(self, msg)
             except Exception, e:
-                self.log_debug(1, 'Exception handling "%s": %s', message, e)
+                self.log_debug(1, 'Exception handling "%s": %s', msg, e)
                 self.server.broadcast_admin('An error has occurred.  '
                         'The server may be unreliable until it is restarted.')
                 self.errors += 1
-                if self.errors < 3: self.boot()
+                if self.errors > 3: self.boot()
                 else: self.admin("Please don't do that again, whatever it was.")
     def close(self):
         if not self.closed:

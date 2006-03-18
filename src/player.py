@@ -151,9 +151,8 @@ class Player(Verbose_Object):
         
         if self.client_opts.validate:
             # Check message syntax
-            if self.opts: level = self.opts.LVL
-            else:         level = -1
-            reply = message.validate(self.power, level, True)
+            level = self.opts and self.opts.LVL or 0
+            reply = message.validate(level, True)
         else: reply = None
         if reply:
             self.handle_invalid(message, reply=reply)

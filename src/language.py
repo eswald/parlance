@@ -11,10 +11,6 @@
         - Token: One unit of a message, containing both its name and number.
 '''#'''
 
-from struct     import pack                as _pack
-from validation import validate_expression as _validate
-
-
 class Message(list):
     ''' Representation of a Diplomacy Message, as a list of Tokens.
         >>> m = Message(NOT, BRA, GOF, KET)
@@ -40,7 +36,7 @@ class Message(list):
         '''#'''
         for item in message: list.extend(self, _tokenize(item))
     
-    def validate(self, country, syntax_level, from_server = False):
+    def validate(self, syntax_level=0, from_server=False):
         ''' Determines whether the message is syntactically valid.
             Returns False for a good message, or an error Message
             (HUH or PRN) to send to the client.
@@ -48,69 +44,54 @@ class Message(list):
             # Checks unbalanced parentheses
             >>> from translation import translate
             >>> Token.opts.squeeze_parens = True
-            >>> print translate("IAM(NOT").validate(False, 0)
+            >>> print translate("IAM(NOT").validate()
             PRN (IAM (NOT)
-            >>> print translate("IAM)NOT(").validate(False, 0)
+            >>> print translate("IAM)NOT(").validate()
             PRN (IAM) NOT ()
-            >>> print translate('PRN ( IAM ( NOT )').validate(False, 0)
+            >>> print translate('PRN ( IAM ( NOT )').validate()
             False
             
             # Checks syntax
-            >>> print translate('WHT(YES)').validate(True, 0)
+            >>> print translate('WHT(YES)').validate()
             HUH (ERR WHT (YES))
-            >>> print NME('name', -3).validate(False, 0)
+            >>> print NME('name', -3).validate()
             HUH (NME ("name") (ERR -3))
-            >>> print NME('name').validate(False, 0)
+            >>> print NME('name').validate()
             HUH (NME ("name") ERR)
-            >>> print NME('name', 'version').validate(False, 0)
-            False
-            
-            # Limits observers to certain messages
-            >>> print DRW().validate(False, 0)
-            HUH (ERR DRW)
-            >>> print DRW().validate(True, 0)
-            False
-            >>> print NOW().validate(False, 0)
+            >>> print NME('name', 'version').validate()
             False
             
             # Checks syntax level
             >>> Eng = Token('ENG', 0x4101)
             >>> Fra = Token('FRA', 0x4102)
             >>> Peace = AND(PCE([Eng, Fra]), DRW)
-            >>> print SND(1, Eng, PRP(Peace)).validate(Fra, 40)
+            >>> print SND(1, Eng, PRP(Peace)).validate(40)
             False
             >>> m = SND(1, Eng, PRP(ORR(NOT(DRW), Peace)))
-            >>> print m.validate(Fra, 40)
+            >>> print m.validate(40)
             HUH (SND (1) (ENG) (PRP (ORR (NOT (DRW)) (ERR AND (PCE (ENG FRA)) (DRW)))))
-            >>> print m.validate(Fra, 100)
-            False
-            
-            # Verifies country restrictions in press (maybe)
-            >>> Ger = Token('GER', 0x4103)
-            >>> print SND(1, Ger, PRP(Peace)).validate(Fra, 60)
-            HUH (SND (1) (GER) (PRP (AND (PCE ERR (ENG FRA)) (DRW))))
-            >>> print SND(1, Ger, SUG(Peace)).validate(Fra, 60)
+            >>> print m.validate(100)
             False
             
             # Checks messages from server, too
             >>> msg = MAP('standard')
-            >>> print msg.validate(None, -1)
+            >>> print msg.validate()
             HUH (MAP ERR ("standard"))
-            >>> print msg.validate(None, -1, True)
+            >>> print msg.validate(0, True)
             False
             
             # Just to restore the state for other tests:
             >>> Token.opts.squeeze_parens = False
         '''#'''
+        from validation import validate_expression
         
         if self.count(BRA) != self.count(KET):
             if self[0] == PRN: return False
             else: return PRN(self)
         else:
-            if not country: syntax_level = -1
-            if from_server: base_expression = 'server_command'
-            else:           base_expression = 'client_command'
-            index, valid = _validate(self, base_expression, syntax_level)
+            if from_server: base_expression = 'server_message'
+            else:           base_expression = 'client_message'
+            index, valid = validate_expression(self, base_expression, syntax_level)
             if valid and index == len(self): return False
             else:
                 if index < len(self) and self[index] == KET:
@@ -203,7 +184,8 @@ class Message(list):
             >>> print map(lambda x: hex(ord(x)), NOT(GOF).pack())
             ['0x48', '0xd', '0x40', '0x0', '0x48', '0x3', '0x40', '0x1']
         '''#'''
-        return _pack('!' + 'H'*len(self), *map(int, self))
+        from struct import pack
+        return pack('!' + 'H'*len(self), *map(int, self))
     def tokenize(self): return self
     
     # Automatically translate new items into Tokens

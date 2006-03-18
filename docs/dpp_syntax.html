@@ -103,7 +103,7 @@ They are:</p>
 	<li>Coast &mdash; can be one of <b>NCS, NEC, ECS, SEC</b>;
 	in great need, <b>SCS, SWC, WCS, NWC</b> might be accepted.</li>
 
-	<!-- <h4>season = Seasons</h4> -->
+	<!-- <h4>season = Phases</h4> -->
 	<li>Season and Phase &mdash; can be one of <b>SPR</b> (Spring
 	Moves), <b>SUM</b> (Spring retreats), <b>FAL</b> (Fall Moves),
 	<b>AUT</b> (Fall retreats), <b>WIN</b> (Adjustments).</li>
@@ -818,11 +818,10 @@ reply should be sent to the server.</p>
 
 <h4><a name="HUH">server_message = HUH</a> (message)</h4>
 <!-- <h4>server_message = HUH (error_sequence)</h4> -->
-<!-- <h4>error_sequence = ERR</h4> -->
-<!-- <h4>error_sequence = (error_sequence)</h4> -->
-<!-- <h4>error_sequence = any_token_sequence error_sequence any_token_sequence</h4> -->
-<!-- <h4>any_token_sequence = [Token Token ...]</h4> (meaning any token except BRA, KET, or possibly ERR) -->
-<!-- <h4>any_token_sequence = any_token_sequence (any_token_sequence) any_token_sequence</h4> -->
+<!-- <h4>error_sequence = any_token_sequence ERR any_token_sequence</h4> -->
+<!-- <h4>error_sequence = any_token_sequence (error_sequence) any_token_sequence</h4> -->
+<!-- <h4>any_token_sequence = [Token Token ...] [(any_token_sequence) any_token_sequence]</h4> -->
+<!-- (Where "Token" is any token except BRA, KET, or possibly ERR) -->
 
 <p>This message is sent from the server to the client, and means that
 the server determined that <b>message</b> had a syntax error in it. The
