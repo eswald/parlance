@@ -420,8 +420,8 @@ class Server_Admin_Press(Server_Admin):
         ''' The enable press admin command works'''
         from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
-        self.assertAdminVetoable(self.master, 'enable press',
-                'Fake Human Player is enabling press level 8000.')
+        self.assertAdminResponse(self.master, 'enable press',
+                'Fake Human Player has set the press level to 8000 (Free Text).')
         self.wait_for_actions()
         sender = self.backup
         recipient = self.robot
@@ -440,8 +440,8 @@ class Server_Admin_Press(Server_Admin):
         ''' The enable press admin command works with a numeric level'''
         from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
-        self.assertAdminVetoable(self.master, 'enable press level 40',
-                'Fake Human Player is enabling press level 40.')
+        self.assertAdminResponse(self.master, 'enable press level 40',
+                'Fake Human Player has set the press level to 40 (Sharing out the Supply Centres).')
         self.wait_for_actions()
         sender = self.backup
         recipient = self.robot
@@ -461,9 +461,9 @@ class Server_Admin_Press(Server_Admin):
         from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         print config.press_levels
-        self.assertAdminVetoable(self.master,
+        self.assertAdminResponse(self.master,
                 'enable press level Sharing out the supply centres',
-                'Fake Human Player is enabling press level 40.')
+                'Fake Human Player has set the press level to 40 (Sharing out the Supply Centres).')
         self.wait_for_actions()
         sender = self.backup
         recipient = self.robot
@@ -481,8 +481,8 @@ class Server_Admin_Press(Server_Admin):
     def test_press_disable(self):
         ''' The disable press admin command works'''
         from language import PCE, PRP
-        self.assertAdminVetoable(self.master, 'disable press',
-                'Fake Human Player is disabling press.')
+        self.assertAdminResponse(self.master, 'disable press',
+                'Fake Human Player has set the press level to 0 (No Press).')
         self.wait_for_actions()
         sender = self.backup
         recipient = self.robot
@@ -491,71 +491,46 @@ class Server_Admin_Press(Server_Admin):
         # Level 10 fails
         offer = PRP(PCE([sender.power, recipient.power]))
         self.assertPressHuhd(offer, sender, recipient, 0)
-    def test_press_window_block(self):
-        ''' A vetoed enable press command blocks disabled press.'''
-        from language import ERR, HUH, PRP, SCD, SND
+    def test_press_enable_blocked(self):
+        ''' The enable press command is blocked after the game starts.'''
+        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
         self.start_game()
-        self.master.admin('Server: enable press')
-        offer = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
-        sender.queue = []
-        msg = SND(0, recipient.power, offer)
-        sender.send(msg)
-        self.assertAdminResponse(self.robot, 'veto enable press',
-                'Fake Player has vetoed the press level change.')
+        self.assertAdminResponse(self.master, 'enable press',
+                'The press level can only be changed before the game starts.')
         self.wait_for_actions()
-        msg.insert(10, ERR)
-        self.assertContains(HUH(msg), sender.queue)
-    def test_press_window_pass(self):
-        ''' A vetoed disable press command passes enabled press.'''
-        from language import FRM, SND, PCE, PRP, YES
-        sender = self.backup
-        recipient = self.robot
-        self.start_game()
-        self.master.admin('Server: disable press')
-        sender.queue = []
-        recipient.queue = []
+        
+        # Level 10 succeeds
         offer = PRP(PCE([sender.power, recipient.power]))
-        msg = SND(0, recipient.power, offer)
-        sender.send(msg)
-        self.assertAdminResponse(self.robot, 'veto disable press',
-                'Fake Player has vetoed the press level change.')
-        self.wait_for_actions()
-        self.assertContains(YES(msg), sender.queue)
-        msg = FRM([sender.power, 0], recipient.power, offer)
-        self.assertContains(msg, recipient.queue)
-    def test_press_timeout_block(self):
-        ''' A non-vetoed disable press command blocks press immediately.'''
-        from language import ERR, HUH, FRM, SND, PCE, PRP
-        sender = self.backup
-        recipient = self.robot
-        self.start_game()
-        self.master.admin('Server: disable press')
-        sender.queue = []
-        offer = PRP(PCE([sender.power, recipient.power]))
-        msg = SND(0, recipient.power, offer)
-        sender.send(msg)
-        self.wait_for_actions()
-        self.assertContains(HUH([ERR, msg]), sender.queue)
-    def test_press_timeout_pass(self):
-        ''' A non-vetoed enable press command enables press immediately.'''
-        from language import FRM, PRP, SCD, SND, YES
+        self.assertPressSent(offer, sender, recipient)
+        # Level 40 fails
+        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        self.assertPressHuhd(offer2, sender, recipient, 10)
+        # Level 60 fails
+        offer[0] = SUG
+        self.assertPressHuhd(offer, sender, recipient, 8)
+    def test_press_disable_blocked(self):
+        ''' The disable admin command is blocked after the game starts.'''
+        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
         self.start_game()
-        self.master.admin('Server: enable press')
-        sender.queue = []
-        recipient.queue = []
-        offer = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
-        msg = SND(0, recipient.power, offer)
-        sender.send(msg)
+        self.assertAdminResponse(self.master, 'disable press',
+                'The press level can only be changed before the game starts.')
         self.wait_for_actions()
-        self.assertContains(YES(msg), sender.queue)
-        msg = FRM([sender.power, 0], recipient.power, offer)
-        self.assertContains(msg, recipient.queue)
+        
+        # Level 10 succeeds
+        offer = PRP(PCE([sender.power, recipient.power]))
+        self.assertPressSent(offer, sender, recipient)
+        # Level 40 fails
+        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        self.assertPressHuhd(offer2, sender, recipient, 10)
+        # Level 60 fails
+        offer[0] = SUG
+        self.assertPressHuhd(offer, sender, recipient, 8)
 
 class Server_Admin_Eject(Server_Admin):
     def test_eject_player_unstarted(self):

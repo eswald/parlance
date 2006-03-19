@@ -161,13 +161,8 @@ class Server(Verbose_Object):
     
     def handle_message(self, client, message):
         'Processes a single message from any client.'
-        syntax = client.game.syntax_levels
-        reply = message.validate(min(syntax))
-        if reply:
-            if (len(syntax) > 1 and
-                    not message.validate(max(syntax))):
-                client.game.held_press.append((client, message))
-            else: client.send(reply)
+        reply = message.validate(client.game.options.LVL)
+        if reply: client.send(reply)
         else:
             method_name = 'handle_'+message[0].text
             # Special handling for common prefixes
@@ -405,7 +400,6 @@ class Game(Verbose_Object):
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts
         self.held_press     = []
-        self.syntax_levels  = [game.LVL]
         self.press_allowed  = False
         self.started        = False
         self.closed         = False
@@ -1033,27 +1027,14 @@ class Game(Verbose_Object):
         elif cmd == 'en': new_level = 8000
         elif cmd == 'dis': new_level = 0
         old_level = self.options.LVL
-        self.options.LVL = new_level
         if new_level == old_level:
             client.admin('The press level is already %d', old_level)
-            return
-        self.syntax_levels.append(new_level)
-        self.queue_action(client, self.fix_level, new_level and
-                ('enabling press level %d.' % new_level) or 'disabling press.',
-                self.restore_level, 'the press level change.',
-                ('enable', 'disable', 'press', 'level'))
-    def fix_level(self):
-        self.syntax_levels.pop(0)
-        self.check_held_press()
-    def restore_level(self, client):
-        self.syntax_levels.pop()
-        self.options.LVL = self.syntax_levels[0]
-        self.check_held_press()
-    def check_held_press(self):
-        old_press = self.held_press
-        self.held_press = []
-        for client, message in old_press:
-            self.server.handle_message(client, message)
+        elif self.started:
+            client.admin('The press level can only be changed before the game starts.')
+        else:
+            self.options.LVL = new_level
+            self.admin('%s has set the press level to %d (%s).',
+                    client.name(), new_level, config.press_levels[new_level])
     def end_game(self, client, match):
         if self.closed: client.admin('The game is already over.')
         else:
