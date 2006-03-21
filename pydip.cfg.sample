@@ -28,14 +28,13 @@ deadline stops on disconnection = no
 
 [server]
 # Options for server operation.
-# The default admin password is single space; impossible to represent here.
 allow takeovers = no
 send admin messages = no
+accept admin commands = no
 forward admin messages = no
 close on disconnect = no
 randomize power assignments = yes
 default variant = standard
-; admin command password = ' '
 number of games = 1
 time allowed for vetos = 20
 minimum player count for bots = 0

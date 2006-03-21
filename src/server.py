@@ -48,11 +48,11 @@ class server_options(config.option_class):
     def __init__(self):
         self.takeover  = self.getboolean('allow takeovers',        False)
         self.snd_admin = self.getboolean('send admin messages',    False)
+        self.admin_cmd = self.getboolean('accept admin commands',  False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
         self.quit      = self.getboolean('close on disconnect',    False)
         self.shuffle   = self.getboolean('randomize power assignments', True)
         self.variant   = self.getstring( 'default variant',        'standard')
-        self.password  = self.getstring( 'admin command password', ' ')
         self.games     = self.getint(    'number of games',        1)
         self.veto_time = self.getint(    'time allowed for vetos', 20)
         self.bot_min   = self.getint(    'minimum player count for bots', 0)
@@ -189,6 +189,9 @@ class Server(Verbose_Object):
             else: client.game.broadcast(message)
         else: client.reject(message)
     def seek_command(self, client, text):
+        if not self.options.admin_cmd:
+            client.admin('Admin commands have been disabled.')
+            return
         for pattern in self.commands:
             match = pattern.pattern.search(text)
             if match:
