@@ -39,14 +39,14 @@ class main_options(config.option_class):
         self.verbosity   = self.getint('output verbosity', 1)
 class server_options(config.option_class):
     ''' Options for the server, including:
-        - takeover     Whether to allow taking over an existing power
+        - takeovers    Whether to allow taking over an existing power
         - snd_admin    Whether to send admin messages created by the server
         - fwd_admin    Whether to send admin messages from other players
         - games        Number of games to play
     '''#'''
     section = 'server'
     def __init__(self):
-        self.takeover  = self.getboolean('allow takeovers',        False)
+        self.takeovers = self.getboolean('allow takeovers',        False)
         self.snd_admin = self.getboolean('send admin messages',    False)
         self.admin_cmd = self.getboolean('accept admin commands',  False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
@@ -507,9 +507,9 @@ class Game(Verbose_Object):
         
         # For testing purposes: stop the game if a player quits
         if opening and not self.closed:
-            self.log_debug(11, 'Deciding whether to quit (%s)',
-                    self.server.options.quit)
-            if self.server.options.quit: self.close()
+            quitting = self.server.options.quit
+            self.log_debug(11, 'Deciding whether to quit (%s)', quitting)
+            if quitting: self.close()
             else: self.open_position(opening)
     def close(self):
         self.log_debug(10, 'Closing')
@@ -531,7 +531,7 @@ class Game(Verbose_Object):
             if len(disconnected) > 1: msg = 'have been disconnected'
             else: msg = 'has been disconnected'
             slate = disconnected
-        elif robotic and self.server.options.takeover:
+        elif robotic and self.server.options.takeovers:
             if len(robotic) > 1: msg = 'seem to be bots'
             else: msg = 'seems to be a bot'
             slate = robotic
@@ -650,10 +650,12 @@ class Game(Verbose_Object):
     def queue_action(self, client, action_callback, action_line,
             veto_callback, veto_line, veto_terms, *args):
         delay = self.server.options.veto_time
-        self.actions.append(DelayedAction(action_callback, veto_callback,
-            veto_line, veto_terms, delay, *args))
         self.admin('%s is %s', client.name(), action_line)
-        self.admin('(You may veto within %s seconds.)', num2name(delay))
+        if delay > 0:
+            self.actions.append(DelayedAction(action_callback, veto_callback,
+                veto_line, veto_terms, delay, *args))
+            self.admin('(You may veto within %s seconds.)', num2name(delay))
+        else: action_callback(*args)
     
     # Sending messages
     def send_hello(self, client):
@@ -860,7 +862,7 @@ class Game(Verbose_Object):
                 # Allow taking over empty slots, but not by existing players
                 good = not client.country
                 if good: self.broadcast(NOT(CCD(country)))
-            elif self.server.options.takeover:
+            elif self.server.options.takeovers:
                 # The current client might be dead, but we haven't noticed yet.
                 # Or this could be a legitimate GM decision,
                 # to replace a bot with a human player

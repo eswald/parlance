@@ -7,99 +7,200 @@
 # and may be used for comments.
 # 
 # The values shown in this sample file are the defaults.
-# The sections are ordered in approximate likelihood of change.
+# The sections are ordered in approximate likelihood of customization.
 
 
 [game]
 # Parameters to be sent in the HLO message.
 # For the press inauguration, David used:
 # ( LVL 130 ) ( MTL 600 ) ( RTL 120 ) ( BTL 180 ) ( DSD ) ( PDA )
-syntax level = 8000
-build time limit = 0
-retreat time limit = 0
-move time limit = 0
-press time limit = 0
-partial draws allowed = no
-any orders allowed = no
-no press during builds = no
-no press during retreats = no
-deadline stops on disconnection = no
+# syntax level (,)
+;syntax level = 8000
+# build time limit (,)
+;build time limit = 0
+# retreat time limit (,)
+;retreat time limit = 0
+# move time limit (,)
+;move time limit = 0
+# press time limit (,)
+;press time limit = 0
+# partial draws allowed (,)
+;partial draws allowed = no
+# any orders allowed (,)
+;any orders allowed = no
+# no press during builds (,)
+;no press during builds = no
+# no press during retreats (,)
+;no press during retreats = no
+# deadline stops on disconnection (,)
+;deadline stops on disconnection = no
 
 
 [server]
 # Options for server operation.
-allow takeovers = no
-send admin messages = no
-accept admin commands = no
-forward admin messages = no
-close on disconnect = no
-randomize power assignments = yes
-default variant = standard
-number of games = 1
-time allowed for vetos = 20
-minimum player count for bots = 0
+
+# allow takeovers (takeovers, boolean)
+# Whether IAM messages can take over non-abandoned powers.
+# This can be disturbing to the original player, so use with care.
+# However, it allows new players to take over bot positions,
+# and prevents problems with an undetected nonresponsive client.
+;allow takeovers = no
+
+# send admin messages (snd_admin, boolean)
+# Whether the server should broadcast admin messages.
+# This includes server-generated and forwarded messages,
+# but not individual responses to admin commands.
+;send admin messages = no
+
+# accept admin commands (admin_cmd, boolean)
+# Whether the server should accept admin commands.
+# These allow players to do things outside the scope of DAIDE syntax,
+# such as pausing the game, starting bots, or booting each other.
+;accept admin commands = no
+
+# forward admin messages (fwd_admin, boolean)
+# Whether non-command admin messages from clients should be re-broadcast.
+;forward admin messages = no
+
+# close on disconnect (quit, boolean)
+# Whether a game should end when a player disconnects.
+# Useful for testing, but should *not* be on for human games.
+;close on disconnect = no
+
+# randomize power assignments (shuffle, boolean)
+# Whether to assign players to powers randomly.
+# If not true, powers are assigned in token order (usually alphabetical),
+# to each player as it connects.
+;randomize power assignments = yes
+
+# default variant (variant, string)
+# The map to use for games not started with the "start <variant> game" command.
+# This should be the variant's DAIDE name as specified in the variants file.
+# (See "variants file", under [syntax].)
+;default variant = standard
+
+# number of games (games, integer)
+# Minimum number of games to play before server stops.
+# Use 0 to prevent the server from shutting down automatically.
+;number of games = 1
+
+# time allowed for vetos (veto_time, integer)
+# Time (in seconds) to wait for vetos before processing certain admin commands.
+# Use 0 to disable vetos entirely.
+;time allowed for vetos = 20
+
+# minimum player count for bots (bot_min, integer)
+# Blocks the bot-starting admin commands, in favor of more individual players.
+# Specifically, starting bots requires that at least this many players
+# be connected from different IP addresses.
+# Use 0 to always allow starting bots.
+;minimum player count for bots = 0
 
 
 [judge]
-# Options for basic judge operation,
-# including David Norman's Variable-Length mix-in rule
-total years before setting draw = 4000
-static years before setting draw = 1000
-years before variable end = 5000
-length of variable end = 10
-variation of variable end = 1.55
-list draw parties in DIAS = no
-publish order sets = no
-publish individual orders = yes
+# Options for basic judge operation.
+
+# total years before setting draw (,)
+# static years before setting draw (,)
+# years before variable end (,)
+# David Norman's Variable-Length mix-in rule
+;total years before setting draw = 4000
+;static years before setting draw = 1000
+;years before variable end = 5000
+
+# length of variable end (,)
+;length of variable end = 10
+# variation of variable end (,)
+;variation of variable end = 1.55
+# list draw parties in DIAS (,)
+;list draw parties in DIAS = no
+# publish order sets (,)
+;publish order sets = no
+# publish individual orders (,)
+;publish individual orders = yes
 
 
 [clients]
 # Options applicable for all PyDip clients.
-invalid message response = ignore
-validate incoming messages = yes
-confirm order submission = no
+# invalid message response (,)
+;invalid message response = ignore
+# validate incoming messages (,)
+;validate incoming messages = yes
+# confirm order submission (,)
+;confirm order submission = no
 
 
 [network]
 # You may change the host and port, but the rest should be left alone.
 # A blank host indicates to listen on all possible addresses,
 # and connect to localhost.
-host = 
-port = 16713
-client-server protocol version = 1
-magic number = 0xDA10
-first error number = 1
-error codes = Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken
-timeout for select() without deadline = 600
-send unnecessary final messages = no
+# host (,)
+;host = 
+# port (,)
+;port = 16713
+# client-server protocol version (,)
+;client-server protocol version = 1
+# magic number (,)
+;magic number = 0xDA10
+# first error number (,)
+;first error number = 1
+# error codes (,)
+;error codes = Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken
+# timeout for select() without deadline (,)
+;timeout for select() without deadline = 600
+# send unnecessary final messages (,)
+;send unnecessary final messages = no
 
 
 [dumberbot]
 # Weights and probabilities for David's Dumbbot algorithm.
 # This section can be duplicated for [evilbot] and [combobot], if desired.
-spring attack = 7000
-spring defence = 3000
-fall attack = 6000
-fall defence = 4000
-spring proximity = 400, 700, 30, 10, 6, 5, 4, 3, 2, 1
-spring strength = 10000
-spring competition = 10000
-fall proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-fall strength = 10000
-fall competition = 10000
-unit attack = 20
-home vacation = 0
-home attack = 3
-home defence = 4
-build defence = 10000
-build proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-remove defence = 10000
-remove proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-play alternative = 75
-alternative modifier = 100
-square coefficient = 2
-size coefficient = -9
-size constant = 16
+# spring attack (,)
+;spring attack = 7000
+# spring defence (,)
+;spring defence = 3000
+# fall attack (,)
+;fall attack = 6000
+# fall defence (,)
+;fall defence = 4000
+# spring proximity (,)
+;spring proximity = 400, 700, 30, 10, 6, 5, 4, 3, 2, 1
+# spring strength (,)
+;spring strength = 10000
+# spring competition (,)
+;spring competition = 10000
+# fall proximity (,)
+;fall proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
+# fall strength (,)
+;fall strength = 10000
+# fall competition (,)
+;fall competition = 10000
+# unit attack (,)
+;unit attack = 20
+# home vacation (,)
+;home vacation = 0
+# home attack (,)
+;home attack = 3
+# home defence (,)
+;home defence = 4
+# build defence (,)
+;build defence = 10000
+# build proximity (,)
+;build proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
+# remove defence (,)
+;remove defence = 10000
+# remove proximity (,)
+;remove proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
+# play alternative (,)
+;play alternative = 75
+# alternative modifier (,)
+;alternative modifier = 100
+# square coefficient (,)
+;square coefficient = 2
+# size coefficient (,)
+;size coefficient = -9
+# size constant (,)
+;size constant = 16
 
 
 [datc]
@@ -108,61 +209,75 @@ size constant = 16
 # Not all options are supported; some cannot be, within DAIDE.
 # Some options use letters not used by the DATC; in general,
 # the syntax disallows the option entirely in these cases.
-multi-route convoy disruption = b
-convoy disruption paradoxes = d
-convoying to adjacent place = f
-support cut on attack on itself via convoy = a
-retreat when dislodged by convoy = b
-convoy path specification = b
-avoiding a head to head battle to bounce a unit = b
-omitted coast specification in move order when two coasts are possible = a
-omitted coast specification in move order when one coast is possible = c
-move order to impossible coast = b
-coast specification in support order = d
-wrong coast of ordered unit = a
-unknown coasts or irrelevant coasts = a
-coast specification in build order = a
-missing unit designation = a
-wrong unit designation = a
-missing unit designation in build order = a
-building a fleet in a land area = a
-missing nationality in support order = a
-wrong nationality in support order = a
-multiple order sets with defined order = b
-multiple order sets with undefined order = b
-multiple orders to the same unit = b
-too many build orders = b
-multiple build orders for one area = c
-too many disband orders = b
-waiving builds = a
-removing a unit in civil disorder = d
-receiving hold support in civil disorder = b
-illegal orders = d
-poorly written orders = e
-implicit orders = b
-perpetual orders = b
-proxy orders = c
-flying dutchman = a
+;multi-route convoy disruption = b
+;convoy disruption paradoxes = d
+;convoying to adjacent place = f
+;support cut on attack on itself via convoy = a
+;retreat when dislodged by convoy = b
+;convoy path specification = b
+;avoiding a head to head battle to bounce a unit = b
+;omitted coast specification in move order when two coasts are possible = a
+;omitted coast specification in move order when one coast is possible = c
+;move order to impossible coast = b
+;coast specification in support order = d
+;wrong coast of ordered unit = a
+;unknown coasts or irrelevant coasts = a
+;coast specification in build order = a
+;missing unit designation = a
+;wrong unit designation = a
+;missing unit designation in build order = a
+;building a fleet in a land area = a
+;missing nationality in support order = a
+;wrong nationality in support order = a
+;multiple order sets with defined order = b
+;multiple order sets with undefined order = b
+;multiple orders to the same unit = b
+;too many build orders = b
+;multiple build orders for one area = c
+;too many disband orders = b
+;waiving builds = a
+;removing a unit in civil disorder = d
+;receiving hold support in civil disorder = b
+;illegal orders = d
+;poorly written orders = e
+;implicit orders = b
+;perpetual orders = b
+;proxy orders = c
+;flying dutchman = a
 
 
 [tokens]
 # Minor options for dealing with token conversion.
-squeeze parens = no
-ignore unknown = no
-double quotes = yes
-escape char = \
-quot char = "
+# squeeze parens (,)
+;squeeze parens = no
+# ignore unknown (,)
+;ignore unknown = no
+# double quotes (,)
+;double quotes = yes
+# escape char (,)
+;escape char = \
+# quot char (,)
+;quot char = "
 
 
 [syntax]
 # Syntax files and special tokens.
 # Do not touch this section unless you understand the code.
-variants file = docs/variants.html
-protocol file = docs/dcsp.html
-syntax file = docs/dpp_syntax.html
-move phases = SPR, FAL
-retreat phases = SUM, AUT
-build phases = WIN
-move order mask = 0x20
-retreat order mask = 0x40
-build order mask = 0x80
+# variants file (,)
+;variants file = docs/variants.html
+# protocol file (,)
+;protocol file = docs/dcsp.html
+# syntax file (,)
+;syntax file = docs/dpp_syntax.html
+# move phases (,)
+;move phases = SPR, FAL
+# retreat phases (,)
+;retreat phases = SUM, AUT
+# build phases (,)
+;build phases = WIN
+# move order mask (,)
+;move order mask = 0x20
+# retreat order mask (,)
+;retreat order mask = 0x40
+# build order mask (,)
+;build order mask = 0x80
