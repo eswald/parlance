@@ -114,6 +114,7 @@ class Network_Basics(NetworkTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_verbosity(15)
+        self.set_option('allow takeovers', True)
         self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''

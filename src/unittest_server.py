@@ -172,6 +172,7 @@ class ServerTestCase(unittest.TestCase):
             'invalid message response': 'croak',
             'minimum player count for bots': 2,
             'time allowed for vetos': 3,
+            'Move Time Limit': 60,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''

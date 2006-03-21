@@ -1024,7 +1024,6 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         ])
     def test_4B4_infer(self):
         '4.B.4.c  COAST SPECIFICATION IN SUPPORT ORDER'
-        # a:required; b:default; c:; d:optional; e:impossible
         # If either Portugal or Mid-Atlantic Ocean move,
         # you have the unsupported option 'b' (default coast).
         self.judge.datc.datc_4b4 = 'c'
@@ -1062,7 +1061,6 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
     test_4B4_infer = fails(test_4B4_infer)
     def test_4B4_optional(self):
         '4.B.4.d  COAST SPECIFICATION IN SUPPORT ORDER'
-        # a:required; b:default; c:infer; d:; e:impossible
         # If either Portugal or Mid-Atlantic Ocean move,
         # you have the unsupported option 'b' (default coast).
         self.judge.datc.datc_4b4 = 'd'

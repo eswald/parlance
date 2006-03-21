@@ -531,7 +531,7 @@ class Game(Verbose_Object):
             if len(disconnected) > 1: msg = 'have been disconnected'
             else: msg = 'has been disconnected'
             slate = disconnected
-        elif robotic:
+        elif robotic and self.server.options.takeover:
             if len(robotic) > 1: msg = 'seem to be bots'
             else: msg = 'seems to be a bot'
             slate = robotic
