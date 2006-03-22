@@ -613,10 +613,15 @@
 # If this is false, unknown tokens in a DM will result in an Error Message.
 ;ignore unknown tokens = no
 
-# escape character (escape_char, character)
-# The character with which to escape quotation marks.
+# input escape character (input_escape, character)
+# The character which escapes quotation marks when translating messages.
 # This can be the same as the quotation mark character itself.
-;escape character = \
+;input escape character = \
+
+# output escape character (output_escape, character)
+# The character with which to escape quotation marks when printing messages.
+# This can be the same as the quotation mark character itself.
+;output escape character = \
 
 # quotation mark (quot_char, character)
 # The character to use for quoting strings when printing messages.

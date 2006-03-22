@@ -23,13 +23,12 @@ def translate(text, rep=None):
         choosing an escape model based on options.
         
         # Black magic: This test exploits an implementation detail or two.
-        # Note that the backslashes are halved twice,
-        # so the Message really only has one in each place.
-        >>> s = 'NME("name\\\\""KET""BRA"KET""BRA" \\\\")'
-        >>> Token.opts.escape_char = '"';  str(translate(s))
-        'NME ( "name\\\\""KET""BRA" ) ( " \\\\" )'
-        >>> Token.opts.escape_char = '\\\\'; str(translate(s))
-        'NME ( "name\\\\"" ) ( "KETBRA\\\\"" )'
+        # This test avoids backslashes because they get halved too often.
+        >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
+        >>> Token.opts.input_escape = '"';  str(translate(s))
+        'NME ( "name^""KET""BRA" ) ( " ^" )'
+        >>> Token.opts.input_escape = '^'; str(translate(s))
+        'NME ( "name""" ) ( "KETBRA""" )'
     '''#'''
     return Representation(rep).translate(text)
 
@@ -57,19 +56,18 @@ class Representation(Verbose_Object):
             choosing an escape model based on options.
             
             # Black magic: This test exploits an implementation detail or two.
-            # Note that the backslashes are halved twice,
-            # so the Message really only has one in each place.
+            # This test avoids backslashes because they get halved too often.
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
-            >>> s = 'NME("name\\\\""KET""BRA"KET""BRA" \\\\")'
-            >>> rep.opts.escape_char = '"'
+            >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
+            >>> rep.opts.input_escape = '"'
             >>> str(rep.translate(s))
-            'NME ( "name\\\\""KET""BRA" ) ( " \\\\" )'
-            >>> rep.opts.escape_char = '\\\\'
+            'NME ( "name^""KET""BRA" ) ( " ^" )'
+            >>> rep.opts.input_escape = '^'
             >>> str(rep.translate(s))
-            'NME ( "name\\\\"" ) ( "KETBRA\\\\"" )'
+            'NME ( "name""" ) ( "KETBRA""" )'
         '''#'''
-        if self.opts.escape_char == self.opts.quot_char:
+        if self.opts.input_escape == self.opts.quot_char:
             return self.translate_doubled_quotes(text)
         else: return self.translate_backslashed(text)
     
@@ -79,7 +77,7 @@ class Representation(Verbose_Object):
             
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
-            >>> rep.opts.escape_char = '"'
+            >>> rep.opts.input_escape = '"'
             >>> rep.translate_doubled_quotes('NOT ( GOF KET')
             Message([NOT, [GOF]])
             >>> str(rep.translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n'))
@@ -127,7 +125,7 @@ class Representation(Verbose_Object):
             
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
-            >>> rep.opts.escape_char = '"'
+            >>> rep.opts.input_escape = '\\\\'
             >>> rep.translate_backslashed('NOT ( GOF KET')
             Message([NOT, [GOF]])
             >>> str(rep.translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n'))
@@ -143,7 +141,7 @@ class Representation(Verbose_Object):
         message = []
         in_text = False
         saved = ''
-        slash = '\\'
+        slash = self.opts.input_escape
         
         # aliases
         quoted = self.tokenize_quote

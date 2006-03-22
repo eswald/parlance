@@ -670,7 +670,7 @@ class Token(_tuple_Token):
         if isinstance(other, (Token, Message)): other = str(other)
         elif not isinstance(other, str): return NotImplemented
         quot = self.opts.quot_char
-        escape = self.opts.escape_char
+        escape = self.opts.output_escape
         if self.is_text():
             if not other:                                       joint = quot
             elif other[-1] == quot: other = other[:-1];         joint = ''
