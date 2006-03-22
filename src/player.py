@@ -23,7 +23,7 @@ class client_options(config.option_class):
     section = 'clients'
     def __init__(self, player_class):
         self.response    = self.getstring('invalid message response', 'ignore').lower()
-        self.validate    = self.getboolean('validate incoming messages', True)
+        self.validate    = self.getboolean('validate incoming messages', False)
         self.confirm     = self.getboolean('confirm order submission', False)
         functions = {
             int:  self.getint,

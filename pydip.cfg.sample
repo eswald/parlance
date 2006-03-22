@@ -12,28 +12,64 @@
 
 [game]
 # Parameters to be sent in the HLO message.
-# For the press inauguration, David used:
-# ( LVL 130 ) ( MTL 600 ) ( RTL 120 ) ( BTL 180 ) ( DSD ) ( PDA )
-# syntax level (,)
-;syntax level = 8000
-# build time limit (,)
-;build time limit = 0
-# retreat time limit (,)
-;retreat time limit = 0
-# move time limit (,)
+
+# syntax level (LVL, integer)
+# Syntax level of the game; mostly determines what kind of press can be sent.
+# See the message syntax document for details.
+;syntax level = 0
+
+# move time limit (MTL, integer)
+# Time limit for movement phases, in seconds.
+# A setting of 0 disables movement time limits.
+# The standard "real-time" setting is 600 (five minutes).
 ;move time limit = 0
-# press time limit (,)
-;press time limit = 0
-# partial draws allowed (,)
-;partial draws allowed = no
-# any orders allowed (,)
-;any orders allowed = no
-# no press during builds (,)
-;no press during builds = no
-# no press during retreats (,)
-;no press during retreats = no
-# deadline stops on disconnection (,)
+
+# retreat time limit (RTL, integer)
+# Time limit for retreat phases, in seconds.
+# A setting of 0 disables retreat time limits.
+# The standard "real-time" setting is 120 (two minutes).
+;retreat time limit = 0
+
+# build time limit (BTL, integer)
+# Time limit for build phases, in seconds.
+# A setting of 0 disables build time limits.
+# The standard "real-time" setting is 180 (three minutes).
+;build time limit = 0
+
+# deadline stops on disconnection (DSD, boolean)
+# Whether time limits pause when a non-eliminated player disconnects.
+# The standard "real-time" setting is yes.
 ;deadline stops on disconnection = no
+
+# any orders allowed (AOA, boolean)
+# Whether to accept any syntactically valid order, regardless of legality.
+# This server is more permissive than David's in AOA games;
+# the latter doesn't accept orders for non-existent or foreign units.
+# See also DATC option 4.E.1, which only comes up in AOA games.
+# The standard "real-time" setting is no.
+;any orders allowed = no
+
+# partial draws allowed (PDA, boolean)
+# Whether to allow draws that don't include all survivors.
+# When this is on, clients can specify powers to allow in the draw,
+# and the server can specify the powers in a draw.
+# Only available at syntax level 10 or above.
+;partial draws allowed = no
+
+# no press during builds (NPB, boolean)
+# Whether press is blocked during build phases.
+;no press during builds = no
+
+# no press during retreats (NPR, boolean)
+# Whether press is blocked during retreat phases.
+;no press during retreats = no
+
+# press time limit (PTL, integer)
+# Time (in seconds) before movement deadlines to start blocking press.
+# If there is not movement time limit, this has no effect;
+# otherwise, if this is greater than or equal to MTL,
+# press is entirely blocked in movement phases.
+;press time limit = 0
 
 
 [server]
@@ -76,7 +112,6 @@
 # default variant (variant, string)
 # The map to use for games not started with the "start <variant> game" command.
 # This should be the variant's DAIDE name as specified in the variants file.
-# (See "variants file", under [syntax].)
 ;default variant = standard
 
 # number of games (games, integer)
@@ -98,108 +133,220 @@
 
 
 [judge]
-# Options for basic judge operation.
+# Options for basic judge operation, including premature endings.
 
-# total years before setting draw (,)
-# static years before setting draw (,)
-# years before variable end (,)
-# David Norman's Variable-Length mix-in rule
+# total years before setting draw (draw, integer)
+# Maximum length of a game, in game years.
+# Games exceeding this length will be declared DIAS draws.
+# Values greater than 8191 might disable this, but could cause other problems.
 ;total years before setting draw = 4000
-;static years before setting draw = 1000
-;years before variable end = 5000
 
-# length of variable end (,)
-;length of variable end = 10
-# variation of variable end (,)
+# static years before setting draw (static, integer)
+# Maximum number of years in which supply center counts do not change.
+# Comparable to the 50-move rule in FIDE chess.
+# After this many game years, the game will be declared a DIAS draw.
+# Note that supply centers changing hands is not enough;
+# at least one power must have a different total supply center count.
+# Setting this higher than "total years before setting draw" will disable it.
+;static years before setting draw = 1000
+
+# years before variable end (var_start, integer)
+# length of variable end (var_length, integer)
+# variation of variable end (variation, floating-point number)
+# Parameters for David Norman's Variable-Length mix-in rule.
+# The winning condition is decreased each year of the variable period.
+# See http://www.diplom.org/Zine/S1998R/Norman/VarLength.html
+# For the conditions specified in the document, use 3, 9, and 1.55
+# To disable variable ends, use 0 for either the length or the variation.
+;years before variable end = 3
+;length of variable end = 0
 ;variation of variable end = 1.55
-# list draw parties in DIAS (,)
+
+# list draw parties in DIAS (full_DRW, boolean)
+# Whether to list the countries participating in a draw even in non-PDA games.
+# Doing so technically violates the syntax, but makes some clients easier.
 ;list draw parties in DIAS = no
-# publish order sets (,)
+
+# publish order sets (send_SET, boolean)
+# Whether to send SET messages, listing orders actually given by each power.
+# This message was rejected by the DAIDE community, after it was implemented.
+# Advantage over ORD messages: It can represent *any* order,
+# even those to non-existent or foreign units.
+# Disadvantage: Doesn't list results, and may be large.
 ;publish order sets = no
-# publish individual orders (,)
+
+# publish individual orders (send_ORD, boolean)
+# Whether to send ORD messages each turn, as required by DAIDE.
+# Can slow down the game, particularly when syntax-checked by each client.
 ;publish individual orders = yes
 
 
 [clients]
 # Options applicable for all PyDip clients.
-# invalid message response (,)
+
+# invalid message response (response, string)
+# How to react when a message fails a syntax check or results in an error.
+# 'close'  or 'die':         Send a final message to the server, and stop
+# 'print'  or 'warn':        Display a warning to the user
+# 'HUH'    or 'complain':    Send an error message to the server
+# 'carp'   or 'croak':       All three of the above
+# 'ignore' or anything else: None of the above
+# The second option will also re-raise the error, if any.
 ;invalid message response = ignore
-# validate incoming messages (,)
-;validate incoming messages = yes
-# confirm order submission (,)
+
+# validate incoming messages (validate, boolean)
+# Whether to validate messages received from the server.
+# Turn this on when testing a server or to protect against garbage;
+# however, doing so will slow down the game, particularly startup.
+;validate incoming messages = no
+
+# confirm order submission (confirm, boolean)
+# Whether to send admin messages reporting that orders have been sent.
+# Useful for testing, but should *not* be on for human games.
 ;confirm order submission = no
 
 
 [network]
-# You may change the host and port, but the rest should be left alone.
-# A blank host indicates to listen on all possible addresses,
-# and connect to localhost.
-# host (,)
+# Settings for the network (DCSP) layer.
+
+# host (host, string)
+# The name or IP address of the server.
+# If blank, the server will listen on all possible addresses,
+# and clients will connect to localhost.
 ;host = 
-# port (,)
+
+# port (port, integer)
+# The port that the server listens on.
 ;port = 16713
-# client-server protocol version (,)
+
+# client-server protocol version (dcsp_version, integer)
+# The version number sent and expected in Initial Messages.
+# This setting is overridden if found in the protocol document.
 ;client-server protocol version = 1
-# magic number (,)
+
+# magic number (magic, integer)
+# The magic number sent and expected in Initial Messages.
+# This setting is overridden if found in the protocol document.
 ;magic number = 0xDA10
-# first error number (,)
+
+# first error number (first_error, integer)
+# The number of the first error in "error codes" as listed below.
+# Should generally be 1 or 0, depending on the protocol.
 ;first error number = 1
-# error codes (,)
+
+# error codes (default_errors, list of strings)
+# Short names for the error codes, separated by commas.
+# Several of these names are used by the code, so they should not be changed.
 ;error codes = Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken
-# timeout for select() without deadline (,)
-;timeout for select() without deadline = 600
-# send unnecessary final messages (,)
+
+# idle timeout for server loop (wait_time, integer)
+# Default time (in seconds) to wait for select() or poll() system calls.
+# Not used when any client or game has a time limit.
+# Higher numbers waste less CPU time, up to a point.
+;idle timeout for server loop = 600
+
+# send unnecessary final messages (echo_final, boolean)
+# Whether to send FM after receiving EM or FM.
+# The extra FM may be useful to terminate input loops,
+# particularly when using threads, but the protocol prohibits it.
 ;send unnecessary final messages = no
 
 
 [dumberbot]
 # Weights and probabilities for David's Dumbbot algorithm.
 # This section can be duplicated for [evilbot] and [combobot], if desired.
-# spring attack (,)
+
+# spring attack (proximity_spring_attack_weight, integer)
+# Importance of attacking centres we don't own, in Spring
 ;spring attack = 7000
-# spring defence (,)
+
+# spring defence (proximity_spring_defence_weight, integer)
+# Importance of defending our own centres in Spring
 ;spring defence = 3000
-# fall attack (,)
+
+# fall attack (proximity_fall_attack_weight, integer)
+# Importance of attacking centres we don't own, in Fall
 ;fall attack = 6000
-# fall defence (,)
+
+# fall defence (proximity_fall_defence_weight, integer)
+# Importance of defending our own centres in Fall
 ;fall defence = 4000
-# spring proximity (,)
+
+# spring proximity (spring_proximity_weight, list of integers)
+# Importance of proximity[n] in Spring
 ;spring proximity = 400, 700, 30, 10, 6, 5, 4, 3, 2, 1
-# spring strength (,)
+
+# spring strength (spring_strength_weight, integer)
+# Importance of our attack strength on a province in Spring
 ;spring strength = 10000
-# spring competition (,)
+
+# spring competition (spring_competition_weight, integer)
+# Importance of lack of competition for the province in Spring
 ;spring competition = 10000
-# fall proximity (,)
+
+# fall proximity (fall_proximity_weight, list of integers)
+# Importance of proximity[n] in Fall
 ;fall proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-# fall strength (,)
+
+# fall strength (fall_strength_weight, integer)
+# Importance of our attack strength on a province in Fall
 ;fall strength = 10000
-# fall competition (,)
+
+# fall competition (fall_competition_weight, integer)
+# Importance of lack of competition for the province in Fall
 ;fall competition = 10000
-# unit attack (,)
+
+# unit attack (base_unit_weight, integer)
+# Importance of attacking opposing units
 ;unit attack = 20
-# home vacation (,)
+
+# home vacation (home_vacation_weight, integer)
+# Importance of vacating unattacked home SCs
 ;home vacation = 0
-# home attack (,)
+
+# home attack (home_attack_weight, integer)
+# Importance of attacking another power's home supply centers
 ;home attack = 3
-# home defence (,)
+
+# home defence (home_defence_weight, integer)
+# Importance of defending or regaining our own home supply centers
 ;home defence = 4
-# build defence (,)
+
+# build defence (build_defence_weight, integer)
+# Importance of building in provinces we need to defend
 ;build defence = 10000
-# build proximity (,)
+
+# build proximity (build_proximity_weight, list of integers)
+# Importance of proximity[n] when building
 ;build proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-# remove defence (,)
+
+# remove defence (remove_defence_weight, integer)
+# Importance of removing in provinces we don't need to defend
 ;remove defence = 10000
-# remove proximity (,)
+
+# remove proximity (remove_proximity_weight, list of integers)
+# Importance of proximity[n] when removing
 ;remove proximity = 1000, 100, 30, 10, 6, 5, 4, 3, 2, 1
-# play alternative (,)
+
+# play alternative (play_alternative, integer)
+# Percentage change of not automatically playing the best move
 ;play alternative = 75
-# alternative modifier (,)
+
+# alternative modifier (alternative_difference_modifier, integer)
+# If not automatic, chance of playing best move if inferior move is nearly as good.
+# Larger numbers mean less chance.
 ;alternative modifier = 100
-# square coefficient (,)
+
+# square coefficient (size_square_coefficient, integer)
+# A in S = Ax^2 + Bx + C, where x is centre count and S is size of power
 ;square coefficient = 2
-# size coefficient (,)
+
+# size coefficient (size_coefficient, integer)
+# B in S = Ax^2 + Bx + C, where x is centre count and S is size of power
 ;size coefficient = -9
-# size constant (,)
+
+# size constant (size_constant, integer)
+# C in S = Ax^2 + Bx + C, where x is centre count and S is size of power
 ;size constant = 16
 
 
@@ -209,75 +356,305 @@
 # Not all options are supported; some cannot be, within DAIDE.
 # Some options use letters not used by the DATC; in general,
 # the syntax disallows the option entirely in these cases.
+
+# 4.A.1.  MULTI-ROUTE CONVOY DISRUPTION
+# a: A convoy is disrupted when any possible route is disrupted.
+# b: A convoy is disrupted when all possible routes are disrupted.
+# DATC: b; DPTG: a; DAIDE: ?
 ;multi-route convoy disruption = b
+
+# 4.A.2.  CONVOY DISRUPTION PARADOXES
+# a: Convoyed armies don't cut support to fleets attacking its convoy fleet.
+# b: Convoyed armies don't cut support to or against any convoying fleet.
+# c: Convoyed armies don't cut support to fleets necessary for the convoy.
+# d: Convoyed armies in a paradoxical situation don't move.
+# e: All moves in a paradoxical situation fail.
+# f: All convoys fail if consistent; otherwise, all moves fail.
+# DATC: d; DPTG: f; DAIDE: ?
 ;convoy disruption paradoxes = d
+
+# 4.A.3.  CONVOYING TO ADJACENT PLACE
+# a: Always choose the convoy route.
+# b: Choose the land route except in head-to-head situations.
+# c: Choose the land route except in head-to-head with undisrupted route.
+# d: Determine the intent from the player's order set.
+# e: Use the land route unless specifically ordered to be convoyed.
+# f: Never convoy unless specifically ordered.
+# DATC: d(c); DPTG: e; DAIDE: f
 ;convoying to adjacent place = f
+
+# 4.A.4.  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY
+# a: Support is not cut.
+# b: Support is cut.
+# DATC: a; DPTG: b; DAIDE: ?
 ;support cut on attack on itself via convoy = a
+
+# 4.A.5.  RETREAT WHEN DISLODGED BY CONVOY
+# a: Dislodged units may not retreat to the starting place of any attacker.
+# b: Dislodged units may retreat to the starting place of a convoyed attacker.
+# DATC: b; DPTG: b; DAIDE: ?
 ;retreat when dislodged by convoy = b
+
+# 4.A.6.  CONVOY PATH SPECIFICATION
+# a: Path specifications are ignored.
+# b: Path specifications are allowed, but not required.
+# c: Path specifications are required.
+# DATC: a(b); DPTG: a; DAIDE: c
 ;convoy path specification = b
+
+# 4.A.7.  AVOIDING A HEAD TO HEAD BATTLE TO BOUNCE A UNIT
+# a: Dislodged units never have effect on attacker's space.
+# b: Dislodged units have no effect on attacker's space in head-to-head combat.
+# DATC: b; DPTG: b; DAIDE: ?
 ;avoiding a head to head battle to bounce a unit = b
+
+# 4.B.1.  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN TWO COASTS ARE POSSIBLE
+# a: Such a move fails.
+# b: A move is attempted to a default coast.
+# DATC: a; DPTG: a; DAIDE: a
 ;omitted coast specification in move order when two coasts are possible = a
+
+# 4.B.2.  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE
+# a: A move is attempted to the only possible coast.
+# b: A move is attempted to a default coast.
+# c: The move fails.
+# DATC: a; DPTG: a; DAIDE: c
 ;omitted coast specification in move order when one coast is possible = c
+
+# 4.B.3.  MOVE ORDER TO IMPOSSIBLE COAST
+# a: A move is attempted to the only possible coast.
+# b: The move fails.
+# DATC: b; DPTG: ?; DAIDE: b
 ;move order to impossible coast = b
+
+# 4.B.4.  COAST SPECIFICATION IN SUPPORT ORDER
+# a: Missing coast in a support order fails.
+# b: Missing coast in a support order goes to a default coast.
+# c: Missing coast in a support order fails unless unambiguous.
+# d: Support to a specific coast is allowed, but not required.
+# e: Support to a specific coast is not allowed.
+# DATC: d; DPTG: e; DAIDE: e
 ;coast specification in support order = d
+
+# 4.B.5.  WRONG COAST OF ORDERED UNIT
+# a: The move fails.
+# b: Coast specification is ignored.
+# DATC: b; DPTG: ?; DAIDE: a
 ;wrong coast of ordered unit = a
+
+# 4.B.6.  UNKNOWN COASTS OR IRRELEVANT COASTS
+# a: The move fails.
+# b: Coast specification is ignored.
+# DATC: b; DPTG: ?; DAIDE: a
 ;unknown coasts or irrelevant coasts = a
+
+# 4.B.7.  COAST SPECIFICATION IN BUILD ORDER
+# a: A fleet build fails if it does not specify a coast when necessary.
+# b: The fleet is built on a default coast.
+# DATC: a; DPTG: ?; DAIDE: a
 ;coast specification in build order = a
+
+# 4.C.1.  MISSING UNIT DESIGNATION
+# a: The order is invalid.
+# b: The order is valid.
+# c: The order is valid unless a correct order exists.
+# DATC: b; DPTG: ?; DAIDE: a
 ;missing unit designation = a
+
+# 4.C.2.  WRONG UNIT DESIGNATION
+# a: The order is invalid.
+# b: The order is valid.
+# c: The order is valid unless a correct order exists.
+# DATC: b; DPTG: ?; DAIDE: a
 ;wrong unit designation = a
+
+# 4.C.3.  MISSING UNIT DESIGNATION IN BUILD ORDER
+# a: The build always fails.
+# b: The build fails in coastal areas, but succeeds when unambiguous.
+# c: Armies are built inland, fleets when a specific coast is specified.
+# DATC: c; DPTG: ?; DAIDE: a
 ;missing unit designation in build order = a
+
+# 4.C.4.  BUILDING A FLEET IN A LAND AREA
+# a: The build always fails.
+# b: An army us built instead.
+# DATC: a; DPTG: ?; DAIDE: a
 ;building a fleet in a land area = a
+
+# 4.C.5.  MISSING NATIONALITY IN SUPPORT ORDER
+# a: The order is invalid.
+# b: The order is valid.
+# c: The order is valid unless another order uses the correct nationality.
+# DATC: b; DPTG: ?; DAIDE: a
 ;missing nationality in support order = a
+
+# 4.C.6.  WRONG NATIONALITY IN SUPPORT ORDER
+# a: The order is invalid.
+# b: The order is valid.
+# c: The order is valid unless another order uses the correct nationality.
+# DATC: b; DPTG: ?; DAIDE: a
 ;wrong nationality in support order = a
+
+# 4.D.1.  MULTIPLE ORDER SETS WITH DEFINED ORDER
+# a: All order sets are combined to one set of orders.
+# b: All order sets are combined, unless latest clearly replaces all earlier.
+# c: Only the latest order set is considered, unless otherwise specified.
+# d: Only the latest order set is considered.
+# DATC: c; DPTG: ?; DAIDE: b
 ;multiple order sets with defined order = b
+
+# 4.D.2.  MULTIPLE ORDER SETS WITH UNDEFINED ORDER
+# a: All units hold.
+# b: All order sets are combined.
+# DATC: b; DPTG: ?; DAIDE: n/a
 ;multiple order sets with undefined order = b
+
+# 4.D.3.  MULTIPLE ORDERS TO THE SAME UNIT
+# a: The first order in a set is used.
+# b: The last order in a set is used.
+# c: The orders are illegal (the unit holds).
+# DATC: c; DPTG: ?; DAIDE: b
 ;multiple orders to the same unit = b
+
+# 4.D.4.  TOO MANY BUILD ORDERS
+# a: All build orders are invalid.
+# b: The first legal build orders are used.
+# c: The last legal build orders are used.
+# DATC: b; DPTG: ?; DAIDE: b
 ;too many build orders = b
+
+# 4.D.5.  MULTIPLE BUILD ORDERS FOR ONE AREA
+# a: Both build orders fail.
+# b: The first build order is used.
+# c: The last build order is used.
+# DATC: b; DPTG: ?; DAIDE: c
 ;multiple build orders for one area = c
+
+# 4.D.6.  TOO MANY DISBAND ORDERS
+# a: All disbands are handled by civil disorder rules.
+# b: The first legal disband orders are used.
+# c: The last legal disband orders are used.
+# DATC: b; DPTG: ?; DAIDE: b
 ;too many disband orders = b
+
+# 4.D.7.  WAIVING BUILDS
+# a: Waiving builds is allowed.
+# b: Waiving builds is not allowed.
+# DATC: a; DPTG: ?; DAIDE: a
 ;waiving builds = a
+
+# 4.D.8.  REMOVING A UNIT IN CIVIL DISORDER
+# a: Convoys count as one move; no fleet necessary.
+# b: Convoys count as one move, but require fleets of the same nation.
+# c: Convoys count as one move, but require fleets of any nation.
+# d: Armies may move as a fleet.
+# e: Armies may move as a fleet, and fleets may move as an army.
+# f: The oldest unit not at a supply center is removed.
+# DATC: d; DPTG: d; DAIDE: ?
 ;removing a unit in civil disorder = d
+
+# 4.D.9.  RECEIVING HOLD SUPPORT IN CIVIL DISORDER
+# a: Units in civil disorder cannot receive support.
+# b: Units in civil disorder can receive support.
+# DATC: b; DPTG: ?; DAIDE: ?
 ;receiving hold support in civil disorder = b
+
+# 4.E.1.  ILLEGAL ORDERS
+# a: Every order with the right format is legal.
+# b: Legal orders may only use places on the map.
+# c: Only orders that can be valid in a game situation are legal.
+# d: Only orders that can be valid in the current game situation are legal.
+# DATC: d; DPTG: a; DAIDE: d
 ;illegal orders = d
+
+# 4.E.2.  POORLY WRITTEN ORDERS
+# a: No knowledge of Diplomacy must be used to correct orders.
+# b: Each order may be corrected to make it legal.
+# c: Other orders in the set may be considered when correcting an order.
+# d: Orders may be corrected to match other orders within the set.
+# e: Orders may not be corrected.
+# DATC: d; DPTG: ?; DAIDE: e
 ;poorly written orders = e
+
+# 4.E.3.  IMPLICIT ORDERS
+# a: Implicit orders are allowed.
+# b: Implicit orders are not allowed.
+# DATC: b; DPTG: ?; DAIDE: b
 ;implicit orders = b
+
+# 4.E.4.  PERPETUAL ORDERS
+# a: Perpetual orders are allowed.
+# b: Perpetual orders are not allowed.
+# DATC: b; DPTG: ?; DAIDE: b
 ;perpetual orders = b
+
+# 4.E.5.  PROXY ORDERS
+# a: Proxy orders are allowed, with prior notification to the judge.
+# b: Proxy orders are allowed as part of the normal order set.
+# c: Proxy orders are not allowed.
+# DATC: c; DPTG: ?; DAIDE: c
 ;proxy orders = c
+
+# 4.E.6.  FLYING DUTCHMAN
+# a: Allowed, as long as it is a deception.
+# DATC: a; DPTG: ?; DAIDE: ?
 ;flying dutchman = a
 
 
 [tokens]
 # Minor options for dealing with token conversion.
-# squeeze parens (,)
+
+# squeeze parens (squeeze_parens, boolean)
+# Whether to omit the spaces just inside parentheses when printing messages.
 ;squeeze parens = no
-# ignore unknown (,)
+
+# ignore unknown (ignore_unknown, boolean)
+# Whether to allow tokens not represented in the protocol document or RM.
+# If this is false, unknown tokens in a DM will result in an Error Message.
 ;ignore unknown = no
-# double quotes (,)
+
+# double quotes (double_quotes, boolean)
+# Whether to represent quotation marks in strings by doubling or escaping them.
 ;double quotes = yes
-# escape char (,)
+
+# escape char (escape_char, character)
+# The character with which to escape quotation marks, if "double quotes" is no.
 ;escape char = \
-# quot char (,)
+
+# quot char (quot_char, character)
+# The character to use for quoting strings when printing messages.
 ;quot char = "
 
 
 [syntax]
 # Syntax files and special tokens.
-# Do not touch this section unless you understand the code.
-# variants file (,)
+
+# variants file (variant_file, file name)
+# Document listing the available map variants, with their names and files.
 ;variants file = docs/variants.html
-# protocol file (,)
+
+# protocol file (dcsp_file, file name)
+# Document specifying protocol information, including token names and numbers.
 ;protocol file = docs/dcsp.html
-# syntax file (,)
+
+# syntax file (syntax_file, file name)
+# Document specifying syntax rules and level names.
 ;syntax file = docs/dpp_syntax.html
-# move phases (,)
+
+# move phases (move_phases, list of token names)
+# retreat phases (retreat_phases, list of token names)
+# build phases (build_phases, list of token names)
+# Lists of tokens associated with each phase.
+# It would be nice if their token numbers had this information,
+# like the order tokens do.
 ;move phases = SPR, FAL
-# retreat phases (,)
 ;retreat phases = SUM, AUT
-# build phases (,)
 ;build phases = WIN
-# move order mask (,)
+
+# move order mask (move_phase, integer)
+# retreat order mask (retreat_phase, integer)
+# build order mask (build_phase, integer)
+# Bits that indicate phase information in order token numbers.
 ;move order mask = 0x20
-# retreat order mask (,)
 ;retreat order mask = 0x40
-# build order mask (,)
 ;build order mask = 0x80

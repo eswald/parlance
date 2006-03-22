@@ -23,7 +23,7 @@ class network_options(config.option_class):
         self.port         = self.getint('port', 16713)
         self.dcsp_version = self.getint('client-server protocol version', 1)
         self.magic        = self.getint('magic number', 0xDA10)
-        self.wait_time    = self.getint('timeout for select() without deadline', 600)
+        self.wait_time    = self.getint('idle timeout for server loop', 600)
         
         error_number = self.getint('first error number', 1)
         default_errors = 'Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken'

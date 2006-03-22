@@ -81,7 +81,7 @@ class judge_options(config.option_class):
         self.draw       = self.getint('total years before setting draw',  4000)
         self.static     = self.getint('static years before setting draw', 1000)
         self.var_start  = self.getint('years before variable end',        5000)
-        self.var_stop   = self.getint('length of variable end',           10)
+        self.var_length = self.getint('length of variable end',           0)
         self.variation  = self.getfloat('variation of variable end',      1.55)
         self.full_DRW   = self.getboolean('list draw parties in DIAS',    False)
         self.send_SET   = self.getboolean('publish order sets',           False)
@@ -101,7 +101,7 @@ class Standard_Judge(Judge):
         # Game-end conditions
         year = self.map.current_turn.year
         self.var_start  = year + options.var_start
-        self.var_stop   = self.var_start + options.var_stop
+        self.var_stop   = self.var_start + options.var_length
         self.variation  = options.variation
         self.draw_year  = year + options.draw - 1
         self.max_static = options.static

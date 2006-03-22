@@ -51,7 +51,7 @@ class DumbBot_Values(config.option_class):
         self.proximity_fall_defence_weight = self.getint('fall defence', 4000)
         
         # Importance of proximity[n] in Spring
-        self.spring_proximity_weight = self.getint('spring proximity',
+        self.spring_proximity_weight = self.getintlist('spring proximity',
                 [400, 700, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of our attack strength on a province in Spring
@@ -61,7 +61,7 @@ class DumbBot_Values(config.option_class):
         self.spring_competition_weight = self.getint('spring competition', 10000)
         
         # Importance of proximity[n] in Fall
-        self.fall_proximity_weight = self.getint('fall proximity',
+        self.fall_proximity_weight = self.getintlist('fall proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of our attack strength on a province in Fall
@@ -86,14 +86,14 @@ class DumbBot_Values(config.option_class):
         self.build_defence_weight = self.getint('build defence', 10000)
         
         # Importance of proximity[n] when building
-        self.build_proximity_weight = self.getint('build proximity',
+        self.build_proximity_weight = self.getintlist('build proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of removing in provinces we don't need to defend
         self.remove_defence_weight = self.getint('remove defence', 10000)
         
         # Importance of proximity[n] when removing
-        self.remove_proximity_weight = self.getint('remove proximity',
+        self.remove_proximity_weight = self.getintlist('remove proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Percentage change of not automatically playing the best move
@@ -104,7 +104,7 @@ class DumbBot_Values(config.option_class):
         # Larger numbers mean less chance.
         self.alternative_difference_modifier = self.getint('alternative modifier', 100)
         
-        # Formula for power size. These are A,B,C in self.S = Ax^2 + Bx + C
+        # Formula for power size. These are A,B,C in S = Ax^2 + Bx + C
         # where x is centre count and S is size of power
         self.size_square_coefficient = self.getint('square coefficient', 2)
         self.size_coefficient = self.getint('size coefficient', -9)

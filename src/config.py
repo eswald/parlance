@@ -82,8 +82,8 @@ class token_options(option_class):
         self.squeeze_parens = self.getboolean('squeeze parens', False)
         self.ignore_unknown = self.getboolean('ignore unknown', False)
         self.double_quotes  = self.getboolean('double quotes',  True)
-        self.escape_char    = self.getstring('escape char',    '\\')
-        self.quot_char      = self.getstring('quot char',      '"')
+        self.escape_char    = self.getstring('escape char',    '\\')[0]
+        self.quot_char      = self.getstring('quot char',      '"')[0]
         
         # Calculated constants needed by the language module
         self.max_token   = (max([cat for cat in token_cats.keys()
@@ -124,7 +124,7 @@ class game_options(option_class):
                 else: raise ValueError, 'invalid HLO message'
         else:
             # Initialize from configuration files
-            self.LVL = self.getint('syntax Level',                    8000)
+            self.LVL = self.getint('syntax Level',                    0)
             self.BTL = self.getint('Build Time Limit',                0)
             self.RTL = self.getint('Retreat Time Limit',              0)
             self.MTL = self.getint('Move Time Limit',                 0)

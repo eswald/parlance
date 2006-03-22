@@ -165,7 +165,7 @@ class ServerTestCase(unittest.TestCase):
             'accept admin commands' : True,
             'forward admin messages' : True,
             'host' : '',
-            'timeout for select() without deadline' : 5,
+            'idle timeout for server loop' : 5,
             'publish order sets': False,
             'publish individual orders': False,
             'total years before setting draw': 3,
