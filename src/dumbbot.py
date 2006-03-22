@@ -111,7 +111,7 @@ class DumbBot_Values(config.option_class):
         self.size_constant = self.getint('size constant', 16)
     
     def getintlist(self, option, default):
-        strings = self.getlist(option, default)
+        strings = self.getlist(option, '') or default
         try: result = map(int, strings)
         except ValueError: result = default
         return result
