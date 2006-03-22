@@ -67,7 +67,6 @@ class token_options(option_class):
     ''' Options for token and message handling.
         - squeeze_parens   Whether to print spaces on the inside of parentheses
         - ignore_unknown   Whether to send error messages on receipt of unknown tokens in Diplomacy Messages
-        - double_quotes    Whether to use doubled or escaped quotation marks to note quotation marks in text
         - escape_char      The character that indicates an escaped quotation mark
         - quot_char        The character in which to wrap text in Messages
         - max_token        The largest number legal for a token
@@ -79,11 +78,10 @@ class token_options(option_class):
     section = 'tokens'
     def __init__(self):
         # Load values from the configuration files
-        self.squeeze_parens = self.getboolean('squeeze parens', False)
-        self.ignore_unknown = self.getboolean('ignore unknown', False)
-        self.double_quotes  = self.getboolean('double quotes',  True)
-        self.escape_char    = self.getstring('escape char',    '\\')[0]
-        self.quot_char      = self.getstring('quot char',      '"')[0]
+        self.squeeze_parens = self.getboolean('squeeze parentheses', False)
+        self.ignore_unknown = self.getboolean('ignore unknown tokens', False)
+        self.escape_char    = self.getstring('escape chararacter', '\\')[0]
+        self.quot_char      = self.getstring('quotation mark', '"')[0]
         
         # Calculated constants needed by the language module
         self.max_token   = (max([cat for cat in token_cats.keys()

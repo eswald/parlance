@@ -102,7 +102,6 @@ class Standard_Judge(Judge):
         year = self.map.current_turn.year
         self.var_start  = year + options.var_start
         self.var_stop   = self.var_start + options.var_length
-        self.variation  = options.variation
         self.draw_year  = year + options.draw - 1
         self.max_static = options.static
         
@@ -320,7 +319,7 @@ class Standard_Judge(Judge):
         if year >= self.draw_year or self.static >= self.max_static:
             return DRW()
         elif self.var_start <= year < self.var_stop:
-            self.win_condition -= self.variation
+            self.win_condition -= self.options.variation
         return None
     
     def build_algorithm(self):

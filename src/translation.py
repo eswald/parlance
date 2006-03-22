@@ -26,9 +26,9 @@ def translate(text, rep=None):
         # Note that the backslashes are halved twice,
         # so the Message really only has one in each place.
         >>> s = 'NME("name\\\\""KET""BRA"KET""BRA" \\\\")'
-        >>> Token.opts.double_quotes = True;  str(translate(s))
+        >>> Token.opts.escape_char = '"';  str(translate(s))
         'NME ( "name\\\\""KET""BRA" ) ( " \\\\" )'
-        >>> Token.opts.double_quotes = False; str(translate(s))
+        >>> Token.opts.escape_char = '\\\\'; str(translate(s))
         'NME ( "name\\\\"" ) ( "KETBRA\\\\"" )'
     '''#'''
     return Representation(rep).translate(text)
@@ -62,14 +62,14 @@ class Representation(Verbose_Object):
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
             >>> s = 'NME("name\\\\""KET""BRA"KET""BRA" \\\\")'
-            >>> rep.opts.double_quotes = True
+            >>> rep.opts.escape_char = '"'
             >>> str(rep.translate(s))
             'NME ( "name\\\\""KET""BRA" ) ( " \\\\" )'
-            >>> rep.opts.double_quotes = False
+            >>> rep.opts.escape_char = '\\\\'
             >>> str(rep.translate(s))
             'NME ( "name\\\\"" ) ( "KETBRA\\\\"" )'
         '''#'''
-        if self.opts.double_quotes:
+        if self.opts.escape_char == self.opts.quot_char:
             return self.translate_doubled_quotes(text)
         else: return self.translate_backslashed(text)
     
@@ -79,6 +79,7 @@ class Representation(Verbose_Object):
             
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
+            >>> rep.opts.escape_char = '"'
             >>> rep.translate_doubled_quotes('NOT ( GOF KET')
             Message([NOT, [GOF]])
             >>> str(rep.translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n'))
@@ -126,6 +127,7 @@ class Representation(Verbose_Object):
             
             >>> from config import default_rep
             >>> rep = Representation(default_rep)
+            >>> rep.opts.escape_char = '"'
             >>> rep.translate_backslashed('NOT ( GOF KET')
             Message([NOT, [GOF]])
             >>> str(rep.translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n'))

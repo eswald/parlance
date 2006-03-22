@@ -41,7 +41,8 @@ def _test():
     for mod in modules:
         print 'Testing', mod.__name__
         language.Token.opts.squeeze_parens = False
-        language.Token.opts.double_quotes = True
+        language.Token.opts.escape_char = '"'
+        language.Token.opts.quot_char = '"'
         globs = mod.__dict__
         globs.update(extension)
         doctest.testmod(mod, verbose=verbose, report=0, globs=globs)

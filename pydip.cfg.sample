@@ -1,4 +1,4 @@
-# Configuration file for PyDip, the Python Diplomacy program
+# Example configuration file for PyDip, the Python Diplomacy program
 # 
 # Settings in $HOME/.pydiprc will override those in pydip.cfg of the
 # current working directory.
@@ -333,7 +333,7 @@
 ;play alternative = 75
 
 # alternative modifier (alternative_difference_modifier, integer)
-# If not automatic, chance of playing best move if inferior move is nearly as good.
+# If not automatic, chance of playing best move if next best is nearly as good.
 # Larger numbers mean less chance.
 ;alternative modifier = 100
 
@@ -604,30 +604,29 @@
 [tokens]
 # Minor options for dealing with token conversion.
 
-# squeeze parens (squeeze_parens, boolean)
+# squeeze parentheses (squeeze_parens, boolean)
 # Whether to omit the spaces just inside parentheses when printing messages.
-;squeeze parens = no
+;squeeze parentheses = no
 
-# ignore unknown (ignore_unknown, boolean)
+# ignore unknown tokens (ignore_unknown, boolean)
 # Whether to allow tokens not represented in the protocol document or RM.
 # If this is false, unknown tokens in a DM will result in an Error Message.
-;ignore unknown = no
+;ignore unknown tokens = no
 
-# double quotes (double_quotes, boolean)
-# Whether to represent quotation marks in strings by doubling or escaping them.
-;double quotes = yes
+# escape character (escape_char, character)
+# The character with which to escape quotation marks.
+# This can be the same as the quotation mark character itself.
+;escape character = \
 
-# escape char (escape_char, character)
-# The character with which to escape quotation marks, if "double quotes" is no.
-;escape char = \
-
-# quot char (quot_char, character)
+# quotation mark (quot_char, character)
 # The character to use for quoting strings when printing messages.
-;quot char = "
+;quotation mark = "
 
 
 [syntax]
 # Syntax files and special tokens.
+# Note: File names are relative to the current working directory,
+#       *not* the directory of this file.
 
 # variants file (variant_file, file name)
 # Document listing the available map variants, with their names and files.
