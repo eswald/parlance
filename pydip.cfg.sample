@@ -82,6 +82,13 @@
 # and prevents problems with an undetected nonresponsive client.
 ;allow takeovers = no
 
+# show replaced powers in summary (replaced, boolean)
+# Whether SMR messages should list players that have been replaced.
+# If true, the original player will be listed first,
+# with the year of replacement and their center count at that time,
+# but only if the new player reports a different name and/or version.
+;show replaced powers in summary = no
+
 # send admin messages (snd_admin, boolean)
 # Whether the server should broadcast admin messages.
 # This includes server-generated and forwarded messages,

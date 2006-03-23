@@ -47,6 +47,7 @@ class server_options(config.option_class):
     section = 'server'
     def __init__(self):
         self.takeovers = self.getboolean('allow takeovers',        False)
+        self.replaced  = self.getboolean('show replaced powers in summary', False)
         self.snd_admin = self.getboolean('send admin messages',    False)
         self.admin_cmd = self.getboolean('accept admin commands',  False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
@@ -351,8 +352,6 @@ class Game(Verbose_Object):
             self.robotic  = False
             self.assigned = False
             self.passcode = randint(100, Token.opts.max_pos_int - 1)
-            self.replaced = []
-            self.original = ''
         def new_client(self, client, assigned=False):
             self.client   = client
             self.ready    = False
@@ -409,7 +408,6 @@ class Game(Verbose_Object):
         
         self.judge          = variant.new_judge()
         self.options        = game = self.judge.game_opts
-        self.held_press     = []
         self.press_allowed  = False
         self.started        = False
         self.closed         = False
@@ -443,6 +441,7 @@ class Game(Verbose_Object):
         self.clients        = []
         self.players        = {}
         self.limbo          = {}
+        self.summary        = []
         powers = self.judge.players()
         if server.options.shuffle: shuffle(powers)
         else: powers.sort()
@@ -674,17 +673,14 @@ class Game(Verbose_Object):
         client.send(HLO(country, passcode, variant))
     def summarize(self):
         ''' Sends the end-of-game SMR message.'''
-        players = []
+        players = self.summary
         for country, player in self.players.iteritems():
-            if player.replaced:
-                # Nasty abuse of the name and version fields,
-                # but the syntax wasn't designed to handle replacements.
-                name = player.original
-                version = 'replaced in ' + expand_list(player.replaced)
-            else:
-                name = player.name or '""'
-                version = player.version or ' '
-            stats = [country, [name], [version], self.judge.score(country)]
+            stats = [
+                country,
+                [player.name or '""'],
+                [player.version or ' '],
+                self.judge.score(country)
+            ]
             elim = self.judge.eliminated(country)
             if elim: stats.append(elim)
             players.append(stats)
@@ -816,6 +812,10 @@ class Game(Verbose_Object):
             # and block signups after starting a game
             client.reject(message)
             self.reveal_passcodes(client)
+            if not client.name:
+                msg = message.fold()
+                client.name = msg[1][0]
+                client.version = msg[2][0]
         else:
             for country in self.p_order:
                 # Take the first open slot
@@ -884,14 +884,22 @@ class Game(Verbose_Object):
                 if client not in self.clients: self.clients.append(client)
                 if client.country: self.open_position(client.country)
                 client.country = country
-                old_name = slot.full_name()
-                if not slot.original: slot.original = old_name
+                if (client.name and self.server.options.replaced and
+                        (slot.name, slot.version) !=
+                        (client.name, client.version)):
+                    # Slight abuse of the syntax:
+                    # Replaced players are reported, with the year of
+                    # replacement and their center count at that time.
+                    # This means the country will be reported multiple times.
+                    self.summary.append([
+                        country,
+                        [slot.name or '""'],
+                        [slot.version or ' '],
+                        self.judge.score(country),
+                        self.judge.turn().year
+                    ])
                 slot.new_client(client)
                 slot.ready = True
-                now = str(self.judge.turn())
-                new_name = slot.full_name()
-                if old_name != new_name: now += ' by ' + new_name
-                slot.replaced.append(now)
                 client.accept(message)
                 if old_client: old_client.boot()
                 

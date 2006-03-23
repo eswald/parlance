@@ -83,24 +83,28 @@ class Network_Basics(NetworkTestCase):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             def __init__(self, send_method, representation, power, passcode):
-                from language import IAM
+                from language import NME
                 self.log_debug(9, 'Fake player started')
                 self.restarted = False
                 self.closed = False
                 self.send = send_method
                 self.rep = representation
                 self.power = power
-                send_method(IAM(power, passcode))
+                self.passcode = passcode
+                send_method(NME(power.text, str(passcode)))
             def close(self):
                 self.log_debug(9, 'Closed')
                 self.closed = True
             def handle_message(self, message):
-                from language import YES, IAM, ADM
+                from language import YES, REJ, NME, IAM, ADM
                 self.log_debug(5, '<< %s', message)
                 if message[0] is YES and message[2] is IAM:
                     self.send(ADM(self.power.text, 'Takeover successful'))
                     sleep(self.sleep_time)
                     self.close()
+                elif message[0] is REJ and message[2] is NME:
+                    self.send(IAM(self.power, self.passcode))
+                elif message[0] is ADM: pass
                 else: raise AssertionError, 'Unexpected message: ' + str(message)
         class Fake_Restarter(self.Disconnector):
             ''' A false player, who starts Fake_Takeover after receiving HLO.'''
