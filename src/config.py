@@ -12,7 +12,8 @@ import ConfigParser
 from functions import Verbose_Object
 
 # Main program version; used for bot versions
-__version__ = '1.0'
+repository = '$URL$'
+__version__ = repository.split('/')[-3]
 
 # Various option classes.
 class option_class(object):
