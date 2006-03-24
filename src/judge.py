@@ -207,11 +207,16 @@ class Standard_Judge(Judge):
         else:
             self.log_debug(11, 'List of winners not allowed in non-PDA game')
             return None
-    def eliminated(self, country):
+    def eliminated(self, country=None):
         ''' Returns the year the power was eliminated,
             or False if it is still in the game.
+            Without a country, returns a list of eliminated countries.
         '''#'''
-        return self.map.powers[country].eliminated
+        if country:
+            return self.map.powers[country].eliminated
+        else:
+            return [country for country,power in self.map.powers.iteritems()
+                    if power.eliminated]
     
     # Turn processing
     def start(self):

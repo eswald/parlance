@@ -712,20 +712,33 @@ class Game(Verbose_Object):
         ''' Sends the press message to the recipients,
             subject to various caveats listed in the syntax document.
         '''#'''
+        from validation import trimmed
+        
         country = client.country
-        if country and self.press_allowed and not self.judge.eliminated(country):
+        eliminated = self.judge.eliminated()
+        if country and self.press_allowed and country not in eliminated:
             folded = message.fold()
             recips = folded[2]
             for nation in recips:
                 if not self.players[nation].client:
                     client.send(CCD(nation))
                     break
-                elif self.judge.eliminated(nation):
+                elif nation in eliminated:
                     client.send(OUT(nation))
                     break
             else:
                 msg_id = (country, folded[1][0])
-                press  = folded[3:]
+                press = Message(folded[3:])
+                # Send OUT if any power in press is eliminated
+                for nation in eliminated:
+                    if nation in press:
+                        client.send(OUT(nation))
+                        return
+                # Trim high-level tokens from TRY messages
+                for token,level in trimmed.items():
+                    if level > self.options.LVL:
+                        while token in press:
+                            press.remove(token)
                 outgoing = FRM(msg_id, recips)
                 outgoing.extend(press)
                 for nation in recips:
@@ -1168,8 +1181,9 @@ class Judge(Verbose_Object):
     def player_name(self, country): return self.map.powers[country].name
     def score(self, player): return len(self.map.powers[player].centers)
     def turn(self): return self.map.current_turn
-    def eliminated(self, country):
+    def eliminated(self, country=None):
         ''' Returns the year the power was eliminated,
             or False if it is still in the game.
+            Without a country, returns a list of eliminated countries.
         '''#'''
         raise NotImplementedError

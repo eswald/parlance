@@ -3,9 +3,10 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-__all__ = ['validate_expression', 'parse_syntax_file']
+__all__ = ['validate_expression', 'parse_syntax_file', 'trimmed']
 
 syntax = {'string': [(0, ['repeat', 'cat', 'Text'])]}
+trimmed = {}
 
 def parse_syntax_file(lines):
     ''' Parses lines from the DAIDE Message Syntax file.
@@ -83,6 +84,7 @@ def parse_syntax_file(lines):
         rule = (level, sum([correct(word) for word in words], []))
         rules = syntax.setdefault(name, [])
         if rule not in rules: rules.append(rule)
+        if level < 0: trimmed[rule[1][0]] = -level
     
     for line in lines:
         match = bnf_rule.search(line)

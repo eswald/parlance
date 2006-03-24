@@ -28,7 +28,7 @@ class Map(Verbose_Object):
     
     def __init__(self, options):
         ''' Initializes the map from an instance of config.variant_options.'''
-        self.powers  = []
+        self.powers  = {}
         self.opts    = options
         self.name    = options.map_name
         self.prefix  = options.variant + ' map'

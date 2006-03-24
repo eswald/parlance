@@ -7,7 +7,7 @@ import unittest, config
 from time      import sleep, time
 from functions import absolute_limit, Verbose_Object
 from network   import Connection, Service
-from server    import Server, Client_Manager, Judge
+from server    import Server, Client_Manager
 
 class Fake_Manager(Client_Manager):
     def __init__(self, player_classes):
@@ -284,6 +284,70 @@ class Server_Basics(ServerTestCase):
         sleep(player.get_time() + 1)
         self.game.check_flags()
         self.failIf(CCD(player.power) in player.queue)
+
+class Server_Press(ServerTestCase):
+    ''' Press-handling tests'''
+    def setUp(self):
+        from language import FAL, SPR
+        ServerTestCase.setUp(self)
+        self.set_option('close on disconnect', False)
+        self.set_option('randomize power assignments', False)
+        self.connect_server()
+        self.sender = self.connect_player(self.Fake_Player) # Austria
+        self.recipient = self.connect_player(self.Fake_Player) # England
+        self.eliminated = self.connect_player(self.Fake_Player) # France
+        self.disconnected = self.connect_player(self.Fake_Player) # Germany
+        self.start_game()
+        judge_map = self.game.judge.map
+        now = judge_map.create_NOW()
+        for index, token in enumerate(now):
+            if token is self.eliminated.power:
+                now[index] = self.disconnected.power
+            elif token is SPR: now[index] = FAL
+        print now
+        judge_map.handle_NOW(now)
+        self.disconnected.close()
+        self.game.run_judge()
+    def assertPressReply(self, press, response):
+        from language import SND, Token
+        self.sender.queue = []
+        self.recipient.queue = []
+        msg = SND(0, self.recipient.power, press)
+        self.sender.send(msg)
+        if isinstance(response, Token): reply = response(msg)
+        else: reply = response
+        self.assertContains(reply, self.sender.queue)
+    def assertPressSent(self, press):
+        from language import YES
+        self.assertPressReply(press, YES)
+    def assertPressReceived(self, press):
+        from language import FRM
+        msg = FRM([self.sender.power, 0], self.recipient.power, press)
+        self.assertContains(msg, self.recipient.queue)
+    def assertPressNotReceived(self, press):
+        from language import FRM
+        msg = FRM([self.sender.power, 0], self.recipient.power, press)
+        self.failIf(msg in self.recipient.queue,
+                '"%s" accidentally sent.' % press)
+    
+    def test_send_press(self):
+        ''' The server forwards press of the appropriate level.'''
+        from language import PCE, PRP
+        press = PRP(PCE([self.sender.power, self.recipient.power]))
+        self.assertPressSent(press)
+        self.assertPressReceived(press)
+    def test_send_try(self):
+        ''' The server trims high-level tokens from TRY messages.'''
+        from language import IOU, PRP, QRY, TRY
+        self.assertPressSent(TRY([IOU, PRP, QRY]))
+        self.assertPressReceived(TRY(PRP))
+    def test_send_eliminated(self):
+        ''' The server rejects press including eliminated powers.'''
+        from language import ALY, OUT, PRP, VSS
+        out = self.eliminated.power
+        press = PRP([ALY([self.sender.power, self.recipient.power]), VSS(out)])
+        self.assertPressReply(press, OUT(out))
+        self.assertPressNotReceived(press)
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
