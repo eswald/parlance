@@ -55,20 +55,6 @@ more consistent.</p>
 <h3>Common terms</h3>
 
 <!--
-Embedded in this document is a BNF-like formal syntax specification.
-The language elements are found in H4 headers, and in B wrappers at the
-beginning of LI elements.  Each has a "word = message" structure, except
-that it may contain named anchors, it may be prefixed by an option tag
-wrapped in braces, and the operator may instead be "+=" or "-=".
-
-Specifications using the "=" operator are only legal at the given syntax
-level or above.  Those using the "+=" operator are legal at any syntax
-level, but should be removed by the server at lower syntax levels.
-Those using the "-=" operator should be removed at all syntax levels.
-Some specifications use the "!=" operator; they were either legal or
-under consideration at some point, but are not legal now, and should be
-ignored while parsing the document.
-
 <h4>message = server_message</h4>
 <h4>message = client_message</h4>
 <h4>server_message = server_command</h4>
@@ -390,7 +376,7 @@ any options for the game. For example:</p>
 	<li><b>variant_option = DSD</b> &mdash; deadline stops on
 	disconnection. If a player disconnects when it has orders due,
 	the deadline timer stops.</li>
-	<li><b>variant_option = AOA</b> &mdash; any orders accepted. Any
+	<li><b><a name="AOA">variant_option = AOA</a></b> &mdash; any orders accepted. Any
 	orders which match the syntax for an order will be accepted,
 	whether they are legal or not. If not specified, then only
 	orders which could be valid will be accepted.</li>
@@ -926,7 +912,7 @@ dropped to 0 centres.</p>
 also be given at the start of the game:</p>
 
 <ul>
-	<li><b>variant_option = PDA</b> &mdash; Partial draws are
+	<li><b><a name="PDA">variant_option = PDA</a></b> &mdash; Partial draws are
 	allowed (that is, NoDIAS).</li>
 	<li><b>variant_option = NPR</b> &mdash; No press during retreat phases</li>
 	<li><b>variant_option = NPB</b> &mdash; No press during build phases</li>
@@ -1658,9 +1644,9 @@ make it worthwhile.</p>
 <p>The following is a complete alphabetical list of tokens specified in
 the Diplomacy AI Development Environment Syntax.  Token numbers refer to
 Version 1, Revision 13 of the
-<a href="http://www.starblood.org/daide/external/comproto.html">Client-Server Protocol Document</a>,
+<a href="http://www.daide.org.uk/external/comproto.html">Client-Server Protocol Document</a>,
 except for those indicated with an asterisk, which are listed as used by
-<a href="http://www.brainshell.org/">the Brainshell server</a>.  Note
+<a href="http://www.brainshell.org/diplomacy/">the Brainshell server</a>.  Note
 that this table contains a few tokens not used in this document, for
 various reasons.</p>
 
@@ -1892,137 +1878,28 @@ various reasons.</p>
 </table>
 
 
-<h2><a name="appB">Appendix B</a> : Commands which can be Sent by any Client</h2>
+<h2><a name="appB">Appendix B</a> : Language Definition</h2>
 
-<table>
-<tr><td><a href="#ADM">ADM</a></a></td><td>Administration Message</td></tr>
-<tr><td><a href="#HLO">HLO</a></td><td>Game Information Request</td></tr>
-<tr><td><a href="#HST">HST</a></td><td>History</td></tr>
-<tr><td><a href="#IAM">IAM</a></td><td>I am already a player</td></tr>
-<tr><td><a href="#MAP">MAP</a></td><td>Map Name Request</td></tr>
-<tr><td><a href="#MDF">MDF</a></td><td>Map Definition Request</td></tr>
-<tr><td><a href="#NME">NME</a></td><td>Name</td></tr>
-<tr><td>NOT</td><td>Logical NOT</td></tr>
-<tr><td><a href="#NOW">NOW</a></td><td>Current Position Request</td></tr>
-<tr><td><a href="#OBS">OBS</a></td><td>Observer</td></tr>
-<tr><td><a href="#ORD">ORD</a></td><td>Last Orders Request</td></tr>
-<tr><td>REJ</td><td>Reject (negative response)</td></tr>
-<tr><td><a href="#SCO">SCO</a></td><td>Supply Centre Ownership</td></tr>
-<tr><td><a href="#TME">TME</a></td><td>Time to Deadline</td></tr>
-<tr><td>YES</td><td>Yes (positive response)</td></tr>
-</table>
+<p>Embedded in this document, including its comments, is a BNF-like
+formal syntax specification.  The language elements are found in H4
+headers, and in B wrappers at the beginning of LI elements.  Each has a
+"word = message" structure, except that it may contain named anchors, it
+may be prefixed by an option tag wrapped in {braces}, and the operator
+may instead be "+=" or "-=".</p>
 
+<p>Specifications using the "=" operator are only legal at the given
+syntax level or above.  Those using the "+=" operator are legal at any
+syntax level, but should be removed by the server at lower syntax
+levels.  Those using the "-=" operator should be removed at all syntax
+levels.  Some specifications use the "!=" operator; they were either
+legal or under consideration at some point, but are not legal now, and
+should be ignored while parsing the document.</p>
 
-<h2><a name="appC">Appendix C</a> : Additional Commands which can be Sent by a Player</h2>
+<p>Specifications with an option tag are only legal when the given
+option is in effect.  Currently, this only includes
+<a href="#PDA"><b>PDA</b></a> (partial draws allowed) and
+<a href="#AOA"><b>AOA</b></a> (any orders allowed).</p>
 
-<table>
-<tr><td><a href="#DRW">DRW</a></td><td>Request Draw</td></tr>
-<tr><td><a href="#GOF">GOF</a></td><td>Go Flag</td></tr>
-<tr><td><a href="#MIS">MIS</a></td><td>Missing Orders Request</td></tr>
-<tr><td><a href="#SND">SND</a></td><td>Send Press Message</td></tr>
-<tr><td><a href="#SUB">SUB</a></td><td>Submit Order</td></tr>
-</table>
-
-
-<h2><a name="appD">Appendix D</a> : Commands which can be Sent to a Client</h2>
-
-<table>
-<tr><td><a href="#ADM">ADM</td><td>Administration Message</td></tr>
-<tr><td><a href="#CCD">CCD</a></td><td>Power in Civil Disorder</td></tr>
-<tr><td><a href="#DRW">DRW</a></td><td>Draw</td></tr>
-<tr><td><a href="#FRM">FRM</a></td><td>Message From</td></tr>
-<tr><td><a href="#HLO">HLO</a></td><td>Hello (Start of Game)</td></tr>
-<tr><td><a href="#HUH">HUH</a></td><td>Syntax Error / Not Understood</td></tr>
-<tr><td><a href="#LOD">LOD</a></td><td>Load Game</td></tr>
-<tr><td><a href="#MAP">MAP</a></td><td>Map to be used for this game</td></tr>
-<tr><td><a href="#MDF">MDF</a></td><td>Map Definition</td></tr>
-<tr><td><a href="#MIS">MIS</a></td><td>Missing Orders</td></tr>
-<tr><td>NOT</td><td>Logical NOT</td></tr>
-<tr><td><a href="#NOW">NOW</a></td><td>Current Position</td></tr>
-<tr><td><a href="#OFF">OFF</a></td><td>Turn Off (Exit)</td></tr>
-<tr><td><a href="#ORD">ORD</a></td><td>Order Results</td></tr>
-<tr><td><a href="#OUT">OUT</a></td><td>Power has been Eliminated</td></tr>
-<tr><td><a href="#PRN">PRN</a></td><td>Parenthesis error</td></tr>
-<tr><td>REJ</td><td>Reject</td></tr>
-<tr><td><a href="#SCO">SCO</a></td><td>Supply Centre Ownership</td></tr>
-<tr><td><a href="#SLO">SLO</a></td><td>Solo</td></tr>
-<tr><td><a href="#SVE">SVE</a></td><td>Save Game</td></tr>
-<tr><td><a href="#THX">THX</a></td><td>Thanks for the order</td></tr>
-<tr><td><a href="#TME">TME</a></td><td>Time to Deadline</td></tr>
-<tr><td>YES</td><td>Accept</td></tr>
-</table>
-
-
-<h2><a name="appE">Appendix E</a> : Tokens which can Start a New Press Message</h2>
-
-<table>
-<tr><td><a href="#EXP">EXP</a></td><td>Explain</td></tr>
-<tr><td><a href="#FCT">FCT</a></td><td>Fact</td></tr>
-<tr><td><a href="#FRM_press">FRM</a></td><td>From another power</td></tr>
-<tr><td><a href="#HOW">HOW</a></td><td>How to attack</td></tr>
-<tr><td><a href="#IFF">IFF</a></td><td>If</td></tr>
-<tr><td><a href="#INS">INS</a></td><td>Insist</td></tr>
-<tr><td><a href="#PRP">PRP</a></td><td>Propose</td></tr>
-<tr><td><a href="#QRY">QRY</a></td><td>Query</td></tr>
-<tr><td><a href="#SUG">SUG</a></td><td>Suggest</td></tr>
-<tr><td><a href="#THK">THK</a></td><td>Think</td></tr>
-<tr><td><a href="#TRY">TRY</a></td><td>Try the following tokens</td></tr>
-<tr><td><a href="#WHT">WHT</a></td><td>What to do with</td></tr>
-</table>
-
-
-<h2><a name="appF">Appendix F</a> : Additional Tokens which can Start a Press Reply</h2>
-
-<table>
-<tr><td><a href="#BWX">BWX</a></td><td>None of Your Business</td></tr>
-<tr><td><a href="#HUH_press">HUH</a></td><td>Syntax Error / Not Understood</td></tr>
-<tr><td><a href="#IDK">IDK</a></td><td>I Don't Know</td></tr>
-<tr><td><a href="#POB">POB</a></td><td>Position of the Board</td></tr>
-<tr><td><a href="#REJ_press">REJ</a></td><td>Reject</td></tr>
-<tr><td><a href="#SRY">SRY</a></td><td>Sorry</td></tr>
-<tr><td><a href="#WHY">WHY</a></td><td>Why</td></tr>
-<tr><td><a href="#YES_press">YES</a></td><td>Accept</td></tr>
-</table>
-
-
-<h2><a name="appG">Appendix G</a> : Tokens which can Start a Press Offer</h2>
-
-<table>
-<tr><td><a href="#ALY">ALY</a></td><td>Ally</td></tr>
-<tr><td><a href="#AND">AND</a></td><td>Logical AND</td></tr>
-<tr><td><a href="#BCC">BCC</a></td><td>Blind Carbon Copy</td></tr>
-<tr><td><a href="#CHO">CHO</a></td><td>Choose</td><td>
-<tr><td><a href="#DMZ">DMZ</a></td><td>Demiliterised Zone</td></tr>
-<tr><td><a href="#DRW_press">DRW</a></td><td>Draw</td></tr>
-<tr><td><a href="#FOR">FOR</a></td><td>For specified Turn</td></tr>
-<tr><td><a href="#FWD">FWD</a></td><td>Forward Press</td><td>
-<!-- Removed: tr><td><a href="#IOU">IOU</a></td><td>I Owe You</td></tr -->
-<tr><td><a href="#NOT_press">NOT</a></td><td>Logical NOT</td></tr>
-<tr><td><a href="#OCC">OCC</a></td><td>Occupy</td></tr>
-<tr><td><a href="#ORR">ORR</a></td><td>Logical OR</td></tr>
-<tr><td><a href="#PCE">PCE</a></td><td>Peace</td></tr>
-<!-- tr><td><a href="#PPT">PPT</a></td><td>Puppet</td><td -->
-<tr><td><a href="#SCD">SCD</a></td><td>Supply Centre Distribution</td></tr>
-<tr><td><a href="#SLO_press">SLO</a></td><td>Solo</td></tr>
-<tr><td><a href="#SND_press">SND</a></td><td>Send Message to another Power</td></tr>
-<!-- Removed: tr><td><a href="#UOM">UOM</a></td><td>You Owe Me</td></tr -->
-<tr><td><a href="#XDO">XDO</a></td><td>Moves to do</td></tr>
-<tr><td><a href="#XOY">XOY</a></td><td>X owes Y</td></tr>
-<tr><td><a href="#YDO">YDO</a></td><td>You provide the order for these units</td></tr>
-</table>
-
-
-<!-- Just for completeness...
-<h2><a name="appH">Appendix H</a> : DAIDE Websites</h2>
-
-<ul>
-<li><a href="http://www.starblood.org/daide/">Diplomacy AI Centre</a></li>
-<li><a href="http://www.ellought.demon.co.uk/dipai/">David's Diplomacy AI Page</a></li>
-<li><a href="http://www.spencersoft.com/diplomacy/daide/">Greg's DAIDE Tournament Director Page</a></li>
-<li><a href="http://groups.yahoo.com/group/dipai/">Yahoo! [dipai] group</a></li>
-<li><a href="http://www.brainshell.org/diplomacy/">Eric's Diplomacy Page</a></li>
-</ul>
--->
 
 <!-- vim: set tw=72 noet ts=8 sw=8 sts=0 noai inde= indk= fo=q : -->
 </BODY>
