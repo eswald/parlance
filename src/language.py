@@ -11,6 +11,8 @@
         - Token: One unit of a message, containing both its name and number.
 '''#'''
 
+from functions import Verbose_Object
+
 class Message(list):
     ''' Representation of a Diplomacy Message, as a list of Tokens.
         >>> m = Message(NOT, BRA, GOF, KET)
@@ -433,30 +435,30 @@ class Token(_tuple_Token):
             Traceback (most recent call last):
                 ...
             OverflowError: int too large to convert to Token
-            >>> rep={'STH': 0x4101, 0x4101: 'Sth'}
-            >>> Token('STH', rep=rep)
-            Token('STH', 0x4101)
+            >>> from translation import Representation
+            >>> rep=Representation({0x4101: 'Sth'}, None)
+            >>> Token('Sth', rep=rep)
+            Token('Sth', 0x4101)
             >>> Token(0x4101, rep=rep)
             Token('Sth', 0x4101)
         '''#'''
         if number != None:
             return _get_or_create_token(klass, str(name), int(number))
+        elif rep:
+            result = rep.get(name)
+            if result: return result
         elif isinstance(name, (int, float, long)):
             num_type = type(name).__name__
             if isinstance(name, float): name = int(round(name))
-            if rep and rep.has_key(name):
-                return _get_or_create_token(klass, rep[name], name)
-            elif -Token.opts.max_pos_int <= name < 0:
+            if -Token.opts.max_pos_int <= name < 0:
                 return _get_or_create_token(klass, str(name), Token.opts.max_neg_int + name)
             elif name < -Token.opts.max_pos_int or name >= Token.opts.max_token:
                 raise OverflowError, '%s too large to convert to %s' % (num_type, klass.__name__)
             else:
                 return _get_or_create_token(klass, _get_token_text(name), name)
         elif isinstance(name, str):
-            if rep and rep.has_key(name):
-                return _get_or_create_token(klass, name, rep[name])
-            elif rep and rep.has_key(name.upper()):
-                return _get_or_create_token(klass, name.upper(), rep[name.upper()])
+            if rep and rep.has_key(name.upper()):
+                return rep[name.upper()]
             elif _cache.has_key(name): return _cache[name]
             elif len(name) == 1:
                 charnum = ord(name)
@@ -628,8 +630,8 @@ class Token(_tuple_Token):
             return name + '(' + self.text + ')'
         elif self == KET: return 'KET'
         elif self == BRA: return 'BRA'
-        elif _cache.get(self.text) == self:             return self.text
-        elif default_rep.get(self.text) == self.number: return self.text
+        elif _cache.get(self.text) == self:      return self.text
+        elif default_rep.get(self.text) == self: return self.text
         elif len(self.text) == 1 and Token(self.text) == self:
             return name + '(' + repr(self.text) + ')'
         else: return name+'('+repr(self.text)+', '+('0x%04X'%self.number)+')'
@@ -686,6 +688,22 @@ class Token(_tuple_Token):
             return other + joint + self.text
 
 
+class Cache(dict, Verbose_Object):
+    def __getitem__(self, key):
+        result = dict.__getitem__(self, key)
+        if result: self.log('Cached token', key, result)
+        return result
+    def get(self, key, default=None):
+        result = dict.get(self, key)
+        if result: self.log('Cached token', key, result)
+        return result or default
+    def __setitem__(self, key, value):
+        self.log('Adding token', key, value)
+        dict.__setitem__(self, key, value)
+    def log(self, line, key, token):
+        self.log_debug(17, '%s %r => Token(%r, 0x%04X)',
+                line, key, token.text, token.number)
+#_cache = Cache()
 _cache = {}
 def _get_or_create_token(klass, text, number):
     ''' Returns the token requested, using the cached item if possible.
@@ -716,8 +734,6 @@ def _get_token_text(number):
         '-8188'
         >>> _get_token_text(0x4B63)
         'c'
-        >>> _get_token_text(0x481C)
-        'YES'
         >>> Token.opts.ignore_unknown = True;  _get_token_text(0x581C)
         '0x581C'
         >>> Token.opts.ignore_unknown = False; _get_token_text(0x581C)
@@ -725,11 +741,9 @@ def _get_token_text(number):
             ...
         ValueError: unknown token number 0x581C
     '''#'''
-    from config import token_names
     if   number < Token.opts.max_pos_int:             return str(number)
     elif number < Token.opts.max_neg_int:             return str(number - Token.opts.max_neg_int)
     elif (number & 0xFF00) == Token.opts.quot_prefix: return chr(number & 0x00FF)
-    elif token_names.has_key(number):                 return token_names[number]
     elif Token.opts.ignore_unknown:                   return '0x%04X' % number
     else: raise ValueError, 'unknown token number 0x%04X' % number
 

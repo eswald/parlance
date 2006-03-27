@@ -142,7 +142,7 @@ class Map_Bugfix(unittest.TestCase):
         ''' Check for The Pale in Hundred3, which is an island.'''
         options = config.variants['hundred3']
         game_map = Map(options)
-        prov = Token('Pal', rep=options.rep)
+        prov = options.rep['PAL']
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
         coast = game_map.coasts[(AMY, prov, None)]
         self.failUnless(coast.is_valid())

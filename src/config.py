@@ -10,6 +10,7 @@
 import re, os
 import ConfigParser
 from functions import Verbose_Object
+from translation import Representation, read_message_file
 
 # Main program version; used for bot versions
 repository = '$URL$'
@@ -220,7 +221,6 @@ class variant_options(Verbose_Object):
         if filename: return read_representation_file(filename)
         else: return default_rep
     def read_file(self, extension):
-        from translation import read_message_file
         result = self.msg_cache.get(extension)
         if not result:
             filename = self.files.get(extension)
@@ -243,10 +243,10 @@ class variant_options(Verbose_Object):
             fset = lambda self, msg: self.cache_msg('sco', msg))
 
 
+base_rep = None
+default_rep = None
 token_cats    = {}
 error_strings = {}
-default_rep   = {}
-token_names   = {}
 message_types = {}
 order_mask    = {}
 variants      = {}
@@ -286,12 +286,15 @@ def parse_dcsp(proto_file):
         >>> error_strings[5]
         'Version incompatibility'
         >>> default_rep[0x4101]
-        'ENG'
-        >>> token_names[0x481C]
-        'YES'
+        ENG
+        >>> base_rep[0x481C]
+        YES
         >>> message_types['Diplomacy']
         2
     '''#'''
+    global base_rep
+    global default_rep
+    
     try: dcsp_file = open(proto_file, 'rU', 1)
     except IOError: raise IOError, "Could not find protocol file '%s'" % proto_file
     else:
@@ -301,6 +304,8 @@ def parse_dcsp(proto_file):
         last_cat = None
         rep_item = False
         old_line = ''
+        token_names = {}
+        default_tokens = {}
         
         for line in dcsp_file:
             if old_line: line = old_line + ' ' + line.strip()
@@ -353,7 +358,7 @@ def parse_dcsp(proto_file):
                     match = re.match('.*(\w\w\w) (0x\w\w)', line)
                     name = match.group(1).upper()
                     number = last_cat + int(match.group(2), 16)
-                    if rep_item: default_rep[number] = name; default_rep[name] = number
+                    if rep_item: default_tokens[number] = name
                     else:        token_names[number] = name
             elif line.find('M)') > 0:
                 match = re.match('.*The (\w+) Message', line)
@@ -364,6 +369,8 @@ def parse_dcsp(proto_file):
             elif line.find('Magic Number =') > 0:
                 option_class.local_opts['magic'] = int(re.match('.*Number = (0x\w+)', line).group(1), 16)
         dcsp_file.close()
+        base_rep = Representation(token_names, None)
+        default_rep = Representation(default_tokens, base_rep)
     # We may want some sanity checking here.
 
 def read_representation_file(rep_file_name):
@@ -374,15 +381,14 @@ def read_representation_file(rep_file_name):
         
         >>> rep = read_representation_file('variants/sailho.rem')
         >>> rep['NTH']
-        16640
+        Token('NTH', 0x4100)
         
         # This used to be 'Psy'; it was probably changed for consistency.
         >>> rep[0x563B]
-        'PSY'
+        Token('PSY', 0x563B)
         >>> len(rep)
-        128
+        64
     '''#'''
-    from language import _cache
     rep_file = open(rep_file_name, 'rU', 1)
     num_tokens = int(rep_file.readline().strip())
     if num_tokens > 0:
@@ -391,12 +397,11 @@ def read_representation_file(rep_file_name):
             number = int(line[0:4], 16)
             name = line[5:8]
             uname = name.upper()
-            if _cache.has_key(uname):
+            if base_rep.has_key(uname):
                 raise ValueError, 'Conflict with token ' + uname
             rep[number] = uname
-            rep[uname] = number
             num_tokens -= 1
-        if num_tokens == 0: return rep
+        if num_tokens == 0: return Representation(rep, base_rep)
         else: raise ValueError, 'Wrong number of lines in representation file'
     else: return default_rep
 
@@ -448,8 +453,9 @@ def init_language():
     import language
     language.Token.cats = token_cats
     language.Token.opts = token_options()
-    for number, name in token_names.iteritems():
-        token = language.Token(name, number)
+    #print 'Attempting to add tokens to language...'
+    for name, token in base_rep.items():
+        #print 'Adding language.%s' % (name,)
         setattr(language, name, token)
         language._cache[name.upper()] = token
         if   name in opts.move_phases:    order_mask[token] = opts.move_phase
@@ -471,7 +477,7 @@ def extend_globals(globs):
         
         This takes several seconds, so only do it if necessary.
     '''#'''
-    import gameboard, language
+    import gameboard
     opts = variants['standard']
     standard_map = gameboard.Map(opts)
     extension = {
@@ -479,8 +485,7 @@ def extend_globals(globs):
         'standard_sco': opts.start_sco,
         'standard_now': opts.start_now,
     }
-    for key,value in default_rep.iteritems():
-        if isinstance(value, int): extension[key] = language.Token(key, value)
+    for name,token in opts.rep.items(): extension[name] = token
     extension.update(globs)
     return extension
 

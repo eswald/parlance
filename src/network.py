@@ -145,21 +145,22 @@ class Connection(SocketWrapper):
         ''' Creates a representation dictionary from the RM.
             This dictionary maps names to numbers and vice-versa.
         '''#'''
+        from translation import Representation
         if data:
             rep = {}
             while len(data) >= 6:
                 num, name = unpack('!H3sx', data[:6])
-                rep[name] = num
                 rep[num] = name
                 data = data[6:]
-        else: rep = copy(config.default_rep)
-        self.rep = rep
+        else: rep = config.default_rep
+        self.rep = Representation(rep, config.base_rep)
     def unpack_message(self, data):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
             
+            >>> from translation import Representation
             >>> c = Connection()
-            >>> c.rep = {0x4101: 'Sth'}
+            >>> c.rep = Representation({0x4101: 'Sth'}, config.base_rep)
             >>> msg = [HLO.number, BRA.number, 0x4101, KET.number]
             >>> c.unpack_message(pack('!HHHH', *msg))
             Message([HLO, [Token('Sth', 0x4101)]])
@@ -192,9 +193,8 @@ class Connection(SocketWrapper):
             instead of relying on default behavior.
         '''#'''
         data = ''
-        for key, value in self.rep.iteritems():
-            if isinstance(value, int):
-                data += pack('!H3sx', value, key)
+        for name, token in self.rep.items():
+            data += pack('!H3sx', token.number, name)
         self.send_dcsp(self.RM, data)
     def send_dcsp(self, msg_type, data):
         ''' Sends a DCSP message to the client.

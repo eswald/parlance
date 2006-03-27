@@ -74,10 +74,11 @@ class Player(Verbose_Object):
         power = kwargs.get('power')     # The power being played, or None
         pcode = kwargs.get('passcode')  # The passcode from the HLO message
         if power:
-            try: self.power = Token(power, rep=representation)
-            except ValueError:
-                self.log_debug(1, 'Invalid power "%r"', power)
-                self.power = None
+            # Todo: Wait until after SEL returns, for the right RM.
+            self.power = representation.get(power)
+            if not self.power:
+                if isinstance(power, Token): self.power = power
+                else: self.log_debug(1, 'Invalid power %r', power)
             try: self.pcode = int(pcode)
             except ValueError:
                 self.log_debug(1, 'Invalid passcode "%r"', pcode)

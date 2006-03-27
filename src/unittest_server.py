@@ -797,10 +797,10 @@ class Server_Multigame(ServerTestCase):
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP('sailho'), player.queue)
     def test_RM_change(self):
+        old_rep = self.game.variant.rep
         self.new_game('sailho')
         newbie = self.connect_player(self.Fake_Player, game_id=0)
-        self.assertContains('AUS', newbie.rep)
-        self.failUnlessEqual(newbie.rep['AUS'], 0x4100)
+        self.failUnlessEqual(newbie.rep, old_rep)
     
     def test_SEL_reply(self):
         from language import LST, SEL

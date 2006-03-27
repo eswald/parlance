@@ -16,33 +16,68 @@ def read_message_file(filename, rep=None):
         >>> msg.fold()[2]
         [ENG, LVP, EDI, LON]
     '''#'''
-    return Representation(rep).read_message_file(filename)
+    from config import base_rep
+    return (rep or base_rep).read_message_file(filename)
 
 def translate(text, rep=None):
-    ''' Translates diplomacy message strings into Messages,
-        choosing an escape model based on options.
-        
-        # Black magic: This test exploits an implementation detail or two.
-        # This test avoids backslashes because they get halved too often.
-        >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
-        >>> Token.opts.input_escape = '"';  str(translate(s))
-        'NME ( "name^""KET""BRA" ) ( " ^" )'
-        >>> Token.opts.input_escape = '^'; str(translate(s))
-        'NME ( "name""" ) ( "KETBRA""" )'
-    '''#'''
-    return Representation(rep).translate(text)
+    ''' Translates a diplomacy message string into a Message.'''
+    from config import base_rep
+    return (rep or base_rep).translate(text)
 
 class Representation(Verbose_Object):
-    ''' Holds and translates all tokens for a variant.'''
-    def __init__(self, tokens):
-        self.rep = tokens
-        self.opts = Token.opts
+    ''' Holds and translates all tokens for a variant.
+        Warning: Abuses the traditional dict methods.
+    '''#'''
+    def __init__(self, tokens, base):
+        from config import token_options
+        # tokens is a number -> name mapping
+        self.opts = token_options()
+        self.base = base
+        self.names = names = {}
+        self.numbers = nums = {}
+        for number, name in tokens.iteritems():
+            nums[number] = names[name] = Token(name, number)
+    
+    def __getitem__(self, key):
+        ''' Returns a Token from its name or number.'''
+        result = self.get(key)
+        if not result: raise KeyError, 'unknown token %r' % (key,)
+        return result
+    def get(self, key, default=None):
+        ''' Returns a Token from its name or number.
+            >>> from config import default_rep
+            >>> default_rep.get('ITA')
+            ITA
+        '''#'''
+        from language import _get_token_text
+        result = self.numbers.get(key) or self.names.get(key)
+        if not result:
+            if self.base: result = self.base.get(key)
+            else:
+                try: result = Token(_get_token_text(int(key)), key)
+                except ValueError: result = default
+        return result or default
+    
+    def has_key(self, key):
+        ''' Determines whether a given TLA is in use.'''
+        return ((key in self.names) or (key in self.numbers) or
+                (self.base and self.base.has_key(key)))
+    
+    def __len__(self):
+        return len(self.numbers)
+    
+    def items(self):
+        ''' Creates a name -> token mapping.'''
+        return self.names.items()
+    
+    def keys(self):
+        ''' Returns a list of token TLAs.'''
+        return self.names.keys()
     
     def read_message_file(self, filename):
         ''' Reads a Diplomacy message written in a text file.
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
-            >>> msg = rep.read_message_file('variants/standard.sco')
+            >>> msg = default_rep.read_message_file('variants/standard.sco')
             >>> msg.fold()[2]
             [ENG, LVP, EDI, LON]
         '''#'''
@@ -58,14 +93,15 @@ class Representation(Verbose_Object):
             # Black magic: This test exploits an implementation detail or two.
             # This test avoids backslashes because they get halved too often.
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
             >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
-            >>> rep.opts.input_escape = '"'
-            >>> str(rep.translate(s))
+            >>> default_rep.opts.input_escape = '"'
+            >>> str(default_rep.translate(s))
             'NME ( "name^""KET""BRA" ) ( " ^" )'
-            >>> rep.opts.input_escape = '^'
-            >>> str(rep.translate(s))
-            'NME ( "name""" ) ( "KETBRA""" )'
+            >>> default_rep.opts.input_escape = '^'
+            >>> str(default_rep.translate(s))
+            Traceback (most recent call last):
+                ...
+            KeyError: 'unknown token \\'"\\''
         '''#'''
         if self.opts.input_escape == self.opts.quot_char:
             return self.translate_doubled_quotes(text)
@@ -76,13 +112,12 @@ class Representation(Verbose_Object):
             doubling quotation marks to escape them.
             
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
-            >>> rep.opts.input_escape = '"'
-            >>> rep.translate_doubled_quotes('NOT ( GOF KET')
+            >>> default_rep.opts.input_escape = '"'
+            >>> default_rep.translate_doubled_quotes('NOT ( GOF KET')
             Message([NOT, [GOF]])
-            >>> str(rep.translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n'))
+            >>> str(default_rep.translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n'))
             'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
-            >>> rep.translate_doubled_quotes('YES " NOT ')
+            >>> default_rep.translate_doubled_quotes('YES " NOT ')
             Traceback (most recent call last):
                 ...
             ValueError: unterminated string in Diplomacy message
@@ -124,13 +159,12 @@ class Representation(Verbose_Object):
             using backslashes to escape quotation marks.
             
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
-            >>> rep.opts.input_escape = '\\\\'
-            >>> rep.translate_backslashed('NOT ( GOF KET')
+            >>> default_rep.opts.input_escape = '\\\\'
+            >>> default_rep.translate_backslashed('NOT ( GOF KET')
             Message([NOT, [GOF]])
-            >>> str(rep.translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n'))
+            >>> str(default_rep.translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n'))
             'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
-            >>> rep.translate_backslashed('YES " NOT ')
+            >>> default_rep.translate_backslashed('YES " NOT ')
             Traceback (most recent call last):
                 ...
             ValueError: unterminated string in Diplomacy message
@@ -173,10 +207,9 @@ class Representation(Verbose_Object):
     def tokenize_quote(self, text):
         ''' Returns a list of tokens from a string within a quotation.
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
-            >>> rep.tokenize_quote('Not(Gof)')
+            >>> default_rep.tokenize_quote('Not(Gof)')
             [Token('N'), Token('o'), Token('t'), Token('('), Token('G'), Token('o'), Token('f'), Token(')')]
-            >>> rep.tokenize_quote('name')
+            >>> default_rep.tokenize_quote('name')
             [Token('n'), Token('a'), Token('m'), Token('e')]
         '''#'''
         return [Token(c) for c in text]
@@ -184,20 +217,19 @@ class Representation(Verbose_Object):
     def tokenize_normal(self, text):
         ''' Returns a list of tokens from a string without quotations.
             >>> from config import default_rep
-            >>> rep = Representation(default_rep)
-            >>> rep.tokenize_normal('Not(Gof)')
+            >>> default_rep.tokenize_normal('Not(Gof)')
             [NOT, BRA, GOF, KET]
-            >>> rep.tokenize_normal('name')
+            >>> default_rep.tokenize_normal('name')
             Traceback (most recent call last):
                 ...
-            ValueError: unknown token "NAME"
+            KeyError: "unknown token 'NAME'"
         '''#'''
         # Switch parentheses to three-character notation
         text = text.replace('(', ' BRA ')
         text = text.replace(')', ' KET ')
         
         # Pass items into Token, converting integers if necessary
-        return [Token(maybe_int(word.upper()), rep=self.rep) for word in text.split()]
+        return [self[maybe_int(word.upper())] for word in text.split()]
 
 def maybe_int(word):
     ''' Converts a string to an int if possible.
