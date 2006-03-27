@@ -165,7 +165,7 @@ class Connection(SocketWrapper):
             >>> c.unpack_message(pack('!HHHH', *msg))
             Message([HLO, [Token('Sth', 0x4101)]])
         '''#'''
-        return Message([Token(x, rep=self.rep)
+        return Message([self.rep[x]
             for x in unpack('!' + 'H'*(len(data)//2), data)])
     
     # Outgoing messages

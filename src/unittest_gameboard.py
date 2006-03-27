@@ -163,8 +163,8 @@ class Coast_Bugfix(unittest.TestCase):
     def test_infinite_convoy(self):
         variant = config.variants['americas4']
         board = Map(variant)
-        Alaska = board.spaces[Token('ALA', rep=variant.rep)]
-        Oregon = board.coasts[(AMY, Token('ORE', rep=variant.rep), None)]
+        Alaska = board.spaces[variant.rep['ALA']]
+        Oregon = board.coasts[(AMY, variant.rep['ORE'], None)]
         results = Oregon.convoy_routes(Alaska, board)
         self.failUnlessEqual(results, [])
 

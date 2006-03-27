@@ -417,7 +417,7 @@ class Token(_tuple_Token):
     # Use __slots__ to save memory, and to maintain immutability
     __slots__ = ()
     
-    def __new__(klass, name, number=None, rep=None):
+    def __new__(klass, name, number=None):
         ''' Returns a Token instance from its name and number,
             or either one for the DCSP tokens.
             
@@ -437,16 +437,13 @@ class Token(_tuple_Token):
             OverflowError: int too large to convert to Token
             >>> from translation import Representation
             >>> rep=Representation({0x4101: 'Sth'}, None)
-            >>> Token('Sth', rep=rep)
+            >>> rep['Sth']
             Token('Sth', 0x4101)
-            >>> Token(0x4101, rep=rep)
+            >>> rep[0x4101]
             Token('Sth', 0x4101)
         '''#'''
         if number != None:
             return _get_or_create_token(klass, str(name), int(number))
-        elif rep:
-            result = rep.get(name)
-            if result: return result
         elif isinstance(name, (int, float, long)):
             num_type = type(name).__name__
             if isinstance(name, float): name = int(round(name))
@@ -457,9 +454,7 @@ class Token(_tuple_Token):
             else:
                 return _get_or_create_token(klass, _get_token_text(name), name)
         elif isinstance(name, str):
-            if rep and rep.has_key(name.upper()):
-                return rep[name.upper()]
-            elif _cache.has_key(name): return _cache[name]
+            if _cache.has_key(name): return _cache[name]
             elif len(name) == 1:
                 charnum = ord(name)
                 if charnum > 0xFF:

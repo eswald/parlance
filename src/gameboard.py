@@ -102,7 +102,7 @@ class Map(Verbose_Object):
             for line in name_file:
                 fields = line.strip().split(':')
                 if fields[0]:
-                    token = Token(fields[0].upper(), rep=self.opts.rep)
+                    token = self.opts.rep[fields[0].upper()]
                     if token.is_power():
                         self.powers[token].name = fields[1]
                         self.powers[token].adjective = fields[2]

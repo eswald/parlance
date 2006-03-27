@@ -531,7 +531,7 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
         ''', rep) #'''
         self.judge.map.handle_NOW(now)
         self.judge.init_turn()
-        client = self.Fake_Service(Token('MXC', rep=rep))
+        client = self.Fake_Service(rep['MXC'])
         thread = Thread(target=self.judge.handle_SUB, args=(client, sub))
         thread.setDaemon(True)
         thread.start()
