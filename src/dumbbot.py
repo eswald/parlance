@@ -33,143 +33,94 @@ PROXIMITY_DEPTH = 10
 
 class DumbBot_Values(config.option_class):
     ''' Various constants that affect how the bot plays.
-        These are just values that seemed right at the time
+        These are the values used by the original DumbBot;
         there has been no attempt to optimise them for best play.
+        A few of these values enable features not available to DumbBot;
+        the default values for these disable them.
     '''#'''
     
     def __init__(self, section):
         self.section = section
         
         # Importance of attacking centres we don't own, in Spring
-        self.proximity_spring_attack_weight = self.getint('spring attack', 7000)
+        self.proximity_spring_attack_weight = self.getint('spring attack', 700)
         
         # Importance of defending our own centres in Spring
-        self.proximity_spring_defence_weight = self.getint('spring defence', 3000)
+        self.proximity_spring_defence_weight = self.getint('spring defence', 300)
         
         # Same for fall.
-        self.proximity_fall_attack_weight = self.getint('fall attack', 6000)
-        self.proximity_fall_defence_weight = self.getint('fall defence', 4000)
+        self.proximity_fall_attack_weight = self.getint('fall attack', 600)
+        self.proximity_fall_defence_weight = self.getint('fall defence', 400)
         
         # Importance of proximity[n] in Spring
         self.spring_proximity_weight = self.getintlist('spring proximity',
-                [400, 700, 30, 10, 6, 5, 4, 3, 2, 1])
+                [100, 1000, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of our attack strength on a province in Spring
-        self.spring_strength_weight = self.getint('spring strength', 10000)
+        self.spring_strength_weight = self.getint('spring strength', 1000)
         
         # Importance of lack of competition for the province in Spring
-        self.spring_competition_weight = self.getint('spring competition', 10000)
+        self.spring_competition_weight = self.getint('spring competition', 1000)
         
         # Importance of proximity[n] in Fall
         self.fall_proximity_weight = self.getintlist('fall proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of our attack strength on a province in Fall
-        self.fall_strength_weight = self.getint('fall strength', 10000)
+        self.fall_strength_weight = self.getint('fall strength', 1000)
         
         # Importance of lack of competition for the province in Fall
-        self.fall_competition_weight = self.getint('fall competition', 10000)
+        self.fall_competition_weight = self.getint('fall competition', 1000)
         
         # Importance of attacking opposing units
-        self.base_unit_weight = self.getint('unit attack', 20) / 100
+        self.base_unit_weight = self.getint('unit attack', 0)
         
         # Importance of vacating unattacked home SCs
         self.home_vacation_weight = self.getint('home vacation', 0)
         
         # Importance of attacking another power's home supply centers
-        self.home_attack_weight = self.getint('home attack', 3)
+        self.home_attack_weight = self.getint('home attack', 1)
         
         # Importance of defending or regaining our own home supply centers
-        self.home_defence_weight = self.getint('home defence', 4)
+        self.home_defence_weight = self.getint('home defence', 1)
         
         # Importance of building in provinces we need to defend
-        self.build_defence_weight = self.getint('build defence', 10000)
+        self.build_defence_weight = self.getint('build defence', 1000)
         
         # Importance of proximity[n] when building
         self.build_proximity_weight = self.getintlist('build proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Importance of removing in provinces we don't need to defend
-        self.remove_defence_weight = self.getint('remove defence', 10000)
+        self.remove_defence_weight = self.getint('remove defence', 1000)
         
         # Importance of proximity[n] when removing
         self.remove_proximity_weight = self.getintlist('remove proximity',
                 [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
         
         # Percentage change of not automatically playing the best move
-        self.play_alternative = self.getint('play alternative', 75)
+        self.play_alternative = self.getint('play alternative', 50)
         
         # If not automatic, chance of playing best move
         # if inferior move is nearly as good.
         # Larger numbers mean less chance.
-        self.alternative_difference_modifier = self.getint('alternative modifier', 100)
+        self.alternative_difference_modifier = self.getint('alternative modifier', 500)
         
         # Formula for power size. These are A,B,C in S = Ax^2 + Bx + C
         # where x is centre count and S is size of power
-        self.size_square_coefficient = self.getint('square coefficient', 2)
-        self.size_coefficient = self.getint('size coefficient', -9)
+        self.size_square_coefficient = self.getint('square coefficient', 1)
+        self.size_coefficient = self.getint('size coefficient', 4)
         self.size_constant = self.getint('size constant', 16)
+        
+        # Percentage value a convoy has compared to a comparable move.
+        # 0 prevents convoys; 100 gives them equal weight.
+        self.convoy_weight = self.getint('convoy weight', 0)
     
     def getintlist(self, option, default):
         strings = self.getlist(option, '') or default
         try: result = map(int, strings)
         except ValueError: result = default
         return result
-    
-    # Hooks for mutation
-    # These must return and accept a list of numbers.
-    def get_key(self):
-        return ([
-                self.proximity_spring_attack_weight,
-                self.proximity_spring_defence_weight,
-                self.proximity_fall_attack_weight,
-                self.proximity_fall_defence_weight,
-                self.spring_strength_weight,
-                self.spring_competition_weight,
-                self.fall_strength_weight,
-                self.fall_competition_weight,
-                self.base_unit_weight,
-                self.home_vacation_weight,
-                self.home_attack_weight,
-                self.home_defence_weight,
-                self.build_defence_weight,
-                self.remove_defence_weight,
-                self.play_alternative,
-                self.alternative_difference_modifier,
-                self.size_square_coefficient,
-                self.size_coefficient,
-                self.size_constant,
-            ]
-            + self.spring_proximity_weight
-            + self.fall_proximity_weight
-            + self.build_proximity_weight
-            + self.remove_proximity_weight
-        )
-    def set(self, values):
-        self.proximity_spring_attack_weight  = values.pop(0)
-        self.proximity_spring_defence_weight = values.pop(0)
-        self.proximity_fall_attack_weight    = values.pop(0)
-        self.proximity_fall_defence_weight   = values.pop(0)
-        self.spring_strength_weight          = values.pop(0)
-        self.spring_competition_weight       = values.pop(0)
-        self.fall_strength_weight            = values.pop(0)
-        self.fall_competition_weight         = values.pop(0)
-        self.base_unit_weight                = values.pop(0)
-        self.home_vacation_weight            = values.pop(0)
-        self.home_attack_weight              = values.pop(0)
-        self.home_defence_weight             = values.pop(0)
-        self.build_defence_weight            = values.pop(0)
-        self.remove_defence_weight           = values.pop(0)
-        self.play_alternative                = values.pop(0)
-        self.alternative_difference_modifier = values.pop(0)
-        self.size_square_coefficient         = values.pop(0)
-        self.size_coefficient                = values.pop(0)
-        self.size_constant                   = values.pop(0)
-        ind = 0
-        self.spring_proximity_weight = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
-        self.fall_proximity_weight   = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
-        self.build_proximity_weight  = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
-        self.remove_proximity_weight = values[ind:ind+PROXIMITY_DEPTH]; ind += PROXIMITY_DEPTH
 
 class Province_Values(object):
     ''' Holds various information about the provinces.
@@ -247,9 +198,7 @@ class DumbBot(Player):
     version = version_string(__version__)
     
     print_csv = False
-    attempt_convoys = True
-    check_best = True
-    description = 'An enhanced version of DumbBot'
+    description = "A mimic of David Norman's DumbBot"
     
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
@@ -337,7 +286,7 @@ class DumbBot(Player):
                             values.attack_value[province_counter.key] *= self.vals.home_attack_weight
                     else: values.attack_value[province_counter.key] = self.vals.size_constant
             for unit in province_counter.units:
-                values.attack_value[province_counter.key] += int(self.power_size[unit.nation.key] * self.vals.base_unit_weight)
+                values.attack_value[province_counter.key] += self.power_size[unit.nation.key] * self.vals.base_unit_weight // 100
             
             # Calculate proximity[0] for each coast.
             # Proximity[0] is calculated based on the attack value and defence value of the province,
@@ -616,7 +565,7 @@ class DumbBot(Player):
                     destination_map.remove(dest.key)
         return None
     def consider_convoy(self, fleet, orders, values, dest=None):
-        if self.attempt_convoys and fleet.can_convoy():
+        if self.vals.convoy_weight > 0 and fleet.can_convoy():
             self.log_debug(13, "  Considering convoys through %s." % fleet)
             beach = None
             if dest:
@@ -654,18 +603,19 @@ class DumbBot(Player):
                     and not orders.get_order(unit)
                     and not unit.can_move_to(beach.province.key)]
                 if armies:
-                    army = self.random_destination(armies, values)
+                    # Consider the army we least want to keep in place.
+                    army = self.random_source(armies, values)
                     self.log_debug(13, '   %s chosen (from among %s).' % (army,
                         expand_list([key[1] for key in armies])))
                     if dest: alternate = fleet.coast
                     else: alternate = beach
-                    convoy_best = values.destination_value[army.key] < values.destination_value[alternate.key]
-                    if convoy_best: first = alternate; second = army
-                    else: first = army; second = alternate
+                    convoy_value = values.destination_value[alternate.key] * self.vals.convoy_weight
+                    army_value = values.destination_value[army.key]
+                    convoy_best = army_value < convoy_value
+                    if convoy_best: first = convoy_value; second = army_value
+                    else: first = army_value; second = convoy_value
                     
-                    if convoy_best != self.weighted_choice(
-                            values.destination_value[first.key],
-                            values.destination_value[second.key]):
+                    if convoy_best != self.weighted_choice(first, second):
                         self.log_debug(11, "   Ordered to convoy")
                         unit = [u for u in self.map.units if u.coast.key == army.key][0]
                         orders.add(ConvoyedOrder(unit, beach, [fleet]), unit.nation)
@@ -763,10 +713,17 @@ class DumbBot(Player):
             orders.waive(builds_remaining)
         return orders
     
+    def random_source(self, coast_keys, values):
+        ''' Chooses randomly among the coasts,
+            with preference to lower values of values.destination_value.
+        '''#'''
+        keys = [values.destination_value[key] for key in coast_keys]
+        best = 2 * max(keys)
+        vals = [best - key for key in keys]
+        return self.map.coasts[coast_keys[self.random_selection(vals)]]
     def random_destination(self, coast_keys, values):
         ''' Chooses randomly among the coasts,
             with preference to higher values of values.destination_value.
-            Returns the index of the chosen item.
         '''#'''
         return self.map.coasts[coast_keys[self.random_selection(
                 [values.destination_value[key] for key in coast_keys])]]
@@ -784,7 +741,9 @@ class DumbBot(Player):
             if self.weighted_choice(sorted_values[best][0],
                     sorted_values[iterator][0]):
                 current = iterator
-                if not self.check_best: best = current
+                # The original DumbBot checks against the current selection.
+                # To be a truly faithful mimic, uncomment the next line.
+                #best = current
             else: break
         return sorted_values[current][1]
     def weighted_choice(self, best_choice, second_choice):
@@ -823,32 +782,6 @@ class DumbBot(Player):
     # Hooks for mutation
     def get_values(self): return self.vals.get_key()
     def set_values(self, values): self.vals.set(values)
-
-class DavidBot(DumbBot):
-    ''' A more faithful representation of David's Dumbbot,
-        using the original values for the various constants.
-    '''#'''
-    
-    # Items for the NME message
-    name    = 'DumbBot'
-    version = version_string(__version__)
-    attempt_convoys = False
-    check_best = False
-    description = "A mimic of David Norman's DumbBot"
-    
-    def __init__(self, *args, **kwargs):
-        self.__super.__init__(*args, **kwargs)
-        self.vals.set([
-            700, 300, 600, 400,
-            1000, 1000, 1000, 1000,
-            0, 0, 1, 1, 1000, 1000,
-            50, 500,
-            1, 4, 16,
-            100, 1000, 30, 10, 6, 5, 4, 3, 2, 1,
-            1000, 100, 30, 10, 6, 5, 4, 3, 2, 1,
-            1000, 100, 30, 10, 6, 5, 4, 3, 2, 1,
-            1000, 100, 30, 10, 6, 5, 4, 3, 2, 1,
-        ])
 
 
 if __name__ == "__main__":

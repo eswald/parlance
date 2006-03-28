@@ -17,8 +17,7 @@ from language  import *
 import player, evilbot, dumbbot
 bots = {
     'holdbot': player.HoldBot,
-    'dumbbot': dumbbot.DavidBot,
-    'dumberbot': dumbbot.DumbBot,
+    'dumbbot': dumbbot.DumbBot,
     'evilbot': evilbot.EvilBot,
 }
 
