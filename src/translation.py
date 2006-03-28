@@ -4,7 +4,7 @@
 '''#'''
 
 from functions import Verbose_Object
-from language import Message, Token
+from language import IntegerToken, Message, Token
 
 __all__ = ['Representation', 'translate', 'read_message_file']
 
@@ -41,7 +41,9 @@ class Representation(Verbose_Object):
     def __getitem__(self, key):
         ''' Returns a Token from its name or number.'''
         result = self.get(key)
-        if not result: raise KeyError, 'unknown token %r' % (key,)
+        if not result:
+            if isinstance(key, int): key = '0x%04X' % key
+            raise KeyError, 'unknown token %r' % (key,)
         return result
     def get(self, key, default=None):
         ''' Returns a Token from its name or number.
@@ -52,9 +54,12 @@ class Representation(Verbose_Object):
         from language import _get_token_text
         result = self.numbers.get(key) or self.names.get(key)
         if not result:
-            if self.base: result = self.base.get(key)
+            if isinstance(key, Token): result = key
+            elif self.base: result = self.base.get(key)
             else:
-                try: result = Token(_get_token_text(int(key)), key)
+                try:
+                    number = int(key)
+                    result = Token(_get_token_text(number), number)
                 except ValueError: result = default
         return result or default
     
@@ -142,7 +147,7 @@ class Representation(Verbose_Object):
             in_text = not in_text
             if in_text: addmsg(quoted(piece))
             elif piece: addmsg(normal(piece))
-            else:       append(Token(self.opts.quot_number))
+            else: append(StringToken(self.opts.quot_char))
         
         # Again, the last normal part might be empty.
         if len(fragments) > 1:
@@ -208,11 +213,11 @@ class Representation(Verbose_Object):
         ''' Returns a list of tokens from a string within a quotation.
             >>> from config import default_rep
             >>> default_rep.tokenize_quote('Not(Gof)')
-            [Token('N'), Token('o'), Token('t'), Token('('), Token('G'), Token('o'), Token('f'), Token(')')]
+            [StringToken('N'), StringToken('o'), StringToken('t'), StringToken('('), StringToken('G'), StringToken('o'), StringToken('f'), StringToken(')')]
             >>> default_rep.tokenize_quote('name')
-            [Token('n'), Token('a'), Token('m'), Token('e')]
+            [StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e')]
         '''#'''
-        return [Token(c) for c in text]
+        return [StringToken(c) for c in text]
     
     def tokenize_normal(self, text):
         ''' Returns a list of tokens from a string without quotations.

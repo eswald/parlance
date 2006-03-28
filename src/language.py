@@ -205,7 +205,7 @@ class Message(list):
             'NOT GOF ( "name" ) ( 3 )'
         '''#'''
         try: list.append(self, Token(value))
-        except ValueError: list.extend(self, _wrap(value))
+        except (ValueError, TypeError): list.extend(self, _wrap(value))
     def extend(self, value):
         ''' Adds a list of new tokens to the Message, without parentheses.
             >>> m = Message(NOT)
@@ -242,11 +242,11 @@ class Message(list):
             >>> m[-1] = 42; print m
             NOT ( DRW 42
             >>> m[3]
-            Token(42)
+            IntegerToken(42)
             >>> m[-2] = [YES, KET]
             Traceback (most recent call last):
                 ...
-            ValueError
+            TypeError: list objects are unhashable
         '''#'''
         list.__setitem__(self, index, Token(value))
     def insert(self, index, value):
@@ -258,108 +258,10 @@ class Message(list):
             >>> m.insert(3, [Token('ENG', 0x4101), Token('FRA', 0x4102)])
             Traceback (most recent call last):
                 ...
-            ValueError
+            TypeError: list objects are unhashable
         '''#'''
         list.insert(self, index, Token(value))
 
-
-class _object_Token(object):
-    ''' Core for the Token class, based on an object.
-        Disadvantages: Slow comparisons and other functions;
-        immutabililty can be compromised.
-    '''#'''
-    
-    # Use __slots__ to save memory, and to maintain immutability
-    __slots__ = ('text', 'number', 'key')
-    
-    # Initialization
-    def __new__(klass, key):
-        self = object.__new__(klass)
-        self.key = key
-        self.text = key[0]
-        self.number = key[1]
-        return self
-    
-    # Basic token properties
-    def __str__(self):
-        ''' Returns the text given to the token when initialized.
-            May or may not be the standard DCSP name.
-            
-            >>> str(YES)
-            'YES'
-            >>> str(Token(3))
-            '3'
-            >>> str(Token(-3))
-            '-3'
-            >>> South = Token("STH", 0x4101)
-            >>> South
-            Token('STH', 0x4101)
-            >>> str(South)
-            'STH'
-        '''#'''
-        return self.text
-    def __int__(self):
-        ''' Converts the token to an integer,
-            resulting in the numerical DCSP value.
-            
-            >>> int(YES)
-            18460
-            >>> int(Token('PAR', 0x510A))
-            20746
-            >>> int(Token(0x1980))
-            6528
-            >>> int(Token(-3))
-            16381
-        '''#'''
-        return self.number
-    def __setattr__(self, name, value):
-        ''' Prevents modification of an instance's attributes.
-            This implementation depends on __slots__ to prevent new attributes.
-            (But that's just a bonus of the memory-saving feature.)
-            This also fails to prevent object.__setattr__(...) calls;
-            any client that does so is evil and should be shot.
-            
-            >>> t = REJ
-            >>> t.attribute = 'value'
-            Traceback (most recent call last):
-                ...
-            AttributeError: 'Token' object has no attribute 'attribute'
-            >>> t.text = 'value'
-            Traceback (most recent call last):
-                ...
-            AttributeError: can't set attribute
-        '''#'''
-        if hasattr(self, name): raise AttributeError, "can't set attribute"
-        else: object.__setattr__(self, name, value)
-    def __delattr__(self, name):
-        ''' Prevents deletion of an instance's attributes.
-            >>> del REJ.text
-            Traceback (most recent call last):
-                ...
-            AttributeError: can't delete attribute
-            >>> del REJ.attribute
-            Traceback (most recent call last):
-                ...
-            AttributeError: 'Token' object has no attribute 'attribute'
-        '''#'''
-        # Let getattr raise AttributeErrors for us,
-        # and raise our own complaint if it doesn't.
-        getattr(self, name)
-        raise AttributeError, "can't delete attribute"
-    
-    # Comparison
-    def __hash__(self):
-        ''' Generic hashing function, allowing tokens to be dictionary keys.
-            >>> hash(NOT) == hash(GOF)
-            False
-            >>> { YES : 45 }
-            {YES: 45}
-        '''#'''
-        return hash(self.key)
-    def __cmp__(self, other):
-        if isinstance(other, self.__class__):
-            return cmp(self.key, other.key)
-        else: return NotImplemented
 
 class _tuple_Token(tuple):
     ''' Core for the Token class, based on an tuple.
@@ -416,13 +318,15 @@ class Token(_tuple_Token):
     
     # Use __slots__ to save memory, and to maintain immutability
     __slots__ = ()
+    cache = {}
     
     def __new__(klass, name, number=None):
         ''' Returns a Token instance from its name and number,
             or either one for the DCSP tokens.
+            Warning: Token('3') is ambiguous; use StringToken or IntegerToken.
             
             >>> Token(-3)
-            Token(-3)
+            IntegerToken(-3)
             >>> Token('YES')
             YES
             >>> YES is Token(Token('YES'))
@@ -434,7 +338,7 @@ class Token(_tuple_Token):
             >>> Token(0x1481C)
             Traceback (most recent call last):
                 ...
-            OverflowError: int too large to convert to Token
+            OverflowError: int too large to convert to IntegerToken
             >>> from translation import Representation
             >>> rep=Representation({0x4101: 'Sth'}, None)
             >>> rep['Sth']
@@ -442,28 +346,22 @@ class Token(_tuple_Token):
             >>> rep[0x4101]
             Token('Sth', 0x4101)
         '''#'''
-        if number != None:
-            return _get_or_create_token(klass, str(name), int(number))
+        from config import base_rep
+        if number is not None:
+            # Fiddle with parentheses
+            if name == 'BRA': name = '('
+            elif name == 'KET': name = ')'
+            
+            key = (name, number)
+            result = klass.cache.get(key)
+            if not result:
+                result = super(Token, klass).__new__(klass, key)
+                klass.cache[key] = result
+        elif isinstance(name, klass): result = name
         elif isinstance(name, (int, float, long)):
-            num_type = type(name).__name__
-            if isinstance(name, float): name = int(round(name))
-            if -Token.opts.max_pos_int <= name < 0:
-                return _get_or_create_token(klass, str(name), Token.opts.max_neg_int + name)
-            elif name < -Token.opts.max_pos_int or name >= Token.opts.max_token:
-                raise OverflowError, '%s too large to convert to %s' % (num_type, klass.__name__)
-            else:
-                return _get_or_create_token(klass, _get_token_text(name), name)
-        elif isinstance(name, str):
-            if _cache.has_key(name): return _cache[name]
-            elif len(name) == 1:
-                charnum = ord(name)
-                if charnum > 0xFF:
-                    raise OverflowError, '%s too large to convert to %s' % (type(name), klass.__name__)
-                else:
-                    return _get_or_create_token(klass, name, Token.opts.quot_prefix + charnum)
-            else: raise ValueError, 'unknown token "%s"' % name
-        elif isinstance(name, klass): return name
-        else: raise ValueError
+            result = IntegerToken(name)
+        else: result = base_rep.get(name) or StringToken(name)
+        return result
     
     # Components
     def category_name(self):
@@ -609,7 +507,7 @@ class Token(_tuple_Token):
         ''' Returns code to reproduce the token.
             Uses the simplest form it can.
             >>> repr(Token(-3))
-            'Token(-3)'
+            'IntegerToken(-3)'
             >>> repr(YES)
             'YES'
             >>> repr(KET)
@@ -625,7 +523,6 @@ class Token(_tuple_Token):
             return name + '(' + self.text + ')'
         elif self == KET: return 'KET'
         elif self == BRA: return 'BRA'
-        elif _cache.get(self.text) == self:      return self.text
         elif default_rep.get(self.text) == self: return self.text
         elif len(self.text) == 1 and Token(self.text) == self:
             return name + '(' + repr(self.text) + ')'
@@ -682,42 +579,56 @@ class Token(_tuple_Token):
             else: joint = ' '
             return other + joint + self.text
 
-
-class Cache(dict, Verbose_Object):
-    def __getitem__(self, key):
-        result = dict.__getitem__(self, key)
-        if result: self.log('Cached token', key, result)
-        return result
-    def get(self, key, default=None):
-        result = dict.get(self, key)
-        if result: self.log('Cached token', key, result)
-        return result or default
-    def __setitem__(self, key, value):
-        self.log('Adding token', key, value)
-        dict.__setitem__(self, key, value)
-    def log(self, line, key, token):
-        self.log_debug(17, '%s %r => Token(%r, 0x%04X)',
-                line, key, token.text, token.number)
-#_cache = Cache()
-_cache = {}
-def _get_or_create_token(klass, text, number):
-    ''' Returns the token requested, using the cached item if possible.
-        The cache as implemented keeps only the latest of each number;
-        this could be inefficient if clients are playing in different
-        variants, but that is highly unlikely.
-        
-        TODO: Doctests
+class StringToken(Token):
+    ''' A token of a DM string, encoding a single ASCII character.
+        (Or, perhaps, a UTF-8 byte.)
     '''#'''
-    # Fiddle with parentheses
-    if text == 'BRA': text = '('
-    elif text == 'KET': text = ')'
     
-    key = (text, number)
-    if _cache.has_key(key): item = _cache[key]
-    else:
-        item = super(Token, klass).__new__(klass, key)
-        _cache[key] = item
-    return item
+    # Use __slots__ to save memory, and to maintain immutability
+    __slots__ = ()
+    cache = {}
+    
+    def __new__(klass, char):
+        result = klass.cache.get(char)
+        if not result:
+            charnum = ord(char)
+            if charnum > 0xFF:
+                raise OverflowError, '%s too large to convert to %s' % (type(char), klass.__name__)
+            else:
+                result = Token.__new__(klass, char, Token.opts.quot_prefix + charnum)
+            klass.cache[char] = result
+        return result
+
+class IntegerToken(Token):
+    ''' A token representing a DM integer.
+        Only supports 14-bit two's-complement numbers.
+    '''#'''
+    
+    # Use __slots__ to save memory, and to maintain immutability
+    __slots__ = ()
+    cache = {}
+    
+    def __new__(klass, number):
+        pos = Token.opts.max_pos_int
+        neg = Token.opts.max_neg_int
+        result = klass.cache.get(number) or klass.cache.get(number + neg)
+        if not result:
+            number = int(number)
+            if number < -pos:
+                raise OverflowError, '%s too large to convert to %s' % (
+                        type(number).__name__, klass.__name__)
+            elif number < pos:
+                name = str(number)
+                if number < 0: number += neg
+            elif number < neg:
+                name = str(number - neg)
+            else:
+                raise OverflowError, '%s too large to convert to %s' % (
+                        type(number).__name__, klass.__name__)
+            result = Token.__new__(klass, name, number)
+            klass.cache[number] = result
+        return result
+
 
 def _get_token_text(number):
     ''' Finds the text for a single token number.
@@ -748,22 +659,21 @@ def _tokenize(value, wrap=False):
         (But that's meant to be used only by this method.)
         
         >>> _tokenize(3)
-        [Token(3)]
+        [IntegerToken(3)]
         >>> _tokenize('YES')
-        [YES]
+        [StringToken('Y'), StringToken('E'), StringToken('S')]
         >>> _tokenize('name')
-        [Token('n'), Token('a'), Token('m'), Token('e')]
+        [StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e')]
         >>> _tokenize([3, 0, -3])
-        [Token(3), Token(0), Token(-3)]
+        [IntegerToken(3), IntegerToken(0), IntegerToken(-3)]
         >>> _tokenize([3, 0, -3], True)
-        [BRA, Token(3), Token(0), Token(-3), KET]
+        [BRA, IntegerToken(3), IntegerToken(0), IntegerToken(-3), KET]
         >>> _tokenize([NOT(), (GOF,)])
         [NOT, BRA, GOF, KET]
     '''#'''
     if   isinstance(value, (int, float, long)): return [Token(value)]
     elif isinstance(value, str):
-        try:                                    return [Token(value)]
-        except ValueError:                      return [Token(c) for c in value]
+        return [StringToken(c) for c in value]
     elif hasattr(value, 'tokenize'):
         result = value.tokenize()
         if isinstance(result, list):            return result
@@ -780,13 +690,12 @@ def _wrap(value):
         >>> _wrap(NOT(GOF))
         [BRA, NOT, BRA, GOF, KET, KET]
         >>> _wrap('name')
-        [BRA, Token('n'), Token('a'), Token('m'), Token('e'), KET]
+        [BRA, StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e'), KET]
     '''#'''
     return [BRA] + _tokenize(value) + [KET]
 
 # Testing framework
 __test__ = {
-    '_get_or_create_token':      _get_or_create_token,
     '_get_token_text':           _get_token_text,
     '_tokenize':                 _tokenize,
     '_wrap':                     _wrap,

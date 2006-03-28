@@ -73,7 +73,6 @@ class token_options(option_class):
         - quot_char        The character in which to wrap text in Messages
         - max_token        The largest number legal for a token
         - quot_prefix      The number to add to a character's ordinal value, to get its token number
-        - quot_number      The token number of the quotation mark character
         - max_pos_int      One greater than the largest positive number representable by a token
         - max_neg_int      One greater than the token number of the most negative number representable by a token
     '''#'''
@@ -90,7 +89,6 @@ class token_options(option_class):
         self.max_token   = (max([cat for cat in token_cats.keys()
             if isinstance(cat, int)]) + 1) << 8
         self.quot_prefix = token_cats['Text'] << 8
-        self.quot_number = self.quot_prefix | ord(self.quot_char)
         self.max_pos_int = (token_cats['Integers'][1] + 1) << 7
         self.max_neg_int = self.max_pos_int << 1
 class syntax_options(option_class):
@@ -436,9 +434,7 @@ def init_language():
         >>> if not variants:
         ...     init_language()
         >>> import language
-        >>> language.YES is language._cache['YES']
-        1
-        >>> language.Token.opts.quot_number == language.Token(language.Token.opts.quot_char).number
+        >>> language.YES is Token('YES', 0x481C)
         1
         >>> language.KET.text
         ')'
@@ -457,7 +453,6 @@ def init_language():
     for name, token in base_rep.items():
         #print 'Adding language.%s' % (name,)
         setattr(language, name, token)
-        language._cache[name.upper()] = token
         if   name in opts.move_phases:    order_mask[token] = opts.move_phase
         elif name in opts.retreat_phases: order_mask[token] = opts.retreat_phase
         elif name in opts.build_phases:   order_mask[token] = opts.build_phase
