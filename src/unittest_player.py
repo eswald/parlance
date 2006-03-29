@@ -86,6 +86,8 @@ class Player_Tests(PlayerTestCase):
         name = 'Test Player'
         version = version_string(__version__)
         def handle_REJ_YES(self, message): self.send(HLO())
+        def handle_press_SUG(self, *args):
+            raise NotImplementedError, 'Intentionally raising an error.'
         def generate_orders(self): pass
     def test_press_response(self):
         from xtended import ENG, FRA, GER
@@ -123,6 +125,14 @@ class Player_Tests(PlayerTestCase):
         self.player.client_opts.validate = True
         self.start_game()
         self.failIf(self.player.closed)
+    def test_press_error(self):
+        ''' Errors in handle_press methods should send HUH(message ERR) press.'''
+        from xtended import ENG, GER
+        self.connect_player(self.Test_Player)
+        self.start_game()
+        offer = SUG(DRW)
+        self.send(FRM([GER, 0], ENG, offer))
+        self.seek_reply(SND(Number, GER, HUH([offer, ERR])) + WRT([GER, 0]))
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):

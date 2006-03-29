@@ -348,13 +348,19 @@ class Player(Verbose_Object):
         if len(press) > 4: refs = folded[5:]
         else:              refs = None
         method_name = 'handle_press_' + press[0].text
+        self.log_debug(15, 'Searching for %s() handlers', method_name)
         try: method = getattr(self, method_name)
         except AttributeError:
             # No handler found; return the standard response
             if press[0] not in (HUH, TRY):
                 self.send_press(sender, HUH(ERR() + press), [mid])
                 self.send_press(sender, TRY(self.press_tokens))
-        else: method(mid, press, refs)
+        else:
+            try: method(mid, press, refs)
+            except Exception, err:
+                self.send_press(sender, HUH(press + ERR()), [mid])
+                self.log_debug(7, 'Exception in %s(%s, %s, %s): %s',
+                        method_name, sender, press, refs, err)
     
     def send_press(self, recips, press, refs = None):
         if not (self.in_game and self.power): return

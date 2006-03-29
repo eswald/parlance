@@ -1086,6 +1086,16 @@ to handle all of the tokens available for press at the current level. In
 this case, the token <b>ERR</b> should be inserted immediately before
 the first token which could not be understood.</p>
 
+<!-- 
+David's explanation of the ERR positioning:
+- If the problem is a specific token, then it goes before that token.
+- If the problem is in a sub-expression but you can't determine where,
+  then it goes before the close-bracket of that sub-expression.
+- If the problem is found in a subsequent stage after you've completed
+  initial parsing of the message successfully, then it goes at the end
+  of the message.
+-->
+
 <p>The above responses should only be sent as a response to a received
 message.  <b>press_message</b> should be identical to the received message.</p>
 
