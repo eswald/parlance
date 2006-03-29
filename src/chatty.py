@@ -25,12 +25,15 @@ class Chatty(Observer):
         except EOFError: self.output('Thank you for playing.'); self.close()
     def output(self, line, *args): print str(line) % args
     def handle_CCD(self, message):
-        self.output('[Server]: %s has been disconnected.', message[2])
+        self.output('* %s has been disconnected.', message[2])
     def handle_NOT_CCD(self, message):
-        self.output('[Server]: %s is back in the game.', message[4])
+        self.output('* %s is back in the game.', message[4])
     def handle_ADM(self, message):
         msg = message.fold()
         self.output('%s: %s', msg[1][0], msg[2][0])
+    def handle_REJ_ADM(self, message):
+        msg = message.fold()
+        self.output('* Server refused to forward "%s"', msg[1][2][0])
     def handle_SCO(self, message):
         dists = message.fold()[1:]
         dists.sort()
