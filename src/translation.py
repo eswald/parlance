@@ -4,7 +4,7 @@
 '''#'''
 
 from functions import Verbose_Object
-from language import IntegerToken, Message, Token
+from language import Message, StringToken, Token
 
 __all__ = ['Representation', 'translate', 'read_message_file']
 
