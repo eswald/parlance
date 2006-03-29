@@ -789,7 +789,9 @@ class Game(Verbose_Object):
         if message.fold()[1][1][0].lower() == self.judge.map_name:
             if client in self.clients: return # Ignore duplicate messages
             self.clients.append(client)
-            client.admin('Welcome.  This server accepts admin commands; send "Server: help" for details.')
+            if self.server.options.admin_cmd:
+                client.admin('Welcome.  This server accepts admin commands; '
+                        'send "Server: help" for details.')
             name = client.full_name()
             obs = ''
             if client.country:
