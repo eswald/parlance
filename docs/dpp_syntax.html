@@ -1243,7 +1243,7 @@ nested. For example:</p>
 <!-- <h4>minimum = number</h4> -->
 <!-- <h4>maximum = number</h4> -->
 
-<p><b>minimum</b> and <b>maximum</b> are numbers.  This is an offer to
+<p><b>minimum</b> and <b>maximum</b> are integers.  This is an offer to
 accept between <b>minimum</b> and <b>maximum</b> of the listed offers.
 <b>minimum</b> and <b>maximum</b> may be the same, in which case it
 means to choose exactly that many.  For example:</p>
@@ -1640,6 +1640,31 @@ make it worthwhile.</p>
 <h4>reply = IDK (SUG (offer))</h4>
 <p>I don't really know whether I desire that.</p>
 
+<!--
+<h2><a name="level140">Level 140</a> : Probabilities</h2>
+<!- - <h4>press_token -= PRB</h4> - ->
+
+<p>Level 140 adds the ability to estimate the probability of a
+situation.  In response to a <a href="#QRY"><b>QRY</b></a> message,
+the player can reply with:</p>
+<h4><a name="PRB">press_message != PRB</a> (percentage) (QRY (offer))</h4>
+<!- - <h4>percentage != number</h4> - ->
+
+<p><b>percentage</b> is an integer indicating the percentage chance that
+<b>offer</b> is true, and should be between 0 and 100, inclusive.</p>
+
+<p><b>PRB</b> can also be used as a message in its own right, to pass
+information without first being queried for it.</p>
+
+<h4>press_message != PRB (percentage) (offer)</h4>
+<p>I think <b>offer</b> has a <b>percentage</b> chance of being true.</p>
+
+<p>As for a <b>THK</b> or <b>FCT</b> message, no reply is expected, but
+<b>WHY</b> can be used to ask for an explanation.</p>
+
+<h4>reply != WHY (PRB (percentage) (offer))</h4>
+<p>Why do you think that?</p>
+-->
 
 <h2><a name="level8000">Level 8000</a> : Free Text</h2>
 
@@ -1809,6 +1834,7 @@ various reasons.</p>
 <tr><td>POR</td><td>0x553F</td><td>Province</td><td>Coastal Supply Centre</td><td>Portugal</td></tr>
 <tr><td>PNG</td><td>0x4822 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Ping</td></tr>
 <tr><td>PPT</td><td>0x4A12</td><td>Press</td><td></td><td>Puppet (<em>REMOVED</em>)</td></tr>
+<!--<tr><td>PRB</td><td>0x4A24</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PRN</td><td>0x4813</td><td>Command</td><td>Server to Client</td><td>Parenthesis error</td></tr>
 <tr><td>PRP</td><td>0x4A13</td><td>Press</td><td>Message</td><td>Propose</td></tr>
 <tr><td>PRU</td><td>0x542B</td><td>Province</td><td>Coastal</td><td>Prussia</td></tr>
