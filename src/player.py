@@ -345,19 +345,16 @@ class Player(Verbose_Object):
             self.send_press(self.fwd_list[sender], FRM(sender, recips, press), [mid])
         
         # Pass it off to a handler method
-        if press[0] in self.press_tokens:
-            if len(press) > 4: refs = folded[5:]
-            else:              refs = None
-            try:
-                method_name = 'handle_press_'+press[0].text
-                getattr(self, method_name)(mid, message, refs)
-                return
-            except AttributeError: pass
-
-        # If that fails, reply with HUH/TRY
-        if press[0] not in (HUH, TRY):
-            self.send_press(sender, HUH(ERR() + press), [mid])
-            self.send_press(sender, TRY(self.press_tokens))
+        if len(press) > 4: refs = folded[5:]
+        else:              refs = None
+        method_name = 'handle_press_' + press[0].text
+        try: method = getattr(self, method_name)
+        except AttributeError:
+            # No handler found; return the standard response
+            if press[0] not in (HUH, TRY):
+                self.send_press(sender, HUH(ERR() + press), [mid])
+                self.send_press(sender, TRY(self.press_tokens))
+        else: method(mid, press, refs)
     
     def send_press(self, recips, press, refs = None):
         if not (self.in_game and self.power): return

@@ -346,7 +346,7 @@ class DumbBot(Player):
         for prov in province.borders_in:
             for unit in self.map.spaces[prov].units:
                 self.log_debug(13, '  Unit in %s: %s', prov, unit)
-                if (unit.nation != self.power
+                if (not self.friendly(unit.nation)
                         and self.power_size[unit.nation.key] > defence_value
                         and unit.can_move_to(province)):
                     defence_value = self.power_size[unit.nation.key]
@@ -533,6 +533,11 @@ class DumbBot(Player):
                                     self.log_debug(11, "    Supporting occupying unit")
                                     return SupportHoldOrder(unit, other_unit)
                                 else: selection_is_ok = False
+                        elif other_unit.nation != self.power:
+                            # The other unit is friendly, but we can't
+                            # guarantee its move.  Go somewhere else.
+                            self.log_debug(13, "   Occupying unit friendly")
+                            selection_is_ok = False
                         else:
                             # We can't decide whether to move there or not,
                             # so give up on this unit for now,
