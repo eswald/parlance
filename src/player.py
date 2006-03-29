@@ -153,6 +153,9 @@ class Player(Verbose_Object):
         if self.client_opts.validate:
             # Check message syntax
             level = self.opts and self.opts.LVL or 0
+            if message[0] is HLO:
+                try: level = message[message.index(LVL) + 1].value()
+                except (ValueError, IndexError): level = 0
             reply = message.validate(level, True)
         else: reply = None
         if reply:
@@ -352,8 +355,9 @@ class Player(Verbose_Object):
             except AttributeError: pass
 
         # If that fails, reply with HUH/TRY
-        self.send_press(sender, HUH(ERR() + press), [mid])
-        self.send_press(sender, TRY(self.press_tokens))
+        if press[0] not in (HUH, TRY):
+            self.send_press(sender, HUH(ERR() + press), [mid])
+            self.send_press(sender, TRY(self.press_tokens))
     
     def send_press(self, recips, press, refs = None):
         if not (self.in_game and self.power): return

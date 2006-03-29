@@ -24,12 +24,10 @@ class PlayerTestCase(unittest.TestCase):
     
     game_options = {
             'syntax Level': 8000,
+            'Partial Draws Allowed': True,
             'default variant' : 'standard',
             'close on disconnect' : True,
-            'use internal server' : True,
             'host' : '',
-            'port' : 16719,
-            'timeout for select() without deadline' : 5,
             'publish order sets': False,
             'publish individual orders': False,
             'total years before setting draw': 3,
@@ -60,7 +58,7 @@ class PlayerTestCase(unittest.TestCase):
         self.player = player_class(self.handle_message, self.variant.rep, **kwargs)
     def send_hello(self, country=None):
         from xtended import ENG
-        self.send(HLO(country or ENG, 0, self.params))
+        self.send(HLO(country or ENG, self.level, self.params))
     def seek_reply(self, message, error=None):
         while self.replies:
             msg = self.replies.pop(0)
@@ -119,6 +117,12 @@ class Player_Tests(PlayerTestCase):
         self.seek_reply(MDF())
         self.send(config.variants['fleet_rome'].map_mdf)
         self.seek_reply(YES(MAP('unknown')))
+    def test_HLO_PDA(self):
+        ''' The HLO message should be valid with level 10 parameters.'''
+        self.connect_player(self.Test_Player)
+        self.player.client_opts.validate = True
+        self.start_game()
+        self.failIf(self.player.closed)
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):
