@@ -17,7 +17,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
         for arg in argv[1:]:
             try: num = int(arg)
             except ValueError:
-                if arg[3] == '=':
+                if len(arg) > 3 and arg[3] == '=':
                     if allow_country: countries[arg[:3]] = int(arg[4:])
                     else: raise ValueError
                 elif arg[:2] == '-v': Verbose_Object.verbosity = int(arg[2:])
