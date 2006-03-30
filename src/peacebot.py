@@ -50,7 +50,6 @@ class PeaceBot(DumbBot):
                 power = self.map.powers[country]
                 if not power.centers:
                     self.friends.remove(country)
-                    self.admin('Farewell, %s.', power.name)
     
     def friendly(self, nation): return nation.key in self.friends
     def generate_movement_orders(self, values):
