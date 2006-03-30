@@ -1062,7 +1062,7 @@ class Game(Verbose_Object):
                 num2name(number), bot_class.name, s(number))
         def callback(success, failure):
             if failure:
-                self.admin('%d bot%s failed to start',
+                self.admin('%s bot%s failed to start',
                         num2name(failure).capitalize(), s(failure))
         self.server.manager.async_start(bot_class, number, callback,
                 game_id=self.game_id, power=power, passcode=pcode)
