@@ -155,8 +155,9 @@ class Server(Verbose_Object):
         if open_games:
             for game in open_games: game.check_flags()
         elif 0 < self.options.games <= len(self.games):
-            self.log_debug(11, 'Completed all requested games')
-            self.close()
+            if not any([g.clients for g in self.games]):
+                self.log_debug(11, 'Completed all requested games')
+                self.close()
         else: self.start_game()
     
     def broadcast_admin(self, text):
@@ -519,6 +520,9 @@ class Game(Verbose_Object):
             self.log_debug(11, 'Deciding whether to quit (%s)', quitting)
             if quitting: self.close()
             else: self.open_position(opening)
+        
+        # Perhaps close the server
+        if not self.clients: self.server.check()
     def close(self):
         self.log_debug(10, 'Closing')
         self.pause()
