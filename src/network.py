@@ -345,14 +345,18 @@ class Service(Connection):
     def admin(self, line, *args): self.send(ADM('Server', str(line) % args))
 
 class ServerSocket(SocketWrapper):
-    flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
+    try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
+    except AttributeError: flags = None
+    
     def __init__(self):
         self.__super.__init__()
         self.server = None
         self.deadline = None
         self.log_debug(10, 'Attempting to create a poll object')
-        try: self.polling = select.poll()
-        except: self.polling = None
+        if self.flags:
+            try: self.polling = select.poll()
+            except: self.polling = None
+        else: self.polling = None
         self.sockets = {}
         self.next_id = 0
     def open(self):
