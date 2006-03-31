@@ -239,7 +239,7 @@ class Client(Connection):
     def open(self):
         # Open the socket
         self.sock = sock = socket.socket()
-        sock.connect((self.opts.host, self.opts.port))
+        sock.connect((self.opts.host or 'localhost', self.opts.port))
         sock.settimeout(None)
         
         # Required by the DCSP document
