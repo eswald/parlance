@@ -529,8 +529,8 @@ class RawClient(Verbose_Object):
             except EOFError: self.close()
             if line:
                 try: message = translate(line, self.rep)
-                except: print '??'
-                self.send(message)
+                except Exception, err: print str(err) or '??'
+                else: self.send(message)
     def send(self, message):
         if not self.closed: self.send_out(message)
 
