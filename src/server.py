@@ -148,8 +148,7 @@ class Server(Verbose_Object):
         time_left = [t for t in [game.max_time(now) for game in self.games]
             if t is not None]
         if time_left: return max([0, min(time_left)])
-        elif any(self.games, lambda x: not x.closed): return None
-        else: return 0
+        else: return None
     def check(self):
         open_games = [game for game in self.games if not game.closed]
         if open_games:
@@ -522,7 +521,7 @@ class Game(Verbose_Object):
             else: self.open_position(opening)
         
         # Perhaps close the server
-        if not self.clients: self.server.check()
+        if self.closed and not self.clients: self.server.check()
     def close(self):
         self.log_debug(10, 'Closing')
         self.pause()
@@ -530,6 +529,9 @@ class Game(Verbose_Object):
         if not self.closed:
             self.closed = True
             if self.started: self.broadcast(self.summarize())
+        
+        # Perhaps close the server
+        if not self.clients: self.server.check()
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}
