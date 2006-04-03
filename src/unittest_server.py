@@ -176,7 +176,7 @@ class ServerTestCase(unittest.TestCase):
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
-        self.set_verbosity(20)
+        self.set_verbosity(0)
         config.option_class.local_opts.update(self.game_options)
         self.manager = None
         self.server = None
@@ -304,7 +304,6 @@ class Server_Press(ServerTestCase):
             if token is self.eliminated.power:
                 now[index] = self.disconnected.power
             elif token is SPR: now[index] = FAL
-        print now
         judge_map.handle_NOW(now)
         self.disconnected.close()
         self.game.run_judge()
@@ -528,7 +527,6 @@ class Server_Admin_Press(Server_Admin):
         ''' The enable press admin command works with a verbal level'''
         from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
-        print config.press_levels
         self.assertAdminResponse(self.master,
                 'enable press level Sharing out the supply centres',
                 'Fake Human Player (Fake_Master) has set the press level to 40 (Sharing out the Supply Centres).')

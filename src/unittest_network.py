@@ -141,7 +141,9 @@ class Network_Full_Games(NetworkTestCase):
         config.option_class.local_opts.update({name: value})
     def connect_server(self, *args):
         ServerTestCase.connect_server(self, *args)
-        while not self.server.closed: sleep(3); self.server.check()
+        while [game for game in self.server.games if not game.closed]:
+            sleep(3)
+            self.server.check()
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
         from player import HoldBot

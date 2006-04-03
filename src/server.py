@@ -302,11 +302,10 @@ class Server(Verbose_Object):
         if not self.closed:
             self.broadcast_admin('The server is shutting down.  Good-bye.')
             self.log_debug(10, 'Closing')
+            self.closed = True
             for game in self.games:
                 if not game.closed: game.close()
             self.broadcast(OFF())
-            #self.__super.close()
-            self.closed = True
             self.manager.close_threads()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
