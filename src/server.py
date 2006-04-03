@@ -14,13 +14,14 @@ from functions import any, s, expand_list, DefaultDict, Verbose_Object
 from functions import absolute_limit, relative_limit, num2name, instances
 from language  import *
 
-import player, evilbot, dumbbot, peacebot, blabberbot
+import player, evilbot, dumbbot, peacebot, blabberbot, project20m
 bots = dict([(klass.name.lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
     evilbot.EvilBot,
     peacebot.PeaceBot,
     blabberbot.BlabberBot,
+    project20m.Project20M,
 ])
 
 class main_options(config.option_class):

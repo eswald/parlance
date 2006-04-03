@@ -172,8 +172,8 @@ class Order_Strings(unittest.TestCase):
     def check_order(self, order, result):
         from xtended import standard_map, FRA
         from judge   import datc_options
-        from orders  import UnitOrder
-        order = UnitOrder(order, standard_map.powers[FRA],
+        from orders  import createUnitOrder
+        order = createUnitOrder(order, standard_map.powers[FRA],
                 standard_map, datc_options())
         self.failUnlessEqual(str(order), result)
     def test_hold_string(self):

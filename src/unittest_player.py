@@ -147,4 +147,33 @@ class Player_HoldBot(PlayerTestCase):
         self.seek_reply(SND(Number, FRA, HUH([ERR, offer])) + WRT([FRA, 0]))
         self.seek_reply(SND(Number, FRA, TRY([])))
 
+class Player_Bots(PlayerTestCase):
+    def setUp(self):
+        def handle_NOW(player, message):
+            ''' Non-threading version of Player.handle_NOW().'''
+            if player.in_game and player.power:
+                from orders import OrderSet
+                player.submitted = False
+                player.orders = OrderSet(player.power)
+                if player.missing_orders():
+                    player.generate_orders()
+            else: self.fail('Player failed to join the game.')
+        def handle_HUH(player, message):
+            ''' Fail on bad message submission.'''
+            self.fail('Server complained about a message: ' + str(message))
+        def handle_THX(player, message):
+            ''' Fail on bad order submission.'''
+            self.fail('Invalid order submitted: ' + str(message))
+        PlayerTestCase.setUp(self)
+        Player.handle_NOW = handle_NOW
+        Player.handle_THX = handle_THX
+    
+    def test_project20m(self):
+        ''' Demonstrates that Project20M can at least survive a single season.
+        '''#'''
+        from project20m import Project20M
+        self.connect_player(Project20M)
+        self.start_game()
+        self.assertContains(SUB, [message[0] for message in self.replies])
+
 if __name__ == '__main__': unittest.main()

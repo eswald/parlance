@@ -623,6 +623,9 @@ class Province(Comparable):
         elif isinstance(other, Province): return cmp(self.key, other.key)
         else: return NotImplemented 
     def exists(self): return bool(self.coasts)
+    
+    def unit(self): return self.units and self.units[0] or None
+    unit = property(unit)
 
 
 class Coast(Comparable, Verbose_Object):

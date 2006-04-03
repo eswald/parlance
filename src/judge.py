@@ -11,7 +11,7 @@ from sets      import Set, ImmutableSet
 from functions import DefaultDict, any, all, s, Infinity
 from server    import Judge
 from orders    import *
-#from orders    import UnitOrder, RemoveOrder, WaiveOrder, \
+#from orders    import createUnitOrder, RemoveOrder, WaiveOrder, \
 #                      HoldOrder, DisbandOrder, OrderSet
 #from language  import *
 
@@ -128,7 +128,7 @@ class Standard_Judge(Judge):
             orders = self.next_orders
             for tlist in message.fold()[1:]:
                 power = self.map.powers[country]
-                order = UnitOrder(tlist, power, self.map, self.datc)
+                order = createUnitOrder(tlist, power, self.map, self.datc)
                 note = order.order_note(power, phase, orders)
                 self.log_debug(14, ' SUB: %s => %s', order, note)
                 order.__note = note
@@ -155,7 +155,8 @@ class Standard_Judge(Judge):
             orders = self.next_orders
             if len(message) > 4:
                 # Attempt to remove a specific order
-                order = UnitOrder(message.fold()[1][1], country, self.map, self.datc)
+                order = createUnitOrder(message.fold()[1][1],
+                        country, self.map, self.datc)
                 if not orders.remove(order, country):
                     client.reject(message)
                     return

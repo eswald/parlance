@@ -450,10 +450,10 @@ _class_types = {
     REM: RemoveOrder,
     WVE: WaiveOrder,
 }
-def UnitOrder(order, nation, board, datc):
+def createUnitOrder(order, nation, board, datc):
     ''' Determine the class of the order, and create one of that type.
-        This function hides the definition of the UnitOrder class,
-        but is more useful.
+        This would have been nice as UnitOrder.__new__(),
+        but that causes headaches in the child classes.
         
         order is a folded message, part of a SUB command;
         nation is the country making the order;
