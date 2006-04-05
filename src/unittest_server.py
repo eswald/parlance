@@ -265,14 +265,14 @@ class Server_Basics(ServerTestCase):
         self.assertContains(MIS(), sender.queue)
     def test_missing_orders_CCD(self):
         ''' Failing to submit orders on time results in a CCD message.'''
-        from language import CCD
+        from language import CCD, SPR
         self.set_option('Move Time Limit', 5)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.start_game()
         sleep(player.get_time() + 1)
         self.game.check_flags()
-        self.assertContains(CCD(player.power), player.queue)
+        self.assertContains(CCD(player.power, [SPR, 1901]), player.queue)
     def test_submitted_orders_CCD(self):
         ''' Submitting orders on time avoids a CCD message.'''
         from language import CCD
@@ -283,7 +283,9 @@ class Server_Basics(ServerTestCase):
         player.hold_all()
         sleep(player.get_time() + 1)
         self.game.check_flags()
-        self.failIf(CCD(player.power) in player.queue)
+        self.failIf(player.power in sum([msg
+            for msg in player.queue if msg[0] is CCD], []),
+            '%s reported in civil disorder' % (player.power,))
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
@@ -307,14 +309,14 @@ class Server_Press(ServerTestCase):
         judge_map.handle_NOW(now)
         self.disconnected.close()
         self.game.run_judge()
-    def assertPressReply(self, press, response):
+    def assertPressReply(self, press, response, problem=None):
         from language import SND, Token
         self.sender.queue = []
         self.recipient.queue = []
         msg = SND(0, self.recipient.power, press)
         self.sender.send(msg)
-        if isinstance(response, Token): reply = response(msg)
-        else: reply = response
+        if problem: reply = response(problem, msg)
+        else: reply = response(msg)
         self.assertContains(reply, self.sender.queue)
     def assertPressSent(self, press):
         from language import YES
@@ -345,7 +347,25 @@ class Server_Press(ServerTestCase):
         from language import ALY, OUT, PRP, VSS
         out = self.eliminated.power
         press = PRP([ALY([self.sender.power, self.recipient.power]), VSS(out)])
-        self.assertPressReply(press, OUT(out))
+        self.assertPressReply(press, OUT, out)
+        self.assertPressNotReceived(press)
+    def test_send_to_eliminated(self):
+        ''' The server rejects press to eliminated powers.'''
+        from language import ALY, OUT, PRP, VSS
+        self.recipient = self.eliminated
+        out = self.eliminated.power
+        press = PRP([ALY([self.sender.power, out]),
+                VSS(self.disconnected.power)])
+        self.assertPressReply(press, OUT, out)
+        self.assertPressNotReceived(press)
+    def test_send_to_disconnected(self):
+        ''' The server rejects press to disconnected powers.'''
+        from language import ALY, CCD, PRP, VSS
+        self.recipient = self.disconnected
+        out = self.disconnected.power
+        press = PRP([ALY([self.sender.power, out]),
+                VSS(self.eliminated.power)])
+        self.assertPressReply(press, CCD, out)
         self.assertPressNotReceived(press)
 
 class Server_Admin(ServerTestCase):

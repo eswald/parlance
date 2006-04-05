@@ -726,10 +726,10 @@ class Game(Verbose_Object):
             recips = folded[2]
             for nation in recips:
                 if not self.players[nation].client:
-                    client.send(CCD(nation))
+                    client.send(CCD(nation, message))
                     break
                 elif nation in eliminated:
-                    client.send(OUT(nation))
+                    client.send(OUT(nation, message))
                     break
             else:
                 msg_id = (country, folded[1][0])
@@ -737,7 +737,7 @@ class Game(Verbose_Object):
                 # Send OUT if any power in press is eliminated
                 for nation in eliminated:
                     if nation in press:
-                        client.send(OUT(nation))
+                        client.send(OUT(nation, message))
                         return
                 # Trim high-level tokens from TRY messages
                 for token,level in trimmed.items():

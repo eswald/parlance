@@ -912,11 +912,18 @@ server is incorrectly bracketed or contains illegal syntax.</p>
 <!-- <h4>server_message = NOT (CCD (power))</h4> -->
 
 <p>This message is sent from the server to the client, and indicates
-that the specified power has been declared to be in Civil Disorder.
-This will normally happen because either the power failed to get its
-orders in by the deadline, or because the TCP/IP connection to the
-power has been broken. If the power returns, the server will send the
-command <b>NOT (CCD (power))</b>.</p>
+that the specified power has been declared to be in Civil Disorder,
+because the network connection to the power has been broken. If the
+power reconnects, the server will send the
+message <b>NOT (CCD (power))</b>.</p>
+
+<h4>server_message = CCD (power) (turn)</h4>
+
+<p>This message is sent from the server to the client, and indicates
+that the specified power failed to get its orders in by the deadline for
+the specified turn.  However, this does not indicate that the power has
+been declared permanently in civil disorder, merely that default orders
+have been issued for that turn.</p>
 
 <!-- <h4>server_message = NOT (TME (seconds))</h4> -->
 <p>If the game is of the <b>DSD</b> variant, then when a power
@@ -1070,14 +1077,20 @@ otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
 
-<h4>server_message = CCD (power)</h4>
+<h4>server_message = CCD (power) (SND (power power ...) (press_message))</h4>
+<!-- <h4>server_message = CCD (power) (SND (power power ...) (reply))</h4> -->
+<!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
+<!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
 <p><b>power</b> is in civil disorder, and so can not receive press. If
 multiple powers are listed in the <b>SND</b> command, and the server sends
 a <b>CCD</b> reply, then the message has not been sent to anybody
 (including the ones that are not in civil disorder).</p>
 
-<h4><a name="OUT">server_message = OUT</a> (power)</h4>
+<h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))</h4>
+<!-- <h4>server_message = OUT (power) (SND (power power ...) (reply))</h4> -->
+<!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
+<!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
 <p><b>power</b> has been eliminated from the game. If multiple
 powers are listed in the <b>SND</b> command, and the server sends a

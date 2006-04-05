@@ -237,10 +237,10 @@ class Standard_Judge(Judge):
             self.phase = None
         else:
             # Report civil disorders
-            results = [CCD(country) for country in self.unready]
+            turn = self.map.current_turn
+            results = [CCD(country, turn) for country in self.unready]
             
             # Report submitted orders
-            turn = self.map.current_turn
             if self.options.send_SET:
                 results.extend(self.create_SETs(turn))
             
