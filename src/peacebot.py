@@ -46,7 +46,7 @@ class PeaceBot(DumbBot):
     def handle_SCO(self, message):
         self.__super.handle_SCO(message)
         if self.power.centers:
-            for country in self.friends:
+            for country in list(self.friends):
                 power = self.map.powers[country]
                 if not power.centers:
                     self.friends.remove(country)
