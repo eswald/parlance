@@ -805,7 +805,7 @@ class Server_Multigame(ServerTestCase):
         self.master.queue = []
         self.master.send(SEL())
         params = self.game.options.get_params()
-        self.assertContains(LST(0, 6, 'standard', params), self.master.queue)
+        self.assertContains(SEL(0), self.master.queue)
     def test_LST_reply(self):
         from language import LST
         self.master.queue = []
