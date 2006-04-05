@@ -7,7 +7,7 @@
 <body>
 
 <p>Author:             Andrew Rose, revised by David Norman</p>
-<p>Date:               03-Apr-2006</p>
+<p>Date:               05-Apr-2006</p>
 <p>Status:             Draft</p>            
 
 <p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
@@ -560,11 +560,6 @@ movement phase.</p>
 	<li>YES 0x1C</li>
 	<li>ADM 0x1D</li>
 	<li>SMR 0x1E</li>
-	<li>SET 0x1F</li>
-	<li>LST 0x20</li>
-	<li>SEL 0x21</li>
-	<li>PNG 0x22</li>
-	<li>PRF 0x23</li>
 </ul>
 
 <h2>4.13     <a name="Parameters">Parameters (0x49)</a></h2> 
@@ -582,7 +577,8 @@ movement phase.</p>
 	<li>PTL 0x09</li>
 	<li>RTL 0x0A</li>
 	<li>UNO 0x0B</li>
-	<li>WRT 0x0C</li>
+	<!--<li>WRT 0x0C</li> Removed in revision 14.
+	Revision 13 listed this as 0x4A22, but only this number was used. -->
 	<li>DSD 0x0D</li>
 </ul>
 
@@ -602,12 +598,12 @@ movement phase.</p>
 	<li>IDK 0x0A</li>
 	<li>IFF 0x0B</li>
 	<li>INS 0x0C</li>
-        <!-- <li>IOU 0x0D</li> -->
+	<!-- <li>IOU 0x0D</li> Removed in revision 14. -->
 	<li>OCC 0x0E</li>
 	<li>ORR 0x0F</li>
 	<li>PCE 0x10</li>
 	<li>POB 0x11</li>
-	<!-- <li>PPT 0x12</li> -->
+	<!-- <li>PPT 0x12</li> Removed in revision 14. -->
 	<li>PRP 0x13</li>
 	<li>QRY 0x14</li>
 	<li>SCD 0x15</li>
@@ -616,7 +612,7 @@ movement phase.</p>
 	<li>THK 0x18</li>
 	<li>THN 0x19</li>
 	<li>TRY 0x1A</li>
-	<!-- <li>UOM 0x1B</li> -->
+	<!-- <li>UOM 0x1B</li> Removed in revision 14. -->
 	<li>VSS 0x1C</li>
 	<li>WHT 0x1D</li>
 	<li>WHY 0x1E</li>
@@ -626,7 +622,6 @@ movement phase.</p>
 	<li>CHO 0x22</li>
 	<li>BCC 0x23</li>
 	<li>UNT 0x24</li>
-        <!-- <li>PRB 0xFF</li> -->
 </ul>
 
 <h2>4.15     <a name="Text">Text (0x4B)</a></h2> 
@@ -636,6 +631,23 @@ delimited with quotation marks or anything else.  There are no
 situations in the language where one string runs directly into
 another.  Therefore, the end of a string can be identified when the
 first non-text token is received.</p> 
+
+<!--
+<h2>4.??     <a name="PyDip">Added by PyDip (0x4E)</a></h2>
+
+<p>These are tokens used and/or documented by PyDip, that have not yet been
+assigned official numbers.  Their numbers are likely to change in future
+revisions of this document.</p>
+
+<ul>
+	<li>SET 0x01</li>
+	<li>LST 0x02</li>
+	<li>SEL 0x03</li>
+	<li>PNG 0x04</li>
+	<li>PRB 0x05</li>
+	<li>PRF 0x06</li>
+</ul>
+-->
 
 <h2>4.16     <a name="Provinces">Provinces (0x50 - 0x57)</a></h2>
 

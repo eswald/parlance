@@ -353,11 +353,12 @@ def parse_dcsp(proto_file):
                         last_cat <<= 8
                     else: print 'Bad line in protocol file: ' + line
                 elif line.find(' 0x') > 0:
-                    match = re.match('.*(\w\w\w) (0x\w\w)', line)
-                    name = match.group(1).upper()
-                    number = last_cat + int(match.group(2), 16)
-                    if rep_item: default_tokens[number] = name
-                    else:        token_names[number] = name
+                    match = re.search('>(\w\w\w) (0x\w\w)', line)
+                    if match:
+                        name = match.group(1).upper()
+                        number = last_cat + int(match.group(2), 16)
+                        if rep_item: default_tokens[number] = name
+                        else: token_names[number] = name
             elif line.find('M)') > 0:
                 match = re.match('.*The (\w+) Message', line)
                 if match: msg_name = match.group(1)
