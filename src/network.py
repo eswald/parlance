@@ -413,6 +413,7 @@ class ServerSocket(SocketWrapper):
         if self.polling: self.polling.unregister(fd)
         remain = len(self.sockets) - 1
         self.log_debug(6, '%d client%s still connected.', remain, s(remain))
+        if not remain: self.server.check_close()
     def select(self, time_left):
         for fd, sock in self.sockets.items():
             if sock.closed: self.remove(fd)

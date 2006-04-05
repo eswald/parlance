@@ -141,9 +141,11 @@ class Network_Full_Games(NetworkTestCase):
         config.option_class.local_opts.update({name: value})
     def connect_server(self, *args):
         ServerTestCase.connect_server(self, *args)
-        while [game for game in self.server.games if not game.closed]:
-            sleep(3)
-            self.server.check()
+        while not self.server.closed:
+            while [game for game in self.server.games if not game.closed]:
+                sleep(3)
+                self.server.check()
+            self.server.check_close()
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
         from player import HoldBot
@@ -165,6 +167,7 @@ class Network_Full_Games(NetworkTestCase):
         self.set_verbosity(4)
         from player import HoldBot
         self.connect_server([HoldBot] * 7, 2)
+        self.failUnlessEqual(len(self.server.games), 2)
     def test_evilbots(self):
         ''' Six drawing evilbots and a holdbot'''
         from player  import HoldBot

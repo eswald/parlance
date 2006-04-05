@@ -152,13 +152,17 @@ class Server(Verbose_Object):
         else: return None
     def check(self):
         open_games = [game for game in self.games if not game.closed]
-        if open_games:
-            for game in open_games: game.check_flags()
-        elif 0 < self.options.games <= len(self.games):
-            if not any([g.clients for g in self.games]):
+        for game in open_games: game.check_flags()
+    def check_close(self):
+        ''' Closes the server if all requested games have been completed.
+            Meant to be called when the last client disconnects.
+        '''#'''
+        open_games = [game for game in self.games if not game.closed]
+        if not open_games:
+            if 0 < self.options.games <= len(self.games):
                 self.log_debug(11, 'Completed all requested games')
                 self.close()
-        else: self.start_game()
+            else: self.start_game()
     
     def broadcast_admin(self, text):
         if self.options.snd_admin: self.broadcast(ADM('Server', text))
@@ -519,9 +523,6 @@ class Game(Verbose_Object):
             self.log_debug(11, 'Deciding whether to quit (%s)', quitting)
             if quitting: self.close()
             else: self.open_position(opening)
-        
-        # Perhaps close the server
-        if self.closed and not self.clients: self.server.check()
     def close(self):
         self.log_debug(10, 'Closing')
         self.pause()
@@ -529,9 +530,6 @@ class Game(Verbose_Object):
         if not self.closed:
             self.closed = True
             if self.started: self.broadcast(self.summarize())
-        
-        # Perhaps close the server
-        if not self.clients: self.server.check()
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}
