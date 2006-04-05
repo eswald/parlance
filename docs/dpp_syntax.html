@@ -409,6 +409,32 @@ but the actual map is the same as another variant.</p>
 supply centres in the game. So for a map which has 34 or 35 centres, the
 victory condition is 18 centres.</p>
 
+<!-- Not yet accepted into the DAIDE
+<h4><a name="PRF">client_command != PRF</a> (power power ...) (power power ...) ...</h4>
+
+<p>This message may be sent by the client to express its preferred power
+assignments.  It should be sent after the client receives the <b>MAP</b>
+message (and, if requested, the <b>MDF</b> message), but before it sends
+the <b>YES (MAP ('name'))</b>.</p>
+
+<p>The powers in each list are considered equally as desirabile as
+other powers in the same list, and more desirable than powers appearing
+in later lists or not listed at all.  Each power must not appear more
+than once in the message.  For example:</p>
+
+<p><b>PRF (FRA) (ENG TUR) (GER)</b>
+<br>I would prefer France the most, then either England or Turkey, then
+Germany, and any other power the least.</p>
+
+<p>The server will respond with YES (PRF (power power ...) (power power
+...) ...)</b> if the preference list will be honored, or with REJ (PRF
+(power power ...) (power power ...) ...)</b> if it is ignoring
+preference lists (for example, because a tournament director is choosing
+who gets what power).  If the server honors preference lists, any player
+who does not submit one will be considered as desiring all powers
+equally.</p>
+-->
+
 <h4><a name="HLO">server_message = HLO</a> (power) (passcode) (variant)</h4>
 <!-- <h4>server_message = HLO (UNO) (passcode) (variant)</h4> -->
 <!-- <h4>variant = (variant_option) (variant_option) ...</h4> -->
