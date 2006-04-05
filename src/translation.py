@@ -4,7 +4,7 @@
 '''#'''
 
 from functions import Verbose_Object
-from language import Message, StringToken, Token
+from language import IntegerToken, Message, StringToken, Token
 
 __all__ = ['Representation', 'translate', 'read_message_file']
 
@@ -57,10 +57,12 @@ class Representation(Verbose_Object):
             if isinstance(key, Token): result = key
             elif self.base: result = self.base.get(key)
             else:
-                try:
-                    number = int(key)
-                    result = Token(_get_token_text(number), number)
+                try: number = int(key)
                 except ValueError: result = default
+                else:
+                    if number < self.opts.max_neg_int:
+                        result = IntegerToken(number)
+                    else: result = Token(_get_token_text(number), number)
         return result or default
     
     def has_key(self, key):

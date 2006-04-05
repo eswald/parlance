@@ -78,13 +78,17 @@ def parse_syntax_file(lines):
     def add_rule(name, level, words):
         ''' Translates token abbreviations and adds the rule.'''
         def correct(word):
-            if tla.match(word): return [Token(word)]
+            from config import base_rep
+            if tla.match(word): return [base_rep[word]]
             elif word[0].isupper() and word[1].islower(): return ['cat', word]
             else: return [word]
-        rule = (level, sum([correct(word) for word in words], []))
-        rules = syntax.setdefault(name, [])
-        if rule not in rules: rules.append(rule)
-        if level < 0: trimmed[rule[1][0]] = -level
+        try: rule = (level, sum([correct(word) for word in words], []))
+        except KeyError, err:
+            print 'Error parsing syntax document: %s' % err
+        else:
+            rules = syntax.setdefault(name, [])
+            if rule not in rules: rules.append(rule)
+            if level < 0: trimmed[rule[1][0]] = -level
     
     for line in lines:
         match = bnf_rule.search(line)
@@ -165,7 +169,7 @@ def validate_option(msg, item_list, syntax_level):
         Returns the number of tokens in the best match,
         and whether the full match is valid.
         
-        >>> validate_option([BRA, KET, BRA, YES, Token(-3)],
+        >>> validate_option([BRA, KET, BRA, YES, IntegerToken(-3)],
         ...     ['repeat', 'cat', 'Miscellaneous', YES, 'number'], 200)
         (5, True)
         >>> Eng = Token('ENG', 0x4101)

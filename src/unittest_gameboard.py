@@ -300,23 +300,23 @@ class Gameboard_Doctests(unittest.TestCase):
     def test_turn_compare_lt(self):
         from language import SPR, FAL
         spring = Turn()
-        spring.set(SPR, Token(1901))
+        spring.set(SPR, IntegerToken(1901))
         fall = Turn()
-        fall.set(FAL, Token(1901))
+        fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(spring, fall), -1)
     def test_turn_compare_gt(self):
         from language import SPR, FAL
         spring = Turn()
-        spring.set(SPR, Token(1901))
+        spring.set(SPR, IntegerToken(1901))
         fall = Turn()
-        fall.set(FAL, Token(1901))
+        fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(fall, spring.key), 1)
     def test_turn_compare_eq(self):
         from language import SPR, FAL
         spring = Turn()
-        spring.set(SPR, Token(1901))
+        spring.set(SPR, IntegerToken(1901))
         fall = Turn()
-        fall.set(FAL, Token(1901))
+        fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(fall, fall.key), 0)
     def test_turn_compare_list(self):
         from language import SPR

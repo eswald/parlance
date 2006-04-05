@@ -474,8 +474,8 @@ class Turn(Comparable):
             return self.season.value() & config.order_mask[None]
     def __cmp__(self, other):
         ''' Compares Turns with each other, or with their keys.
-            >>> ts = Turn(); ts.set(SPR, Token(1901))
-            >>> tf = Turn(); tf.set(FAL, Token(1901))
+            >>> ts = Turn(); ts.set(SPR, IntegerToken(1901))
+            >>> tf = Turn(); tf.set(FAL, IntegerToken(1901))
             >>> cmp(ts, tf)
             -1
             >>> cmp(tf, ts.key)

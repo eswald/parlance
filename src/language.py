@@ -192,20 +192,22 @@ class Message(list):
     
     # Automatically translate new items into Tokens
     def append(self, value):
-        ''' Adds a new token or sublist to the Message.
+        ''' Adds a new token to the Message.
             >>> m = Message(NOT)
             >>> m.append(GOF)
             >>> m
             Message([NOT, GOF])
             >>> m.append('name')
-            >>> str(m)
-            'NOT GOF ( "name" )'
+            Traceback (most recent call last):
+                ...
+            KeyError: "unknown token 'name'"
             >>> m.append([3])
-            >>> str(m)
-            'NOT GOF ( "name" ) ( 3 )'
+            Traceback (most recent call last):
+                ...
+            TypeError: list objects are unhashable
         '''#'''
-        try: list.append(self, Token(value))
-        except (ValueError, TypeError): list.extend(self, _wrap(value))
+        from config import base_rep
+        list.append(self, base_rep[value])
     def extend(self, value):
         ''' Adds a list of new tokens to the Message, without parentheses.
             >>> m = Message(NOT)
@@ -248,7 +250,8 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        list.__setitem__(self, index, Token(value))
+        from config import base_rep
+        list.__setitem__(self, index, base_rep[value])
     def insert(self, index, value):
         ''' Inserts a single token into the Message.
             >>> m = HUH(WHT)
@@ -260,7 +263,8 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        list.insert(self, index, Token(value))
+        from config import base_rep
+        list.insert(self, index, base_rep[value])
 
 
 class _tuple_Token(tuple):
@@ -279,9 +283,9 @@ class _tuple_Token(tuple):
             
             >>> str(YES)
             'YES'
-            >>> str(Token(3))
+            >>> str(IntegerToken(3))
             '3'
-            >>> str(Token(-3))
+            >>> str(IntegerToken(-3))
             '-3'
             >>> South = Token("STH", 0x4101)
             >>> South
@@ -298,9 +302,9 @@ class _tuple_Token(tuple):
             18460
             >>> int(Token('PAR', 0x510A))
             20746
-            >>> int(Token(0x1980))
+            >>> int(IntegerToken(0x1980))
             6528
-            >>> int(Token(-3))
+            >>> int(IntegerToken(-3))
             16381
         '''#'''
         return self[1]
@@ -320,47 +324,19 @@ class Token(_tuple_Token):
     __slots__ = ()
     cache = {}
     
-    def __new__(klass, name, number=None):
-        ''' Returns a Token instance from its name and number,
-            or either one for the DCSP tokens.
-            Warning: Token('3') is ambiguous; use StringToken or IntegerToken.
-            
-            >>> Token(-3)
-            IntegerToken(-3)
-            >>> Token('YES')
-            YES
-            >>> YES is Token(Token('YES'))
-            True
-            >>> hex(Token('T'))
-            '0x4B54'
-            >>> Token(')') == KET   # Beware! This is a single character token.
-            False
-            >>> Token(0x1481C)
-            Traceback (most recent call last):
-                ...
-            OverflowError: int too large to convert to IntegerToken
-            >>> from translation import Representation
-            >>> rep=Representation({0x4101: 'Sth'}, None)
-            >>> rep['Sth']
-            Token('Sth', 0x4101)
-            >>> rep[0x4101]
-            Token('Sth', 0x4101)
+    def __new__(klass, name, number):
+        ''' Returns a Token instance from its name and number.
+            If you only have one, use "config.base_rep[key]".
         '''#'''
-        from config import base_rep
-        if number is not None:
-            # Fiddle with parentheses
-            if name == 'BRA': name = '('
-            elif name == 'KET': name = ')'
-            
-            key = (name, number)
-            result = klass.cache.get(key)
-            if not result:
-                result = super(Token, klass).__new__(klass, key)
-                klass.cache[key] = result
-        elif isinstance(name, klass): result = name
-        elif isinstance(name, (int, float, long)):
-            result = IntegerToken(name)
-        else: result = base_rep.get(name) or StringToken(name)
+        # Fiddle with parentheses
+        if name == 'BRA': name = '('
+        elif name == 'KET': name = ')'
+        
+        key = (name, number)
+        result = Token.cache.get(key)
+        if not result:
+            result = super(Token, klass).__new__(klass, key)
+            Token.cache[key] = result
         return result
     
     # Components
@@ -368,7 +344,7 @@ class Token(_tuple_Token):
         ''' Returns a string representing the type of token.
             >>> YES.category_name()
             'Commands'
-            >>> Token(-3).category_name()
+            >>> IntegerToken(-3).category_name()
             'Integers'
         '''#'''
         cat = self.category()
@@ -380,7 +356,7 @@ class Token(_tuple_Token):
             
             >>> YES.category()
             72
-            >>> Token('A').category() == Token.cats['Text']
+            >>> StringToken('A').category() == Token.cats['Text']
             True
         '''#'''
         return (self.number & 0xFF00) >> 8
@@ -394,9 +370,9 @@ class Token(_tuple_Token):
             28
             >>> Token('PAR', 0x510A).value()
             10
-            >>> Token(0x1980).value()
+            >>> IntegerToken(0x1980).value()
             6528
-            >>> Token(-3).value()
+            >>> IntegerToken(-3).value()
             -3
         '''#'''
         if   self.is_positive(): return self.number
@@ -408,7 +384,7 @@ class Token(_tuple_Token):
         ''' Whether the token represents an ASCII character.
             >>> YES.is_text()
             False
-            >>> Token('A').is_text()
+            >>> StringToken('A').is_text()
             True
         '''#'''
         return self.category() == self.cats['Text']
@@ -463,9 +439,9 @@ class Token(_tuple_Token):
         ''' Whether the token represents a number.
             >>> YES.is_integer()
             False
-            >>> Token(3).is_integer()
+            >>> IntegerToken(3).is_integer()
             True
-            >>> Token(-3).is_integer()
+            >>> IntegerToken(-3).is_integer()
             True
         '''#'''
         return self.number < self.opts.max_neg_int
@@ -473,11 +449,11 @@ class Token(_tuple_Token):
         ''' Whether the token represents a positive number.
             >>> YES.is_positive()
             False
-            >>> Token(3).is_positive()
+            >>> IntegerToken(3).is_positive()
             True
-            >>> Token(-3).is_positive()
+            >>> IntegerToken(-3).is_positive()
             False
-            >>> Token(0).is_positive()
+            >>> IntegerToken(0).is_positive()
             False
         '''#'''
         return 0 < self.number < self.opts.max_pos_int
@@ -485,11 +461,11 @@ class Token(_tuple_Token):
         ''' Whether the token represents a negative number.
             >>> YES.is_negative()
             False
-            >>> Token(3).is_negative()
+            >>> IntegerToken(3).is_negative()
             False
-            >>> Token(-3).is_negative()
+            >>> IntegerToken(-3).is_negative()
             True
-            >>> Token(0).is_positive()
+            >>> IntegerToken(0).is_positive()
             False
         '''#'''
         return self.opts.max_pos_int <= self.number < self.opts.max_neg_int
@@ -506,13 +482,14 @@ class Token(_tuple_Token):
     def __repr__(self):
         ''' Returns code to reproduce the token.
             Uses the simplest form it can.
-            >>> repr(Token(-3))
+            >>> repr(IntegerToken(-3))
             'IntegerToken(-3)'
             >>> repr(YES)
             'YES'
             >>> repr(KET)
             'KET'
-            >>> eval(repr(YES)) == Token('YES')
+            >>> from config import base_rep
+            >>> eval(repr(YES)) == base_rep['YES']
             True
             >>> repr(Token('STH', 0x4101))
             "Token('STH', 0x4101)"
@@ -524,7 +501,7 @@ class Token(_tuple_Token):
         elif self == KET: return 'KET'
         elif self == BRA: return 'BRA'
         elif default_rep.get(self.text) == self: return self.text
-        elif len(self.text) == 1 and Token(self.text) == self:
+        elif len(self.text) == 1 and StringToken(self.text) == self:
             return name + '(' + repr(self.text) + ')'
         else: return name+'('+repr(self.text)+', '+('0x%04X'%self.number)+')'
     def tokenize(self): return [self]
@@ -551,12 +528,12 @@ class Token(_tuple_Token):
             
             >>> 'NOT' + GOF
             'NOT GOF'
-            >>> 'NOT' + Token('A')
+            >>> 'NOT' + StringToken('A')
             'NOT "A"'
-            >>> s = '"Hello, "' + Token('W')
+            >>> s = '"Hello, "' + StringToken('W')
             >>> s
             '"Hello, W"'
-            >>> s + Token('o')
+            >>> s + StringToken('o')
             '"Hello, Wo"'
             >>> s + YES
             '"Hello, W" YES'
@@ -671,7 +648,7 @@ def _tokenize(value, wrap=False):
         >>> _tokenize([NOT(), (GOF,)])
         [NOT, BRA, GOF, KET]
     '''#'''
-    if   isinstance(value, (int, float, long)): return [Token(value)]
+    if   isinstance(value, (int, float, long)): return [IntegerToken(value)]
     elif isinstance(value, str):
         return [StringToken(c) for c in value]
     elif hasattr(value, 'tokenize'):
