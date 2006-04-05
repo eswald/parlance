@@ -8,7 +8,7 @@
 
 <p>Author:             Andrew Rose, revised by David Norman</p>
 <p>Date:               05-Apr-2006</p>
-<p>Status:             Draft</p>            
+<p>Status:             Draft</p>
 
 <p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
 <p class=Title1>Version 1</p>
@@ -41,7 +41,7 @@ this document is structured as follows:</p>
 	is not available.</li>
 </ul>
 
-<h2>1.2  Issues</h2> 
+<h2>1.2  Issues</h2>
 
 <p>The following issues have been identified with this protocol and
 are under investigation.</p>
@@ -59,7 +59,7 @@ are under investigation.</p>
 <p>Client-server communications will be carried out over a TCP
 connection.</p>
 
-<h2>2.2         Server Requirements</h2> 
+<h2>2.2         Server Requirements</h2>
 
 <h3>Listening for Connections</h3>
 <p>The server will publish an address and TCP port on which the server
@@ -89,7 +89,7 @@ structure (see chapter 3), the server will terminate the
 connection.</p>
 
 
-<h2>2.3         Client Requirements</h2> 
+<h2>2.3         Client Requirements</h2>
 
 <h3>Establishing a Connection</h3>
 <p>To communicate with a server, a client shall first establish a TCP
@@ -111,7 +111,7 @@ messages at any time except as limited below.</p>
 <p>All message structures described in this section are shown in
 network byte order (big endian).  Implementers of clients or servers
 for little endian machines (e.g. Intel) should take care in swapping
-the octets of multi-octet fields.</p> 
+the octets of multi-octet fields.</p>
 
 <h2>3.1         General Message Structure</h2>
 <p>All messages sent between a client and a server will have the
@@ -122,12 +122,12 @@ following message structure.</p>
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
-|                         Optional Data                         | 
-|                               .                               | 
-|                               .                               | 
-|                               .                               | 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Optional Data                         |
+|                               .                               |
+|                               .                               |
+|                               .                               |
 
 </pre>
 
@@ -165,10 +165,10 @@ following message structure.</p>
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |            Version            |         Magic  Number         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 </pre>
 
@@ -185,7 +185,7 @@ connection has been opened.  If the server discovers incompatible
 version numbers, it will send the error message and close the
 connection.  Note that a single instance of a server may be able to
 talk several different protocol versions over different
-connections.</p> 
+connections.</p>
 
 <p>The message contains a magic number that is designed to quickly
 catch connections that have (inadvertently or deliberately) been made
@@ -197,18 +197,18 @@ and it is only sent once.</p>
 
 
 
-<h2>3.3         <a name="RM">The Representation Message</a> (RM)</h2> 
+<h2>3.3         <a name="RM">The Representation Message</a> (RM)</h2>
 <pre>
 
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
-|                     Representation Message                    | 
-|                               .                               | 
-|                               .                               | 
-|                               .                               | 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Representation Message                    |
+|                               .                               |
+|                               .                               |
+|                               .                               |
 
 </pre>
 
@@ -245,14 +245,14 @@ be defined in the RM.</p>
 
 <p>When defining provinces, the low-octet of the province tokens must
 be unique and form a sequence starting at 0 and incrementing by 1 up
-to the number of provinces less 1.</p> 
+to the number of provinces less 1.</p>
 
 <p>When defining powers, the low-octet of the power tokens must be
 unique and form a sequence starting at 0 and incrementing by 1 up to
-the number of powers less 1.</p> 
+the number of powers less 1.</p>
 
 <p>This message is only ever sent from the server to the client and it
-is always sent precisely once, immediately following the IM.</p> 
+is always sent precisely once, immediately following the IM.</p>
 
 
 <h2>3.4         <a name="DM">The Diplomacy Message</a> (DM)</h2>
@@ -264,12 +264,12 @@ is always sent precisely once, immediately following the IM.</p>
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
-|                        Language Message                       | 
-|                               .                               | 
-|                               .                               | 
-|                               .                               | 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Language Message                       |
+|                               .                               |
+|                               .                               |
+|                               .                               |
 
 </pre>
 
@@ -292,8 +292,8 @@ either party following the RM.</p>
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 </pre>
 
@@ -305,7 +305,7 @@ either party following the RM.</p>
 <p>This message is sent immediately before the either party closes the
 TCP connection.  It is not sent if an error message has been sent.  On
 receipt, the receiving party will immediately close the connection
-without sending a final message or error message.</p> 
+without sending a final message or error message.</p>
 
 
 <h2>3.6         <a name="EM">The Error Message</a> (EM)</h2>
@@ -315,9 +315,9 @@ without sending a final message or error message.</p>
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Message Type |      Pad      |        Remaining Length       | 
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
-|           Error code          | 
+|  Message Type |      Pad      |        Remaining Length       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Error code          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 </pre>
@@ -377,7 +377,7 @@ the category by 256 and adding the token number within the
 category.</p>
 
 <p>This method means that the protocol is extensible and allows simple
-determination of a token category from the top octet.</p> 
+determination of a token category from the top octet.</p>
 
 
 <h2>4.2         Category Space</h2>
@@ -397,7 +397,7 @@ determination of a token category from the top octet.</p>
 <p>Of the 256 possible categories, 88 are assigned and the remaining
 168 are reserved for future use.  In those 168, a full 128-category
 block remains as well as a 32-category block.  These blocks may be
-further subdivided in the future if appropriate.</p> 
+further subdivided in the future if appropriate.</p>
 
 
 <p>The remainder of this chapter defines the categories, their value
@@ -418,7 +418,7 @@ category are always zero.</p>
 </ul>
 
 
-<h2>4.5         <a name="Powers">Powers (0x41)</a></h2> 
+<h2>4.5         <a name="Powers">Powers (0x41)</a></h2>
 
 <ul>
 	<li>AUS 0x00</li>
@@ -452,32 +452,32 @@ category are always zero.</p>
 	<li>DSB 0x40</li>
 	<li>RTO 0x41</li>
 	<br>
-	<li>BLD 0x80</li> 
-	<li>REM 0x81</li> 
+	<li>BLD 0x80</li>
+	<li>REM 0x81</li>
 	<li>WVE 0x82</li>
 </ul>
 
 <p>Note that the high three bits can be used to determine which phase
 the order is valid in.  The top bit is valid the adjustments phase,
 the next is valid in the retreats phase and the last is valid in the
-movement phase.</p> 
+movement phase.</p>
 
 
-<h2>4.8         <a name="Order_Notes">Order Notes (0x44)</a></h2> 
+<h2>4.8         <a name="Order_Notes">Order Notes (0x44)</a></h2>
 
 <ul>
-	<li>MBV 0x00</li> 
-	<li>BPR 0x01</li> 
-	<li>CST 0x02</li> 
-	<li>ESC 0x03</li> 
-	<li>FAR 0x04</li> 
-	<li>HSC 0x05</li> 
-	<li>NAS 0x06</li> 
-	<li>NMB 0x07</li> 
-	<li>NMR 0x08</li> 
-	<li>NRN 0x09</li> 
-	<li>NRS 0x0A</li> 
-	<li>NSA 0x0B</li> 
+	<li>MBV 0x00</li>
+	<li>BPR 0x01</li>
+	<li>CST 0x02</li>
+	<li>ESC 0x03</li>
+	<li>FAR 0x04</li>
+	<li>HSC 0x05</li>
+	<li>NAS 0x06</li>
+	<li>NMB 0x07</li>
+	<li>NMR 0x08</li>
+	<li>NRN 0x09</li>
+	<li>NRS 0x0A</li>
+	<li>NSA 0x0B</li>
 	<li>NSC 0x0C</li>
 	<li>NSF 0x0D</li>
 	<li>NSP 0x0E</li>
@@ -490,7 +490,7 @@ movement phase.</p>
 
 
 
-<h2>4.9         <a name="Results">Results (0x45)</a></h2> 
+<h2>4.9         <a name="Results">Results (0x45)</a></h2>
 
 <ul>
 	<li>SUC 0x00</li>
@@ -502,21 +502,21 @@ movement phase.</p>
 	<li>RET 0x06</li>
 </ul>
 
-<h2>4.10     <a name="Coasts">Coasts (0x46)</a></h2> 
+<h2>4.10     <a name="Coasts">Coasts (0x46)</a></h2>
 
 <ul>
-	<li>NCS 0x00</li> 
-	<li>NEC 0x02</li> 
-	<li>ECS 0x04</li> 
-	<li>SEC 0x06</li> 
-	<li>SCS 0x08</li> 
-	<li>SWC 0x0A</li> 
-	<li>WCS 0x0C</li> 
-	<li>NWC 0x0E</li> 
+	<li>NCS 0x00</li>
+	<li>NEC 0x02</li>
+	<li>ECS 0x04</li>
+	<li>SEC 0x06</li>
+	<li>SCS 0x08</li>
+	<li>SWC 0x0A</li>
+	<li>WCS 0x0C</li>
+	<li>NWC 0x0E</li>
 </ul>
 
 
-<h2>4.11     <a name="Phases">Phases (0x47)</a></h2> 
+<h2>4.11     <a name="Phases">Phases (0x47)</a></h2>
 
 <ul>
 	<li>SPR 0x00</li>
@@ -526,11 +526,11 @@ movement phase.</p>
 	<li>WIN 0x04</li>
 </ul>
 
-<h2>4.12     <a name="Commands">Commands (0x48)</a></h2> 
+<h2>4.12     <a name="Commands">Commands (0x48)</a></h2>
 
 <ul>
-	<li>CCD 0x00</li> 
-	<li>DRW 0x01</li> 
+	<li>CCD 0x00</li>
+	<li>DRW 0x01</li>
 	<li>FRM 0x02</li>
 	<li>GOF 0x03</li>
 	<li>HLO 0x04</li>
@@ -562,7 +562,7 @@ movement phase.</p>
 	<li>SMR 0x1E</li>
 </ul>
 
-<h2>4.13     <a name="Parameters">Parameters (0x49)</a></h2> 
+<h2>4.13     <a name="Parameters">Parameters (0x49)</a></h2>
 
 <ul>
 	<li>AOA 0x00</li>
@@ -582,11 +582,11 @@ movement phase.</p>
 	<li>DSD 0x0D</li>
 </ul>
 
-<h2>4.14     <a name="Press">Press (0x4A)</a></h2> 
+<h2>4.14     <a name="Press">Press (0x4A)</a></h2>
 
 <ul>
-	<li>ALY 0x00</li> 
-	<li>AND 0x01</li> 
+	<li>ALY 0x00</li>
+	<li>AND 0x01</li>
 	<li>BWX 0x02</li>
 	<li>DMZ 0x03</li>
 	<li>ELS 0x04</li>
@@ -624,13 +624,13 @@ movement phase.</p>
 	<li>UNT 0x24</li>
 </ul>
 
-<h2>4.15     <a name="Text">Text (0x4B)</a></h2> 
+<h2>4.15     <a name="Text">Text (0x4B)</a></h2>
 
 <p>The value is the ASCII code for a single letter.  Strings are not
 delimited with quotation marks or anything else.  There are no
 situations in the language where one string runs directly into
 another.  Therefore, the end of a string can be identified when the
-first non-text token is received.</p> 
+first non-text token is received.</p>
 
 <!--
 <h2>4.??     <a name="PyDip">Added by PyDip (0x4E)</a></h2>
@@ -772,7 +772,7 @@ leading up to 74 (giving 75 provinces in total).  It will always be
 possible to use the bottom octet to index into a zero-based array.
 The low bit of the category determines if the province is a supply
 centre or not.  The next two bits can be used to determine province
-type.</p> 
+type.</p>
 
 
 <h2>4.17     <a name="Reserved">Reserved for AI use (0x58 - 0x5F)</a></h2>
