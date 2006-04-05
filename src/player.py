@@ -332,17 +332,16 @@ class Player(Verbose_Object):
             Implements the suggested response for unhandled messages.
         '''#'''
         folded = message.fold()
-        mid    = folded[1]
+        sender = folded[1][0]
         recips = folded[2]
         press  = folded[3]
-        sender = mid[0]
-
+        
         # Save it for future reference
-        self.pressed.setdefault(sender,{}).setdefault(mid[1],[]).append(message)
+        self.pressed.setdefault(sender,[]).append(message)
         
         # Forward it if requested, but avoid loops
         if self.fwd_list.has_key(sender) and press[0] != FRM:
-            self.send_press(self.fwd_list[sender], FRM(sender, recips, press), [mid])
+            self.send_press(self.fwd_list[sender], FRM(sender, recips, press))
         
         # Pass it off to a handler method
         if len(press) > 4: refs = folded[5:]
@@ -353,49 +352,35 @@ class Player(Verbose_Object):
         except AttributeError:
             # No handler found; return the standard response
             if press[0] not in (HUH, TRY):
-                self.send_press(sender, HUH(ERR() + press), [mid])
+                self.send_press(sender, HUH(ERR() + press))
                 self.send_press(sender, TRY(self.press_tokens))
         else:
-            try: method(mid, press, refs)
+            try: method(sender, press)
             except Exception, err:
-                self.send_press(sender, HUH(press + ERR()), [mid])
-                self.log_debug(7, 'Exception in %s(%s, %s, %s): %s',
-                        method_name, sender, press, refs, err)
+                self.send_press(sender, HUH(press + ERR()))
+                self.log_debug(7, 'Exception in %s(%s, %s): %s',
+                        method_name, sender, press, err)
     
-    def send_press(self, recips, press, refs = None):
+    def send_press(self, recips, press):
         if not (self.in_game and self.power): return
         
         # Standardize inputs
         if not isinstance(recips, list): recips = [recips]
         
         # Forward, if requested
-        mid = self.select_id()
         for recipient in recips:
             if self.bcc_list.has_key(recipient) and press[0] != FRM:
                 self.send_press(self.bcc_list[recipient],
-                    FRM(self.power, recips, press),
-                    refs + [(self.power, mid)])
-
+                    FRM(self.power, recips, press))
+        
         # Create and store the message
-        message = SND(mid, recips, press)
-        if refs: message += WRT(*refs)
-        self.pressed[self.power].setdefault(mid,[]).append(message)
+        message = SND(recips, press)
+        self.pressed.setdefault(self.power.key,[]).append(message)
         
         # Actually send the message
         self.send(message)
     def send_admin(self, text):
         self.send(ADM(self.name or 'Observer', str(text)))
-    
-    def select_id(self):
-        ''' Finds a random unused message id.
-            Sequential would be easier, but more revealing.
-        '''#'''
-        max_int = Token.opts.max_pos_int
-        me = self.pressed.setdefault(self.power, {})
-        while True:
-            num = randrange(-max_int, max_int)
-            if not me.has_key(num): break
-        return num
 
 
 class HoldBot(Player):

@@ -6,13 +6,13 @@
 
 <body>
 
-<p>Author:             Andrew Rose</p>
-<p>Date:               29-Mar-2006</p>
+<p>Author:             Andrew Rose, revised by David Norman</p>
+<p>Date:               03-Apr-2006</p>
 <p>Status:             Draft</p>            
 
 <p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
 <p class=Title1>Version 1</p>
-<p class=Title1>Revision 13</p>
+<p class=Title1>Revision 14</p>
 <p class=Title1>DRAFT COPY</p>
 
 <h1>1     Introduction</h1>
@@ -436,7 +436,6 @@ category are always zero.</p>
 <ul>
 	<li>AMY 0x00</li>
 	<li>FLT 0x01</li>
-	<li>UNT 0x02</li>
 </ul>
 
 
@@ -565,6 +564,7 @@ movement phase.</p>
 	<li>LST 0x20</li>
 	<li>SEL 0x21</li>
 	<li>PNG 0x22</li>
+	<li>PRF 0x23</li>
 </ul>
 
 <h2>4.13     <a name="Parameters">Parameters (0x49)</a></h2> 
@@ -602,12 +602,12 @@ movement phase.</p>
 	<li>IDK 0x0A</li>
 	<li>IFF 0x0B</li>
 	<li>INS 0x0C</li>
-	<li>IOU 0x0D</li>
+        <!-- <li>IOU 0x0D</li> -->
 	<li>OCC 0x0E</li>
 	<li>ORR 0x0F</li>
 	<li>PCE 0x10</li>
 	<li>POB 0x11</li>
-	<li>PPT 0x12</li>
+	<!-- <li>PPT 0x12</li> -->
 	<li>PRP 0x13</li>
 	<li>QRY 0x14</li>
 	<li>SCD 0x15</li>
@@ -616,16 +616,17 @@ movement phase.</p>
 	<li>THK 0x18</li>
 	<li>THN 0x19</li>
 	<li>TRY 0x1A</li>
-	<li>UOM 0x1B</li>
+	<!-- <li>UOM 0x1B</li> -->
 	<li>VSS 0x1C</li>
 	<li>WHT 0x1D</li>
 	<li>WHY 0x1E</li>
 	<li>XDO 0x1F</li>
 	<li>XOY 0x20</li>
 	<li>YDO 0x21</li>
-	<li>BCC 0x22</li>
-	<li>CHO 0x23</li>
-        <!-- <li>PRB 0x24</li> -->
+	<li>CHO 0x22</li>
+	<li>BCC 0x23</li>
+	<li>UNT 0x24</li>
+        <!-- <li>PRB 0xFF</li> -->
 </ul>
 
 <h2>4.15     <a name="Text">Text (0x4B)</a></h2> 

@@ -8,9 +8,9 @@
 <BODY>
 <h1>Diplomacy AI Development Environment Message Syntax</h1>
 
-<p>Modified from version 0.13 of
+<p>Modified from version 0.14 of
 <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">David's RTF
-document</a>, which was last updated on 2 January 2006.</p>
+document</a>, which was last updated on 2 April 2006.</p>
 
 <p>The following document defines the language which will be used for
 communications between a client and server, and for negotiation between
@@ -906,7 +906,9 @@ the syntax level for the current game.</p>
 <!-- <h4>client_message = HUH (error_sequence)</h4> -->
 <p>The <b>PRN</b> and <b>HUH</b> messages may also be sent from the
 client to the server, if the client believes that a message from the
-server is incorrectly bracketed or contains illegal syntax.</p>
+server is incorrectly bracketed or contains illegal syntax.  However,
+the server and client must not send <b>PRN</b> and <b>HUH</b> in
+response to a <b>PRN</b> and <b>HUH</b> message.</p>
 
 <h4><a name="CCD">server_message = CCD</a> (power)</h4>
 <!-- <h4>server_message = NOT (CCD (power))</h4> -->
@@ -977,7 +979,7 @@ with <b>YES (DRW)</b>, or <b>REJ (DRW)</b> if the game has not
 started.</p>
 
 <!-- <h4>server_message = DRW</h4> -->
-<!-- <h4>server_message != DRW (power power ...)</h4> -->
+<!-- <h4>server_message != DRW (power power power ...)</h4> -->
 <p><b>DRW</b> can also be sent from the server to the client, to
 indicate that a draw has been declared.  This will happen as soon as all
 non-eliminated players have simultaneously indicated that they will
@@ -1030,7 +1032,7 @@ also be given at the start of the game:</p>
 <p>In a <b>PDA</b> variant game, the player can send the <b>DRW</b>
 command with a parameter &mdash; the list of powers in the draw:</p>
 
-<h4>{PDA} client_command = DRW (power power ...)</h4>
+<h4>{PDA} client_command = DRW (power power power ...)</h4>
 
 <p>If all surviving powers submit a <b>DRW</b> command with the same
 list of powers on the same turn, then a draw is immediately declared
@@ -1041,11 +1043,11 @@ including those powers.</p>
 an additional draw combination which the power will accept.</p>
 
 <p>The server will respond to each <b>DRW</b> message with
-<b>YES (DRW (power power ...))</b>, or
-<b>REJ (DRW (power power ...))</b> if the game has not started, or
+<b>YES (DRW (power power power ...))</b>, or
+<b>REJ (DRW (power power power ...))</b> if the game has not started, or
 if the list of powers includes an eliminated power.</p>
 
-<!-- <h4>{PDA} server_message = DRW (power power ...)</h4> -->
+<!-- <h4>{PDA} server_message = DRW (power power power ...)</h4> -->
 <p>When a draw is declared in a <b>PDA</b> variant game, the draw
 message includes a parameter &mdash; the list of powers in the agreed
 draw.</p>
@@ -1054,25 +1056,23 @@ draw.</p>
 <b>PDA</b> game &mdash; it is the same as sending a <b>DRW</b> command
 listing all surviving powers.</p>
 
-<!-- <h4>{PDA} client_command = NOT (DRW (power power ...))</h4> -->
-<p>The player can cancel a partial draw request with <b>NOT (DRW (power power ...))</b>.</p>
+<!-- <h4>{PDA} client_command = NOT (DRW (power power power ...))</h4> -->
+<p>The player can cancel a partial draw request with <b>NOT (DRW (power power power ...))</b>.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
-<h4><a name="SND">client_command = SND</a> (message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>client_command = SND (message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
-<!-- <h4>message_id = number</h4> -->
+<h4><a name="SND">client_command = SND</a> (power power ...) (press_message)</h4>
+<h4>client_command = SND (power power ...) (reply)</h4>
+<!-- Obsolete commands, kept for compatibility with Mapper 0.34
+<h4>client_command = SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...]</h4>
+<h4>client_command = SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...</h4>
+<h4>message_id = number</h4>
+-->
 
 <p>These are sent by the player to the server, to send
 <b>press_message</b> to the list of <b>power</b>s given. The recipient
-list must not include the sending power. <b>message_id</b> is an integer
-value selected by the sending player. The <b>(power message_id)</b>
-list following <b>WRT</b> is the sending power and message_id of each
-message to which this is a reply.  In this case, the reference to the
-message to which it is a direct reply should be the first in the list.
-Some messages are always sent as
-replies, and so the <b>WRT</b> section is compulsory.  For others, it is
-optional.  The message sent applies to the current turn, unless
+list should not include the sending power.
+The message sent applies to the current turn, unless
 otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
@@ -1118,12 +1118,11 @@ or the sending power has been eliminated.</p>
 <p>When the message is sent successfully, the target players will
 receive the message in one of the following forms:</p>
 
-<h4><a name="FRM">server_message = FRM</a> (power message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>server_message = FRM (power message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
+<h4><a name="FRM">server_message = FRM</a> (power) (power power ...) (press_message)</h4>
+<h4>server_message = FRM (power) (power power ...) (reply)</h4>
 
-<p>The first <b>power</b> is the power which sent the message, and
-the <b>message_id</b> provided by that power. The <b>power</b> list,
-the <b>press_message</b> and the <b>WRT</b> information are as in the
+<p>The first <b>power</b> is the power which sent the message. The
+<b>power</b> list and the <b>press_message</b> are as in the
 <b>SND</b> command.</p>
 
 <p>We have now covered every command in the Diplomacy AI Development
@@ -1153,17 +1152,20 @@ powers must not be included in either power list.  This offer is
 continuous.</p>
 
 <h4><a name="DRW_press">offer = DRW</a></h4>
-<!-- <h4>{PDA} offer = DRW (power power ...)</h4> -->
+<!-- <h4>{PDA} offer = DRW (power power power ...)</h4> -->
 
 <p>Propose a Draw. In the case of a <b>PDA</b> game, this may also be
-<b>DRW (power power ...)</b>. The list of powers does
+<b>DRW (power power power ...)</b>. The list of powers does
 <em>not</em> need to include the powers receiving the message.
+The list of powers must include at least two powers.
 Eliminated powers must not be included in the power list.</p>
 
 
 <h4><a name="SLO_press">offer = SLO (power)</a></h4>
 
-<p>Propose a Solo to the specified power.</p>
+<p>Propose a Solo to the specified power.  Note that you can't actually
+order a solo &mdash; but you may be able to move your units in a way
+that causes one to occur.</p>
 
 <h4><a name="NOT_press">offer = NOT (offer)</a></h4>
 
@@ -1242,8 +1244,8 @@ or <b>HUH</b> message.</p>
 <p>A player which can not process Press (that is, which is only designed to
 work at Level 0) should respond to any <b>FRM</b> message with:</p>
 <ul>
-	<li><b>SND (message_id) (power) (HUH (ERR press_message)) WRT (power message_id)</b></li>
-	<li><b>SND (message_id) (power) (TRY ())</b></li>
+	<li><b>SND (power) (HUH (ERR press_message))</b></li>
+	<li><b>SND (power) (TRY ())</b></li>
 </ul>
 
 <p>Where <b>power</b> is the sending power, and <b>press_message</b> is
@@ -1657,8 +1659,8 @@ power.</p>
 <p>Level 120 adds the ability to forward press from one power to
 another. This adds three extra commands to the message syntax:</p>
 
-<h4><a name="SND_press">offer = SND</a> (power) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>offer = SND (power) (power power ...) (reply) [WRT (power message_id) (power message_id) ...]</h4>
+<h4><a name="SND_press">offer = SND</a> (power) (power power ...) (press_message)</h4>
+<h4>offer = SND (power) (power power ...) (reply)</h4>
 
 <p>This is a request for the first <b>(power)</b> to send the message
 given. The sending power (the first parameter) must be a recipient of
@@ -1693,8 +1695,8 @@ received.</p>
 
 <p>This is an offer/request to cancel a previously agreed <b>FWD</b> or <b>BCC</b>.</p>
 
-<h4><a name="FRM_press">press_message = FRM</a> (power message_id) (power power ...) (press_message) [WRT (power message_id) (power message_id) ...]</h4>
-<h4>press_message = FRM (power message_id) (power power ...) (reply) WRT (power message_id) (power message_id) ...</h4>
+<h4><a name="FRM_press">press_message = FRM</a> (power) (power power ...) (press_message)</h4>
+<h4>press_message = FRM (power) (power power ...) (reply)</h4>
 
 <p>This is a message to inform a power of a message the player has sent
 or received.  No response is required. Eliminated powers must not be
@@ -1787,10 +1789,15 @@ information without first being queried for it.</p>
 
 <p>The following is a complete alphabetical list of tokens specified in
 the Diplomacy AI Development Environment Syntax.  Token numbers refer to
-Version 1, Revision 13 of the
-<a href="http://www.daide.org.uk/external/comproto.html">Client-Server Protocol Document</a>,
+Version 1, Revision 14 of the
+<a href="http://www.ellought.demon.co.uk/dipai/daide_protocol.html">Client-Server Protocol Document</a>,
 except for those indicated with an asterisk, which are listed as used by
-<a href="http://www.brainshell.org/diplomacy/">the Brainshell server</a>.  Note
+<a href="http://www.brainshell.org/diplomacy/">the PyDip framework</a>.
+Where multiple token numbers are given, PyDip currently uses only the
+last one listed; the others have been used in previous versions or other
+sources, and might be found in obsolete software.</p>
+
+<p>Note
 that this table contains a few tokens not used in this document, for
 various reasons.</p>
 
@@ -1811,7 +1818,7 @@ various reasons.</p>
 <tr><td>AUT</td><td>0x4703</td><td>Phase</td><td></td><td>Fall Retreats</td></tr>
 <tr><td>BAL</td><td>0x5210</td><td>Province</td><td>Sea</td><td>Baltic Sea</td></tr>
 <tr><td>BAR</td><td>0x5211</td><td>Province</td><td>Sea</td><td>Barents Sea</td></tr>
-<tr><td>BCC</td><td>0x4A22 *</td><td>Press</td><td>Offer</td><td>Blind Carbon Copy</td><td>
+<tr><td>BCC</td><td>0x4A22 / 0x4A23</td><td>Press</td><td>Offer</td><td>Blind Carbon Copy</td><td>
 <tr><td>BEL</td><td>0x5531</td><td>Province</td><td>Coastal Supply Centre</td><td>Belgium</td></tr>
 <tr><td>BER</td><td>0x5532</td><td>Province</td><td>Coastal Supply Centre</td><td>Berlin</td></tr>
 <tr><td>BLA</td><td>0x5212</td><td>Province</td><td>Sea</td><td>Black Sea</td></tr>
@@ -1827,7 +1834,7 @@ various reasons.</p>
 <tr><td>BUR</td><td>0x5001</td><td>Province</td><td>Inland</td><td>Burgundy</td></tr>
 <tr><td>BWX</td><td>0x4A02</td><td>Press</td><td>Reply</td><td>None of Your Business</td></tr>
 <tr><td>CCD</td><td>0x4800</td><td>Command</td><td>Server to Client</td><td>Power in Civil Disorder</td></tr>
-<tr><td>CHO</td><td>0x4A23 *</td><td>Press</td><td>Offer</td><td>Choose</td></tr>
+<tr><td>CHO</td><td>0x4A23 / 0x4A22</td><td>Press</td><td>Offer</td><td>Choose</td></tr>
 <tr><td>CLY</td><td>0x5424</td><td>Province</td><td>Coastal</td><td>Clyde</td></tr>
 <tr><td>CON</td><td>0x5534</td><td>Province</td><td>Coastal Supply Centre</td><td>Constantinople</td></tr>
 <tr><td>CST</td><td>0x4402</td><td>Order Note</td><td>THX</td><td>No Coast Specified</td></tr>
@@ -1944,7 +1951,8 @@ various reasons.</p>
 <tr><td>POR</td><td>0x553F</td><td>Province</td><td>Coastal Supply Centre</td><td>Portugal</td></tr>
 <!--<tr><td>PNG</td><td>0x4822 *</td><td>Command</td><td>Client &lt;- - -&gt; Server</td><td>Ping (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PPT</td><td>0x4A12</td><td>Press</td><td></td><td>Puppet (<em>REMOVED</em>)</td></tr>
-<!--<tr><td>PRB</td><td>0x4A24</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>PRB</td><td>0x4A24 / 0x4AFF</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>PRF</td><td>0x4823</td><td>Command</td><td>Client to Server</td><td>Preference list (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PRN</td><td>0x4813</td><td>Command</td><td>Server to Client</td><td>Parenthesis error</td></tr>
 <tr><td>PRP</td><td>0x4A13</td><td>Press</td><td>Message</td><td>Propose</td></tr>
 <tr><td>PRU</td><td>0x542B</td><td>Province</td><td>Coastal</td><td>Prussia</td></tr>
@@ -1999,7 +2007,7 @@ various reasons.</p>
 <tr><td>TYS</td><td>0x521F</td><td>Province</td><td>Sea</td><td>Tyrrhenian Sea</td></tr>
 <tr><td>UKR</td><td>0x5006</td><td>Province</td><td>Inland</td><td>Ukraine</td></tr>
 <tr><td>UNO</td><td>0x490B</td><td>Parameter</td><td>SCO</td><td>Unowned</td></tr>
-<tr><td>UNT</td><td>0x4202 *</td><td>Press</td><td>OCC</td><td>Unit</td></tr>
+<tr><td>UNT</td><td>0x4202 / 0x4A24</td><td>Press</td><td>OCC</td><td>Unit</td></tr>
 <tr><td>UOM</td><td>0x4A1B</td><td>Press</td><td>Offer</td><td>You Owe Me (<em>REMOVED</em>)</td></tr>
 <tr><td>VEN</td><td>0x5547</td><td>Province</td><td>Coastal Supply Centre</td><td>Venice</td></tr>
 <tr><td>VIA</td><td>0x4325</td><td>Order</td><td>Movement Phase</td><td>Move via</td></tr>
@@ -2012,7 +2020,7 @@ various reasons.</p>
 <tr><td>WHT</td><td>0x4A1D</td><td>Press</td><td>Message</td><td>What to do with</td></tr>
 <tr><td>WHY</td><td>0x4A1E</td><td>Press</td><td>Reply</td><td>Why</td></tr>
 <tr><td>WIN</td><td>0x4704</td><td>Phase</td><td></td><td>Fall Builds</td></tr>
-<tr><td>WRT</td><td>0x4A22 / 0x490C *</td><td>Press</td><td>SND</td><td>With Respect To</td></tr>
+<tr><td>WRT</td><td>0x4A22 / 0x490C *</td><td>Press</td><td>SND</td><td>With Respect To (<em>REMOVED</em>)</td></tr>
 <tr><td>WVE</td><td>0x4382</td><td>Order</td><td>Build Phase</td><td>Waive</td></tr>
 <tr><td>XDO</td><td>0x4A1F</td><td>Press</td><td>Offer</td><td>Moves to do</td></tr>
 <tr><td>XOY</td><td>0x4A20</td><td>Press</td><td>Offer</td><td>X owes Y</td></tr>

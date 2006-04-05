@@ -723,7 +723,8 @@ class Game(Verbose_Object):
         eliminated = self.judge.eliminated()
         if country and self.press_allowed and country not in eliminated:
             folded = message.fold()
-            recips = folded[2]
+            offset = len(folded) > 3
+            recips = folded[1 + offset]
             for nation in recips:
                 if not self.players[nation].client:
                     client.send(CCD(nation, message))
@@ -731,9 +732,13 @@ class Game(Verbose_Object):
                 elif nation in eliminated:
                     client.send(OUT(nation, message))
                     break
+                elif nation is country:
+                    # The syntax document specifies that this should not be.
+                    self.log_debug(7, 'Client #%d is sending press to itself.',
+                            client.client_id)
+                    pass
             else:
-                msg_id = (country, folded[1][0])
-                press = Message(folded[3:])
+                press = Message(folded[2 + offset])
                 # Send OUT if any power in press is eliminated
                 for nation in eliminated:
                     if nation in press:
@@ -744,9 +749,9 @@ class Game(Verbose_Object):
                     if level > self.options.LVL:
                         while token in press:
                             press.remove(token)
-                outgoing = FRM(msg_id, recips)
-                outgoing.extend(press)
+                outgoing = FRM(country, recips, press)
                 for nation in recips:
+                    # Hope that nobody disappears here...
                     self.players[nation].client.send(outgoing)
                 client.accept(message)
         else: client.reject(message)

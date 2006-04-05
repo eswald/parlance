@@ -68,37 +68,34 @@ class PeaceBot(DumbBot):
         return orders
     
     # Press handling routines
-    def handle_press_PRP(self, mid, message, refs):
-        sender = mid[0]
+    def handle_press_PRP(self, sender, message):
         self.log_debug(1, 'Handling PRP press from %s: "%s".', sender, message)
         if message[1][0] is PCE:
-            self.send_press(sender, YES(message), [mid])
+            self.send_press(sender, YES(message))
             self.friends.add(sender)
             self.attitude[sender] -= 2
             self.log_debug(1, "Setting attitude toward %s to %d.",
                     sender, self.attitude[sender])
         # ALY, DRW, PCE, XDO, YDO
-    def handle_press_YES(self, mid, message, refs):
-        sender = mid[0]
+    def handle_press_YES(self, sender, message):
         self.log_debug(1, 'Handling YES press from %s: "%s".', sender, message)
         if message[1][0] is PRP and message[1][1][0] is PCE:
             self.friends.add(sender)
             self.attitude[sender] -= 2
             self.log_debug(1, "Setting attitude toward %s to %d.",
                     sender, self.attitude[sender])
-    def handle_press_REJ(self, mid, message, refs):
-        sender = mid[0]
+    def handle_press_REJ(self, sender, message):
         self.log_debug(1, 'Handling press from %s: "%s".', sender, message)
         if message[1][0] is PRP and message[1][1][0] is PCE:
             self.attitude[sender] += 25
             self.log_debug(1, "Setting attitude toward %s to %d.",
                     sender, self.attitude[sender])
     handle_press_BWX = handle_press_REJ
-    def handle_press_HUH(self, mid, message, refs):
+    def handle_press_HUH(self, sender, message):
         flattened = Message(message)
         while ERR in flattened: flattened.pop(flattened.index(ERR))
         folded = flattened.fold()
-        self.handle_press_REJ(mid, folded, refs)
+        self.handle_press_REJ(sender, folded)
 
 
 if __name__ == "__main__":

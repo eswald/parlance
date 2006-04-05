@@ -86,6 +86,8 @@ class Player_Tests(PlayerTestCase):
         name = 'Test Player'
         version = version_string(__version__)
         def handle_REJ_YES(self, message): self.send(HLO())
+        def handle_press_THK(self, sender, press):
+            self.send_press(sender, WHY(press))
         def handle_press_SUG(self, *args):
             raise NotImplementedError, 'Intentionally raising an error.'
         def generate_orders(self): pass
@@ -95,9 +97,18 @@ class Player_Tests(PlayerTestCase):
         self.start_game()
         self.replies = []
         offer = PRP(PCE([ENG, FRA]))
-        self.send(FRM([FRA, 0], ENG, offer))
-        self.seek_reply(SND(Number, FRA, HUH([ERR, offer])) + WRT([FRA, 0]))
-        self.seek_reply(SND(Number, FRA, TRY([])))
+        self.send(FRM(FRA, ENG, offer))
+        self.seek_reply(SND(FRA, HUH([ERR, offer])))
+        self.seek_reply(SND(FRA, TRY([])))
+    def test_press_response_legacy(self):
+        # Same as above, but with WRT syntax
+        from xtended import ENG, FRA, GER
+        self.connect_player(self.Test_Player)
+        self.start_game()
+        self.replies = []
+        offer = THK(PCE([ENG, GER]))
+        self.send(FRM([FRA, 0], ENG, offer) + WRT([ENG, 0]))
+        self.seek_reply(SND(FRA, WHY(offer)))
     def test_validate_option(self):
         self.connect_player(self.Test_Player)
         self.player.client_opts.validate = False
@@ -131,8 +142,8 @@ class Player_Tests(PlayerTestCase):
         self.connect_player(self.Test_Player)
         self.start_game()
         offer = SUG(DRW)
-        self.send(FRM([GER, 0], ENG, offer))
-        self.seek_reply(SND(Number, GER, HUH([offer, ERR])) + WRT([GER, 0]))
+        self.send(FRM(GER, ENG, offer))
+        self.seek_reply(SND(GER, HUH([offer, ERR])))
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):
@@ -143,9 +154,9 @@ class Player_HoldBot(PlayerTestCase):
         self.start_game()
         self.replies = []
         offer = PRP(PCE([ENG, FRA]))
-        self.send(FRM([FRA, 0], ENG, offer))
-        self.seek_reply(SND(Number, FRA, HUH([ERR, offer])) + WRT([FRA, 0]))
-        self.seek_reply(SND(Number, FRA, TRY([])))
+        self.send(FRM(FRA, ENG, offer))
+        self.seek_reply(SND(FRA, HUH([ERR, offer])))
+        self.seek_reply(SND(FRA, TRY([])))
 
 class Player_Bots(PlayerTestCase):
     def setUp(self):

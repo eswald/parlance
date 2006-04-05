@@ -207,21 +207,21 @@ class ServerTestCase(unittest.TestCase):
         from language import FRM, SND, YES
         sender.queue = []
         recipient.queue = []
-        msg = SND(0, recipient.power, press)
+        msg = SND(recipient.power, press)
         sender.send(msg)
         self.assertContains(YES(msg), sender.queue)
-        msg = FRM([sender.power, 0], recipient.power, press)
+        msg = FRM(sender.power, recipient.power, press)
         self.assertContains(msg, recipient.queue)
     def assertPressRejected(self, press, sender, recipient):
         from language import REJ, SND
         sender.queue = []
-        msg = SND(0, recipient.power, press)
+        msg = SND(recipient.power, press)
         sender.send(msg)
         self.assertContains(REJ(msg), sender.queue)
     def assertPressHuhd(self, press, sender, recipient, error_loc):
         from language import ERR, HUH, SND
         sender.queue = []
-        msg = SND(0, recipient.power, press)
+        msg = SND(recipient.power, press)
         sender.send(msg)
         msg.insert(error_loc, ERR)
         self.assertContains(HUH(msg), sender.queue)
@@ -313,7 +313,7 @@ class Server_Press(ServerTestCase):
         from language import SND, Token
         self.sender.queue = []
         self.recipient.queue = []
-        msg = SND(0, self.recipient.power, press)
+        msg = SND(self.recipient.power, press)
         self.sender.send(msg)
         if problem: reply = response(problem, msg)
         else: reply = response(msg)
@@ -323,11 +323,11 @@ class Server_Press(ServerTestCase):
         self.assertPressReply(press, YES)
     def assertPressReceived(self, press):
         from language import FRM
-        msg = FRM([self.sender.power, 0], self.recipient.power, press)
+        msg = FRM(self.sender.power, self.recipient.power, press)
         self.assertContains(msg, self.recipient.queue)
     def assertPressNotReceived(self, press):
         from language import FRM
-        msg = FRM([self.sender.power, 0], self.recipient.power, press)
+        msg = FRM(self.sender.power, self.recipient.power, press)
         self.failIf(msg in self.recipient.queue,
                 '"%s" accidentally sent.' % press)
     
@@ -367,6 +367,27 @@ class Server_Press(ServerTestCase):
                 VSS(self.eliminated.power)])
         self.assertPressReply(press, CCD, out)
         self.assertPressNotReceived(press)
+    def test_send_mid(self):
+        ''' The server accepts press with a message id, but does not send it.'''
+        from language import FRM, SND, PCE, PRP, WRT, YES
+        self.sender.queue = []
+        self.recipient.queue = []
+        press = PRP(PCE([self.sender.power, self.recipient.power]))
+        msg = SND(0, self.recipient.power, press)
+        self.sender.send(msg)
+        self.assertContains(YES(msg), self.sender.queue)
+        self.assertPressReceived(press)
+    def test_send_wrt(self):
+        ''' The server accepts press with WRT, but does not send it.'''
+        from language import FRM, SND, PCE, PRP, WRT, YES
+        self.sender.queue = []
+        self.recipient.queue = []
+        press = PRP(PCE([self.sender.power, self.recipient.power]))
+        msg = SND(0, self.recipient.power, press)
+        msg += WRT([self.recipient.power, 1])
+        self.sender.send(msg)
+        self.assertContains(YES(msg), self.sender.queue)
+        self.assertPressReceived(press)
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
@@ -542,7 +563,7 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer2, sender, recipient)
         # Level 60 fails
         offer[0] = SUG
-        self.assertPressHuhd(offer, sender, recipient, 8)
+        self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_enable_verbal(self):
         ''' The enable press admin command works with a verbal level'''
         from language import PCE, PRP, SCD, SUG
@@ -563,7 +584,7 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer2, sender, recipient)
         # Level 60 fails
         offer[0] = SUG
-        self.assertPressHuhd(offer, sender, recipient, 8)
+        self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_disable(self):
         ''' The disable press admin command works'''
         from language import PCE, PRP
@@ -593,10 +614,10 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer, sender, recipient)
         # Level 40 fails
         offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
-        self.assertPressHuhd(offer2, sender, recipient, 10)
+        self.assertPressHuhd(offer2, sender, recipient, 7)
         # Level 60 fails
         offer[0] = SUG
-        self.assertPressHuhd(offer, sender, recipient, 8)
+        self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_disable_blocked(self):
         ''' The disable admin command is blocked after the game starts.'''
         from language import PCE, PRP, SCD, SUG
@@ -613,10 +634,10 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer, sender, recipient)
         # Level 40 fails
         offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
-        self.assertPressHuhd(offer2, sender, recipient, 10)
+        self.assertPressHuhd(offer2, sender, recipient, 7)
         # Level 60 fails
         offer[0] = SUG
-        self.assertPressHuhd(offer, sender, recipient, 8)
+        self.assertPressHuhd(offer, sender, recipient, 5)
 
 class Server_Admin_Eject(Server_Admin):
     def test_eject_player_unstarted(self):

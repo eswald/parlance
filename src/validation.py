@@ -118,15 +118,15 @@ def validate_expression(msg, sub, syntax_level):
         # Serious boundary case: Empty sub-expression valid in TRY, but nowhere else.
         >>> validate_expression(TRY([]), 'press_message', 10)
         (3, True)
-        >>> validate_expression(SND(1, [], TRY([])), 'client_command', 10)
-        (5, False)
+        >>> validate_expression(SND([], TRY([])), 'client_command', 10)
+        (2, False)
         
         # Check for returning the correct error position,
         # even within nested expressions
         >>> Fra = Token('FRA', 0x4102)
-        >>> m = SND(1, Eng, PRP(ORR(NOT(DRW), AND(PCE([Eng, Fra]), DRW))))
+        >>> m = SND(Eng, PRP(ORR(NOT(DRW), AND(PCE([Eng, Fra]), DRW))))
         >>> validate_expression(m, 'client_command', 40)
-        (18, False)
+        (15, False)
         
         # Check for infinite recursion in HUH expressions
         >>> m = HUH([ERR, YES(NME("DumberBot", "PyDip 1.0.166"))])

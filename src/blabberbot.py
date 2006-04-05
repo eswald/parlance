@@ -37,13 +37,12 @@ class BlabberBot(DumbBot):
         else: self.close()
     def handle_FRM(self, message):
         folded = message.fold()
-        mid    = folded[1]
+        sender = folded[1][0]
         press  = folded[3]
-        sender = mid[0]
         
         replies = (YES, REJ, BWX)
         if press[0] not in replies + (HUH, TRY):
-            self.send_press(sender, choice(replies)(press), [mid])
+            self.send_press(sender, choice(replies)(press))
     def handle_YES_SND(self, message):
         sleep(5 + random() * 10)
         self.blab()

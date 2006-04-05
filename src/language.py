@@ -67,11 +67,11 @@ class Message(list):
             >>> Eng = Token('ENG', 0x4101)
             >>> Fra = Token('FRA', 0x4102)
             >>> Peace = AND(PCE([Eng, Fra]), DRW)
-            >>> print SND(1, Eng, PRP(Peace)).validate(40)
+            >>> print SND(Eng, PRP(Peace)).validate(40)
             False
-            >>> m = SND(1, Eng, PRP(ORR(NOT(DRW), Peace)))
+            >>> m = SND(Eng, PRP(ORR(NOT(DRW), Peace)))
             >>> print m.validate(40)
-            HUH (SND (1) (ENG) (PRP (ORR (NOT (DRW)) (ERR AND (PCE (ENG FRA)) (DRW)))))
+            HUH (SND (ENG) (PRP (ORR (NOT (DRW)) (ERR AND (PCE (ENG FRA)) (DRW)))))
             >>> print m.validate(100)
             False
             
