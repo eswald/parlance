@@ -512,6 +512,21 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1902, [ [GER, AMY, RUH], ])
         client = self.Fake_Service(GER)
         self.judge.handle_NOT_SUB(client, NOT(SUB([(GER, AMY, RUH), MTO, BEL])))
+    def test_void_convoying_order_result(self):
+        ''' CVY orders always had NSO results, even for successful convoys.'''
+        steady_state = [
+            [ENG, FLT, NTH],
+        ]
+        self.init_state(FAL, 1901, steady_state + [
+            [ENG, AMY, YOR],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, YOR), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, AMY, YOR), CTO, NWY, VIA, [NTH]])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, NWY],
+        ])
+        self.assertContains(self.results, ORD([FAL, 1901],
+            [(ENG, FLT, NTH), CVY, (ENG, AMY, YOR), CTO, NWY], SUC))
 
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''

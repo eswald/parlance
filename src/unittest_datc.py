@@ -86,7 +86,7 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
             For retreating units, omit the list of available retreats,
             but keep the MRT token.
         '''#'''
-        self.judge.run()
+        self.results = self.judge.run()
         map_units = [Message(unit).fold()[:4] for unit in self.judge.map.units]
         for item in unit_list: self.assertContains(map_units, item)
         for item in map_units: self.assertContains(unit_list, item)

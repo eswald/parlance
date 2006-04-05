@@ -686,7 +686,7 @@ class Standard_Judge(Judge):
                 else: result = CUT
             elif order.is_convoying():
                 routes = order.supported.decisions[Decision.PATH].routes
-                if routes and unit.coast.province in routes[0]:
+                if routes and unit.decisions[Decision.DISLODGE] in routes[0]:
                     self.process_results(order.supported)
                     result = order.supported.current_order.__result
                 else: result = NSO
