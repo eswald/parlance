@@ -80,7 +80,7 @@ class token_options(option_class):
     def __init__(self):
         # Load values from the configuration files
         self.squeeze_parens = self.getboolean('squeeze parentheses', False)
-        self.ignore_unknown = self.getboolean('ignore unknown tokens', False)
+        self.ignore_unknown = self.getboolean('ignore unknown tokens', True)
         self.input_escape   = self.getstring('input escape chararacter', '\\')[0]
         self.output_escape  = self.getstring('output escape chararacter', '\\')[0]
         self.quot_char      = self.getstring('quotation mark', '"')[0]

@@ -59,12 +59,21 @@ class NetworkTestCase(ServerTestCase):
 class Network_Basics(NetworkTestCase):
     def test_timeout(self):
         ''' Thirty-second timeout for the Initial Message'''
-        self.set_verbosity(15)
         self.connect_server([])
-        client = self.Fake_Client(False)
+        client = self.Fake_Client(None)
         client.open()
         sleep(45)
         client.read_error(client.opts.Timeout)
+    def test_reserved_tokens(self):
+        ''' "Reserved for AI use" tokens must never be sent over the wire.'''
+        class ReservedSender(object):
+            def __init__(self, send_method, rep, *args, **kwargs):
+                from language import Token
+                send_method(Token('HMM', 0x585F)())
+        self.connect_server([])
+        client = self.Fake_Client(ReservedSender)
+        client.open()
+        client.read_error(client.opts.IllegalToken)
     def test_full_connection(self):
         ''' Seven fake players, polling if possible'''
         self.set_verbosity(15)

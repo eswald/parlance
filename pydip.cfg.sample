@@ -244,7 +244,7 @@
 # error codes (default_errors, list of strings)
 # Short names for the error codes, separated by commas.
 # Several of these names are used by the code, so they should not be changed.
-;error codes = Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken
+;error codes = Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, IllegalToken
 
 # idle timeout for server loop (wait_time, integer)
 # Default time (in seconds) to wait for select() or poll() system calls.
@@ -622,7 +622,7 @@
 # ignore unknown tokens (ignore_unknown, boolean)
 # Whether to allow tokens not represented in the protocol document or RM.
 # If this is false, unknown tokens in a DM will result in an Error Message.
-;ignore unknown tokens = no
+;ignore unknown tokens = yes
 
 # input escape character (input_escape, character)
 # The character which escapes quotation marks when translating messages.

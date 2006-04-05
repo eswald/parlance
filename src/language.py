@@ -607,29 +607,6 @@ class IntegerToken(Token):
         return result
 
 
-def _get_token_text(number):
-    ''' Finds the text for a single token number.
-        >>> _get_token_text(3)
-        '3'
-        >>> _get_token_text(-3)
-        '-3'
-        >>> _get_token_text(0x2004)
-        '-8188'
-        >>> _get_token_text(0x4B63)
-        'c'
-        >>> Token.opts.ignore_unknown = True;  _get_token_text(0x581C)
-        '0x581C'
-        >>> Token.opts.ignore_unknown = False; _get_token_text(0x581C)
-        Traceback (most recent call last):
-            ...
-        ValueError: unknown token number 0x581C
-    '''#'''
-    if   number < Token.opts.max_pos_int:             return str(number)
-    elif number < Token.opts.max_neg_int:             return str(number - Token.opts.max_neg_int)
-    elif (number & 0xFF00) == Token.opts.quot_prefix: return chr(number & 0x00FF)
-    elif Token.opts.ignore_unknown:                   return '0x%04X' % number
-    else: raise ValueError, 'unknown token number 0x%04X' % number
-
 def _tokenize(value, wrap=False):
     ''' Returns a list of Token instances based on a value.
         If wrap is true, lists and tuples will be wrapped in parentheses.
@@ -673,7 +650,6 @@ def _wrap(value):
 
 # Testing framework
 __test__ = {
-    '_get_token_text':           _get_token_text,
     '_tokenize':                 _tokenize,
     '_wrap':                     _wrap,
 }

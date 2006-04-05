@@ -10,7 +10,7 @@ from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
 from language  import Message, Token, YES, REJ, ADM, OFF, MDF
-from functions import Verbose_Object, s
+from functions import Verbose_Object, any, s
 from server    import Server, Client_Manager
 
 
@@ -26,7 +26,7 @@ class network_options(config.option_class):
         self.wait_time    = self.getint('idle timeout for server loop', 600)
         
         error_number = self.getint('first error number', 1)
-        default_errors = 'Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, UnknownToken'
+        default_errors = 'Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, IllegalToken'
         for code in self.getlist('error codes', default_errors):
             setattr(self, code, error_number)
             error_number += 1
@@ -105,6 +105,7 @@ class Connection(SocketWrapper):
     def process_message(self, type_code, data):
         ''' Processes a single DCSP message from the server.'''
         self.log_debug(13, 'Message type %d received', type_code)
+        message = None
         if   type_code == self.IM:
             if self.is_server:     self.process_IM(data)
             else:                  self.send_error(self.opts.ServerIM)
@@ -116,9 +117,7 @@ class Connection(SocketWrapper):
         elif type_code == self.DM:
             if not data:           self.send_error(self.opts.Short)
             elif len(data) % 2:    self.send_error(self.opts.Short)
-            elif self.rep:
-                try:               return self.unpack_message(data)
-                except ValueError: self.send_error(self.opts.UnknownToken)
+            elif self.rep:         message = self.unpack_message(data)
             else:                  self.send_error(self.opts.QuickDM)
         elif type_code == self.FM: self.send_final = self.opts.echo_final; self.close()
         elif type_code == self.EM:
@@ -127,7 +126,7 @@ class Connection(SocketWrapper):
         else:
             self.log_debug(7, 'Unknown message type %s received', type_code)
             self.send_error(self.opts.MessType)
-        return None
+        return message
     def process_IM(self, data):
         ''' Verifies the Initial Message from the client.'''
         if len(data) == 4:
@@ -165,8 +164,21 @@ class Connection(SocketWrapper):
             >>> c.unpack_message(pack('!HHHH', *msg))
             Message([HLO, [Token('Sth', 0x4101)]])
         '''#'''
-        return Message([self.rep[x]
-            for x in unpack('!' + 'H'*(len(data)//2), data)])
+        try:
+            result = Message([self.rep[x]
+                for x in unpack('!' + 'H'*(len(data)//2), data)])
+        except ValueError:
+            # Someone foolishly chose to disconnect over an unknown token.
+            self.send_error(self.opts.IllegalToken)
+            result = None
+        else:
+            # Tokens in the "Reserved for AI use" category
+            # must never be sent over the wire.
+            def illegal(token): return 'Reserved' in token.category_name()
+            if any(result, illegal):
+                self.send_error(self.opts.IllegalToken)
+                result = None
+        return result
     
     # Outgoing messages
     def write(self, message): self.send_dcsp(self.DM, message.pack())

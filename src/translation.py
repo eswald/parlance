@@ -51,7 +51,6 @@ class Representation(Verbose_Object):
             >>> default_rep.get('ITA')
             ITA
         '''#'''
-        from language import _get_token_text
         result = self.numbers.get(key) or self.names.get(key)
         if not result:
             if isinstance(key, Token): result = key
@@ -62,7 +61,11 @@ class Representation(Verbose_Object):
                 else:
                     if number < self.opts.max_neg_int:
                         result = IntegerToken(number)
-                    else: result = Token(_get_token_text(number), number)
+                    elif (number & 0xFF00) == self.opts.quot_prefix:
+                        result = StringToken(chr(number & 0x00FF))
+                    elif self.opts.ignore_unknown:
+                        result = Token('0x%04X' % number, number)
+                    else: raise ValueError, 'unknown token number 0x%04X' % number
         return result or default
     
     def has_key(self, key):

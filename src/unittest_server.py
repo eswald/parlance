@@ -109,11 +109,11 @@ class ServerTestCase(unittest.TestCase):
         ''' A fake Client to test the server timeout.'''
         is_server = False
         
-        def __init__(self, send_IM):
+        def __init__(self, player_class):
             'Initializes instance variables'
             self.prefix = 'Fake Client'
             self.__super.__init__()
-            self.initialize = send_IM
+            self.pclass = player_class
         def open(self):
             import socket
             # Open the socket
@@ -125,9 +125,10 @@ class ServerTestCase(unittest.TestCase):
             try: sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
             
-            if self.initialize:
+            if self.pclass:
                 # Send initial message
                 self.log_debug(9, 'Sending Initial Message')
+                from struct import pack
                 self.send_dcsp(self.IM, pack('!HH', self.opts.dcsp_version, self.opts.magic));
                 
                 # Wait for representation message
@@ -143,7 +144,7 @@ class ServerTestCase(unittest.TestCase):
                 
                 # Create the Player
                 if self.rep and not self.closed:
-                    self.player = self.pclass(self.send, self.rep, **self.kwargs)
+                    self.player = self.pclass(self.write, self.rep)
                     return True
             return False
         def read_error(self, code):
