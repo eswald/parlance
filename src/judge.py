@@ -281,7 +281,8 @@ class Standard_Judge(Judge):
     def create_SETs(self, turn):
         return [SET(nation, turn, *[(order, [order.__note])
                 for order in self.next_orders.order_list(nation)])
-                for nation in self.map.powers.values()]
+                for nation in self.map.powers.values()
+                if not self.eliminated(nation)]
     def init_turn(self):
         self.draws = {}
         self.unready.clear()

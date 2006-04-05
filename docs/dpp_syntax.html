@@ -57,9 +57,35 @@ more consistent.</p>
 <!--
 <h4>message = server_message</h4>
 <h4>message = client_message</h4>
+
+<p>Each <a href="dcsp.html#DM">Diplomacy Message</a> must conform to the
+syntax of a <b>message</b>.  A <b>server_message</b> is anything that
+can be sent by the server; a <b>client_message</b> is anything that can
+be sent by a client, whether player or observer.</b>
+
 <h4>server_message = server_command</h4>
+<h4>client_message = YES (server_command)</h4>
+<h4>client_message = REJ (server_command)</h4>
+
 <h4>client_message = client_command</h4>
+<h4>server_message = YES (client_command)</h4>
+<h4>server_message = REJ (client_command)</h4>
+
+<p>A <b>server_command</b> is sent from the server to a client, and
+usually tells the client to do something.  The client can respond to any
+<b>server_command</b> with <b>YES (server_command)</b> or <b>REJ
+(server_command)</b>.  Likewise, a <b>client_command</b> is sent from a
+client to the server, and the server can respond with <b>YES</b> or
+<b>REJ</b>.</p>
+
 <h4>client_message = client_request</h4>
+<h4>server_message = REJ (client_request)</h4>
+
+<p>A <b>client_request</b> is sent from the client to the server, and
+is usually a request for information.  If the server cannot send the
+requested message for some reason, often because the game has not yet
+started, it should instead send <b>REJ (client_request)</b>.
+There are currently no <b>server_request</b> messages.</p>
 -->
 
 <p>There are a number of terms which are used by a lot of commands.
@@ -123,23 +149,65 @@ characters long, alphabetic only, and not case-sensitive.</p>
 <p>In this section, we just have the syntax required for getting a game
 up and running, ordering, retrieving results, and general game management.</p>
 
-<h3>(i) Starting the game.</h3>
+<!--
+<h3>(o) Choosing a game.</h3>
 
-<!-- Commands added by the PyDip software:
-<h4>server_command = PNG [(any_token_sequence)]</h4>
-<h4>client_command = PNG [(any_token_sequence)]</h4>
-<h4>client_command = SEL (game_id)</h4>
-<h4>client_request = SEL</h4>
-<h4>client_request = LST</h4>
+<h4><a name="LST">client_request = LST</a></h4>
 <h4>server_message = LST (game_id) (players_needed) ('variant_name') (variant)</h4>
-<h4>players_needed = number</h4>
-<h4>game_id != 'string'</h4>
-<h4>game_id = number</h4>
+<!- - <h4>game_id != 'string'</h4> - ->
+<!- - <h4>game_id = number</h4> - ->
+<!- - <h4>players_needed = number</h4> - ->
+
+<p>The client can request a list of games on the server by sending
+<b>LST</b>.  The server will respond with a <b>LST</b> message for each
+game, listing:</p>
+<ul>
+	<li><b>game_id</b> &mdash; a number assigned by the server</li>
+	<li><b>players_needed</b> &mdash; the number of unfilled
+	or disconnected powers</li>
+	<li><b>'variant_name'</b> &mdash; the name of the variant,
+	as listed on <a href="variants.html">the variants page</a></li>
+	<li><b>variant</b> &mdash; the game options, as listed in
+	<a href="#HLO">the <b>HLO</b> message</a>.</li>
+</ul>
+
+<p>Alternatively, the server can respond with <b>REJ (LST)</b> if it
+does not have multi-game capabilities.</p>
+
+<h4>client_request = LST (game_id)</h4>
+
+<p>The client can send this command to request the <b>LST</b> message
+for a single game.</p>
+
+<h4>client_command = SEL (game_id)</h4>
+
+<p>This command is sent by the client to the server at any time,
+including before any NME, OBS, or IAM message.  It chooses a game to
+participate in, by its <b>game_id</b>, as included in the <b>LST</b>
+message.</p>
+
+<p><em>Warning:</em> After sending this command, the client must be
+prepared to receive a new <a href="dcsp.html#RM">Representation Message</a>,
+in case the selected game uses a different map than the current game.</p>
+
+<p>The server will respond with <b>YES (SEL (game_id))</b> if the game
+selection is successful, even if the client had already been
+participating in the selected game, or <b>REJ (SEL (game_id))</b> if the
+<b>game_id</b> is invalid.</p>
+
+<h4>client_request = SEL</h4>
+<h4>server_message = SEL (game_id)</h4>
+
+<p>The client can also send <b>SEL</b> with no parameters, to request
+the <b>game_id</b> of the currently selected game.  The server will
+respond with <b>SEL (game_id)</b>, or with <b>REJ (SEL)</b> if the
+current game has no <b>game_id</b>, such as in a server without
+multi-game capabilities.</p>
 -->
 
+<h3>(i) Starting the game.</h3>
+
 <h4><a name="NME">client_command = NME</a> ('name') ('version')</h4>
-<!-- <h4>server_message = YES (client_command)</h4> -->
-<!-- <h4>server_message = REJ (client_command)</h4> -->
 
 <p>This should be sent by the client to the server as soon as it has
 connected. It contains the name and version of the client. Both
@@ -199,8 +267,6 @@ sensitive.</p>
 <p>The client may request another copy of the <b>MAP</b> message at any
 time, by sending <b>MAP</b> with no parameters.</p>
 
-<!-- <h4>client_message = YES (server_command)</h4> -->
-<!-- <h4>client_message = REJ (server_command)</h4> -->
 <p>The client should respond with <b>YES (MAP ('name'))</b> if it is to
 play on the map, or <b>REJ (MAP ('name'))</b> if the client can not cope
 with the requested map.</p>
@@ -389,7 +455,6 @@ option</b>; if so, this message syntax may be changed according to the rules
 for each parameter. --> </p>
 
 <!-- <h4>client_request = HLO</h4> -->
-<!-- <h4>server_message = REJ (client_request)</h4> -->
 <p>The client can send the command <b>HLO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the <b>HLO</b> message, or <b>REJ (HLO)</b> if the game hasn't
@@ -647,18 +712,36 @@ turn.)</p>
 
 <h3>(iv) Results</h3>
 
+<!--
+<h4><a name="SET">server_message = SET</a> (power) (turn) [((order) (note)) ((order) (note)) ...]</h4>
+<!- - <h4>server_message = SET (power) (turn) ((loose_order) (note)) ((loose_order) (note)) ...</h4> - ->
+
+<p>This is sent by the server when the turn has processed.  One
+<b>SET</b> message is sent for each non-eliminated power, before the
+<b>ORD</b> messages.  <b>turn</b> is the turn which has just processed,
+with the same format as in <a href="#NOW">the <b>NOW</b>
+command</a>.</p>
+
+<p><b>order</b> is an order submitted by <b>power</b>, with exactly the
+same format as in the <a href="#SUB"><b>SUB</b></a> and
+<a href=#THX><b>THX</b></a> messages.  Each order submitted by the power
+during the turn is listed, except those cancelled by <b>NOT (SUB
+[(order)])</b>.  <b>note</b> is the note returned in the <b>THX</b>
+message.</p>
+-->
+
 <h4><a name="ORD">server_message = ORD</a> (turn) (order) (result)</h4>
 
 <p>This is sent by the server when the turn has processed. <b>turn</b>
 is the turn which has just processed, with the same format
 as in <a href="#NOW">the <b>NOW</b> command</a>.</p>
 
-<p><b>order</b> is an order submitted by a player. One <b>ORD</b>
+<p><b>order</b> is an order performed by a player. One <b>ORD</b>
 message is sent per unit for a movement phase, one per retreat for a
 retreat phase, and one per build, disband, or waive for a build phase.  It
 has exactly the same format as in the <a href="#SUB"><b>SUB</b></a> and
 <a href=#THX><b>THX</b></a> commands<!--, except that loosely-specified
-orders will be more fully specified-->.</p>
+orders will use a more rigorous format-->.</p>
 
 <p><b>result</b> is the result of the order. It can be one of the following:</p>
 <ul>
@@ -857,6 +940,19 @@ should not be used for negotiation. The server may interpret the message
 as a command, or it may forward the message to every client. The server
 may be configured to refuse Admin messages, in which case it will reply
 to the client with <b>REJ (ADM ('name') ('message'))</b>.</p>
+
+<!--
+<h4><a name="PNG">server_command = PNG</a> [(any_token_sequence)]</h4>
+<h4>client_command = PNG [(any_token_sequence)]</h4>
+
+<p>This message is sent by either the client or the server, to ensure
+that the other is responding properly to Diplomacy Messages.
+<b>any_token_sequence</b> can be anything at all, as long as it is
+properly bracketed; the sender can use it to identify a particular
+reply.  The recipient should reply with <b>YES (PNG
+[(any_token_sequence)])</b> if it is functioning properly, or <b>REJ
+(PNG [(any_token_sequence)])</b> if something is wrong.</p>
+-->
 
 <h3>(ix) End of the game</h3>
 
@@ -1777,7 +1873,7 @@ various reasons.</p>
 <tr><td>KIE</td><td>0x5539</td><td>Province</td><td>Coastal Supply Centre</td><td>Kiel</td></tr>
 <tr><td>LOD</td><td>0x4808</td><td>Command</td><td>Server to Client</td><td>Load Game</td></tr>
 <tr><td>LON</td><td>0x553A</td><td>Province</td><td>Coastal Supply Centre</td><td>London</td></tr>
-<tr><td>LST</td><td>0x4820 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Game Listing</td></tr>
+<tr><td>LST</td><td>0x4820 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Game Listing (<em>Not yet accepted</em>)</td></tr>
 <tr><td>LVL</td><td>0x4903</td><td>Parameter</td><td>HLO</td><td>Syntax Level</td></tr>
 <tr><td>LVN</td><td>0x5427</td><td>Province</td><td>Coastal</td><td>Livonia</td></tr>
 <tr><td>LVP</td><td>0x553B</td><td>Province</td><td>Coastal Supply Centre</td><td>Liverpool</td></tr>
@@ -1825,6 +1921,7 @@ various reasons.</p>
 <tr><td>OFF</td><td>0x4810</td><td>Command</td><td>Server to Client</td><td>Turn Off (Exit)</td></tr>
 <tr><td>ORD</td><td>0x4811</td><td>Command</td><td>Server to Client</td><td>Order Results</td></tr>
 <tr><td>ORR</td><td>0x4A0F</td><td>Press</td><td>Offer</td><td>Logical OR</td></tr>
+<tr><td>OUT</td><td>0x4812</td><td>Command</td><td>Server to Client</td><td>Power has been Eliminated</td></tr>
 <tr><td>PAR</td><td>0x510A</td><td>Province</td><td>Inland Supply Centre</td><td>Paris</td></tr>
 <tr><td>PCE</td><td>0x4A10</td><td>Press</td><td>Offer</td><td>Peace</td></tr>
 <tr><td>PDA</td><td>0x4908</td><td>Parameter</td><td>HLO</td><td>Partial Draws Allowed</td></tr>
@@ -1832,7 +1929,7 @@ various reasons.</p>
 <tr><td>PIE</td><td>0x542A</td><td>Province</td><td>Coastal</td><td>Piedmont</td></tr>
 <tr><td>POB</td><td>0x4A11</td><td>Press</td><td>Reply</td><td>Position on Board</td></tr>
 <tr><td>POR</td><td>0x553F</td><td>Province</td><td>Coastal Supply Centre</td><td>Portugal</td></tr>
-<tr><td>PNG</td><td>0x4822 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Ping</td></tr>
+<!--<tr><td>PNG</td><td>0x4822 *</td><td>Command</td><td>Client &lt;- - -&gt; Server</td><td>Ping (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PPT</td><td>0x4A12</td><td>Press</td><td></td><td>Puppet (<em>REMOVED</em>)</td></tr>
 <!--<tr><td>PRB</td><td>0x4A24</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PRN</td><td>0x4813</td><td>Command</td><td>Server to Client</td><td>Parenthesis error</td></tr>
@@ -1853,12 +1950,12 @@ various reasons.</p>
 <tr><td>SCO</td><td>0x4815</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Supply Centre Ownership</td></tr>
 <tr><td>SCS</td><td>0x4608</td><td>Coast</td><td></td><td>South Coast</td></tr>
 <tr><td>SEC</td><td>0x4606</td><td>Coast</td><td></td><td>Southeast Coast</td></tr>
-<tr><td>SEL</td><td>0x4821 *</td><td>Command</td><td>Client to Server</td><td>Select Game</td></tr>
+<tr><td>SEL</td><td>0x4821 *</td><td>Command</td><td>Client to Server</td><td>Select Game (<em>Not yet accepted</em>)</td></tr>
 <tr><td>SER</td><td>0x510B</td><td>Province</td><td>Inland Supply Centre</td><td>Serbia</td></tr>
-<tr><td>SET</td><td>0x481F *</td><td>Command</td><td>Server to Client</td><td>Orders as Given</td></tr>
+<!--<tr><td>SET</td><td>0x481F *</td><td>Command</td><td>Server to Client</td><td>Orders as Given (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>SEV</td><td>0x5542</td><td>Province</td><td>Coastal Supply Centre</td><td>Sevastopol</td></tr>
 <tr><td>SIL</td><td>0x5004</td><td>Province</td><td>Inland</td><td>Silesia</td></tr>
-<tr><td>SKA</td><td>0x521E</td><td>Province</td><td>Sea</td><td>Skaggerack</td></tr>
+<tr><td>SKA</td><td>0x521E</td><td>Province</td><td>Sea</td><td>Skagerrak</td></tr>
 <tr><td>SLO</td><td>0x4816</td><td>Command / Press</td><td>Server to Client</td><td>Solo</td></tr>
 <tr><td>SMR</td><td>0x481E *</td><td>Command</td><td>Server to Client</td><td>Summary</td></tr>
 <tr><td>SMY</td><td>0x5543</td><td>Province</td><td>Coastal Supply Centre</td><td>Smyrna</td></tr>

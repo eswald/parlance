@@ -220,7 +220,7 @@ class Server(Verbose_Object):
         if len(message) > 3:
             reply = self.join_game(client, message[2].value()) and YES or REJ
             client.send(reply(message))
-        else: client.game.send_listing(client)
+        else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
         for game in self.games: game.send_listing(client)
