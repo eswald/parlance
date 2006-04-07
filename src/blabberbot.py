@@ -33,7 +33,8 @@ class BlabberBot(DumbBot):
             countries.remove(me)
             self.countries = list(countries)
             self.syntax = {}
-            self.blab()
+            from threading import Thread
+            Thread(target=self.blab).start()
         else: self.close()
     def handle_FRM(self, message):
         folded = message.fold()
@@ -43,12 +44,11 @@ class BlabberBot(DumbBot):
         replies = (YES, REJ, BWX)
         if press[0] not in replies + (HUH, TRY):
             self.send_press(sender, choice(replies)(press))
-    def handle_YES_SND(self, message):
-        sleep(5 + random() * 10)
-        self.blab()
     def blab(self):
-        self.send_press(choice(self.countries),
-                self.random_expression('press_message'))
+        while not self.closed:
+            self.send_press(choice(self.countries),
+                    self.random_expression('press_message'))
+            sleep(5 + random() * 10)
     def random_expression(self, expression):
         try: items = self.syntax[expression]
         except KeyError:
