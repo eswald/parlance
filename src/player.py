@@ -186,7 +186,8 @@ class Player(Verbose_Object):
         if response in ('print', 'warn', 'carp', 'croak'):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
-        if response in ('huh', 'complain', 'carp', 'croak'):
+        if (response in ('huh', 'complain', 'carp', 'croak')
+                and ERR not in message):
             self.send(reply or HUH(ERR + message))
         if response in ('die', 'close', 'carp', 'croak'): self.close()
         if error and response not in ('print', 'close', 'huh', 'carp', 'ignore'): raise
@@ -348,7 +349,7 @@ class Player(Verbose_Object):
         try: method = getattr(self, method_name)
         except AttributeError:
             # No handler found; return the standard response
-            if press[0] not in (HUH, TRY):
+            if press[0] not in (HUH, TRY) and ERR not in message:
                 self.send_press(sender, HUH(ERR + press))
                 self.send_press(sender, TRY(self.press_tokens))
         else:
