@@ -527,6 +527,7 @@ class Game(Verbose_Object):
         self.log_debug(10, 'Closing')
         self.pause()
         self.judge.phase = None
+        self.press_allowed = False
         if not self.closed:
             self.closed = True
             if self.started: self.broadcast(self.summarize())
