@@ -17,7 +17,7 @@ class NetworkTestCase(ServerTestCase):
             self.__super.handle_message(message)
             if message[0] is HLO:
                 sleep(self.sleep_time)
-                self.send(ADM(str(self.power), 'Passcode: %d' % self.pcode))
+                self.send(ADM(str(self.power))('Passcode: %d' % self.pcode))
                 self.close()
     
     def setUp(self):
@@ -100,7 +100,7 @@ class Network_Basics(NetworkTestCase):
                 self.rep = representation
                 self.power = power
                 self.passcode = passcode
-                send_method(NME(power.text, str(passcode)))
+                send_method(NME(power.text)(str(passcode)))
             def close(self):
                 self.log_debug(9, 'Closed')
                 self.closed = True
@@ -108,11 +108,11 @@ class Network_Basics(NetworkTestCase):
                 from language import YES, REJ, NME, IAM, ADM
                 self.log_debug(5, '<< %s', message)
                 if message[0] is YES and message[2] is IAM:
-                    self.send(ADM(self.power.text, 'Takeover successful'))
+                    self.send(ADM(self.power.text)('Takeover successful'))
                     sleep(self.sleep_time)
                     self.close()
                 elif message[0] is REJ and message[2] is NME:
-                    self.send(IAM(self.power, self.passcode))
+                    self.send(IAM(self.power)(self.passcode))
                 elif message[0] is ADM: pass
                 else: raise AssertionError, 'Unexpected message: ' + str(message)
         class Fake_Restarter(self.Disconnector):
@@ -134,7 +134,7 @@ class Network_Basics(NetworkTestCase):
         def lazy_admin(self, line, *args):
             from language import ADM
             self.queue = []
-            self.send(ADM(self.name, str(line) % args))
+            self.send(ADM(self.name)(str(line) % args))
             sleep(15)
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
         self.connect_server([])

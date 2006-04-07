@@ -336,7 +336,7 @@ class Service(Connection):
     def boot(self):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
         self.log_debug(6, 'Booting client #%d', self.client_id)
-        self.send(OFF())
+        self.send(+OFF)
         self.booted = self.country
         self.country = None
         self.close()
@@ -354,7 +354,7 @@ class Service(Connection):
         for msg in message_list: self.send(msg)
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
-    def admin(self, line, *args): self.send(ADM('Server', str(line) % args))
+    def admin(self, line, *args): self.send(ADM('Server')(str(line) % args))
 
 class ServerSocket(SocketWrapper):
     try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL

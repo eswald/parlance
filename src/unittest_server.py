@@ -71,8 +71,8 @@ class ServerTestCase(unittest.TestCase):
             self.send = send_method
             self.rep = representation
             if kwargs.has_key('game_id'): send_method(SEL(kwargs['game_id']))
-            if power and pcode: send_method(IAM(power, pcode))
-            else: send_method(NME(self.name, self.__class__.__name__))
+            if power and pcode: send_method(IAM(power)(pcode))
+            else: send_method(NME(self.name)(self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
@@ -88,21 +88,20 @@ class ServerTestCase(unittest.TestCase):
         def admin(self, line, *args):
             from language import ADM
             self.queue = []
-            self.send(ADM(self.name, str(line) % args))
+            self.send(ADM(self.name)(str(line) % args))
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
         def get_time(self):
             from language import TME
             self.queue = []
-            self.send(TME())
+            self.send(+TME)
             times = [absolute_limit(msg[2].value())
                     for msg in self.queue if msg[0] is TME]
             return times and times[0] or None
         def hold_all(self):
             from language import HLD, MIS, SUB, TME
-            self.send(MIS())
+            self.send(+MIS)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
-            orders = [[unit, HLD] for unit in units]
-            for unit in units: self.send(SUB(*orders))
+            self.send(SUB % [[unit, HLD] for unit in units])
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     class Fake_Client(Connection):
@@ -208,21 +207,21 @@ class ServerTestCase(unittest.TestCase):
         from language import FRM, SND, YES
         sender.queue = []
         recipient.queue = []
-        msg = SND(recipient.power, press)
+        msg = SND(recipient.power)(press)
         sender.send(msg)
         self.assertContains(YES(msg), sender.queue)
-        msg = FRM(sender.power, recipient.power, press)
+        msg = FRM(sender.power)(recipient.power)(press)
         self.assertContains(msg, recipient.queue)
     def assertPressRejected(self, press, sender, recipient):
         from language import REJ, SND
         sender.queue = []
-        msg = SND(recipient.power, press)
+        msg = SND(recipient.power)(press)
         sender.send(msg)
         self.assertContains(REJ(msg), sender.queue)
     def assertPressHuhd(self, press, sender, recipient, error_loc):
         from language import ERR, HUH, SND
         sender.queue = []
-        msg = SND(recipient.power, press)
+        msg = SND(recipient.power)(press)
         sender.send(msg)
         msg.insert(error_loc, ERR)
         self.assertContains(HUH(msg), sender.queue)
@@ -262,8 +261,8 @@ class Server_Basics(ServerTestCase):
         self.start_game()
         sender.hold_all()
         sender.queue = []
-        sender.send(MIS())
-        self.assertContains(MIS(), sender.queue)
+        sender.send(+MIS)
+        self.assertContains(+MIS, sender.queue)
     def test_missing_orders_CCD(self):
         ''' Failing to submit orders on time results in a CCD message.'''
         from language import CCD, SPR
@@ -273,7 +272,7 @@ class Server_Basics(ServerTestCase):
         self.start_game()
         sleep(player.get_time() + 1)
         self.game.check_flags()
-        self.assertContains(CCD(player.power, [SPR, 1901]), player.queue)
+        self.assertContains(CCD(player.power) (SPR, 1901), player.queue)
     def test_submitted_orders_CCD(self):
         ''' Submitting orders on time avoids a CCD message.'''
         from language import CCD
@@ -310,82 +309,79 @@ class Server_Press(ServerTestCase):
         judge_map.handle_NOW(now)
         self.disconnected.close()
         self.game.run_judge()
-    def assertPressReply(self, press, response, problem=None):
+    def assertPressReply(self, press, response):
         from language import SND, Token
         self.sender.queue = []
         self.recipient.queue = []
-        msg = SND(self.recipient.power, press)
+        msg = SND(self.recipient.power)(press)
         self.sender.send(msg)
-        if problem: reply = response(problem, msg)
-        else: reply = response(msg)
+        reply = response(msg)
         self.assertContains(reply, self.sender.queue)
     def assertPressSent(self, press):
         from language import YES
         self.assertPressReply(press, YES)
     def assertPressReceived(self, press):
         from language import FRM
-        msg = FRM(self.sender.power, self.recipient.power, press)
+        msg = FRM(self.sender.power)(self.recipient.power)(press)
         self.assertContains(msg, self.recipient.queue)
     def assertPressNotReceived(self, press):
         from language import FRM
-        msg = FRM(self.sender.power, self.recipient.power, press)
+        msg = FRM(self.sender.power)(self.recipient.power)(press)
         self.failIf(msg in self.recipient.queue,
                 '"%s" accidentally sent.' % press)
     
     def test_send_press(self):
         ''' The server forwards press of the appropriate level.'''
         from language import PCE, PRP
-        press = PRP(PCE([self.sender.power, self.recipient.power]))
+        press = PRP(PCE(self.sender.power, self.recipient.power))
         self.assertPressSent(press)
         self.assertPressReceived(press)
     def test_send_try(self):
         ''' The server trims high-level tokens from TRY messages.'''
         from language import IOU, PRP, QRY, TRY
-        self.assertPressSent(TRY([IOU, PRP, QRY]))
+        self.assertPressSent(TRY(IOU, PRP, QRY))
         self.assertPressReceived(TRY(PRP))
     def test_send_eliminated(self):
         ''' The server rejects press including eliminated powers.'''
         from language import ALY, OUT, PRP, VSS
         out = self.eliminated.power
-        press = PRP([ALY([self.sender.power, self.recipient.power]), VSS(out)])
-        self.assertPressReply(press, OUT, out)
+        press = PRP(ALY(self.sender.power, self.recipient.power) + VSS(out))
+        self.assertPressReply(press, OUT(out))
         self.assertPressNotReceived(press)
     def test_send_to_eliminated(self):
         ''' The server rejects press to eliminated powers.'''
         from language import ALY, OUT, PRP, VSS
         self.recipient = self.eliminated
         out = self.eliminated.power
-        press = PRP([ALY([self.sender.power, out]),
-                VSS(self.disconnected.power)])
-        self.assertPressReply(press, OUT, out)
+        press = PRP(ALY(self.sender.power, out) + VSS(self.disconnected.power))
+        self.assertPressReply(press, OUT(out))
         self.assertPressNotReceived(press)
     def test_send_to_disconnected(self):
         ''' The server rejects press to disconnected powers.'''
         from language import ALY, CCD, PRP, VSS
         self.recipient = self.disconnected
         out = self.disconnected.power
-        press = PRP([ALY([self.sender.power, out]),
-                VSS(self.eliminated.power)])
-        self.assertPressReply(press, CCD, out)
+        press = PRP(ALY(self.sender.power, out) + VSS(self.eliminated.power))
+        self.assertPressReply(press, CCD(out))
         self.assertPressNotReceived(press)
     def test_send_mid(self):
         ''' The server accepts press with a message id, but does not send it.'''
-        from language import FRM, SND, PCE, PRP, WRT, YES
+        from language import SND, PCE, PRP, YES
         self.sender.queue = []
         self.recipient.queue = []
-        press = PRP(PCE([self.sender.power, self.recipient.power]))
-        msg = SND(0, self.recipient.power, press)
+        press = PRP(PCE(self.sender.power, self.recipient.power))
+        msg = SND(0)(self.recipient.power)(press)
         self.sender.send(msg)
         self.assertContains(YES(msg), self.sender.queue)
         self.assertPressReceived(press)
     def test_send_wrt(self):
         ''' The server accepts press with WRT, but does not send it.'''
-        from language import FRM, SND, PCE, PRP, WRT, YES
+        from language import SND, PCE, PRP, WRT, YES
         self.sender.queue = []
         self.recipient.queue = []
-        press = PRP(PCE([self.sender.power, self.recipient.power]))
-        msg = SND(0, self.recipient.power, press)
-        msg += WRT([self.recipient.power, 1])
+        press = PRP(PCE(self.sender.power, self.recipient.power))
+        msg = SND(0)(self.recipient.power)(press)
+        msg += WRT(self.recipient.power, 1)
         self.sender.send(msg)
         self.assertContains(YES(msg), self.sender.queue)
         self.assertPressReceived(press)
@@ -537,10 +533,10 @@ class Server_Admin_Press(Server_Admin):
         self.start_game()
         
         # Level 10 succeeds
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
         # Level 40 succeeds
-        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        offer2 = PRP(SCD(sender.power, LON) (recipient.power, PAR))
         self.assertPressSent(offer2, sender, recipient)
         # Level 60 succeeds
         offer[0] = SUG
@@ -557,10 +553,10 @@ class Server_Admin_Press(Server_Admin):
         self.start_game()
         
         # Level 10 succeeds
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
         # Level 40 succeeds
-        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        offer2 = PRP(SCD(sender.power, LON) (recipient.power, PAR))
         self.assertPressSent(offer2, sender, recipient)
         # Level 60 fails
         offer[0] = SUG
@@ -578,10 +574,10 @@ class Server_Admin_Press(Server_Admin):
         self.start_game()
         
         # Level 10 succeeds
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
         # Level 40 succeeds
-        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        offer2 = PRP(SCD(sender.power, LON) (recipient.power, PAR))
         self.assertPressSent(offer2, sender, recipient)
         # Level 60 fails
         offer[0] = SUG
@@ -597,7 +593,7 @@ class Server_Admin_Press(Server_Admin):
         self.start_game()
         
         # Level 10 fails
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressHuhd(offer, sender, recipient, 0)
     def test_press_enable_blocked(self):
         ''' The enable press command is blocked after the game starts.'''
@@ -611,10 +607,10 @@ class Server_Admin_Press(Server_Admin):
         self.wait_for_actions()
         
         # Level 10 succeeds
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
         # Level 40 fails
-        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        offer2 = PRP(SCD(sender.power, LON) (recipient.power, PAR))
         self.assertPressHuhd(offer2, sender, recipient, 7)
         # Level 60 fails
         offer[0] = SUG
@@ -631,10 +627,10 @@ class Server_Admin_Press(Server_Admin):
         self.wait_for_actions()
         
         # Level 10 succeeds
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
         # Level 40 fails
-        offer2 = PRP(SCD([sender.power, LON], [recipient.power, PAR]))
+        offer2 = PRP(SCD(sender.power, LON) (recipient.power, PAR))
         self.assertPressHuhd(offer2, sender, recipient, 7)
         # Level 60 fails
         offer[0] = SUG
@@ -843,26 +839,25 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(newbie.rep, old_rep)
     
     def test_SEL_reply(self):
-        from language import LST, SEL
+        from language import SEL
         self.master.queue = []
-        self.master.send(SEL())
-        params = self.game.options.get_params()
+        self.master.send(+SEL)
         self.assertContains(SEL(0), self.master.queue)
     def test_LST_reply(self):
         from language import LST
         self.master.queue = []
-        self.master.send(LST())
+        self.master.send(+LST)
         params = self.game.options.get_params()
-        self.assertContains(LST(0, 6, 'standard', params), self.master.queue)
+        self.assertContains(LST(0)(6)('standard')(params), self.master.queue)
     def test_multigame_LST_reply(self):
         from language import LST
         std_params = self.game.options.get_params()
         game = self.new_game('sailho')
         self.master.queue = []
-        self.master.send(LST())
+        self.master.send(+LST)
         sailho_params = game.options.get_params()
-        self.assertContains(LST(0, 6, 'standard', std_params), self.master.queue)
-        self.assertContains(LST(1, 4, 'sailho', sailho_params), self.master.queue)
+        self.assertContains(LST(0)(6)('standard')(std_params), self.master.queue)
+        self.assertContains(LST(1)(4)('sailho')(sailho_params), self.master.queue)
 
 class Server_Bugfix(ServerTestCase):
     ''' Test cases to reproduce bugs found.'''
@@ -877,7 +872,7 @@ class Server_Bugfix(ServerTestCase):
         from language import HLO
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
-        player.send(HLO())
+        player.send(+HLO)
         for message in player.queue:
             if message[0] is HLO: self.fail('Server sent HLO before game start')
     def test_admin_forward(self):
@@ -886,7 +881,7 @@ class Server_Bugfix(ServerTestCase):
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
         sender.admin('Ping.')
-        self.assertContains(ADM(sender.name, 'Ping.'), recipient.queue)
+        self.assertContains(ADM(sender.name)('Ping.'), recipient.queue)
     def test_NPR_press_block(self):
         ''' The NPR parameter should block press during retreat phases.
             A code overview revealed that it probably doesn't.
@@ -900,7 +895,7 @@ class Server_Bugfix(ServerTestCase):
         game = self.start_game()
         game.judge.phase = Turn.retreat_phase
         game.set_deadlines()
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressRejected(offer, sender, recipient)
     def test_NPR_press_allow(self):
         ''' The NPR parameter should block press during retreat phases.
@@ -915,7 +910,7 @@ class Server_Bugfix(ServerTestCase):
         game = self.start_game()
         game.judge.phase = Turn.retreat_phase
         game.set_deadlines()
-        offer = PRP(PCE([sender.power, recipient.power]))
+        offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
     
 if __name__ == '__main__': unittest.main()

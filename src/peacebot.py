@@ -40,7 +40,7 @@ class PeaceBot(DumbBot):
             if self.opts.LVL >= 10:
                 for country in self.countries:
                     if country is not me:
-                        self.send_press(country, PRP(PCE([country, me])))
+                        self.send_press(country, PRP(PCE(country, me)))
                     self.attitude[country] = 3
         else: self.close()
     def handle_SCO(self, message):

@@ -102,7 +102,7 @@ class Player(Verbose_Object):
         self.closed = True
     
     def send(self, message):
-        if not self.closed: self.send_out(message)
+        if not self.closed: self.send_out(Message(message))
     def send_list(self, message_list):
         'Sends a list of Messages to the server.'
         for msg in message_list: self.send(msg)
@@ -132,10 +132,10 @@ class Player(Verbose_Object):
         '''#'''
         if game_id is not None: self.send(SEL(game_id))
         if self.power and self.pcode is not None:
-            self.send(IAM(self.power, self.pcode))
+            self.send(IAM(self.power)(self.pcode))
         elif self.name and self.version:
-            self.send(NME(self.name, self.version))
-        else: self.send(OBS())
+            self.send(NME(self.name)(self.version))
+        else: self.send(OBS)
     
     def handle_message(self, message):
         ''' Process a new message from the server.
@@ -187,7 +187,7 @@ class Player(Verbose_Object):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
         if response in ('huh', 'complain', 'carp', 'croak'):
-            self.send(reply or HUH([ERR, message]))
+            self.send(reply or HUH(ERR + message))
         if response in ('die', 'close', 'carp', 'croak'): self.close()
         if error and response not in ('print', 'close', 'huh', 'carp', 'ignore'): raise
     
@@ -204,7 +204,7 @@ class Player(Verbose_Object):
                 config.variants[mapname] = variant
             self.map = Map(variant)
             if self.map.valid: self.accept(message)
-            else:              self.send(MDF())
+            else: self.send(MDF)
         else: self.accept(message)
     def handle_MDF(self, message):
         ''' Replies to the MDF command.
@@ -254,7 +254,6 @@ class Player(Verbose_Object):
         ''' Requests draws, and calls generate_orders() in a separate thread.'''
         if self.in_game and self.power:
             from threading import Thread
-            #self.send(MIS())
             self.submitted = False
             self.orders = OrderSet(self.power)
             if self.draws: self.request_draws()
@@ -263,7 +262,7 @@ class Player(Verbose_Object):
     def request_draws(self):
         current = Set(self.map.current_powers())
         for power_set in self.draws:
-            if power_set == current: self.send(DRW())
+            if power_set == current: self.send(DRW)
             elif self.opts.PDA and power_set <= current:
                 self.send(DRW(power_set))
     def generate_orders(self):
@@ -280,18 +279,18 @@ class Player(Verbose_Object):
             if self.closed: return
             else: sleep(1)
         if self.map.valid:
-            self.send(HLO())
-            self.send(SCO())
-            self.send(NOW())
+            self.send(HLO)
+            self.send(SCO)
+            self.send(NOW)
     def handle_YES_IAM(self, message):
         if not self.map:
-            self.send(MAP())
+            self.send(MAP)
             from threading import Thread
             Thread(target=self.wait_for_map).start()
         elif not self.power:
-            self.send(HLO())
-            self.send(SCO())
-            self.send(NOW())
+            self.send(HLO)
+            self.send(SCO)
+            self.send(NOW)
     def handle_REJ_IAM(self, message): self.close()
     def handle_REJ_NME(self, message): self.close()
     def handle_OFF(self, message): self.close()
@@ -321,7 +320,7 @@ class Player(Verbose_Object):
             self.__dict__.update(self.saved[game])
             #for (name, value) in self.saved[game]:
             #   setattr(self, name, value)
-            if self.power: self.send(IAM(self.power, self.pcode))
+            if self.power: self.send(IAM(self.power)(self.pcode))
             else: self.accept(message)
         else: self.reject(message)
     
@@ -341,23 +340,21 @@ class Player(Verbose_Object):
         
         # Forward it if requested, but avoid loops
         if self.fwd_list.has_key(sender) and press[0] != FRM:
-            self.send_press(self.fwd_list[sender], FRM(sender, recips, press))
+            self.send_press(self.fwd_list[sender], FRM(sender)(recips)(press))
         
         # Pass it off to a handler method
-        if len(press) > 4: refs = folded[5:]
-        else:              refs = None
         method_name = 'handle_press_' + press[0].text
         self.log_debug(15, 'Searching for %s() handlers', method_name)
         try: method = getattr(self, method_name)
         except AttributeError:
             # No handler found; return the standard response
             if press[0] not in (HUH, TRY):
-                self.send_press(sender, HUH(ERR() + press))
+                self.send_press(sender, HUH(ERR + press))
                 self.send_press(sender, TRY(self.press_tokens))
         else:
             try: method(sender, press)
             except Exception, err:
-                self.send_press(sender, HUH(press + ERR()))
+                self.send_press(sender, HUH(press ++ ERR))
                 self.log_debug(7, 'Exception in %s(%s, %s): %s',
                         method_name, sender, press, err)
     
@@ -371,16 +368,16 @@ class Player(Verbose_Object):
         for recipient in recips:
             if self.bcc_list.has_key(recipient) and press[0] != FRM:
                 self.send_press(self.bcc_list[recipient],
-                    FRM(self.power, recips, press))
+                    FRM(self.power)(recips)(press))
         
         # Create and store the message
-        message = SND(recips, press)
+        message = SND(recips)(press)
         self.pressed.setdefault(self.power.key,[]).append(message)
         
         # Actually send the message
         self.send(message)
     def send_admin(self, text):
-        self.send(ADM(self.name or 'Observer', str(text)))
+        self.send(ADM(self.name or 'Observer')(str(text)))
 
 
 class HoldBot(Player):
@@ -414,7 +411,7 @@ class HoldBot(Player):
         self.submitted = False
         if self.in_game and self.power:
             from gameboard import Turn
-            self.send(DRW())
+            self.send(DRW)
             orders = OrderSet(self.power)
             phase = self.map.current_turn.phase()
             self.log_debug(11, 'Holding %s in %s', self.power, self.map.current_turn)
@@ -453,13 +450,13 @@ class Observer(Player):
             ...             self.player.handle_ADM(msg)
             >>> p = Responder().player
             Echo: << OBS
-            >>> p.handle_ADM(ADM('Server',
-            ...     'An Observer has connected. Have 5 players and 1 observers. Need 2 to start'))
-            >>> p.handle_ADM(ADM('Geoff', 'Does the observer want to play?'))
+            >>> p.handle_ADM(ADM('Server')('An Observer has connected. '
+            ...     'Have 5 players and 1 observers. Need 2 to start'))
+            >>> p.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
             Echo: << ADM ( "Observer" ) ( "Sorry; I'm just a bot." )
-            >>> p.handle_ADM(ADM('Geoff', 'Are you sure about that?'))
+            >>> p.handle_ADM(ADM('Geoff')('Are you sure about that?'))
             Echo: << ADM ( "Observer" ) ( "Yes, I'm sure." )
-            >>> p.handle_ADM(ADM('DanM', 'Do any other observers care to jump in?'))
+            >>> p.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         '''#'''
         import re
         sorry = "Sorry; I'm just a bot."

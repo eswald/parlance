@@ -139,11 +139,12 @@ class Map(Verbose_Object):
             ...     if item not in old: print Message(item)
             ... 
         '''#'''
-        sc_dist = []
-        for power in [self.neutral] + self.powers.values():
-            if power.centers: sc_dist.insert(0, [power.key] + power.centers)
-        # sc_dist.sort()
-        return SCO(*sc_dist)
+        msg = +SCO
+        powers = self.powers.values()
+        powers.sort()
+        for power in powers + [self.neutral]:
+            if power.centers: msg = msg(power.key, *power.centers)
+        return msg
     def create_NOW(self):
         ''' Creates a unit position message.
             >>> now = standard_now.fold()
@@ -174,7 +175,7 @@ class Map(Verbose_Object):
         '''#'''
         units = sum([power.units for power in self.powers.values()], [])
         units.sort()
-        return NOW(self.current_turn, *units)
+        return NOW(self.current_turn) % units
     def ordered_unit(self, nation, unit_spec):
         ''' Finds a unit from its token representation.
             If the specified unit doesn't exist, returns a fake one.
@@ -820,14 +821,3 @@ class Unit(Comparable):
     def can_be_convoyed(self):
         return self.coast.unit_type == AMY and self.coast.province.is_coastal()
     def exists(self): return self in self.coast.province.units
-
-
-def _test():
-    ''' Exercises the doctests above.
-        For convenience and time, standard_map and its tokens
-        are added to the global dictionary.
-    '''#'''
-    import doctest, gameboard
-    globs = config.extend_globals(gameboard.__dict__)
-    return doctest.testmod(gameboard, globs=globs)
-if __name__ == "__main__": _test()

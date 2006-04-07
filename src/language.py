@@ -56,20 +56,18 @@ class Message(list):
             # Checks syntax
             >>> print translate('WHT(YES)').validate()
             HUH (ERR WHT (YES))
-            >>> print NME('name', -3).validate()
+            >>> print NME('name')(-3).validate()
             HUH (NME ("name") (ERR -3))
             >>> print NME('name').validate()
             HUH (NME ("name") ERR)
-            >>> print NME('name', 'version').validate()
+            >>> print NME('name')('version').validate()
             False
             
             # Checks syntax level
-            >>> Eng = Token('ENG', 0x4101)
-            >>> Fra = Token('FRA', 0x4102)
-            >>> Peace = AND(PCE([Eng, Fra]), DRW)
-            >>> print SND(Eng, PRP(Peace)).validate(40)
+            >>> Peace = AND (PCE(ENG, FRA)) (DRW)
+            >>> print SND(ENG)(PRP(Peace)).validate(40)
             False
-            >>> m = SND(Eng, PRP(ORR(NOT(DRW), Peace)))
+            >>> m = SND(ENG)(PRP(ORR(NOT(DRW))(Peace)))
             >>> print m.validate(40)
             HUH (SND (ENG) (PRP (ORR (NOT (DRW)) (ERR AND (PCE (ENG FRA)) (DRW)))))
             >>> print m.validate(100)
@@ -115,7 +113,7 @@ class Message(list):
             [NOT, [GOF]]
             >>> Message().fold()
             []
-            >>> NME('name', -3).fold()
+            >>> NME('name')(-3).fold()
             [NME, ['name'], [-3]]
             >>> from translation import translate
             >>> translate('(()(()()))()').fold()
@@ -143,7 +141,7 @@ class Message(list):
         ''' Converts a Message into a list,
             with embedded strings and tokens converted into Python values.
             
-            >>> NME('version', -3).convert()
+            >>> NME('version')(-3).convert()
             [NME, BRA, 'version', KET, BRA, -3, KET]
         '''#'''
         result = []
@@ -177,7 +175,7 @@ class Message(list):
             
             >>> eval(repr(NOT(GOF)))
             Message([NOT, [GOF]])
-            >>> eval(repr(IAM(Token('STH', 0x4101), 42)))
+            >>> eval(repr(IAM(Token('STH', 0x4101))(42)))
             Message([IAM, [Token('STH', 0x4101)], [42]])
         '''#'''
         return 'Message(' + repr(self.fold()) + ')'
@@ -222,7 +220,44 @@ class Message(list):
             'NOT GOF "name" 3'
         '''#'''
         list.extend(self, _tokenize(value))
-    def __add__(self, other): return Message(list.__add__(self, other))
+    def __add__(self, other):
+        ''' Adds the given Message or list at the end of this Message,
+            translating list items into Tokens if necessary.
+            Note: To add a single token, use "++".
+            
+            >>> print ((ALY(ENG, FRA) ++ VSS) + [[GER, ITA]])
+            ALY ( ENG FRA ) VSS ( GER ITA )
+        '''#'''
+        return Message(list.__add__(self, other))
+    def __iadd__(self, other): self.extend(other); return self
+    
+    def __call__(self, *args):
+        ''' Makes the standard bracketing patterns legal Python.
+            Unfortunately, multiple values in a single bracket need commas.
+            
+            >>> print NME ('name') ('version')
+            NME ( "name" ) ( "version" )
+            >>> print CCD (ENG) (SPR, 1901)
+            CCD ( ENG ) ( SPR 1901 )
+        '''#'''
+        if len(args) == 1: return self + _wrap(*args)
+        else: return self + _wrap(args)
+    __and__ = __call__
+    def __iand__(self, other):
+        try:
+            if len(other) == 1: other = other[0]
+        except TypeError: pass
+        list.extend(self, _wrap(other)); return self
+    def __mod__(self, other):
+        ''' Wraps each element of a list individually,
+            appending them to a copy of the message.
+            
+            >>> units = standard_now.fold()[5:8]
+            >>> print NOW (FAL, 1901) % units
+            NOW ( FAL 1901 ) ( ENG FLT LON ) ( ENG FLT EDI ) ( ENG AMY LVP )
+        '''#'''
+        return reduce(apply, [(item,) for item in other], self)
+    
     def __setslice__(self, from_index, to_index, value):
         ''' Replaces a portion of the Message, with Tokens.
             >>> from translation import translate
@@ -511,16 +546,21 @@ class Token(_tuple_Token):
     # Actions
     def __call__(self, *args):
         ''' Creates a new Message, starting with the token.
-            Arguments are individually wrapped in parentheses.
+            The arguments are wrapped in brackets;
+            call the result to add more parameters.
             
-            >>> NOT(GOF)
-            Message([NOT, [GOF]])
+            >>> print NOT(GOF)
+            NOT ( GOF )
             >>> print YES(MAP('name'))
             YES ( MAP ( "name" ) )
-            >>> print IAM(Token('ENG', 0x4101), 3)
-            IAM ( ENG ) ( 3 )
+            >>> print DRW (ENG, FRA, GER)
+            DRW ( ENG FRA GER )
+            >>> print TRY()
+            TRY ( )
+            >>> print NOW (standard_map.current_turn)
+            NOW ( SPR 1901 )
         '''#'''
-        return Message(self, *map(_wrap, args))
+        return Message(self)(*args)
     def __radd__(self, other):
         ''' Handles adding a token to a string.
             They join into one string, usually with a space between.
@@ -555,6 +595,25 @@ class Token(_tuple_Token):
                 joint = ''
             else: joint = ' '
             return other + joint + self.text
+    def __add__(self, other):
+        ''' A token can be added to the front of a message.
+            >>> press = PRP(PCE(ENG, FRA))
+            >>> print HUH(ERR + press)
+            HUH ( ERR PRP ( PCE ( ENG FRA ) ) )
+        '''#'''
+        return Message(self) + Message(other)
+    def __pos__(self):
+        ''' Creates a Message containing only this token.
+            >>> +OBS
+            Message([OBS])
+            >>> print HUH(DRW(ENG) ++ ERR)
+            HUH ( DRW ( ENG ) ERR )
+        '''#'''
+        return Message(self)
+    
+    # Shortcuts for treating Tokens as Messages
+    def __and__(self, other): return Message(self) & other
+    def __mod__(self, other): return Message(self) % other
 
 class StringToken(Token):
     ''' A token of a DM string, encoding a single ASCII character.
@@ -622,7 +681,7 @@ def _tokenize(value, wrap=False):
         [IntegerToken(3), IntegerToken(0), IntegerToken(-3)]
         >>> _tokenize([3, 0, -3], True)
         [BRA, IntegerToken(3), IntegerToken(0), IntegerToken(-3), KET]
-        >>> _tokenize([NOT(), (GOF,)])
+        >>> _tokenize([+NOT, (GOF,)])
         [NOT, BRA, GOF, KET]
     '''#'''
     if   isinstance(value, (int, float, long)): return [IntegerToken(value)]

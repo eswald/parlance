@@ -547,7 +547,7 @@ class OrderSet(dict):
             Use the nation argument to submit only that nation's orders.
         '''#'''
         result = self.order_list(nation)
-        if result: return SUB(*result)
+        if result: return SUB % result
         return None
     def order_list(self, nation=None):
         if nation: return [o for o in sum(self.values(), []) if o.__author == nation]
@@ -625,11 +625,11 @@ class OrderSet(dict):
         if phase == Turn.move_phase:
             result = [unit for unit in power.units
                 if not self.get_order(unit)]
-            if result: return MIS(*result)
+            if result: return MIS % result
         elif phase == Turn.retreat_phase:
             result = [unit for unit in power.units
                 if unit.dislodged and not self.get_order(unit)]
-            if result: return MIS(*result)
+            if result: return MIS % result
         elif phase == Turn.build_phase:
             surplus = -self.builds_remaining(power)
             if surplus: return MIS(surplus)

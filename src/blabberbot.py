@@ -82,7 +82,7 @@ class BlabberBot(DumbBot):
                         while repeat:
                             result = self.random_expression(item)
                             if result:
-                                msg.append(result)
+                                msg &= result
                                 repeat -= 1
                             else: return partial
                     elif in_cat:

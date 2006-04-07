@@ -211,7 +211,6 @@ class variant_options(Verbose_Object):
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
         self.msg_cache  = {}
     def new_judge(self):
-        from gameboard import Map
         from judge import Standard_Judge
         return Standard_Judge(self, game_options())
     def get_representation(self):
@@ -484,9 +483,3 @@ def extend_globals(globs):
     for name,token in opts.rep.items(): extension[name] = token
     extension.update(globs)
     return extension
-
-
-def _test():
-    import doctest, config
-    return doctest.testmod(config)
-if __name__ == "__main__": _test()

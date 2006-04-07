@@ -154,13 +154,13 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
             [TUR, FLT, CON],
             [AUS, AMY, VIE],
         ])
-        self.acceptable(RUS, DRW([RUS, ENG, FRA]))
-        self.acceptable(ENG, DRW([ENG, RUS, FRA]))
-        self.acceptable(FRA, DRW([RUS, FRA, ENG]))
-        self.acceptable(GER, DRW([FRA, RUS, ENG]))
-        self.acceptable(ITA, DRW([FRA, ENG, RUS]))
-        self.acceptable(TUR, DRW([ENG, FRA, RUS]))
-        self.acceptable(AUS, DRW([FRA, RUS, ENG]))
+        self.acceptable(RUS, DRW(RUS, ENG, FRA))
+        self.acceptable(ENG, DRW(ENG, RUS, FRA))
+        self.acceptable(FRA, DRW(RUS, FRA, ENG))
+        self.acceptable(GER, DRW(FRA, RUS, ENG))
+        self.acceptable(ITA, DRW(FRA, ENG, RUS))
+        self.acceptable(TUR, DRW(ENG, FRA, RUS))
+        self.acceptable(AUS, DRW(FRA, RUS, ENG))
         self.assertDrawn(FRA, ENG, RUS)
     def test_retreat_coasts(self):
         ''' Fleets retreat to specific coasts'''
@@ -511,7 +511,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         ''' The server crashed when I attempted to retract an order.'''
         self.init_state(SPR, 1902, [ [GER, AMY, RUH], ])
         client = self.Fake_Service(GER)
-        self.judge.handle_NOT_SUB(client, NOT(SUB([(GER, AMY, RUH), MTO, BEL])))
+        self.judge.handle_NOT_SUB(client, NOT(SUB([GER, AMY, RUH], MTO, BEL)))
     def test_void_convoying_order_result(self):
         ''' CVY orders always had NSO results, even for successful convoys.'''
         steady_state = [
@@ -525,8 +525,8 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [ENG, AMY, NWY],
         ])
-        self.assertContains(self.results, ORD([FAL, 1901],
-            [(ENG, FLT, NTH), CVY, (ENG, AMY, YOR), CTO, NWY], SUC))
+        self.assertContains(self.results, ORD(FAL, 1901)
+            ([ENG, FLT, NTH], CVY, [ENG, AMY, YOR], CTO, NWY) (SUC))
 
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''

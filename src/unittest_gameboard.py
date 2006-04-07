@@ -7,7 +7,7 @@ import unittest
 import config
 from functions import fails
 from gameboard import Map, Turn, Province
-from language  import Token, AMY, FLT, HLD, MTO, SUP, CVY, CTO, VIA, RTO, DSB, BLD, REM, WVE, SCS
+from language  import IntegerToken, Token, AMY, FLT, HLD, MTO, SUP, CVY, CTO, VIA, RTO, DSB, BLD, REM, WVE, SCS
 
 class Map_Variants(unittest.TestCase):
     ''' Validity checks for each of the known variants'''
@@ -272,12 +272,12 @@ class Gameboard_Doctests(unittest.TestCase):
         from xtended import standard_map, ENG, FRA, \
                 EDI, LON, BRE, PAR, BEL, HOL, SPA, NWY, ECH, NTH, PIC
         
-        mdf = MDF([ENG, FRA], ([
+        mdf = MDF (ENG, FRA) ([
             (ENG, EDI, LON),
             (FRA, BRE, PAR),
             ([ENG, FRA], BEL, HOL),
             (UNO, SPA, NWY),
-        ], [ECH, NTH, PIC]), [
+        ], [ECH, NTH, PIC]) (
             (EDI, [AMY, LON], [FLT, NTH]),
             (LON, [AMY, EDI], [FLT, NTH, ECH]),
             (BRE, [AMY, PAR, PIC, SPA], [FLT, ECH, PIC, (SPA, NCS)]),
@@ -289,7 +289,7 @@ class Gameboard_Doctests(unittest.TestCase):
             (ECH, [FLT, NTH, BRE, LON, BEL, PIC]),
             (NTH, [FLT, ECH, BEL, HOL, LON, NWY, EDI]),
             (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
-        ])
+        )
         
         self.failIf(mdf.validate(0, True), 'Invalid MDF message')
         m = Map(config.variant_options('simplified',

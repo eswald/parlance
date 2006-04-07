@@ -79,8 +79,7 @@ def run_server():
                 games = int(arg[2:])
                 opts['games'] = games
                 opts['number of games'] = games
-            else:
-                config.variants[arg]
+            elif config.variants.has_key(arg):
                 opts['variant'] = arg
                 opts['default variant'] = arg
     except:

@@ -165,7 +165,7 @@ class Server(Verbose_Object):
             else: self.start_game()
     
     def broadcast_admin(self, text):
-        if self.options.snd_admin: self.broadcast(ADM('Server', text))
+        if self.options.snd_admin: self.broadcast(ADM('Server')(text))
     
     def handle_message(self, client, message):
         'Processes a single message from any client.'
@@ -183,7 +183,7 @@ class Server(Verbose_Object):
                 if method: method(client, message); break
             else:
                 self.log_debug(7, 'Missing message handler: %s', method_name)
-                client.send(HUH([ERR, message]))
+                client.send(HUH(ERR + message))
     def handle_HUH(self, client, message):
         self.log_debug(7, 'Client #%d complained about message: %s',
                 client.client_id, message)
@@ -309,7 +309,7 @@ class Server(Verbose_Object):
             self.closed = True
             for game in self.games:
                 if not game.closed: game.close()
-            self.broadcast(OFF())
+            self.broadcast(+OFF)
             self.manager.close_threads()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
@@ -675,7 +675,7 @@ class Game(Verbose_Object):
         if country: passcode = self.players[country].passcode
         else: country = UNO; passcode = 0
         variant = self.options.get_params()
-        client.send(HLO(country, passcode, variant))
+        client.send(HLO(country)(passcode)(variant))
     def summarize(self):
         ''' Sends the end-of-game SMR message.'''
         players = self.summary
@@ -689,7 +689,7 @@ class Game(Verbose_Object):
             elim = self.judge.eliminated(country)
             if elim: stats.append(elim)
             players.append(stats)
-        return SMR(self.judge.turn(), *players)
+        return SMR(self.judge.turn()) % players
     def broadcast(self, message):
         ''' Sends a message to each ready client, and notes it in the log.'''
         self.log_debug(2, 'ALL << %s', message)
@@ -699,12 +699,12 @@ class Game(Verbose_Object):
         for msg in message_list: self.broadcast(msg)
     def admin(self, line, *args):
         if self.server.options.snd_admin:
-            self.broadcast(ADM('Server', str(line) % args))
+            self.broadcast(ADM('Server')(str(line) % args))
     
     # Press and administration
     def send_listing(self, client):
-        client.send(LST(self.game_id, self.players_needed(),
-            self.variant.variant, self.options.get_params()))
+        client.send(LST(self.game_id)(self.players_needed())
+            (self.variant.variant)(self.options.get_params()))
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
@@ -727,10 +727,10 @@ class Game(Verbose_Object):
             recips = folded[1 + offset]
             for nation in recips:
                 if not self.players[nation].client:
-                    client.send(CCD(nation, message))
+                    client.send(CCD(nation)(message))
                     break
                 elif nation in eliminated:
-                    client.send(OUT(nation, message))
+                    client.send(OUT(nation)(message))
                     break
                 elif nation is country:
                     # The syntax document specifies that this should not be.
@@ -742,14 +742,14 @@ class Game(Verbose_Object):
                 # Send OUT if any power in press is eliminated
                 for nation in eliminated:
                     if nation in press:
-                        client.send(OUT(nation, message))
+                        client.send(OUT(nation)(message))
                         return
                 # Trim high-level tokens from TRY messages
                 for token,level in trimmed.items():
                     if level > self.options.LVL:
                         while token in press:
                             press.remove(token)
-                outgoing = FRM(country, recips, press)
+                outgoing = FRM(country)(recips)(press)
                 for nation in recips:
                     # Hope that nobody disappears here...
                     self.players[nation].client.send(outgoing)

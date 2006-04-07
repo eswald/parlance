@@ -36,7 +36,7 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
         from functions import Verbose_Object
         Verbose_Object.verbosity = verbosity
     def init_state(self, season, year, unit_list):
-        self.judge.map.handle_NOW(NOW([season, year], *unit_list))
+        self.judge.map.handle_NOW(NOW(season, year) % unit_list)
         self.judge.init_turn()
     def chown_sc(self, owner, sc_list):
         # Todo: This could more efficiently change the map itself...

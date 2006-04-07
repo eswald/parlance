@@ -118,8 +118,8 @@ else:
                 except Exception, e:
                     self.output('Error reading tty file for %s: %s', self.map.name, e)
                 # Just in case it works...
-                self.send(NOW())
-                self.send(SCO())
+                self.send(NOW)
+                self.send(SCO)
         def show_map(self, message):
             from language import Token
             self.init_colors()

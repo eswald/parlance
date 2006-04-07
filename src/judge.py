@@ -143,7 +143,7 @@ class Standard_Judge(Judge):
                     order.__result = note
                     orders.add(order, country)
                     note = MBV
-                client.send(THX(order, note))
+                client.send(THX(order)(note))
             missing = self.missing_orders(country)
             if missing: client.send(missing)
             else: self.unready.discard(country)
@@ -190,7 +190,7 @@ class Standard_Judge(Judge):
         if country and self.phase and not self.eliminated(country):
             missing = self.missing_orders(country)
             if missing: client.send(missing)
-            else: client.send(MIS())
+            else: client.send(+MIS)
         else: client.reject(message)
     
     # Support functions for the above
@@ -238,7 +238,7 @@ class Standard_Judge(Judge):
         else:
             # Report civil disorders
             turn = self.map.current_turn
-            results = [CCD(country, turn) for country in self.unready]
+            results = [CCD(country)(turn) for country in self.unready]
             
             # Report submitted orders
             if self.options.send_SET:
@@ -279,10 +279,10 @@ class Standard_Judge(Judge):
                         break
         return results
     def create_SETs(self, turn):
-        return [SET(nation, turn, *[(order, [order.__note])
-                for order in self.next_orders.order_list(nation)])
+        return [SET(nation)(turn) % [([order], [order.__note])
+                for order in self.next_orders.order_list(nation)]
                 for nation in self.map.powers.values()
-                if not self.eliminated(nation)]
+                if not nation.eliminated]
     def init_turn(self):
         self.draws = {}
         self.unready.clear()
@@ -300,7 +300,7 @@ class Standard_Judge(Judge):
             if voters >= in_game:
                 if self.game_opts.PDA: return DRW(winners)
                 elif self.options.full_DRW: return DRW(in_game)
-                else: return DRW()
+                else: return +DRW
         return None
     def check_solo(self, growing):
         ''' Checks for the end of the game by a solo win.
@@ -324,7 +324,7 @@ class Standard_Judge(Judge):
         self.log_debug(11, 'Now in %s, with %d static year%s.',
                 year, self.static, s(self.static))
         if year >= self.draw_year or self.static >= self.max_static:
-            return DRW()
+            return +DRW
         elif self.var_start <= year < self.var_stop:
             self.win_condition -= self.options.variation
         return None
@@ -358,7 +358,7 @@ class Standard_Judge(Judge):
                     else:
                         self.log_debug(7, 'Unknown order type %s in build phase', order.order_type)
                         result = FLD
-                orders.append(ORD(turn, order, result))
+                orders.append(ORD(turn)(order)(result))
             
             # Handle missing orders
             if surplus > 0:
@@ -366,12 +366,12 @@ class Standard_Judge(Judge):
                 while surplus > 0:
                     unit = units.pop(0)
                     self.log_debug(8, 'Removing %s on behalf of %s', unit, power)
-                    orders.append(ORD(turn, RemoveOrder(unit), SUC))
+                    orders.append(ORD(turn)(RemoveOrder(unit))(SUC))
                     unit.die()
                     surplus -= 1
             while surplus < 0:
                 self.log_debug(8, 'Waiving on behalf of %s', power)
-                orders.append(ORD(turn, WaiveOrder(power), SUC))
+                orders.append(ORD(turn)(WaiveOrder(power))(SUC))
                 surplus += 1
         return orders
     def retreat_algorithm(self):
@@ -393,18 +393,18 @@ class Standard_Judge(Judge):
                     destinations[order.destination.province.key].append(order)
                     result = None
                 else: result = FLD   # Unrecognized order, but correct season
-                if result: orders.append(ORD(turn, order, result))
+                if result: orders.append(ORD(turn)(order)(result))
         for unit in removed: unit.die()
         for unit_list in destinations.itervalues():
             if len(unit_list) == 1:
                 # Successful retreat
                 order = unit_list[0]
-                orders.append(ORD(turn, order, SUC))
+                orders.append(ORD(turn)(order)(SUC))
                 order.unit.move_to(order.destination)
             else:
                 # Bouncing
                 for order in unit_list:
-                    orders.append(ORD(turn, order, BNC))
+                    orders.append(ORD(turn)(order)(BNC))
                     order.unit.die()
         return orders
     def move_algorithm(self):
@@ -468,7 +468,7 @@ class Standard_Judge(Judge):
         
         # 5) Move units around
         turn = self.map.current_turn
-        orders = [ORD(turn, unit.current_order, self.process_results(unit))
+        orders = [ORD(turn)(unit.current_order)(self.process_results(unit))
                 for unit in self.map.units]
         
         # 6) Clean up all of the circular references

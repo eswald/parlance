@@ -49,7 +49,7 @@ class PlayerTestCase(unittest.TestCase):
         self.failIf(reply, reply)
         self.replies.append(message)
     def tearDown(self):
-        if self.player: self.send(OFF())
+        if self.player: self.send(+OFF)
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
@@ -58,7 +58,7 @@ class PlayerTestCase(unittest.TestCase):
         self.player = player_class(self.handle_message, self.variant.rep, **kwargs)
     def send_hello(self, country=None):
         from xtended import ENG
-        self.send(HLO(country or ENG, self.level, self.params))
+        self.send(HLO(country or ENG)(self.level)(self.params))
     def seek_reply(self, message, error=None):
         while self.replies:
             msg = self.replies.pop(0)
@@ -85,49 +85,51 @@ class Player_Tests(PlayerTestCase):
     class Test_Player(Player):
         name = 'Test Player'
         version = version_string(__version__)
-        def handle_REJ_YES(self, message): self.send(HLO())
+        def handle_REJ_YES(self, message): self.send(+HLO)
         def handle_press_THK(self, sender, press):
             self.send_press(sender, WHY(press))
         def handle_press_SUG(self, *args):
             raise NotImplementedError, 'Intentionally raising an error.'
         def generate_orders(self): pass
     def test_press_response(self):
-        from xtended import ENG, FRA, GER
+        from xtended import ENG, FRA
         self.connect_player(self.Test_Player)
         self.start_game()
         self.replies = []
-        offer = PRP(PCE([ENG, FRA]))
-        self.send(FRM(FRA, ENG, offer))
-        self.seek_reply(SND(FRA, HUH([ERR, offer])))
-        self.seek_reply(SND(FRA, TRY([])))
+        offer = PRP(PCE(ENG, FRA))
+        self.send(FRM(FRA)(ENG)(offer))
+        self.seek_reply(SND(FRA)(HUH(ERR + offer)))
+        self.seek_reply(SND(FRA)(TRY()))
     def test_press_response_legacy(self):
         # Same as above, but with WRT syntax
+        # Note that this only works with validation off.
         from xtended import ENG, FRA, GER
         self.connect_player(self.Test_Player)
         self.start_game()
         self.replies = []
-        offer = THK(PCE([ENG, GER]))
-        self.send(FRM([FRA, 0], ENG, offer) + WRT([ENG, 0]))
-        self.seek_reply(SND(FRA, WHY(offer)))
+        offer = THK(PCE(ENG, GER))
+        self.player.client_opts.validate = False
+        self.send(FRM(FRA, 0)(ENG)(offer) + WRT(ENG, 0))
+        self.seek_reply(SND(FRA)(WHY(offer)))
     def test_validate_option(self):
         self.connect_player(self.Test_Player)
         self.player.client_opts.validate = False
         self.send(REJ(YES))
-        self.assertContains(HLO(), self.replies)
+        self.seek_reply(+HLO)
         self.failIf(self.player.closed)
         self.player.client_opts.validate = True
         self.send(REJ(YES))
         self.failUnless(self.player.closed)
     def test_known_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name, self.Test_Player.version))
+        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
         self.send(MAP('fleet_rome'))
         self.seek_reply(YES(MAP('fleet_rome')))
     def test_unknown_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name, self.Test_Player.version))
+        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
         self.send(MAP('unknown'))
-        self.seek_reply(MDF())
+        self.seek_reply(+MDF)
         self.send(config.variants['fleet_rome'].map_mdf)
         self.seek_reply(YES(MAP('unknown')))
     def test_HLO_PDA(self):
@@ -142,21 +144,21 @@ class Player_Tests(PlayerTestCase):
         self.connect_player(self.Test_Player)
         self.start_game()
         offer = SUG(DRW)
-        self.send(FRM(GER, ENG, offer))
-        self.seek_reply(SND(GER, HUH([offer, ERR])))
+        self.send(FRM(GER)(ENG)(offer))
+        self.seek_reply(SND(GER)(HUH(offer ++ ERR)))
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):
         PlayerTestCase.setUp(self)
         self.connect_player(HoldBot)
     def test_press_response(self):
-        from xtended import ENG, FRA, GER
+        from xtended import ENG, FRA
         self.start_game()
         self.replies = []
-        offer = PRP(PCE([ENG, FRA]))
-        self.send(FRM(FRA, ENG, offer))
-        self.seek_reply(SND(FRA, HUH([ERR, offer])))
-        self.seek_reply(SND(FRA, TRY([])))
+        offer = PRP(PCE(ENG, FRA))
+        self.send(FRM(FRA)(ENG)(offer))
+        self.seek_reply(SND(FRA)(HUH(ERR + offer)))
+        self.seek_reply(SND(FRA)(TRY()))
 
 class Player_Bots(PlayerTestCase):
     def setUp(self):
@@ -175,16 +177,27 @@ class Player_Bots(PlayerTestCase):
         def handle_THX(player, message):
             ''' Fail on bad order submission.'''
             self.fail('Invalid order submitted: ' + str(message))
+        def handle_MIS(player, message):
+            ''' Fail on incomplete order submission.'''
+            self.fail('Missing orders: ' + str(message))
         PlayerTestCase.setUp(self)
         Player.handle_NOW = handle_NOW
+        Player.handle_HUH = handle_HUH
         Player.handle_THX = handle_THX
-    
-    def test_project20m(self):
-        ''' Demonstrates that Project20M can at least survive a single season.
+        Player.handle_MIS = handle_MIS
+    def attempt_one_phase(self, bot_class):
+        ''' Demonstrates that the given bot can at least start up
+            and submit a complete set of orders for the first season.
         '''#'''
-        from project20m import Project20M
-        self.connect_player(Project20M)
+        self.connect_player(bot_class)
         self.start_game()
         self.assertContains(SUB, [message[0] for message in self.replies])
+    
+    def test_project20m(self):
+        from project20m import Project20M
+        self.attempt_one_phase(Project20M)
+    def test_blabberbot(self):
+        from blabberbot import BlabberBot
+        self.attempt_one_phase(BlabberBot)
 
 if __name__ == '__main__': unittest.main()
