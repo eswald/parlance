@@ -1030,23 +1030,21 @@ Unit.canMoveTo = canMoveTo
 UnitOrder.helping = None
 
 def couldBeSupportedBy(this, board):
-    # get the list of units surrounding the target province
-    # excluding this order's unit
+    # get the list of units surrounding this one
+    return this.unit.coast.province.getALLSurroundingUnits(board)
+UnitOrder.couldBeSupportedBy = couldBeSupportedBy
+
+def couldBeSupportedByMove(this, board):
+    # Restrictions in the original, due to misunderstanding the syntax,
+    # have been removed by Eric Wald on the recommendation of Andrew Huff.
+    # The original project could not support convoyed armies,
+    # or fleets moving to a specific coast.
     aroundTarget = this.target.getALLSurroundingUnits(board)
     while this.unit in aroundTarget:
         aroundTarget.remove(this.unit)
     return aroundTarget
-UnitOrder.couldBeSupportedBy = couldBeSupportedBy
-
-def couldBeSupportedByMove(this, board):
-    if this.destination.coastline:
-        return [] # you can't support moves into coasts apparently
-    else: return couldBeSupportedBy(this, board)
 MoveOrder.couldBeSupportedBy = couldBeSupportedByMove
-
-def couldBeSupportedByNone(this, board):
-    return [] # apparently you can't support convoys
-ConvoyedOrder.couldBeSupportedBy = couldBeSupportedByNone
+ConvoyedOrder.couldBeSupportedBy = couldBeSupportedByMove
 
 def doStrengthCompetition(this, value, board):
     # adjusts the value given, according to the strength (people who could
