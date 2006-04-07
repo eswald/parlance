@@ -58,7 +58,7 @@ more consistent.</p>
 <h4>message = server_message</h4>
 <h4>message = client_message</h4>
 
-<p>Each <a href="dcsp.html#DM">Diplomacy Message</a> must conform to the
+<p>Each <a href="protocol.html#DM">Diplomacy Message</a> must conform to the
 syntax of a <b>message</b>.  A <b>server_message</b> is anything that
 can be sent by the server; a <b>client_message</b> is anything that can
 be sent by a client, whether player or observer.</b>
@@ -140,7 +140,7 @@ three times followed by an ellipsis must be repeated at least twice.</p>
 
 <p>Internally, all tokens are represented as a 16-bit value. Details of
 the value for each token are provided in the
-<a href="dcsp.html">Client-Server Protocol Document</a>.  Conversion between
+<a href="protocol.html">Client-Server Protocol Document</a>.  Conversion between
 16-bit values and text can be done. All text versions of the tokens are 3
 characters long, alphabetic only, and not case-sensitive.</p>
 
@@ -187,7 +187,7 @@ participate in, by its <b>game_id</b>, as included in the <b>LST</b>
 message.</p>
 
 <p><em>Warning:</em> After sending this command, the client must be
-prepared to receive a new <a href="dcsp.html#RM">Representation Message</a>,
+prepared to receive a new <a href="protocol.html#RM">Representation Message</a>,
 in case the selected game uses a different map than the current game.</p>
 
 <p>The server will respond with <b>YES (SEL (game_id))</b> if the game

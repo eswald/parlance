@@ -97,8 +97,8 @@ class syntax_options(option_class):
     def __init__(self):
         # os.path.abspath(__file__) would be useful here.
         self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
-        self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'dcsp.html'))
-        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'dpp_syntax.html'))
+        self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'protocol.html'))
+        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.html'))
         self.move_phases    = self.getlist('move phases',      'SPR,FAL')
         self.retreat_phases = self.getlist('retreat phases',   'SUM,AUT')
         self.build_phases   = self.getlist('build phases',     'WIN')
@@ -275,7 +275,7 @@ def parse_dcsp(proto_file):
         Rather dependent on precise formatting,
         but benefits greatly from trimming Microslop junk.
         
-        >>> parse_dcsp('docs/dcsp.html')
+        >>> parse_dcsp('docs/protocol.html')
         >>> token_cats[0x42]
         'Unit Types'
         >>> token_cats['Unit_Types']

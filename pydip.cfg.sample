@@ -650,11 +650,11 @@
 
 # protocol file (dcsp_file, file name)
 # Document specifying protocol information, including token names and numbers.
-;protocol file = docs/dcsp.html
+;protocol file = docs/protocol.html
 
 # syntax file (syntax_file, file name)
 # Document specifying syntax rules and level names.
-;syntax file = docs/dpp_syntax.html
+;syntax file = docs/syntax.html
 
 # move phases (move_phases, list of token names)
 # retreat phases (retreat_phases, list of token names)
