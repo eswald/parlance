@@ -131,7 +131,7 @@ class MoveOrder(MovementPhaseOrder):
         self.destination = destination_coast
         self.maybe_convoy = maybe_convoy
     def __str__(self):
-        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name())
+        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name)
     def is_convoyed(self):    return self.maybe_convoy
     def maybe_overland(self): return self.maybe_convoy
     def order_note(self, power, phase, past_orders=None):
@@ -169,7 +169,7 @@ class ConvoyingOrder(MovementPhaseOrder):
         self.destination = destination
     def __str__(self):
         return '%s CONVOY %s -> %s' % (self.unit.coast.prefix,
-                self.supported_name(), self.destination.name())
+                self.supported_name(), self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the convoyed unit. '''
         counterpart = order_set.get_order(self.supported)
@@ -214,7 +214,7 @@ class ConvoyedOrder(MovementPhaseOrder):
     def __str__(self):
         return '%s -> %s -> %s' % (self.unit.coast.prefix,
                 self.path and ' -> '.join([str(u.coast.province) for u in self.path]) or '...',
-                self.destination.name())
+                self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the convoying unit(s). '''
         def matching(fleet):
@@ -310,7 +310,7 @@ class SupportMoveOrder(SupportOrder):
         self.legal = legal_coast
     def __str__(self):
         return '%s SUPPORT %s -> %s' % (self.unit.coast.prefix,
-                self.supported_name(), self.destination.name())
+                self.supported_name(), self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the supported unit.'''
         counterpart = order_set.get_order(self.supported)
@@ -350,7 +350,7 @@ class RetreatOrder(RetreatPhaseOrder):
         self.unit = unit
         self.destination = destination_coast
     def __str__(self):
-        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name())
+        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV and self.destination.maybe_coast not in self.unit.retreats:
@@ -407,7 +407,7 @@ class BuildOrder(BuildPhaseOrder):
             if text[0] in 'aeiouAEIOU': return 'an %s' % text
             else: return 'a %s' % text
         coast = self.unit.coast
-        return 'Builds %s in %s' % (an(coast.type_name().lower()), coast.name())
+        return 'Builds %s in %s' % (an(coast.type_name().lower()), coast.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == NSU:
@@ -432,7 +432,7 @@ class RemoveOrder(BuildPhaseOrder):
     def __str__(self):
         # Todo: This should specify the unit's nation, if different.
         coast = self.unit.coast
-        return 'Removes the %s in %s' % (coast.type_name().lower(), coast.name())
+        return 'Removes the %s in %s' % (coast.type_name().lower(), coast.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV and not self.required(power, past_orders): note = NMR

@@ -43,6 +43,8 @@ class Map(Verbose_Object):
             which is empty if creation succeeded.
             Note: This routine does not set self.valid.
         '''#'''
+        names = self.opts.names
+        
         (mdf, powers, provinces, adjacencies) = message.fold()
         (centres, non_centres) = provinces
         pow_homes = {}
@@ -63,9 +65,9 @@ class Map(Verbose_Object):
         
         pows = {}
         for country, homes in pow_homes.iteritems():
-            pows[country] = Power(country, homes)
+            pows[country] = Power(country, homes, *names.get(country, ()))
         self.powers = pows
-        self.neutral = Power(UNO, [])
+        self.neutral = Power(UNO, (), *names.get(UNO, ('Nobody', 'Neutral')))
         
         provs = {}
         coasts = {}
@@ -78,7 +80,7 @@ class Map(Verbose_Object):
             elif is_sc: home = prov_homes[prov]
             else:       home = None
             
-            province = Province(prov, adj, home)
+            province = Province(prov, adj, home, names.get(prov))
             provs[prov] = province
             for coast in province.coasts: coasts[coast.key] = coast
         for key,coast in coasts.iteritems():
@@ -88,31 +90,9 @@ class Map(Verbose_Object):
         self.spaces = provs
         self.coasts = coasts
         
-        self.read_names()
         for prov in provs.itervalues():
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
         else: return ''
-    def read_names(self):
-        ''' Attempts to read the country and province names from a file.
-            No big deal if it fails, but it's a nice touch.
-        '''#'''
-        try: name_file = self.opts.open_file('nam')
-        except: return
-        try:
-            for line in name_file:
-                fields = line.strip().split(':')
-                if fields[0]:
-                    token = self.opts.rep[fields[0].upper()]
-                    if token.is_power():
-                        self.powers[token].name = fields[1]
-                        self.powers[token].adjective = fields[2]
-                    elif token.is_province():
-                        self.spaces[token].name = fields[1]
-                    else: self.log_debug(11, "Unknown token type for %r", token)
-        except Exception, err:
-            self.log_debug(1, "Error parsing name file: %s", err)
-        else: self.log_debug(11, "Name file loaded")
-        name_file.close()
     def restart(self):
         if self.opts.start_sco: self.handle_SCO(self.opts.start_sco)
         if self.opts.start_now: self.handle_NOW(self.opts.start_now)
@@ -511,13 +491,13 @@ class Power(Comparable):
             - units      list of Units owned
             - eliminated year of elimination, or False if still on the board
     '''#'''
-    def __init__(self, token, home_scs):
+    def __init__(self, token, home_scs, name=None, adjective=None):
         self.key        = token
-        self.name       = token.text
+        self.name       = name or token.text
         self.homes      = home_scs
         self.units      = []
         self.centers    = []
-        self.adjective  = self.name
+        self.adjective  = adjective or self.name
         self.eliminated = False
     def __cmp__(self, other):
         ''' Allows direct comparison of Powers and tokens.
@@ -582,9 +562,9 @@ class Province(Comparable):
             - borders_out  The provinces that can be reached from here
             - units        A list of Units here
     '''#'''
-    def __init__(self, token, adjacencies, owners):
+    def __init__(self, token, adjacencies, owners, name=None):
         self.key         = token
-        self.name        = token.text
+        self.name        = name or token.text
         self.homes       = owners
         self.coasts      = []
         self.units       = []
@@ -654,9 +634,12 @@ class Coast(Comparable, Verbose_Object):
         if coastline:
             self.maybe_coast = (province.key, coastline)
             self.text        = '(%s (%s %s))' % (unit_type, province.key, coastline)
+            self.name        = province.name + self.coast_suffix()
         else:
             self.maybe_coast = province.key
             self.text        = '(%s %s)' % (unit_type, province.key)
+            self.name        = province.name
+        self.prefix = '%s %s' % (self.type_name(), self.name)
     
     def tokenize(self):
         return Message([self.unit_type, self.maybe_coast])
@@ -667,20 +650,15 @@ class Coast(Comparable, Verbose_Object):
     def __repr__(self): return 'Coast(%s, %s, %s)' % self.key
     
     def coast_suffix(self):
-        from language import SCS, NCS, ECS, WCS, SEC, SWC, NEC, NWC
         if self.coastline:
-            line = self.coastline.text.lower()
-            if line[-1] == 's': line = line[:-1]
-            coastline = self.coastline
-            if   coastline is SCS: line = 'south coast'
-            elif coastline is NCS: line = 'north coast'
-            elif coastline is ECS: line = 'east coast'
-            elif coastline is WCS: line = 'west coast'
-            elif coastline is SEC: line = 'southeast coast'
-            elif coastline is SWC: line = 'southwest coast'
-            elif coastline is NEC: line = 'northeast coast'
-            elif coastline is NWC: line = 'northwest coast'
-            coast = ' (%s)' % line
+            abbr = self.coastline.text.lower().rstrip('s')
+            vert = horiz = ''
+            if 'n' in abbr: vert = 'north'
+            if 's' in abbr: vert = 'south'
+            if 'e' in abbr: horiz = 'east'
+            if 'w' in abbr: horiz = 'west'
+            #coast = ' (%s)' % abbr
+            coast = ' (%s%s coast)' % (vert, horiz)
         else: coast = ''
         return coast
     def type_name(self):
@@ -690,9 +668,6 @@ class Coast(Comparable, Verbose_Object):
         elif token is FLT: return 'Fleet'
         elif token:        return token.text
         else:              return ''
-    def name(self): return self.province.name + self.coast_suffix()
-    def prefix(self): return '%s %s' % (self.type_name(), self.name())
-    prefix = property(fget=prefix)
     
     # Confirmation queries
     def is_valid(self):

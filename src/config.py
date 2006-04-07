@@ -9,7 +9,7 @@
 
 import re, os
 import ConfigParser
-from functions import Verbose_Object
+from functions import Verbose_Object, settable_property
 from translation import Representation, read_message_file
 
 # Main program version; used for bot versions
@@ -238,6 +238,35 @@ class variant_options(Verbose_Object):
             fset = lambda self, msg: self.cache_msg('now', msg))
     start_sco = property(fget = lambda self: self.read_file('sco'),
             fset = lambda self, msg: self.cache_msg('sco', msg))
+    
+    def names(self):
+        ''' Attempts to read the country and province names from a file.
+            No big deal if it fails, but it's a nice touch.
+        '''#'''
+        names = {}
+        try: name_file = self.open_file('nam')
+        except (KeyError, IOError): return names
+        else:
+            try:
+                from language import UNO
+                for line in name_file:
+                    fields = line.strip().split(':')
+                    if fields[0]:
+                        token = self.rep[fields[0].upper()]
+                        if token.is_province():
+                            names[token] = fields[1]
+                        elif token.is_power() or token is UNO:
+                            names[token] = (fields[1], fields[2])
+                        else:
+                            self.log_debug(11,
+                                    "Unknown token type for %r", token)
+            except Exception, err:
+                self.log_debug(1, "Error parsing name file: %s", err)
+            else: self.log_debug(11, "Name file loaded")
+            name_file.close()
+        self.names = names
+        return names
+    names = settable_property(names)
 
 
 base_rep = None
