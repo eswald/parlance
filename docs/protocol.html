@@ -251,8 +251,9 @@ to the number of provinces less 1.</p>
 unique and form a sequence starting at 0 and incrementing by 1 up to
 the number of powers less 1.</p>
 
-<p>This message is only ever sent from the server to the client and it
-is always sent precisely once, immediately following the IM.</p>
+<p>This message is only ever sent from the server to the client.
+It is sent immediately following the IM, and at other times under
+limited circumstances.</p>
 
 
 <h2>3.4         <a name="DM">The Diplomacy Message</a> (DM)</h2>
@@ -347,7 +348,7 @@ it.  The error codes are defined in the following table.</p>
 	<tr><td>0x0A</td><td>DM sent before RM</td></tr>
 	<tr><td>0x0B</td><td>RM was not the first message sent by the
 			server</td></tr>
-	<tr><td>0x0C</td><td>More than one RM sent</td></tr>
+	<tr><td>0x0C</td><td>Unexpected RM sent</td></tr>
 	<tr><td>0x0D</td><td>RM sent by client</td></tr>
 	<tr><td>0x0E</td><td>Invalid token in DM</td></tr>
 </table>
@@ -376,8 +377,12 @@ will be numbered.  The token value can be calculated by multiplying
 the category by 256 and adding the token number within the
 category.</p>
 
-<p>This method means that the protocol is extensible and allows simple
-determination of a token category from the top octet.</p>
+<p>This method means that the protocol is extensible and allows
+simple determination of a token category from the top octet.
+Tokens not listed here may be valid, and thus should not trigger
+<a href="#EM">Error Message 0x0E</a> unless they can be determined
+invalid for other reasons; for example, tokens in the
+<a href="#Reserved">Reserved</a> category are always invalid.</p>
 
 
 <h2>4.2         Category Space</h2>
