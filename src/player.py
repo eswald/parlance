@@ -530,7 +530,7 @@ class Clock(AutoObserver):
     '''#'''
     name = 'Time Keeper'
     def handle_HLO(self, message):
-        self.__super.handle_HLO(self, message)
+        self.__super.handle_HLO(message)
         max_time = max(self.opts.BTL, self.opts.MTL, self.opts.RTL)
         if max_time > 0:
             for seconds in range(5, max_time, 5): self.send(TME(seconds))
