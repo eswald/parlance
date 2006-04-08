@@ -44,8 +44,10 @@ class Message(list):
             (HUH or PRN) to send to the client.
             
             # Checks unbalanced parentheses
+            >>> from config import base_rep
             >>> from translation import translate
-            >>> Token.opts.squeeze_parens = True
+            >>> squeeze = base_rep.opts.squeeze_parens
+            >>> base_rep.opts.squeeze_parens = True
             >>> print translate("IAM(NOT").validate()
             PRN (IAM (NOT)
             >>> print translate("IAM)NOT(").validate()
@@ -81,7 +83,7 @@ class Message(list):
             False
             
             # Just to restore the state for other tests:
-            >>> Token.opts.squeeze_parens = False
+            >>> base_rep.opts.squeeze_parens = squeeze
         '''#'''
         from validation import validate_expression
         
@@ -160,15 +162,41 @@ class Message(list):
         ''' Returns a string representation of the message.
             >>> str(NOT(GOF))
             'NOT ( GOF )'
-            >>> print Message((NME, ["I'm Me"]), '"Missing" field')
-            NME ( "I'm Me" ) """Missing"" field"
+            >>> print Message((NME, ["I'm Me"]), '"Missing" field "name"')
+            NME ( "I'm Me" ) """Missing"" field ""name"""
             >>> str(Message('name'))
             '"name"'
         '''#'''
-        # No, this cannot be simplified to use sum(),
-        # because it relies on the __radd__() method of Token.
-        from operator import add
-        return reduce(add, self, '')
+        from config import base_rep
+        quot = base_rep.opts.quot_char
+        escape = base_rep.opts.output_escape
+        squeeze = base_rep.opts.squeeze_parens
+        
+        result = []
+        in_text = False
+        use_space = False
+        
+        for token in self:
+            if token.is_text():
+                if not in_text:
+                    if use_space: result.append(' ')
+                    else: use_space = True
+                    result.append(quot)
+                    in_text = True
+                
+                if token.text in (escape, quot): result.append(escape)
+                result.append(token.text)
+            else:
+                if in_text:
+                    result.append(quot)
+                    in_text = False
+                if use_space and not (squeeze and token is KET):
+                    result.append(' ')
+                use_space = not (squeeze and token is BRA)
+                result.append(token.text)
+        if in_text: result.append(quot)
+        
+        return str.join('', result)
     def __repr__(self):
         ''' Returns a string which can be used to reproduce the message.
             Note: Can get long, if used improperly.
@@ -561,40 +589,6 @@ class Token(_tuple_Token):
             NOW ( SPR 1901 )
         '''#'''
         return Message(self)(*args)
-    def __radd__(self, other):
-        ''' Handles adding a token to a string.
-            They join into one string, usually with a space between.
-            Quotation marks are added as needed.
-            
-            >>> 'NOT' + GOF
-            'NOT GOF'
-            >>> 'NOT' + StringToken('A')
-            'NOT "A"'
-            >>> s = '"Hello, "' + StringToken('W')
-            >>> s
-            '"Hello, W"'
-            >>> s + StringToken('o')
-            '"Hello, Wo"'
-            >>> s + YES
-            '"Hello, W" YES'
-        '''#'''
-        if isinstance(other, (Token, Message)): other = str(other)
-        elif not isinstance(other, str): return NotImplemented
-        quot = self.opts.quot_char
-        escape = self.opts.output_escape
-        if self.is_text():
-            if not other:                                       joint = quot
-            elif other[-1] == quot: other = other[:-1];         joint = ''
-            elif self.opts.squeeze_parens and other[-1] == '(': joint = quot
-            else:                                               joint = ' ' + quot
-            if self.text in (escape, quot):                     joint += escape
-            return other + joint + self.text + quot
-        else:
-            if not other: joint = ''
-            elif self.opts.squeeze_parens and (other[-1] == '(' or self == KET):
-                joint = ''
-            else: joint = ' '
-            return other + joint + self.text
     def __add__(self, other):
         ''' A token can be added to the front of a message.
             >>> press = PRP(PCE(ENG, FRA))
