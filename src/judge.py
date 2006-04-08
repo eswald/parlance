@@ -200,7 +200,7 @@ class Standard_Judge(Judge):
         if len(message) == 1: return frozenset(self.map.current_powers())
         elif self.game_opts.PDA:
             winners = message[2:-1]
-            if any(winners, self.eliminated):
+            if any(self.eliminated(country) for country in winners):
                 self.log_debug(11, 'Somebody among %s has been eliminated', winners)
                 return None
             else: return frozenset(winners)
@@ -491,7 +491,7 @@ class Standard_Judge(Judge):
     def add_path_decisions(self, order, convoyers, decisions):
         # Is anyone moving in the opposite direction?
         unit_list = order.unit.coast.province.entering
-        heads = any(order.destination.province.units, lambda u: u in unit_list)
+        heads = any(u in unit_list for u in order.destination.province.units)
         if heads:
             decisions.add(Head_Decision(order))
             decisions.add(Defend_Decision(order))
@@ -606,7 +606,8 @@ class Standard_Judge(Judge):
                     and choice.order.supported.current_order.is_convoying())
             if result: self.log_debug(11, '* Confused: %s (%s)', choice)
             return result
-        if any(decisions, confused): return self.fallback(decisions)
+        if any(confused(d) for d in decisions):
+            return self.fallback(decisions)
         else: return self.Szykman(decisions)
     def circular(self, decisions):
         ''' Resolution for circular movement: All moves succeed.'''
@@ -851,8 +852,8 @@ class Dislodge_Decision(Tristate_Decision):
             for unit in self.order.unit.coast.province.entering]
     def calculate(self):
         my_move = self.depends[0]
-        self.passed = (not my_move or my_move.failed) and any(self.depends[1:], lambda d: d.passed)
-        self.failed = (my_move and    my_move.passed) or  all(self.depends[1:], lambda d: d.failed)
+        self.passed = (not my_move or my_move.failed) and any(d.passed for d in self.depends[1:])
+        self.failed = (my_move and    my_move.passed) or  all(d.failed for d in self.depends[1:])
         return self.decided()
 class Path_Decision(Tristate_Decision):
     # When passed, a convoyed unit will have a good route as routes[0].
@@ -935,10 +936,10 @@ class Head_Decision(Tristate_Decision):
         path = self.depends[0]
         heads = self.depends[1:]
         if path.failed: self.failed = True
-        elif all(heads, lambda head: head.failed): self.failed = True
+        elif all(head.failed for head in heads): self.failed = True
         elif path.passed:
             if path.routes: self.failed = True
-            elif any(heads, Head_Decision.overland): self.passed = True
+            elif any(head.overland() for head in heads): self.passed = True
         return self.decided()
     def overland(self):
         path = self.depends[0]
@@ -1047,17 +1048,17 @@ class Prevent_Decision(Numeric_Decision):
                 if choice and choice.type == Decision.MOVE]
             supports = [choice for choice in self.depends
                 if choice and choice.type == Decision.SUPPORT]
-            def pass_test(choice): return choice.passed
-            def fail_test(choice): return not choice.failed
             
             self.max_value = self.min_value = 1
             for support in supports:
                 if not support.failed:
                     self.max_value += 1
                     if support.passed: self.min_value += 1
-            if head and not head.failed and any(moves, fail_test):
+            if (head and not head.failed
+                    and any(not choice.failed for choice in moves)):
                 self.min_value = 0
-                if head.passed and any(moves, pass_test): self.max_value = 0
+                if (head.passed and any(choice.passed for choice in moves)):
+                    self.max_value = 0
             elif not path.passed: self.min_value = 0
         return self.decided()
 class Defend_Decision(Numeric_Decision):

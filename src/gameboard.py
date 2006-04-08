@@ -290,9 +290,8 @@ class Map(Verbose_Object):
         # Todo: Count army and fleet movements differently?
         result = 0
         rank = seen = [coast.province.key]
-        def is_home(place, centers=provs): return place in centers
         while rank:
-            if any(rank, is_home): return result
+            if any(place in provs for place in rank): return result
             new_rank = []
             for here in rank:
                 new_rank.extend([key
@@ -586,7 +585,7 @@ class Province(Comparable):
     def is_valid(self):
         if self.homes and not self.key.is_supply(): return False
         if not self.coasts: return False
-        return all(self.coasts, Coast.is_valid)
+        return all(coast.is_valid() for coast in self.coasts)
     def is_coastal(self):
         if self.key.is_coastal(): return location_key(AMY, self.key)
         else: return None
@@ -785,7 +784,7 @@ class Unit(Comparable):
         #print '\tQuery: %s -> %s' % (self, place)
         if isinstance(place, Coast):
             # Check whether it can move to any coastline
-            return any(self.coast.borders_out, place.matches)
+            return any(place.matches(prov) for prov in self.coast.borders_out)
         else:
             # Assume a Province or province token
             return place.key in [key[1] for key in self.coast.borders_out]

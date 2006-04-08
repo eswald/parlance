@@ -17,7 +17,6 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
     ''' Judge movement phase adjudication'''
     def test_army_move_inland(self):
         ''' Army movement to adjacent inland sector'''
-        #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
         ])

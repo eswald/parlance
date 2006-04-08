@@ -56,8 +56,8 @@ class ComboBot(DumbBot):
         for unit in self.power.units:
             for key in unit.coast.borders_out:
                 dest = self.map.coasts[key]
-                if not any(dest.province.units,
-                        lambda other: other.nation == self.power):
+                if not any(other.nation == self.power
+                        for other in dest.province.units):
                     adj_provs[key[1]].append(MoveOrder(unit, dest))
         return [OrderCombo(self, combo)
             for value in adj_provs.values()
@@ -211,7 +211,7 @@ class OrderCombo(object):
                 if u and u.nation != friendly and u.can_move_to(province)]
         def occupied(province, friendly=self.player.power.key):
             ''' Determines whether an enemy is in a space.'''
-            return any(province.units, lambda unit: unit.nation != friendly)
+            return any(unit.nation != friendly for unit in province.units)
         
         # Determine who can still be ordered
         unordered = [u for u in self.player.power.units
@@ -438,8 +438,8 @@ class ComboSet(object):
         # if no more than one enemy unit nearby, 0
         if len(enemies) <= 1: return 0
         # if all nearby enemy units are attacked, 0
-        if all(enemies, lambda enemy: self.attacked_prob(enemy.coast.province,
-                enemy.nation, 1, not bias, adjacent_units) == 1):
+        if all(self.attacked_prob(enemy.coast.province, enemy.nation, 1,
+                not bias, adjacent_units) == 1 for enemy in enemies):
             return 0
         # Todo: Guess better than this
         strength = 1

@@ -86,7 +86,7 @@ class MovementPhaseOrder(UnitOrder):
         result = FAR
         if not (convoyed.exists() and convoyed.can_be_convoyed()): result = NSA
         elif destination.province.is_coastal():
-            if any(routes, route_valid): result = MBV
+            if any(route_valid(route) for route in routes): result = MBV
         #print 'convoy_note(%s, %s) => %s' % (convoyed, destination, result)
         return result
     def get_routes(self, convoyers, ignore_foreign):
@@ -98,14 +98,16 @@ class MovementPhaseOrder(UnitOrder):
                 key = self.unit.key
                 def available(prov):
                     return convoyers.get(prov.key, (None, None))[0] == key
-                all_routes = [path for path in path_list if all(path, available)]
+                all_routes = [path for path in path_list
+                        if all(available(place) for place in path)]
                 
                 if ignore_foreign:
                     # DPTG craziness: ignore foreign convoyers if we can go alone.
                     nation = self.unit.nation
                     def countryman(prov):
                         return convoyers.get(prov.key, (None, None))[1] == nation
-                    solo_routes = [path for path in all_routes if all(path, countryman)]
+                    solo_routes = [path for path in all_routes
+                            if all(countryman(place) for place in path)]
                 else: solo_routes = None
                 return (solo_routes or all_routes)
         return []
@@ -224,7 +226,7 @@ class ConvoyedOrder(MovementPhaseOrder):
                         and counterpart.supported == self.unit
                         and counterpart.destination.matches(self.destination.key))
             return False
-        if self.path: return all(self.path, matching)
+        if self.path: return all(matching(unit) for unit in self.path)
         else: return True
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
@@ -233,11 +235,12 @@ class ConvoyedOrder(MovementPhaseOrder):
             if note == MBV and self.path:
                 def real_prov(fleet): return fleet.coast.province.exists()
                 def at_sea(fleet):    return fleet.coast.province.can_convoy()
-                if   not all(self.path, real_prov):        note = NSP
-                elif not all(self.path, Unit.exists):      note = NSF
-                elif not all(self.path, at_sea):           note = NAS
-                elif not all(self.path, Unit.can_convoy):  note = NSF
-                elif self.path_key not in self.routes:     note = FAR
+                def check(f): return not all(f(unit) for unit in self.path)
+                if   check(real_prov):                 note = NSP
+                elif check(Unit.exists):               note = NSF
+                elif check(at_sea):                    note = NAS
+                elif check(Unit.can_convoy):           note = NSF
+                elif self.path_key not in self.routes: note = FAR
         return note
     @classmethod
     def create(klass, order, nation, board, datc):

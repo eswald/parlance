@@ -7,30 +7,34 @@
 from os        import linesep
 from itertools import ifilter, ifilterfalse
 
-def any(sequence, predicate=bool):
-    ''' Returns True if the predicate passes for any item in the list.
+def any(sequence):
+    ''' Returns True any item in the sequence is true.
         Short-circuits, if possible.
         >>> def print_and_negate(val):
         ...     print val,; return not val
         ...
-        >>> any(range(3,-3,-1), print_and_negate)
+        >>> any(print_and_negate(x) for x in range(3,-3,-1))
         3 2 1 0
         True
+        >>> any([])
+        False
     '''#'''
-    for unused in ifilter(predicate, sequence): return True
+    for unused in ifilter(bool, sequence): return True
     return False
 
-def all(sequence, predicate=bool):
-    ''' Returns whether the predicate passes for every item in the list.
+def all(sequence):
+    ''' Returns whether every item in the sequence is true.
         Short-circuits, if possible.
         >>> def print_and_return(val):
         ...     print val,; return val
         ...
-        >>> all(range(3,-3,-1), print_and_return)
+        >>> all(print_and_return(x) for x in range(3,-3,-1))
         3 2 1 0
         False
+        >>> all([])
+        True
     '''#'''
-    for unused in ifilterfalse(predicate, sequence): return False
+    for unused in ifilterfalse(bool, sequence): return False
     return True
 
 def rindex(series, value):

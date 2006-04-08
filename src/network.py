@@ -174,8 +174,7 @@ class Connection(SocketWrapper):
         else:
             # Tokens in the "Reserved for AI use" category
             # must never be sent over the wire.
-            def illegal(token): return 'Reserved' in token.category_name()
-            if any(result, illegal):
+            if any('Reserved' in token.category_name() for token in result):
                 self.send_error(self.opts.IllegalToken)
                 result = None
         return result
