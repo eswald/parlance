@@ -412,7 +412,7 @@ victory condition is 18 centres.</p>
 <!-- Not yet accepted into the DAIDE
 <h4><a name="PRF">client_command != PRF</a> (power power ...) (power power ...) ...</h4>
 
-<p>This message may be sent by the client to express its preferred power
+<p>This command may be sent by the client to express its preferred power
 assignments.  It should be sent after the client receives the <b>MAP</b>
 message (and, if requested, the <b>MDF</b> message), but before it sends
 the <b>YES (MAP ('name'))</b>.</p>
@@ -430,9 +430,21 @@ Germany, and any other power the least.</p>
 ...) ...)</b> if the preference list will be honored, or with REJ (PRF
 (power power ...) (power power ...) ...)</b> if it is ignoring
 preference lists (for example, because a tournament director is choosing
-who gets what power).  If the server honors preference lists, any player
-who does not submit one will be considered as desiring all powers
-equally.</p>
+who gets what power), or if powers have already been assigned.</p>
+
+<h4>client_command != PRF</h4>
+
+<p>A <b>PRF</b> command with no parameters indicates the desire for a
+truly random power assignment.  If the server responds with <b>YES
+(PRF)</b>, it will assign that player a random power <em>before</em>
+considering the preference lists of other players.  The server may also
+respond with <b>REJ (PRF)</b> if it refuses to assign powers randomly,
+or if powers have already been assigned.</p>
+
+<p>Any <b>PRF</b> or <b>PRF (power power ...) (power power ...) ...</b>
+command completely replaces any previous such command send by the
+client.  If a client does not send at least one of these commands, the
+server may assign a power to that client in any manner it chooses.</p>
 -->
 
 <h4><a name="HLO">server_message = HLO</a> (power) (passcode) (variant)</h4>
