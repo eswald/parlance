@@ -282,6 +282,7 @@ class Map(Verbose_Object):
                 coast = Coast(None, province, coastline, [])
         #print '\tordered_coast(%s, %s) -> %s (%s, %s, %s)' % (unit, coast_spec, coast, datc.datc_4b1, datc.datc_4b2, datc.datc_4b3)
         return coast
+    #@Memoize  # Cache results; doesn't work for list args
     def distance(self, coast, provs):
         ''' Returns the coast's distance from the nearest of the provinces,
             particularly for use in determining civil disorder retreats.
@@ -303,7 +304,6 @@ class Map(Verbose_Object):
             result += 1
         # Inaccessible island
         return Infinity
-    #distance = Memoize(distance) # Cache results; doesn't work for list args
     def units(self):
         return chain(*[country.units for country in self.powers.values()])
     units = property(fget=units)
@@ -604,8 +604,8 @@ class Province(Comparable):
         else: return NotImplemented 
     def exists(self): return bool(self.coasts)
     
+    @property
     def unit(self): return self.units and self.units[0] or None
-    unit = property(unit)
 
 
 class Coast(Comparable, Verbose_Object):

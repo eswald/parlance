@@ -578,6 +578,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, [SPA, NCS]), MTO, GOL])
         self.assertMapState(start_state)
+    @fails
     def test_6B10_ignore(self):
         ''' 6.B.10.b  UNIT ORDERED WITH WRONG COAST
             Subject to issue 4.B.5 (wrong_coast).
@@ -593,7 +594,6 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, FLT, GOL],
         ])
-    test_6B10_ignore = fails(test_6B10_ignore)
     def test_6B11_a(self):
         ''' 6.B.11.a  COAST CAN NOT BE ORDERED TO CHANGE
             Related to issue 4.B.5 (wrong_coast).
@@ -629,6 +629,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, AMY, GAS), MTO, (SPA, NCS)])
         self.assertMapState(start_state)
+    @fails
     def test_6B12_ignore(self):
         ''' 6.B.12.b  ARMY MOVEMENT WITH COASTAL SPECIFICATION
             Subject to issue 4.B.6 (ignore_coast).
@@ -644,7 +645,6 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [FRA, AMY, SPA],
         ])
-    test_6B12_ignore = fails(test_6B12_ignore)
     def test_6B13(self):
         "6.B.13.  COASTAL CRAWL NOT ALLOWED"
         start_state = [
@@ -666,6 +666,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.init_state(WIN, 1901, start_state)
         self.illegalOrder(RUS, [(RUS, FLT, STP), BLD])
         self.assertMapState(start_state)
+    @fails
     def test_6B14_default(self):
         ''' 6.B.14.b  BUILDING WITH UNSPECIFIED COAST
             Subject to issue 4.B.7 (build_coast).
@@ -678,7 +679,6 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState([
             [RUS, FLT, [STP, NCS]],
         ])
-    test_6B14_default = fails(test_6B14_default)
 
 class DATC_6_C(DiplomacyAdjudicatorTestCase):
     "6.C.  CIRCULAR MOVEMENT"
@@ -2340,6 +2340,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         super(DATC_6_F_Paradox_1982, self).setUp()
         self.judge.datc.datc_4a2 = 'b'
     
+    @fails
     def test_6F14(self):
         "6.F.14.b  SIMPLE CONVOY PARADOX"
         steady_state = [
@@ -2358,7 +2359,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
             [FRA, FLT, ECH, MRT],
         ])
-    test_6F14 = fails(test_6F14)
+    @fails
     def test_6F15(self):
         "6.F.15.b  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
         steady_state = [
@@ -2384,7 +2385,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH, MRT],
             [ITA, AMY, WAL],
         ])
-    test_6F15 = fails(test_6F15)
+    #@fails  # Passes, but for the wrong reason
     def test_6F16(self):
         "6.F.16.b  PANDIN'S PARADOX"
         steady_state = [
@@ -2403,7 +2404,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
         self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
         self.assertMapState(steady_state)
-    #test_6F16 = fails(test_6F16)
+    @fails
     def test_6F17(self):
         "6.F.17.b  PANDIN'S EXTENDED PARADOX"
         steady_state = [
@@ -2428,7 +2429,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, LON, MRT],
             [FRA, AMY, LON],
         ])
-    test_6F17 = fails(test_6F17)
+    @fails
     def test_6F18(self):
         "6.F.18.b  BETRAYAL PARADOX"
         steady_state = [
@@ -2451,7 +2452,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BEL],
             [FRA, FLT, BEL, MRT],
         ])
-    test_6F18 = fails(test_6F18)
+    @fails
     def test_6F19_any(self):
         "6.F.19.b.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
@@ -2474,7 +2475,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, TYS, MRT],
             [ITA, FLT, TYS],
         ])
-    test_6F19_any = fails(test_6F19_any)
+    @fails
     def test_6F19_all(self):
         "6.F.19.b.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
@@ -2497,7 +2498,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, TYS, MRT],
             [ITA, FLT, TYS],
         ])
-    test_6F19_all = fails(test_6F19_all)
+    #@fails  # Passes, but for the wrong reason
     def test_6F20_any(self):
         "6.F.20.b.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
@@ -2522,7 +2523,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ION, MRT],
             [TUR, FLT, ION],
         ])
-    #test_6F20_any = fails(test_6F20_any)
+    @fails
     def test_6F20_all(self):
         "6.F.20.b.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
@@ -2545,7 +2546,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
         self.assertMapState(steady_state + [
         ])
-    test_6F20_all = fails(test_6F20_all)
+    @fails
     def test_6F21(self):
         "6.F.21.b  DAD'S ARMY CONVOY"
         steady_state = [
@@ -2572,7 +2573,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, CLY],
             [ENG, FLT, CLY, MRT],
         ])
-    test_6F21 = fails(test_6F21)
+    @fails
     def test_6F22(self):
         "6.F.22.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
         steady_state = [
@@ -2601,7 +2602,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH],
             [RUS, FLT, NTH, MRT],
         ])
-    test_6F22 = fails(test_6F22)
+    @fails
     def test_6F22_extended(self):
         ''' 6.F.22.extended.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
             The Russian move from St Petersbug to Edinburgh is not part
@@ -2642,7 +2643,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, NTH, MRT],
             [RUS, AMY, EDI],
         ])
-    test_6F22_extended = fails(test_6F22_extended)
+    #@fails  # Passes, but for the wrong reason
     def test_6F23(self):
         "6.F.23.b  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
         steady_state = [
@@ -2671,7 +2672,7 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
         self.assertMapState(steady_state + [
         ])
-    #test_6F23 = fails(test_6F23)
+    @fails
     def test_6F24(self):
         "6.F.24.b  SECOND ORDER PARADOX WITH NO RESOLUTION"
         steady_state = [
@@ -2700,7 +2701,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, NTH],
             [RUS, FLT, NTH, MRT],
         ])
-    test_6F24 = fails(test_6F24)
 
 class DATC_6_F_Paradox_Szykman(DiplomacyAdjudicatorTestCase):
     "6.F.  CONVOY PARADOX (SZYKMAN RESOLUTION)"
@@ -4242,6 +4242,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         self.illegalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, NWY])
         self.assertMapState(steady_state + [
         ])
+    @fails
     def test_6G10_never(self):
         "6.G.10.a  SWAPPED OR AN HEAD TO HEAD BATTLE?"
         # 4.A.7 (convoy_bounce)
@@ -4271,7 +4272,6 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, SWE, MRT],
             [FRA, FLT, NWY],
         ])
-    test_6G10_never = fails(test_6G10_never)
     def test_6G10_bounce(self):
         "6.G.10.b  SWAPPED OR AN HEAD TO HEAD BATTLE?"
         # 4.A.7 (convoy_bounce)
@@ -4344,6 +4344,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, TRI, MRT],
             [ITA, AMY, TRI],
         ])
+    @fails
     def test_6G13_cut(self):
         "6.G.13.b  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY"
         # 4.A.4 (convoy_cuts)
@@ -4362,7 +4363,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, FLT, VEN), SUP, (ITA, AMY, ALB), MTO, TRI])
         self.assertMapState(steady_state + [
         ])
-    test_6G13_cut = fails(test_6G13_cut)
+    @fails
     def test_6G14_never(self):
         "6.G.14.a  BOUNCE BY CONVOY TO ADJACENT PLACE"
         # 4.A.7 (convoy_bounce)
@@ -4392,7 +4393,6 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, SWE, MRT],
         ])
-    test_6G14_never = fails(test_6G14_never)
     def test_6G14_bounce(self):
         "6.G.14.b  BOUNCE BY CONVOY TO ADJACENT PLACE"
         # 4.A.7 (convoy_bounce)
@@ -4421,6 +4421,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, SWE],
             [RUS, AMY, SWE, MRT],
         ])
+    @fails
     def test_6G15_never(self):
         "6.G.15.a  BOUNCE AND DISLODGE WITH DOUBLE CONVOY"
         # 4.A.7 (convoy_bounce)
@@ -4445,7 +4446,6 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BEL],
             [FRA, AMY, BEL, MRT],
         ])
-    test_6G15_never = fails(test_6G15_never)
     def test_6G15_bounce(self):
         "6.G.15.b  BOUNCE AND DISLODGE WITH DOUBLE CONVOY"
         # 4.A.7 (convoy_bounce)
@@ -4816,6 +4816,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
+    @fails
     def test_6H11_retreat(self):
         "6.H.11.b  RETREAT WHEN DISLODGED BY ADJACENT CONVOY"
         # 4.A.3, 4.A.5
@@ -4844,7 +4845,6 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, MAR],
             [ITA, AMY, GAS],
         ])
-    test_6H11_retreat = fails(test_6H11_retreat)
     def test_6H12_blocked(self):
         "6.H.12.a  RETREAT WHEN DISLODGED BY ADJACENT CONVOY WHILE TRYING TO DO THE SAME"
         # 4.A.3, 4.A.5
@@ -4884,6 +4884,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [RUS, AMY, LVP],
         ])
+    @fails
     def test_6H12_retreat(self):
         "6.H.12.b  RETREAT WHEN DISLODGED BY ADJACENT CONVOY WHILE TRYING TO DO THE SAME"
         # 4.A.3, 4.A.5
@@ -4924,7 +4925,6 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [RUS, AMY, LVP],
         ])
-    test_6H12_retreat = fails(test_6H12_retreat)
     def test_6H13(self):
         "6.H.13.  NO RETREAT WITH CONVOY IN MAIN PHASE"
         steady_state = [
@@ -5162,6 +5162,7 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, BER],
         ])
         self.assertMapState(steady_state)
+    @fails
     def test_6J6(self):
         "6.J.6.  CIVIL DISORDER TWO FLEETS WITH EQUAL DISTANCE"
         steady_state = [
@@ -5172,7 +5173,6 @@ class DATC_6_J(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, BER],
         ])
         self.assertMapState(steady_state)
-    test_6J6 = fails(test_6J6)
     def test_6J7(self):
         "6.J.7.  CIVIL DISORDER TWO FLEETS AND ARMY WITH EQUAL DISTANCE"
         steady_state = [

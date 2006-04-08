@@ -239,6 +239,7 @@ class variant_options(Verbose_Object):
     start_sco = property(fget = lambda self: self.read_file('sco'),
             fset = lambda self, msg: self.cache_msg('sco', msg))
     
+    @settable_property
     def names(self):
         ''' Attempts to read the country and province names from a file.
             No big deal if it fails, but it's a nice touch.
@@ -266,7 +267,6 @@ class variant_options(Verbose_Object):
             name_file.close()
         self.names = names
         return names
-    names = settable_property(names)
 
 
 base_rep = None

@@ -240,29 +240,29 @@ class Order_Strings(unittest.TestCase):
         from xtended import standard_map, FRA, PAR
         self.check_order([[FRA, AMY, PAR], BLD],
                 'Builds an army in Paris')
+    @fails
     def test_build_foreign(self):
         from xtended import standard_map, GER, PAR
         self.check_order([[GER, AMY, PAR], BLD],
                 'Builds a German army in Paris')
-    test_build_foreign = fails(test_build_foreign)
     def test_remove_string(self):
         from xtended import standard_map, FRA, PAR
         self.check_order([[FRA, AMY, PAR], REM],
                 'Removes the army in Paris')
+    @fails
     def test_remove_foreign(self):
         from xtended import standard_map, GER, PAR
         self.check_order([[GER, AMY, PAR], REM],
                 'Removes the German army in Paris')
-    test_remove_foreign = fails(test_remove_foreign)
     def test_waive_string(self):
         from xtended import standard_map, FRA
         self.check_order([FRA, WVE],
                 'Waives a build')
+    @fails
     def test_waive_foreign(self):
         from xtended import standard_map, GER
         self.check_order([GER, WVE],
                 'Waives a German build')
-    test_waive_foreign = fails(test_waive_foreign)
 
 class Gameboard_Doctests(unittest.TestCase):
     ''' Tests that were once doctests, but no longer work as such.'''

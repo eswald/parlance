@@ -159,8 +159,8 @@ class Verbose_Object(object):
             else:
                 try: print line
                 except IOError: self.verbosity = 0 # Ignore broken pipes
+    @settable_property
     def prefix(self): return self.__class__.__name__
-    prefix = settable_property(prefix)
 
 def absolute_limit(time_limit):
     ''' Converts a TME message number into a number of seconds.
