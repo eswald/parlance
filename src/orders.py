@@ -263,8 +263,8 @@ class SupportOrder(MovementPhaseOrder):
             elif not self.unit.can_move_to(self.destination.province):
                 note = FAR
         return note
-    @classmethod
-    def create(order, nation, board, datc):
+    @classmethod  # This one could be staticmethod, but pychecker complains.
+    def create(klass, order, nation, board, datc):
         # Note that we don't care about order[3], so it could be MTO or CTO.
         unit = board.ordered_unit(nation, order[0])
         supported = board.ordered_unit(nation, order[2])
