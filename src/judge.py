@@ -7,7 +7,6 @@
 '''#'''
 
 import config
-from sets      import Set, ImmutableSet
 from functions import DefaultDict, any, all, s, Infinity
 from server    import Judge
 from orders    import *
@@ -172,7 +171,7 @@ class Standard_Judge(Judge):
             winners = self.get_draw_parties(message)
             self.log_debug(11, ' Using %s as the winners', winners)
             if winners:
-                self.draws.setdefault(winners, Set()).add(country)
+                self.draws.setdefault(winners, set()).add(country)
                 client.accept(message)
             else: client.reject(message)
         else: client.reject(message)
@@ -198,13 +197,13 @@ class Standard_Judge(Judge):
         self.log_debug(14, 'Finding missing orders for %s from %s', country, self.next_orders)
         return self.next_orders.missing_orders(self.phase, self.map.powers[country])
     def get_draw_parties(self, message):
-        if len(message) == 1: return ImmutableSet(self.map.current_powers())
+        if len(message) == 1: return frozenset(self.map.current_powers())
         elif self.game_opts.PDA:
             winners = message[2:-1]
             if any(winners, self.eliminated):
                 self.log_debug(11, 'Somebody among %s has been eliminated', winners)
                 return None
-            else: return ImmutableSet(winners)
+            else: return frozenset(winners)
         else:
             self.log_debug(11, 'List of winners not allowed in non-PDA game')
             return None
@@ -222,7 +221,7 @@ class Standard_Judge(Judge):
     # Turn processing
     def start(self):
         ''' Starts the game, returning SCO and NOW messages.'''
-        self.unready = Set()
+        self.unready = set()
         self.static = 0
         self.init_turn()
         return [self.map.opts.start_sco, self.map.opts.start_now]
@@ -295,7 +294,7 @@ class Standard_Judge(Judge):
             Note that in a PDA game, if more than one combination
             has everybody's vote, the result is arbitrary.
         '''#'''
-        in_game = Set(self.map.current_powers())
+        in_game = set(self.map.current_powers())
         for winners, voters in self.draws.iteritems():
             if voters >= in_game:
                 if self.game_opts.PDA: return DRW(winners)
@@ -553,11 +552,11 @@ class Standard_Judge(Judge):
             or stranger things in certain variants.
         '''#'''
         self.log_debug(7, 'Warning: Paradox resolution')
-        decision_list = Set(decisions)
+        decision_list = set(decisions)
         core = self.get_core(decisions)
         convoy = False
-        moving_to = Set()
-        moving_from = Set()
+        moving_to = set()
+        moving_from = set()
         self.log_debug(8, 'Choices in paradox core:')
         for choice in core:
             self.log_debug(8, '- %s', choice)
@@ -633,14 +632,14 @@ class Standard_Judge(Judge):
     def get_core(self, decisions):
         choices = {}
         for choice in decisions:
-            choices[choice] = Set([dep for dep in choice.depends
+            choices[choice] = set([dep for dep in choice.depends
                 if dep and not dep.decided()])
             self.log_debug(8, '%s:', choice)
             for dep in choice.depends: self.log_debug(11, '- %s', dep)
         while True:
             additions = False
             for deps in choices.itervalues():
-                newdeps = Set()
+                newdeps = set()
                 for choice in deps:
                     newdeps |= choices[choice]
                 if not (newdeps <= deps):
@@ -870,7 +869,7 @@ class Path_Decision(Tristate_Decision):
             for path in routes
         ]
     def init_deps(self):
-        if self.routes: self.depends = Set(sum(self.routes, []))
+        if self.routes: self.depends = set(sum(self.routes, []))
         else: self.depends = []
     def calculate(self):
         #print 'Calculating %s (%s, %s, %s):' % (self,
@@ -991,7 +990,7 @@ class Attack_Decision(Numeric_Decision):
     def calc_attack(self, path, heads, moves, supports, valid, valid_head):
         if valid(path):
             valid_supports = filter(valid, supports)
-            powers = Set([choice.order.unit.nation.key
+            powers = set([choice.order.unit.nation.key
                 for choice in heads if valid_head(choice)] +
                 [unit.nation.key for unit, choice in moves if not valid(choice)])
             #print 'Calc attack powers: %s' % powers

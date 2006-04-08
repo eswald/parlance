@@ -11,7 +11,6 @@ except ImportError: Thread = None
 import config
 from cPickle   import dump, load
 from random    import randrange, shuffle
-from sets      import Set
 from functions import s, autosuper, Verbose_Object, version_string
 from orders    import *
 
@@ -317,7 +316,7 @@ class Player(Observer):
             if self.draws: self.request_draws()
             if self.missing_orders(): self.generate_orders()
     def request_draws(self):
-        current = Set(self.map.current_powers())
+        current = set(self.map.current_powers())
         for power_set in self.draws:
             if power_set == current: self.send(DRW)
             elif self.opts.PDA and power_set <= current:

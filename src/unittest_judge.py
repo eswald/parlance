@@ -8,7 +8,6 @@
 
 import unittest
 import config
-from sets      import Set
 from unittest_datc import DiplomacyAdjudicatorTestCase
 from language  import *
 from xtended   import *
@@ -131,13 +130,13 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
     def assertRetreats(self, prov, retreats):
         space = self.judge.map.spaces[prov.key]
         valid = sum([(unit.retreats or []) for unit in space.units], [])
-        self.failUnlessEqual(Set(retreats), Set(valid))
+        self.failUnlessEqual(set(retreats), set(valid))
     def assertDrawn(self, *countries):
-        winners = Set(countries)
+        winners = set(countries)
         messages = self.judge.run()
         for msg in messages:
             if msg[0] is DRW:
-                self.failUnlessEqual(winners, Set(msg[2:-1]))
+                self.failUnlessEqual(winners, set(msg[2:-1]))
                 break
         else: raise self.failureException, 'No draw message in %s' % (messages,)
     

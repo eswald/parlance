@@ -3,7 +3,6 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from sets         import Set
 from orders       import OrderSet
 from functions    import version_string
 from dumbbot      import DumbBot
@@ -26,7 +25,7 @@ class PeaceBot(DumbBot):
     
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
-        self.friends = Set()
+        self.friends = set()
         self.draws = [self.friends]
         self.order_list = None
         #self.press_tokens = [ALY, BWX, DRW, PCE, PRP, REJ, VSS, XDO, YDO, YES]
@@ -36,7 +35,7 @@ class PeaceBot(DumbBot):
         me = message[2]
         if me.is_power():
             self.friends.add(me)
-            self.countries = Set(self.map.powers.keys())
+            self.countries = set(self.map.powers.keys())
             if self.opts.LVL >= 10:
                 for country in self.countries:
                     if country is not me:

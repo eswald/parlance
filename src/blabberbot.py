@@ -3,7 +3,6 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from sets         import Set
 from time         import sleep
 from random       import choice, random, randrange, shuffle
 from functions    import version_string
@@ -29,7 +28,7 @@ class BlabberBot(DumbBot):
         self.__super.handle_HLO(message)
         me = message[2]
         if me.is_power() and self.opts.LVL >= 10:
-            countries = Set(self.map.powers.keys())
+            countries = set(self.map.powers.keys())
             countries.remove(me)
             self.countries = list(countries)
             self.syntax = {}

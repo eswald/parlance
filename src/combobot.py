@@ -4,7 +4,6 @@
 '''#'''
 
 from random       import random
-from sets         import Set
 from copy         import copy
 from dumbbot      import DumbBot
 from functions    import sublists, any, version_string
@@ -350,7 +349,7 @@ class ComboSet(object):
         '''#'''
         #return 1 + random() * .1
         result = 0
-        adj_provinces = Set()
+        adj_provinces = set()
         for order in self.unit_orders:
             if order:
                 unit = order.unit

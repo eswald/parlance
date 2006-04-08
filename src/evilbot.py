@@ -5,7 +5,6 @@
 
 from thread       import allocate_lock
 from operator     import add
-from sets         import Set
 from orders       import OrderSet
 from functions    import version_string
 from dumbbot      import DumbBot
@@ -30,7 +29,7 @@ class EvilBot(DumbBot):
     class shared_info(object):
         def __init__(self):
             self.lock = allocate_lock()
-            self.friends = Set()
+            self.friends = set()
             self.laughs = 3
             self.orders = None
             self.turn = None
@@ -86,7 +85,7 @@ class EvilBot(DumbBot):
         for ally in self.shared.friends:
             if self.map.powers[ally].units: self.attitude[ally] = -.1
             else: self.attitude[ally] = 2
-        self.draws = [self.shared.friends & Set(self.map.current_powers())]
+        self.draws = [self.shared.friends & set(self.map.current_powers())]
         super(EvilBot, self).handle_SCO(message)
     def handle_DRW(self, message):
         '''Laugh at the poor humans.'''

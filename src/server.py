@@ -1077,8 +1077,7 @@ class Game(Verbose_Object):
         self.server.manager.async_start(bot_class, number, callback,
                 game_id=self.game_id, power=power, passcode=pcode)
     def num_players(self):
-        from sets import Set
-        return len(Set([p.client.address
+        return len(set([p.client.address
             for p in self.players.values() if p.client]))
     def set_press_level(self, client, match):
         cmd, specific, level = match.groups()

@@ -3,7 +3,6 @@
     Licensed under the Open Software License version 3.0
     
     When run, this module runs docstring tests in other modules.
-    Some modules requre at least Python 2.4 for doctests.
 '''#'''
 
 def _test():

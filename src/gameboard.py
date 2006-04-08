@@ -6,7 +6,6 @@
 '''#'''
 
 import config
-from sets        import Set
 from itertools   import chain
 from functions   import DefaultDict, Verbose_Object, Comparable, any, all, Infinity
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
@@ -330,7 +329,7 @@ class Map(Verbose_Object):
         '''#'''
         if self.valid:
             sc_dist = message.fold()[1:]
-            on_board = Set(self.current_powers())
+            on_board = set(self.current_powers())
             for country in [self.neutral] + self.powers.values():
                 country.centers = []
             for dist in sc_dist:
@@ -569,8 +568,8 @@ class Province(Comparable):
         self.coasts      = []
         self.units       = []
         self.owner       = None
-        self.borders_in  = Set()
-        self.borders_out = Set()
+        self.borders_in  = set()
+        self.borders_out = set()
         for unit_adjacency in adjacencies:
             unit = unit_adjacency.pop(0)
             if isinstance(unit, list):
@@ -629,7 +628,7 @@ class Coast(Comparable, Verbose_Object):
         self.coastline   = coastline
         self.province    = province
         self.key         = (unit_type, province.key, coastline)
-        self.borders_in  = Set()
+        self.borders_in  = set()
         self.borders_out = [location_key(unit_type, adj) for adj in adjacencies]
         if coastline:
             self.maybe_coast = (province.key, coastline)
