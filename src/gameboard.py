@@ -324,7 +324,7 @@ class Map(Verbose_Object):
             ... 
             LVP EDI LON
             >>> print standard_map.spaces[NWY].owner
-            UNO
+            Nobody
             >>> print standard_map.spaces[EDI].owner
             England
         '''#'''
