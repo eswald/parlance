@@ -173,6 +173,7 @@ class ServerTestCase(unittest.TestCase):
             'minimum player count for bots': 2,
             'time allowed for vetos': 3,
             'Move Time Limit': 60,
+            'confirm order submission': False,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''

@@ -5,6 +5,9 @@
 
 from __future__ import division
 
+try: from threading import Thread
+except ImportError: Thread = None
+
 import config
 from cPickle   import dump, load
 from random    import randrange, shuffle
@@ -34,109 +37,50 @@ class client_options(config.option_class):
         for name,otype,text,default in player_class.options:
             setattr(self, name, functions[otype](text, default))
 
-class Player(Verbose_Object):
-    ''' Generic Diplomacy player.
-        This class contains methods useful for all players,
-        but is designed to be subclassed.
-        Handle messages from the server by defining a handle_XXX method,
-        where XXX is the name of the first token in the message.
-        This class defines handlers for the following:
-            MAP, MDF, HLO, DRW, SLO, OFF, SVE, LOD, and FRM
-        Most of them do everything you will need,
-        in combination with instance variables.
-    '''#'''
+class Observer(Verbose_Object):
+    ''' Just watches the game, declining invitations to join.'''
     # Magic variables:
     name = None        # Set this to a string for all subclasses.
     version = None     # Set this to a string to allow registration as a player.
     description = None # Set this to a string to allow use as a bot.
     options = ()       # Set of tuples: (name, type, config text, default)
     
-    def __init__(self, send_method, representation, **kwargs):
+    def __init__(self, send_method, representation, game_id=None, **kwargs):
         ''' Initializes the instance variables.'''
         self.client_opts = client_options(self.__class__)
-        self.send_out  = send_method      # A function that accepts messages
-        self.rep       = representation   # The representation message
-        self.closed    = False # Whether the connection has ended, or should end
-        self.in_game   = False # Whether the game is currently in progress
-        self.submitted = False # Whether any orders have been submitted this turn
-        self.map       = None  # The game board
-        self.saved     = {}    # Positions saved from a SVE message
-        self.press_tokens = [] # Tokens to be sent in a TRY message
-        self.bcc_list  = {}    # Automatic forwarding setup: sent messages
-        self.fwd_list  = {}    # Automatic forwarding setup: received messages
-        self.pressed   = {}    # A list of messages received and sent
-        self.opts      = None  # The variant options for the current game
-        self.use_map   = True  # Whether to initialize a Map; saves time for simple observers
-        self.quit      = True  # Whether to close immediately when a game ends
-        self.draws     = []    # A list of acceptable draws
-        
-        # Usefully sent through keyword arguments
-        power = kwargs.get('power')     # The power being played, or None
-        pcode = kwargs.get('passcode')  # The passcode from the HLO message
-        if power:
-            # Todo: Wait until after SEL returns, for the right RM.
-            self.power = representation.get(power)
-            if not self.power:
-                if isinstance(power, Token): self.power = power
-                else: self.log_debug(1, 'Invalid power %r', power)
-            try: self.pcode = int(pcode)
-            except ValueError:
-                self.log_debug(1, 'Invalid passcode "%r"', pcode)
-                self.pcode = None
-            self.log_debug(7, 'Using power=%r, passcode=%r', self.power, self.pcode)
-        else: self.power = self.pcode = None
+        self.send_out = send_method      # A function that accepts messages
+        self.rep      = representation   # The representation message
+        self.closed   = False  # Whether the connection has ended, or should end
+        self.map      = None   # The game board
+        self.saved    = {}     # Positions saved from a SVE message
+        self.opts     = None   # The variant options for the current game
+        self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
+        self.quit     = True   # Whether to close immediately when a game ends
+        self.power    = None
         
         # A list of variables to remember across SVE/LOD
-        self.remember  = ['map', 'in_game', 'power', 'pcode', 'bcc_list', 'fwd_list', 'pressed', 'draws']
+        self.remember = ['map']
+        
+        # A list of message handlers that should be called in parallel.
+        self.threaded = []
         
         # Register with the server
-        self.send_identity(kwargs.get('game_id'))
-    def prefix(self):
-        if self.power: return '%s (%s)' % (self.__class__.__name__, self.power)
-        else: return self.__class__.__name__
-    prefix = property(fget=prefix)
+        if game_id is None: self.send_identity()
+        else: self.send(SEL(game_id))
+    def close(self): self.closed = True
     
-    def close(self):
-        ''' Informs the player that the connection has closed.'''
-        self.in_game = False
-        self.closed = True
-    
+    # Sending messages to the Server
     def send(self, message):
         if not self.closed: self.send_out(Message(message))
     def send_list(self, message_list):
         'Sends a list of Messages to the server.'
         for msg in message_list: self.send(msg)
+    def send_admin(self, text, *args):
+        self.send(ADM(self.name or 'Observer')(str(text) % args))
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
-    def submit_set(self, orders):
-        self.orders = orders
-        sub = orders.create_SUB(self.power)
-        if sub and self.in_game:
-            if self.submitted: self.send(NOT(SUB))
-            self.submitted = True
-            self.send(sub)
-            if (self.client_opts.confirm and not self.missing_orders()):
-                self.send_admin('Submitted.')
-    def submit(self, order):
-        self.orders.add(order, self.power)
-        self.submitted = True
-        self.send(SUB(order))
-    def phase(self): return self.map.current_turn.phase()
     
-    def send_identity(self, game_id=None):
-        ''' Registers the player with the server.
-            Should send OBS, NME, or IAM.
-            Unless overridden, sends IAM with a valid power and passcode,
-            NME with a valid name and version, OBS otherwise.
-            If game_id is not None, sends a SEL (game_id) message first.
-        '''#'''
-        if game_id is not None: self.send(SEL(game_id))
-        if self.power and self.pcode is not None:
-            self.send(IAM(self.power)(self.pcode))
-        elif self.name and self.version:
-            self.send(NME(self.name)(self.version))
-        else: self.send(OBS)
-    
+    # Handling messages from the server
     def handle_message(self, message):
         ''' Process a new message from the server.
             Hands it off to a handle_XXX() method,
@@ -163,24 +107,30 @@ class Player(Verbose_Object):
         else:
             # Note that try: / except AttributeError: doesn't work below,
             # because the method calls might produce AttributeErrors.
-            method_name = 'handle_'+message[0].text
+            method_name = 'handle_' + message[0].text
             
             # Special handling for common prefixes
-            if message[0] in (YES, REJ, NOT):
+            if message[0] in (YES, REJ, NOT, HUH):
                 method_name += '_' + message[2].text
-            self.log_debug(15, 'Searching for %s() handlers', method_name)
+            self.log_debug(15, 'Searching for %s() methods', method_name)
             
             # Call map handlers first
-            if self.map and hasattr(self.map, method_name):
-                try: getattr(self.map, method_name)(message)
-                except Exception, e: self.handle_invalid(message, error=e)
+            if self.map:
+                method = getattr(self.map, method_name, None)
+                if method: self.apply_handler(method, message)
             
             # Then call client handlers
-            if hasattr(self, method_name):
-                try: getattr(self, method_name)(message)
-                except Exception, e: self.handle_invalid(message, error=e)
+            method = getattr(self, method_name, None)
+            if method:
+                if Thread and method_name in self.threaded:
+                    Thread(target=self.apply_handler,
+                            args=(method, message)).start()
+                else: self.apply_handler(method, message)
         self.log_debug(12, 'Finished %s message', message[0])
-    
+    def apply_handler(self, method, message):
+        self.log_debug(12, 'Calling %s', method)
+        try: method(message)
+        except Exception, e: self.handle_invalid(message, error=e)
     def handle_invalid(self, message, error=None, reply=None):
         response = self.client_opts.response
         if response in ('print', 'warn', 'carp', 'croak'):
@@ -192,6 +142,25 @@ class Player(Verbose_Object):
         if response in ('die', 'close', 'carp', 'croak'): self.close()
         if error and response not in ('print', 'close', 'huh', 'carp', 'ignore'): raise
     
+    # Starting the game
+    def send_identity(self):
+        ''' Registers the observer with the server.
+            Uses name and version if it has them.
+        '''#'''
+        if self.name and self.version:
+            self.send(OBS(self.name)(self.version))
+        else: self.send(OBS)
+    def handle_HUH_OBS(self, message):
+        ''' The server didn't like our OBS ('name') ('version') message.'''
+        self.send(OBS)
+    def handle_HUH_SEL(self, message): self.send_identity()
+    def handle_YES_SEL(self, message): self.send_identity()
+    def handle_REJ_SEL(self, message):
+        if self.quit: self.close()
+    def handle_HLO(self, message):
+        self.opts = config.game_options(message)
+    
+    # Automatic map handling
     def handle_MAP(self, message):
         ''' Handles the MAP command, creating a new map if possible.
             Sends MDF for unknown maps, YES for valid.
@@ -204,7 +173,9 @@ class Player(Verbose_Object):
                 variant = config.variant_options(mapname, mapname, {}, self.rep)
                 config.variants[mapname] = variant
             self.map = Map(variant)
-            if self.map.valid: self.accept(message)
+            if self.map.valid:
+                self.accept(message)
+                if self.power: self.send_list([HLO, SCO, NOW])
             else: self.send(MDF)
         else: self.accept(message)
     def handle_MDF(self, message):
@@ -212,18 +183,166 @@ class Player(Verbose_Object):
             The map should have loaded itself, but might not be valid.
         '''#'''
         if self.map:
-            if self.map.valid: self.accept(MAP(self.map.name))
-            else:              self.reject(MAP(self.map.name))
+            if self.map.valid:
+                self.accept(MAP(self.map.name))
+                if self.power: self.send_list([HLO, SCO, NOW])
+            else: self.reject(MAP(self.map.name))
         else: raise ValueError, 'MDF before MAP'
+    def phase(self): return self.map.current_turn.phase()
     
+    # End of the game
+    def handle_OFF(self, message): self.close()
+    def game_over(self, message):
+        if self.quit: self.close()
+        else: self.in_game = False
+    handle_DRW = game_over
+    handle_SLO = game_over
+    handle_SMR = game_over
+    
+    # Other generic handlers
+    def handle_SVE(self, message):
+        ''' Attempts to save everything named by self.remember.'''
+        from copy import deepcopy
+        try:
+            game = {}
+            for name in self.remember:
+                try: value = deepcopy(getattr(self, name))
+                except AttributeError: value = None
+                game[name] = value
+            self.saved[message.fold()[1][0]] = game
+            self.accept(message)
+        except: self.reject(message)
+    def handle_LOD(self, message):
+        ''' Restores attributes saved from a SVE message.'''
+        game = message.fold()[1][0]
+        if self.saved.has_key(game):
+            self.__dict__.update(self.saved[game])
+            #for (name, value) in self.saved[game]:
+            #   setattr(self, name, value)
+            if self.power: self.send(IAM(self.power)(self.pcode))
+            else: self.accept(message)
+        else: self.reject(message)
+    def handle_PNG(self, message): self.accept(message)
+
+class Player(Observer):
+    ''' Generic Diplomacy player.
+        This class contains methods useful for all players,
+        but is designed to be subclassed.
+        Handle messages from the server by defining a handle_XXX method,
+        where XXX is the name of the first token in the message.
+        This class defines handlers for the following:
+            MAP, MDF, HLO, DRW, SLO, OFF, SVE, LOD
+        Most of them do everything you will need,
+        in combination with instance variables.
+    '''#'''
+    def __init__(self, *args, **kwargs):
+        ''' Initializes the instance variables.'''
+        self.__super.__init__(*args, **kwargs)
+        self.in_game   = False # Whether the game is currently in progress
+        self.submitted = False # Whether any orders have been submitted this turn
+        self.press_tokens = [] # Tokens to be sent in a TRY message
+        self.bcc_list  = {}    # Automatic forwarding setup: sent messages
+        self.fwd_list  = {}    # Automatic forwarding setup: received messages
+        self.press     = {}    # A list of messages received and sent
+        self.draws     = []    # A list of acceptable draws
+        
+        # Overrides certain Observer settings
+        self.use_map   = True
+        self.remember += ['in_game', 'power', 'pcode',
+                'bcc_list', 'fwd_list', 'press', 'draws']
+        self.threaded += ['handle_NOW']
+        
+        # Usefully sent through keyword arguments
+        self.power = kwargs.get('power')     # The power being played, or None
+        self.pcode = kwargs.get('passcode')  # The passcode from the HLO message
+    def close(self):
+        self.__super.close()
+        self.closed = True
+    def prefix(self):
+        if self.power: return '%s (%s)' % (self.__class__.__name__, self.power)
+        else: return self.__class__.__name__
+    prefix = property(fget=prefix)
+    
+    # Starting the game
+    def send_identity(self):
+        ''' Registers the player with the server.
+            Should send OBS, NME, or IAM.
+            Unless overridden, sends IAM with a valid power and passcode,
+            NME with a valid name and version, OBS otherwise.
+            If game_id is not None, sends a SEL (game_id) message first.
+        '''#'''
+        if self.power and self.pcode is not None:
+            self.log_debug(7, 'Using power=%r, passcode=%r',
+                    self.power, self.pcode)
+            if isinstance(self.power, Token):
+                # Internally started
+                self.send(IAM(self.power)(self.pcode))
+            else:
+                self.power = self.rep.get(self.power)
+                if self.power:
+                    try: self.pcode = int(pcode)
+                    except ValueError:
+                        self.log_debug(1, 'Invalid passcode "%r"', pcode)
+                        self.pcode = None
+                else: self.log_debug(1, 'Invalid power %r', self.power)
+                
+                # Send name first, to get it into the server's records
+                self.send(NME(self.name)(self.version))
+        elif self.name and self.version:
+            self.send(NME(self.name)(self.version))
+        else: self.send(OBS)
+    def handle_REJ_NME(self):
+        if self.power and self.pcode is not None:
+            self.send(IAM(self.power)(self.pcode))
+        elif self.quit: self.close()
+    def handle_YES_IAM(self, message):
+        if not self.map: self.send(MAP)
+    def handle_REJ_IAM(self, message):
+        if self.quit: self.close()
     def handle_HLO(self, message):
+        self.__super.handle_HLO(message)
         self.pcode = message[5]
         power = message[2]
-        if power.is_power(): self.power = self.map.powers[power]
+        if power.is_power():
+            self.power = self.map.powers[power]
+        elif self.quit: self.close()
         self.in_game = True
-        self.opts = config.game_options(message)
-        if self.opts.TRN > 1: self.quit = False
-    def handle_PNG(self, message): self.accept(message)
+    
+    # Submitting orders and draw requests
+    def handle_NOW(self, message):
+        ''' Requests draws, and calls generate_orders() in a separate thread.'''
+        if self.in_game and self.power:
+            self.submitted = False
+            self.orders = OrderSet(self.power)
+            if self.draws: self.request_draws()
+            if self.missing_orders(): self.generate_orders()
+    def request_draws(self):
+        current = Set(self.map.current_powers())
+        for power_set in self.draws:
+            if power_set == current: self.send(DRW)
+            elif self.opts.PDA and power_set <= current:
+                self.send(DRW(power_set))
+    def generate_orders(self):
+        ''' Create and send orders.
+            Warning: Take care to make this function thread-safe;
+            in particular, it must not use global or class variables
+            that it sets.
+        '''#'''
+        raise NotImplementedError
+    
+    def submit_set(self, orders):
+        self.orders = orders
+        sub = orders.create_SUB(self.power)
+        if sub and self.in_game:
+            if self.submitted: self.send(NOT(SUB))
+            self.submitted = True
+            self.send(sub)
+            if (self.client_opts.confirm and not self.missing_orders()):
+                self.send_admin('Submitted.')
+    def submit(self, order):
+        self.orders.add(order, self.power)
+        self.submitted = True
+        self.send(SUB(order))
     
     def missing_orders(self):
         return self.orders.missing_orders(self.phase(), self.power)
@@ -251,80 +370,7 @@ class Player(Verbose_Object):
                 self.log_debug(8, 'Ordering %s instead', Message(replacement))
                 self.send(SUB(replacement))
     
-    def handle_NOW(self, message):
-        ''' Requests draws, and calls generate_orders() in a separate thread.'''
-        if self.in_game and self.power:
-            from threading import Thread
-            self.submitted = False
-            self.orders = OrderSet(self.power)
-            if self.draws: self.request_draws()
-            if self.missing_orders():
-                Thread(target=self.generate_orders).start()
-    def request_draws(self):
-        current = Set(self.map.current_powers())
-        for power_set in self.draws:
-            if power_set == current: self.send(DRW)
-            elif self.opts.PDA and power_set <= current:
-                self.send(DRW(power_set))
-    def generate_orders(self):
-        ''' Create and send orders.
-            Warning: Take care to make this function thread-safe;
-            in particular, it must not use global or class variables
-            that it sets.
-        '''#'''
-        raise NotImplementedError
-    
-    def wait_for_map(self):
-        from time import sleep
-        while not self.map:
-            if self.closed: return
-            else: sleep(1)
-        if self.map.valid:
-            self.send(HLO)
-            self.send(SCO)
-            self.send(NOW)
-    def handle_YES_IAM(self, message):
-        if not self.map:
-            self.send(MAP)
-            from threading import Thread
-            Thread(target=self.wait_for_map).start()
-        elif not self.power:
-            self.send(HLO)
-            self.send(SCO)
-            self.send(NOW)
-    def handle_REJ_IAM(self, message): self.close()
-    def handle_REJ_NME(self, message): self.close()
-    def handle_OFF(self, message): self.close()
-    def game_over(self, message):
-        if self.quit: self.close()
-        else: self.in_game = False
-    handle_DRW = game_over
-    handle_SLO = game_over
-    handle_SMR = game_over
-    
-    def handle_SVE(self, message):
-        ''' Attempts to save everything named by self.remember.'''
-        from copy      import deepcopy
-        try:
-            game = {}
-            for name in self.remember:
-                try: value = deepcopy(getattr(self, name))
-                except AttributeError: value = None
-                game[name] = value
-            self.saved[message.fold()[1][0]] = game
-            self.accept(message)
-        except: self.reject(message)
-    def handle_LOD(self, message):
-        ''' Restores attributes saved from a SVE message.'''
-        game = message.fold()[1][0]
-        if self.saved.has_key(game):
-            self.__dict__.update(self.saved[game])
-            #for (name, value) in self.saved[game]:
-            #   setattr(self, name, value)
-            if self.power: self.send(IAM(self.power)(self.pcode))
-            else: self.accept(message)
-        else: self.reject(message)
-    
+    # Press handling
     def handle_FRM(self, message):
         ''' Default press handler.
             Attempts to dispatch it to a handle_press_XXX message.
@@ -337,7 +383,7 @@ class Player(Verbose_Object):
         press  = folded[3]
         
         # Save it for future reference
-        self.pressed.setdefault(sender,[]).append(message)
+        self.press.setdefault(sender,[]).append(message)
         
         # Forward it if requested, but avoid loops
         if self.fwd_list.has_key(sender) and press[0] != FRM:
@@ -358,7 +404,6 @@ class Player(Verbose_Object):
                 self.send_press(sender, HUH(press ++ ERR))
                 self.log_debug(7, 'Exception in %s(%s, %s): %s',
                         method_name, sender, press, err)
-    
     def send_press(self, recips, press):
         if not (self.in_game and self.power): return
         
@@ -373,12 +418,10 @@ class Player(Verbose_Object):
         
         # Create and store the message
         message = SND(recips)(press)
-        self.pressed.setdefault(self.power.key,[]).append(message)
+        self.press.setdefault(self.power.key,[]).append(message)
         
         # Actually send the message
         self.send(message)
-    def send_admin(self, text):
-        self.send(ADM(self.name or 'Observer')(str(text)))
 
 
 class HoldBot(Player):
@@ -432,13 +475,10 @@ class HoldBot(Player):
                         orders.add(RemoveOrder(units.pop()))
             self.submit_set(orders)
 
-
-class Observer(Player):
+class AutoObserver(Observer):
     ''' Just watches the game, declining invitations to join.'''
-    def __init__(self, *args):
-        self.__super.__init__(*args)
-        self.use_map = False
-        self.admin_state = 0
+    
+    admin_state = 0
     def handle_ADM(self, message):
         ''' Try to politely decline invitations,
             without producing too many false positives.
@@ -477,7 +517,7 @@ class Observer(Player):
                 elif re.match('[Ww]ho', s): self.send_admin("Eric.")
             elif re.match('[Nn]ot .*again'): self.send_admin("Fine, I'll shut up now.")
 
-class Sizes(Observer):
+class Sizes(AutoObserver):
     ''' An observer that simply prints power sizes.'''
     def handle_SCO(self, message):
         self.log_debug(1, 'Supply Centres: ' + '; '.join([
@@ -485,7 +525,7 @@ class Sizes(Observer):
             for dist in message.fold()[1:]
         ]))
 
-class Clock(Observer):
+class Clock(AutoObserver):
     ''' An observer that simply asks for the time.
         Useful to get timestamps into the server's log.
     '''#'''
@@ -502,7 +542,7 @@ class Clock(Observer):
         self.log_debug(1, '%d seconds left at %s', seconds, time.ctime())
 
 
-class Ladder(Observer):
+class Ladder(AutoObserver):
     ''' An observer to implement a ratings ladder.'''
     
     name = 'Ladder'
@@ -568,7 +608,7 @@ class Ladder(Observer):
         try: dump(scores, open(self.score_file, 'w'))
         except IOError: pass
 
-class Echo(Observer):
+class Echo(AutoObserver):
     ''' An observer that prints any received message to standard output.'''
     def send(self, message):
         self.log_debug(1, '<< ' + str(message))

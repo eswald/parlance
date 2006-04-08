@@ -56,6 +56,7 @@ class PlayerTestCase(unittest.TestCase):
     def rejept(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
         self.player = player_class(self.handle_message, self.variant.rep, **kwargs)
+        self.player.threaded = []
     def send_hello(self, country=None):
         from xtended import ENG
         self.send(HLO(country or ENG)(self.level)(self.params))
@@ -162,18 +163,6 @@ class Player_HoldBot(PlayerTestCase):
 
 class Player_Bots(PlayerTestCase):
     def setUp(self):
-        def handle_NOW(player, message):
-            ''' Non-threading version of Player.handle_NOW().'''
-            if player.in_game and player.power:
-                from orders import OrderSet
-                player.submitted = False
-                player.orders = OrderSet(player.power)
-                if player.missing_orders():
-                    player.generate_orders()
-            else: self.fail('Player failed to join the game.')
-        def handle_HUH(player, message):
-            ''' Fail on bad message submission.'''
-            self.fail('Server complained about a message: ' + str(message))
         def handle_THX(player, message):
             ''' Fail on bad order submission.'''
             self.fail('Invalid order submitted: ' + str(message))
@@ -181,8 +170,6 @@ class Player_Bots(PlayerTestCase):
             ''' Fail on incomplete order submission.'''
             self.fail('Missing orders: ' + str(message))
         PlayerTestCase.setUp(self)
-        Player.handle_NOW = handle_NOW
-        Player.handle_HUH = handle_HUH
         Player.handle_THX = handle_THX
         Player.handle_MIS = handle_MIS
     def attempt_one_phase(self, bot_class):
@@ -191,7 +178,9 @@ class Player_Bots(PlayerTestCase):
         '''#'''
         self.connect_player(bot_class)
         self.start_game()
-        self.assertContains(SUB, [message[0] for message in self.replies])
+        result = [message[0] for message in self.replies]
+        self.assertContains(SUB, result)
+        self.failIf(HUH in result)
     
     def test_project20m(self):
         from project20m import Project20M
