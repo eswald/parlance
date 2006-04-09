@@ -9,26 +9,24 @@ def _test():
     import doctest, sys
     
     import config
+    import functions
     import gameboard
-    import dumbbot
     import language
-    import main
     import network
+    import orders
     import player
-    import server
     import translation
     import validation
     
     # List of modules to test
     modules = [
-        gameboard,
         config,
-        dumbbot,
+        functions,
+        gameboard,
         language,
-        main,
         network,
+        orders,
         player,
-        server,
         translation,
         validation,
     ]

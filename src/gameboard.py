@@ -532,6 +532,7 @@ class Power(Comparable):
             2
             >>> italy.centers = [ROM, TUN, VEN, NAP, GRE]; print italy.surplus()
             -2
+            >>> italy.centers = [ROM, VEN, NAP]
         '''#'''
         return len(self.units) - len(self.centers)
     def farthest_units(self, distance):

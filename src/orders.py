@@ -466,11 +466,8 @@ def createUnitOrder(order, nation, board, datc):
 
 class OrderSet(dict):
     ''' A mapping of Coast key -> UnitOrder, with special provisions for Waives.
-        Warning: This currently assumes a single unit per coast,
-        and a single order per unit.
-        
         >>> Moscow = standard_map.spaces[MOS].unit
-        >>> Warsaw = standard_map.spaces[WAR].unit
+        >>> Warsaw = standard_map.spaces[WAR].unit.coast
         >>> Russia = standard_map.powers[RUS]
         >>> France = standard_map.powers[FRA]
         >>> russian = OrderSet(Russia)
@@ -479,7 +476,7 @@ class OrderSet(dict):
         >>> russian.add(MoveOrder(Moscow, Warsaw))
         >>> russian.add(WaiveOrder(France))
         >>> print russian.create_SUB()
-        SUB ( ( RUS AMY MOS ) MTO WAR ) ( RUS WVE ) ( FRA WVE )
+        SUB ( ( RUS AMY MOS ) HLD ) ( ( RUS AMY MOS ) MTO WAR ) ( FRA WVE ) ( RUS WVE )
     '''#'''
     def __init__(self, default_nation=None):
         self.default = default_nation
@@ -513,7 +510,7 @@ class OrderSet(dict):
         return result
     
     def add(self, order, nation=None):
-        order.__author = nation or self.default
+        order.__author = nation or self.default or (order.unit or order).nation
         item = order.unit or order.nation
         self[item.key].append(order)
     def remove(self, order, nation=None):
@@ -521,19 +518,20 @@ class OrderSet(dict):
             Returns the actual order removed, or None if it wasn't found.
             
             >>> english = OrderSet(); print english
-            { }
+            {  }
             >>> London = standard_map.spaces[LON].units[0]
             >>> NorthSea = standard_map.coasts[(FLT, NTH, None)]
             >>> EngChannel = standard_map.coasts[(FLT, ECH, None)]
-            >>> english.add(ENG, MoveOrder(London, NorthSea)); print english
-            { ENG: FLT LON - NTH }
-            >>> english.add(ENG, MoveOrder(London, EngChannel)); print english
-            { ENG: FLT LON - NTH, FLT LON - ECH }
-            >>> english.remove(ENG, MoveOrder(London, NorthSea)); print english
-            FLT LON - NTH
-            { ENG: FLT LON - ECH }
-            >>> english.remove(GER, MoveOrder(London, EngChannel)); print english
-            { ENG: FLT LON - ECH }
+            >>> english.add(MoveOrder(London, NorthSea), ENG); print english
+            { ENG: Fleet London -> North Sea }
+            >>> english.add(MoveOrder(London, EngChannel), ENG); print english
+            { ENG: Fleet London -> North Sea, Fleet London -> English Channel }
+            >>> print english.remove(MoveOrder(London, NorthSea), ENG)
+            Fleet London -> North Sea
+            >>> print english.remove(MoveOrder(London, EngChannel), GER)
+            None
+            >>> print english
+            { ENG: Fleet London -> English Channel }
         '''#'''
         author = nation or self.default
         order_list = self[(order.unit or order.nation).key]
@@ -550,11 +548,11 @@ class OrderSet(dict):
             Use the nation argument to submit only that nation's orders.
         '''#'''
         result = self.order_list(nation)
-        if result: return SUB % result
+        if result: return SUB % sorted(result)
         return None
     def order_list(self, nation=None):
-        if nation: return [o for o in sum(self.values(), []) if o.__author == nation]
-        else:      return [o for o in sum(self.values(), [])]
+        if nation: return [o for o in self if o.__author == nation]
+        else: return list(self)
     def clear(self, nation=None):
         if nation:
             for key, orders in self.items():
@@ -583,42 +581,87 @@ class OrderSet(dict):
         return result
     
     def builds_remaining(self, power):
-        # Todo: Don't count duplicate REM orders
+        ''' Counts the number of builds the power still needs to order,
+            taking orders in the set into account.
+            Returns a negative number if more removals are required.
+            
+            >>> germany = standard_map.powers[GER]
+            >>> saved = list(germany.centers)
+            >>> orders = OrderSet()
+            
+            >>> orders.builds_remaining(germany)
+            0
+            >>> germany.centers.append(DEN)
+            >>> orders.builds_remaining(germany)
+            1
+            >>> orders.add(WaiveOrder(germany))
+            >>> orders.builds_remaining(germany)
+            0
+            >>> orders.add(BuildOrder(Unit(germany,
+            ...     standard_map.coasts[(FLT, DEN, None)])))
+            >>> orders.builds_remaining(germany)
+            0
+            >>> orders.remove(WaiveOrder(germany)) and None
+            >>> orders.builds_remaining(germany)
+            0
+            
+            >>> orders.clear(); germany.centers = [DEN]
+            >>> orders.builds_remaining(germany)
+            -2
+            >>> orders.add(RemoveOrder(standard_map.spaces[BER].unit))
+            >>> orders.builds_remaining(germany)
+            -1
+            >>> orders.add(RemoveOrder(standard_map.spaces[BER].unit))
+            >>> orders.builds_remaining(germany)
+            -1
+            >>> orders.add(RemoveOrder(standard_map.spaces[MUN].unit))
+            >>> orders.builds_remaining(germany)
+            0
+            >>> orders.add(RemoveOrder(standard_map.spaces[KIE].unit))
+            >>> orders.builds_remaining(germany)
+            0
+            
+            # Restore original map
+            >>> germany.centers = saved
+        '''#'''
         surplus = power.surplus()
+        waives = 0
+        builds = set()
+        removes = set()
         for order in self.order_list(power):
-            if surplus < 0 and order.order_type in (WVE, BLD): surplus += 1
-            elif surplus > 0 and order.order_type == REM:      surplus -= 1
-        return -surplus
+            if order.order_type is WVE: waives += 1
+            elif order.order_type is BLD:
+                builds.add(order.unit.coast.province.key)
+            elif order.order_type is REM:
+                removes.add(order.unit.key)
+        if   surplus > 0: return -max(0, surplus - len(removes))
+        elif surplus < 0: return -min(0, surplus + len(builds) + waives)
+        return 0
     def missing_orders(self, phase, nation=None):
         ''' Returns the MIS message for the power,
             or None if no orders are required.
             Either nation or the default nation must be a Power object.
             
             # Basic check
-            >>> empty_set = OrderSet()
             >>> italy = standard_map.powers[ITA]
-            >>> print empty_set.missing_orders(italy, Turn.build_phase)
+            >>> orders = OrderSet(italy)
+            >>> print orders.missing_orders(Turn.build_phase)
             None
             
             # Crazy setup:
             # Venice is already holding,
             # Rome is dislodged and must retreat to either Tuscany or Apulia,
             # and Tunis is vacant but controlled by Italy.
-            >>> standard_map.coasts[(AMY, VEN, None)].set_hold_order()
-            >>> rome = standard_map.coasts[(AMY, ROM, None)]
-            >>> rome.dislodged = italy; rome.nation = None
-            >>> rome.retreats = [APU, TUS]
-            >>> italy.dislodged[rome.key] = rome
-            >>> del italy.units[rome.key]
+            >>> orders.add(HoldOrder(standard_map.spaces[VEN].unit))
+            >>> standard_map.spaces[ROM].unit.retreat([APU, TUS])
             >>> italy.centers.append(TUN)
-            >>> turn = standard_map.current_turn
             
             # Test various phases
-            >>> print empty_set.missing_orders(italy, Turn.move_phase)
-            MIS ( ITA FLT NAP )
-            >>> print empty_set.missing_orders(italy, Turn.retreat_phase)
+            >>> print orders.missing_orders(Turn.move_phase)
+            MIS ( ITA FLT NAP ) ( ITA AMY ROM )
+            >>> print orders.missing_orders(Turn.retreat_phase)
             MIS ( ITA AMY ROM MRT ( APU TUS ) )
-            >>> print empty_set.missing_orders(italy, Turn.build_phase)
+            >>> print orders.missing_orders(Turn.build_phase)
             MIS ( -1 )
             
             # Restore original map
@@ -626,7 +669,7 @@ class OrderSet(dict):
         '''#'''
         power = nation or self.default
         if phase == Turn.move_phase:
-            result = [unit for unit in power.units
+            result = [unit.key for unit in power.units
                 if not self.get_order(unit)]
             if result: return MIS % result
         elif phase == Turn.retreat_phase:
@@ -636,6 +679,7 @@ class OrderSet(dict):
         elif phase == Turn.build_phase:
             surplus = -self.builds_remaining(power)
             if surplus: return MIS(surplus)
+        else: raise NotImplementedError
         return None
     def complete_set(self, board):
         ''' Fills out the order set with default orders for the phase.
