@@ -866,7 +866,7 @@ class Server_Bugfix(ServerTestCase):
         # Introduced in revision 93; crashes the server.
         self.connect_server()
         master = self.connect_player(self.Fake_Master)
-        master.admin('Server: start holdbot as' + self.game.p_order[0])
+        master.admin('Server: start holdbot as %s', self.game.p_order[0])
         master.admin('Server: start 5 holdbots')
         self.connect_player(self.Fake_Player)
     def test_hello_leak(self):
