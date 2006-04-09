@@ -106,7 +106,7 @@ class EvilBot(DumbBot):
             self.send_admin('Did you honestly think you could overcome the power of the dark side?')
         self.__super.handle_SLO(message)
     def handle_OFF(self, message):
-        self.shared.friends.remove(self.power.key)
+        if self.power: self.shared.friends.remove(self.power.key)
         self.__super.handle_OFF(message)
 
 

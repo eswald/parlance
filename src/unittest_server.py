@@ -429,6 +429,24 @@ class Server_Admin_Bots(Server_Admin):
         self.wait_for_actions()
         self.failUnless(len(game.clients) > count)
         self.failIf(game.clients[-1].closed)
+    def test_start_bot_a(self):
+        ''' Players can start a bot using the indefinite article.'''
+        game = self.game
+        count = len(game.clients)
+        self.assertAdminVetoable(self.master, 'start a holdbot',
+                'Fake Human Player (Fake_Master) is starting a HoldBot.')
+        self.wait_for_actions()
+        self.failUnless(len(game.clients) > count)
+        self.failIf(game.clients[-1].closed)
+    def test_start_bot_an(self):
+        ''' Players can start a bot using the article "an".'''
+        game = self.game
+        count = len(game.clients)
+        self.assertAdminVetoable(self.master, 'start an evilbot',
+                'Fake Human Player (Fake_Master) is starting an EvilBot.')
+        self.wait_for_actions()
+        self.failUnless(len(game.clients) > count)
+        self.failIf(game.clients[-1].closed)
     def test_start_bot_veto(self):
         ''' Bot starting can be vetoed.'''
         game = self.game
@@ -445,7 +463,8 @@ class Server_Admin_Bots(Server_Admin):
         out.close()
         self.master.admin('Ping.')
         name = game.judge.player_name(out.power)
-        self.assertAdminVetoable(self.master, 'start holdbot as' + out.power,
+        self.assertAdminVetoable(self.master,
+                'start holdbot as %s' % (out.power,),
                 'Fake Human Player (Fake_Master) is starting a HoldBot as %s.' % name)
         self.wait_for_actions()
         self.failUnless(game.players[out.power.key].client)

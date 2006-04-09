@@ -1056,7 +1056,7 @@ class Game(Verbose_Object):
             else:
                 power = pcode = None
                 try: num = int(match.group(1))
-                except TypeError: num = default_num
+                except (TypeError, ValueError): num = default_num
                 if num < 1: num += self.players_needed()
             
             name = bot_class.name
