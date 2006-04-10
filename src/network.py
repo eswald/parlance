@@ -150,8 +150,8 @@ class Connection(SocketWrapper):
                 num, name = unpack('!H3sx', data[:6])
                 rep[num] = name
                 data = data[6:]
-        else: rep = self.proto.default_rep
-        self.rep = Representation(rep, self.proto.base_rep)
+            self.rep = Representation(rep, self.proto.base_rep)
+        else: self.rep = self.proto.default_rep
     def unpack_message(self, data):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
