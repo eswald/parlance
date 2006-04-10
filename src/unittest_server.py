@@ -128,7 +128,7 @@ class ServerTestCase(unittest.TestCase):
                 # Send initial message
                 self.log_debug(9, 'Sending Initial Message')
                 from struct import pack
-                self.send_dcsp(self.IM, pack('!HH', self.opts.dcsp_version, self.opts.magic));
+                self.send_dcsp(self.IM, pack('!HH', self.proto.version, self.proto.magic));
                 
                 # Wait for representation message
                 while not (self.closed or self.rep):
@@ -148,7 +148,7 @@ class ServerTestCase(unittest.TestCase):
             return False
         def read_error(self, code):
             self.log_debug(1, 'Expecting error #%d (%s)',
-                    code, config.error_strings.get(code))
+                    code, self.proto.error_strings.get(code))
             self.error_code = None
             self.read()
             assert self.error_code == code

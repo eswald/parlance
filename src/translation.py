@@ -11,18 +11,17 @@ __all__ = ['Representation', 'translate', 'read_message_file']
 # Temporary stubs while I get this sorted out
 def read_message_file(filename, rep=None):
     ''' Reads a Diplomacy message written in a text file.
-        >>> from config import default_rep
         >>> msg = read_message_file('variants/standard.sco', default_rep)
         >>> msg.fold()[2]
         [ENG, LVP, EDI, LON]
     '''#'''
-    from config import base_rep
-    return (rep or base_rep).read_message_file(filename)
+    from config import protocol
+    return (rep or protocol.base_rep).read_message_file(filename)
 
 def translate(text, rep=None):
     ''' Translates a diplomacy message string into a Message.'''
-    from config import base_rep
-    return (rep or base_rep).translate(text)
+    from config import protocol
+    return (rep or protocol.base_rep).translate(text)
 
 class Representation(Verbose_Object):
     ''' Holds and translates all tokens for a variant.
@@ -47,7 +46,6 @@ class Representation(Verbose_Object):
         return result
     def get(self, key, default=None):
         ''' Returns a Token from its name or number.
-            >>> from config import default_rep
             >>> default_rep.get('ITA')
             ITA
         '''#'''
@@ -86,7 +84,6 @@ class Representation(Verbose_Object):
     
     def read_message_file(self, filename):
         ''' Reads a Diplomacy message written in a text file.
-            >>> from config import default_rep
             >>> msg = default_rep.read_message_file('variants/standard.sco')
             >>> msg.fold()[2]
             [ENG, LVP, EDI, LON]
@@ -102,7 +99,6 @@ class Representation(Verbose_Object):
             
             # Black magic: This test exploits an implementation detail or two.
             # This test avoids backslashes because they get halved too often.
-            >>> from config import default_rep
             >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
             >>> default_rep.opts.input_escape = '"'
             >>> str(default_rep.translate(s))
@@ -121,7 +117,6 @@ class Representation(Verbose_Object):
         ''' Translates diplomacy message strings into Messages,
             doubling quotation marks to escape them.
             
-            >>> from config import default_rep
             >>> default_rep.opts.input_escape = '"'
             >>> default_rep.translate_doubled_quotes('NOT ( GOF KET')
             Message([NOT, [GOF]])
@@ -168,7 +163,6 @@ class Representation(Verbose_Object):
         ''' Translates diplomacy message strings into Messages,
             using backslashes to escape quotation marks.
             
-            >>> from config import default_rep
             >>> default_rep.opts.input_escape = '\\\\'
             >>> default_rep.translate_backslashed('NOT ( GOF KET')
             Message([NOT, [GOF]])
@@ -216,7 +210,6 @@ class Representation(Verbose_Object):
     
     def tokenize_quote(self, text):
         ''' Returns a list of tokens from a string within a quotation.
-            >>> from config import default_rep
             >>> default_rep.tokenize_quote('Not(Gof)')
             [StringToken('N'), StringToken('o'), StringToken('t'), StringToken('('), StringToken('G'), StringToken('o'), StringToken('f'), StringToken(')')]
             >>> default_rep.tokenize_quote('name')
@@ -226,7 +219,6 @@ class Representation(Verbose_Object):
     
     def tokenize_normal(self, text):
         ''' Returns a list of tokens from a string without quotations.
-            >>> from config import default_rep
             >>> default_rep.tokenize_normal('Not(Gof)')
             [NOT, BRA, GOF, KET]
             >>> default_rep.tokenize_normal('name')

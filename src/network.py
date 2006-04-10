@@ -21,8 +21,6 @@ class network_options(config.option_class):
         self.echo_final   = self.getboolean('send unnecessary final messages', False)
         self.host         = self.getstring('host', '')
         self.port         = self.getint('port', 16713)
-        self.dcsp_version = self.getint('client-server protocol version', 1)
-        self.magic        = self.getint('magic number', 0xDA10)
         self.wait_time    = self.getint('idle timeout for server loop', 600)
         
         error_number = self.getint('first error number', 1)
@@ -67,10 +65,11 @@ class Connection(SocketWrapper):
     def __init__(self):
         self.__super.__init__()
         self.send_final = True
+        self.proto = config.protocol
         self.rep = None
         
         # IM, DM, FM, etc.
-        for name, value in config.message_types.iteritems():
+        for name, value in self.proto.message_types.iteritems():
             setattr(Connection, name[0] + 'M', value)
     def close(self):
         if self.send_final: self.send_dcsp(self.FM, '')
@@ -131,12 +130,12 @@ class Connection(SocketWrapper):
         ''' Verifies the Initial Message from the client.'''
         if len(data) == 4:
             (version, magic) = unpack('!HH', data)
-            if magic == self.opts.magic:
-                if version == self.opts.dcsp_version:
+            if magic == self.proto.magic:
+                if version == self.proto.version:
                     self.deadline = None
                     self.send_RM()
                 else: self.send_error(self.opts.Version)
-            elif unpack('>H', pack('<H', magic)) == self.opts.magic:
+            elif unpack('>H', pack('<H', magic)) == self.proto.magic:
                 self.send_error(self.opts.Endian)
             else: self.send_error(self.opts.BadMagic)
         else: self.send_error(self.opts.Short)
@@ -151,15 +150,15 @@ class Connection(SocketWrapper):
                 num, name = unpack('!H3sx', data[:6])
                 rep[num] = name
                 data = data[6:]
-        else: rep = config.default_rep
-        self.rep = Representation(rep, config.base_rep)
+        else: rep = self.proto.default_rep
+        self.rep = Representation(rep, self.proto.base_rep)
     def unpack_message(self, data):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
             
             >>> from translation import Representation
             >>> c = Connection()
-            >>> c.rep = Representation({0x4101: 'Sth'}, config.base_rep)
+            >>> c.rep = Representation({0x4101: 'Sth'}, c.proto.base_rep)
             >>> msg = [HLO.number, BRA.number, 0x4101, KET.number]
             >>> c.unpack_message(pack('!HHHH', *msg))
             Message([HLO, [Token('Sth', 0x4101)]])
@@ -185,7 +184,7 @@ class Connection(SocketWrapper):
         if self.is_server: them = 'Client'; us = 'Server'
         else:              them = 'Server'; us = 'Client'
         
-        text = config.error_strings.get(code)
+        text = self.proto.error_strings.get(code)
         if text:
             if from_them: faulty = us
             else: faulty = them; self.send_dcsp(self.EM, pack('!H', code))
@@ -259,7 +258,7 @@ class Client(Connection):
         
         # Send initial message
         self.log_debug(9, 'Sending Initial Message')
-        self.send_dcsp(self.IM, pack('!HH', self.opts.dcsp_version, self.opts.magic));
+        self.send_dcsp(self.IM, pack('!HH', self.proto.version, self.proto.magic));
         
         # Wait for representation message
         while not (self.closed or self.rep):

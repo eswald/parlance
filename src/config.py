@@ -84,13 +84,6 @@ class token_options(option_class):
         self.input_escape   = self.getstring('input escape chararacter', '\\')[0]
         self.output_escape  = self.getstring('output escape chararacter', '\\')[0]
         self.quot_char      = self.getstring('quotation mark', '"')[0]
-        
-        # Calculated constants needed by the language module
-        self.max_token   = (max([cat for cat in token_cats.keys()
-            if isinstance(cat, int)]) + 1) << 8
-        self.quot_prefix = token_cats['Text'] << 8
-        self.max_pos_int = (token_cats['Integers'][1] + 1) << 7
-        self.max_neg_int = self.max_pos_int << 1
 class syntax_options(option_class):
     ''' Options needed by this configuration script.'''
     section = 'syntax'
@@ -216,7 +209,7 @@ class variant_options(Verbose_Object):
     def get_representation(self):
         filename = self.files.get('rem')
         if filename: return read_representation_file(filename)
-        else: return default_rep
+        else: return protocol.default_rep
     def read_file(self, extension):
         result = self.msg_cache.get(extension)
         if not result:
@@ -269,15 +262,6 @@ class variant_options(Verbose_Object):
         return names
 
 
-base_rep = None
-default_rep = None
-token_cats    = {}
-error_strings = {}
-message_types = {}
-order_mask    = {}
-variants      = {}
-press_levels  = {}
-
 # File parsing
 def parse_variants(variant_file):
     try: var_file = open(variant_file, 'rU', 1)
@@ -298,32 +282,49 @@ def parse_variants(variant_file):
                             os.path.dirname(variant_file), ref))
                 variants[name] = variant_options(name, descrip, files)
 
-def parse_dcsp(proto_file):
-    ''' Pulls token values and other constants from Andrew Rose's
-        Client-Server Protocol file.
-        Rather dependent on precise formatting,
-        but benefits greatly from trimming Microslop junk.
+class Protocol(Verbose_Object):
+    ''' Collects various constants from the Client-Server Protocol file.
+        Rather dependent on precise formatting.
         
-        >>> parse_dcsp('docs/protocol.html')
-        >>> token_cats[0x42]
+        >>> proto = Protocol('docs/protocol.html')
+        >>> proto.token_cats[0x42]
         'Unit Types'
-        >>> token_cats['Unit_Types']
+        >>> proto.token_cats['Unit_Types']
         66
-        >>> error_strings[5]
+        >>> proto.error_strings[5]
         'Version incompatibility'
-        >>> default_rep[0x4101]
+        >>> proto.default_rep[0x4101]
         ENG
-        >>> base_rep[0x481C]
+        >>> proto.base_rep[0x481C]
         YES
-        >>> message_types['Diplomacy']
+        >>> proto.message_types['Diplomacy']
         2
     '''#'''
-    global base_rep
-    global default_rep
+    def __init__(self, filename):
+        self.base_rep = None
+        self.default_rep = None
+        self.token_cats = {}
+        self.error_strings = {}
+        self.message_types = {}
+        self.version = None
+        self.magic = None
+        
+        try: dcsp_file = open(filename, 'rU', 1)
+        except IOError:
+            raise IOError("Failed to open protocol file '%s'" % filename)
+        else:
+            try: self.parse_dcsp(dcsp_file)
+            finally: dcsp_file.close()
+        
+        # Calculated constants needed by the language module
+        # Todo: Move these to a more appropriate place
+        token_options.max_token = (max([cat for cat in self.token_cats.keys()
+            if isinstance(cat, int)]) + 1) << 8
+        token_options.quot_prefix = self.token_cats['Text'] << 8
+        token_options.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
+        token_options.max_neg_int = token_options.max_pos_int << 1
     
-    try: dcsp_file = open(proto_file, 'rU', 1)
-    except IOError: raise IOError, "Could not find protocol file '%s'" % proto_file
-    else:
+    def parse_dcsp(self, dcsp_file):
         # Local variable initialization
         msg_name = None
         err_type = None
@@ -345,14 +346,14 @@ def parse_dcsp(proto_file):
             if err_type:
                 match = re.match('.*>(\w+ [\w ]+)<', line)
                 if match:
-                    error_strings[err_type] = match.group(1)
+                    self.error_strings[err_type] = match.group(1)
                     err_type = None
                     old_line = ''
                 else: old_line = line[line.rfind('>'):].strip()
             elif msg_name:
                 if line.find('Message Type =') > 0:
                     type_num = int(re.match('.*Type = (\d+)', line).group(1))
-                    message_types[msg_name] = type_num
+                    self.message_types[msg_name] = type_num
                     msg_name = ''
             elif line.find(' (0x') > 0:
                 match = re.match('.*?[> ](\w[\w ]+) \((0x\w\w)', line)
@@ -361,25 +362,26 @@ def parse_dcsp(proto_file):
                 match = re.match('.* (0x\w\w)\)', line)
                 if match:
                     last_cat = int(match.group(1), 16)
-                    token_cats[descrip.replace(' ', '_')] = (start_cat, last_cat)
+                    self.token_cats[descrip.replace(' ', '_')] = (start_cat, last_cat)
                     for i in range(start_cat, last_cat + 1):
-                        token_cats[i] = descrip
+                        self.token_cats[i] = descrip
                 else:
                     rep_item = descrip == 'Powers'
                     last_cat = start_cat << 8
-                    token_cats[descrip.replace(' ', '_')] = start_cat
-                    token_cats[start_cat] = descrip
+                    self.token_cats[descrip.replace(' ', '_')] = start_cat
+                    self.token_cats[start_cat] = descrip
             elif last_cat:
                 if line.find('category =') > 0:
                     # This must come before the ' 0x' search.
                     match = re.match('.*>([\w -]+) category = (0x\w\w)<', line)
                     if match:
                         last_cat = int(match.group(2), 16)
-                        token_cats[last_cat] = descrip = match.group(1)
-                        token_cats[descrip.replace(' ', '_')] = last_cat
+                        self.token_cats[last_cat] = descrip = match.group(1)
+                        self.token_cats[descrip.replace(' ', '_')] = last_cat
                         rep_item = True
                         last_cat <<= 8
-                    else: print 'Bad line in protocol file: ' + line
+                    else:
+                        self.log_debug(1, 'Bad line in protocol file: ' + line)
                 elif line.find(' 0x') > 0:
                     match = re.search('>(\w\w\w) (0x\w\w)', line)
                     if match:
@@ -392,13 +394,17 @@ def parse_dcsp(proto_file):
                 if match: msg_name = match.group(1)
             elif line.find('Version ') >= 0:
                 match = re.match('.*Version (\d+)', line)
-                if match: option_class.local_opts['dcsp_version'] = int(match.group(1))
+                if match: self.version = int(match.group(1))
             elif line.find('Magic Number =') > 0:
-                option_class.local_opts['magic'] = int(re.match('.*Number = (0x\w+)', line).group(1), 16)
-        dcsp_file.close()
-        base_rep = Representation(token_names, None)
-        default_rep = Representation(default_tokens, base_rep)
-    # We may want some sanity checking here.
+                match = re.search('Number = (0x\w+)', line)
+                if match: self.magic = int(match.group(1), 16)
+                else: self.log_debug(1, 'Invalid magic number: ' + line)
+        self.base_rep = Representation(token_names, None)
+        self.default_rep = Representation(default_tokens, self.base_rep)
+        
+        # Sanity checking
+        if not self.magic: self.log_debug(1, 'Missing magic number')
+        if not self.version: self.log_debug(1, 'Missing version number')
 
 def read_representation_file(rep_file_name):
     ''' Parses a representation file.
@@ -424,13 +430,13 @@ def read_representation_file(rep_file_name):
             number = int(line[0:4], 16)
             name = line[5:8]
             uname = name.upper()
-            if base_rep.has_key(uname):
+            if protocol.base_rep.has_key(uname):
                 raise ValueError, 'Conflict with token ' + uname
             rep[number] = uname
             num_tokens -= 1
-        if num_tokens == 0: return Representation(rep, base_rep)
+        if num_tokens == 0: return Representation(rep, protocol.base_rep)
         else: raise ValueError, 'Wrong number of lines in representation file'
-    else: return default_rep
+    else: return protocol.default_rep
 
 def read_syntax(syntax_file):
     ''' Opens the Message Syntax file, passing it to the validation module.'''
@@ -456,6 +462,8 @@ def read_syntax(syntax_file):
             press_levels[i] = str(i)
             press_levels[str(i)] = i
 
+
+# Exporting variables
 def init_language():
     ''' Initializes the various tables,
         and exports the token names into the language module.
@@ -468,18 +476,17 @@ def init_language():
         >>> language.KET.text
         ')'
     '''#'''
-    opts = syntax_options()
-    parse_dcsp(opts.dcsp_file)
+    opts = options
     
     # Masks to determine whether an order is valid during a given phase
     order_mask[None] = opts.move_phase + opts.retreat_phase + opts.build_phase
     
     # Export variables into the language globals
     import language
-    language.Token.cats = token_cats
-    language.Token.opts = token_options()
+    language.Token.cats = protocol.token_cats
+    language.Token.opts = protocol.base_rep.opts
     #print 'Attempting to add tokens to language...'
-    for name, token in base_rep.items():
+    for name, token in protocol.base_rep.items():
         #print 'Adding language.%s' % (name,)
         setattr(language, name, token)
         if   name in opts.move_phases:    order_mask[token] = opts.move_phase
@@ -488,8 +495,6 @@ def init_language():
     
     parse_variants(opts.variant_file)
     read_syntax(opts.syntax_file)
-init_language()
-
 
 def extend_globals(globs):
     ''' Inserts into the given dictionary elements required by certain doctests.
@@ -508,7 +513,19 @@ def extend_globals(globs):
         'standard_map': standard_map,
         'standard_sco': opts.start_sco,
         'standard_now': opts.start_now,
+        'default_rep': protocol.default_rep,
+        'base_rep': protocol.base_rep,
     }
     for name,token in opts.rep.items(): extension[name] = token
     extension.update(globs)
     return extension
+
+# Global variables
+options = syntax_options()
+protocol = Protocol(options.dcsp_file)
+press_levels = {}
+order_mask = {}
+variants = {}
+
+# Main initialization
+init_language()

@@ -38,9 +38,10 @@ def _test():
     for mod in modules:
         print 'Testing', mod.__name__
         # Configure basic options assumed by docstrings
-        config.base_rep.opts.squeeze_parens = False
-        config.base_rep.opts.output_escape = '"'
-        config.base_rep.opts.quot_char = '"'
+        opts = config.protocol.base_rep.opts
+        opts.squeeze_parens = False
+        opts.output_escape = '"'
+        opts.quot_char = '"'
         
         globs = mod.__dict__
         globs.update(extension)

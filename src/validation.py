@@ -78,8 +78,8 @@ def parse_syntax_file(lines):
     def add_rule(name, level, words):
         ''' Translates token abbreviations and adds the rule.'''
         def correct(word):
-            from config import base_rep
-            if tla.match(word): return [base_rep[word]]
+            from config import protocol
+            if tla.match(word): return [protocol.base_rep[word]]
             elif word[0].isupper() and word[1].islower(): return ['cat', word]
             else: return [word]
         try: rule = (level, sum([correct(word) for word in words], []))
@@ -181,7 +181,6 @@ def validate_option(msg, item_list, syntax_level):
         (4, True)
     '''#'''
     from language import Token, BRA, KET, ERR
-    from config   import token_cats
     
     index = 0
     option = None
@@ -202,8 +201,8 @@ def validate_option(msg, item_list, syntax_level):
                     if not (result and good): break
                 elif in_cat:
                     # Category name
-                    if token_cats.has_key(opt):
-                        num = token_cats[opt]
+                    if Token.cats.has_key(opt):
+                        num = Token.cats[opt]
                         if isinstance(num, tuple):
                             check = lambda x: num[0] <= x.category() <= num[1]
                         else: check = lambda x: x.category() == num

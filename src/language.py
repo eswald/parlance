@@ -44,7 +44,6 @@ class Message(list):
             (HUH or PRN) to send to the client.
             
             # Checks unbalanced parentheses
-            >>> from config import base_rep
             >>> from translation import translate
             >>> squeeze = base_rep.opts.squeeze_parens
             >>> base_rep.opts.squeeze_parens = True
@@ -167,10 +166,11 @@ class Message(list):
             >>> str(Message('name'))
             '"name"'
         '''#'''
-        from config import base_rep
-        quot = base_rep.opts.quot_char
-        escape = base_rep.opts.output_escape
-        squeeze = base_rep.opts.squeeze_parens
+        from config import protocol
+        opts = protocol.base_rep.opts
+        quot = opts.quot_char
+        escape = opts.output_escape
+        squeeze = opts.squeeze_parens
         
         result = []
         in_text = False
@@ -232,8 +232,8 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import base_rep
-        list.append(self, base_rep[value])
+        from config import protocol
+        list.append(self, protocol.base_rep[value])
     def extend(self, value):
         ''' Adds a list of new tokens to the Message, without parentheses.
             >>> m = Message(NOT)
@@ -313,8 +313,8 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import base_rep
-        list.__setitem__(self, index, base_rep[value])
+        from config import protocol
+        list.__setitem__(self, index, protocol.base_rep[value])
     def insert(self, index, value):
         ''' Inserts a single token into the Message.
             >>> m = HUH(WHT)
@@ -326,8 +326,8 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import base_rep
-        list.insert(self, index, base_rep[value])
+        from config import protocol
+        list.insert(self, index, protocol.base_rep[value])
 
 
 class _tuple_Token(tuple):
@@ -389,7 +389,7 @@ class Token(_tuple_Token):
     
     def __new__(klass, name, number):
         ''' Returns a Token instance from its name and number.
-            If you only have one, use "config.base_rep[key]".
+            If you only have one, use "config.protocol.base_rep[key]".
         '''#'''
         # Fiddle with parentheses
         if name == 'BRA': name = '('
@@ -551,19 +551,18 @@ class Token(_tuple_Token):
             'YES'
             >>> repr(KET)
             'KET'
-            >>> from config import base_rep
             >>> eval(repr(YES)) == base_rep['YES']
             True
             >>> repr(Token('STH', 0x4101))
             "Token('STH', 0x4101)"
         '''#'''
-        from config import default_rep
+        from config import protocol
         name = self.__class__.__name__
         if self.is_integer() and self.text == str(self.value()):
             return name + '(' + self.text + ')'
         elif self == KET: return 'KET'
         elif self == BRA: return 'BRA'
-        elif default_rep.get(self.text) == self: return self.text
+        elif protocol.default_rep.get(self.text) == self: return self.text
         elif len(self.text) == 1 and StringToken(self.text) == self:
             return name + '(' + repr(self.text) + ')'
         else: return name+'('+repr(self.text)+', '+('0x%04X'%self.number)+')'

@@ -226,16 +226,6 @@
 # The port that the server listens on.
 ;port = 16713
 
-# client-server protocol version (dcsp_version, integer)
-# The version number sent and expected in Initial Messages.
-# This setting is overridden if found in the protocol document.
-;client-server protocol version = 1
-
-# magic number (magic, integer)
-# The magic number sent and expected in Initial Messages.
-# This setting is overridden if found in the protocol document.
-;magic number = 0xDA10
-
 # first error number (first_error, integer)
 # The number of the first error in "error codes" as listed below.
 # Should generally be 1 or 0, depending on the protocol.

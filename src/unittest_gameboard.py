@@ -293,7 +293,8 @@ class Gameboard_Doctests(unittest.TestCase):
         
         self.failIf(mdf.validate(0, True), 'Invalid MDF message')
         m = Map(config.variant_options('simplified',
-            'Small board for testing purposes', {}, config.default_rep))
+            'Small board for testing purposes', {},
+            config.protocol.default_rep))
         self.failIf(m.valid, 'Map valid before MDF')
         result = m.define(mdf)
         self.failIf(result, result)
