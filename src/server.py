@@ -190,16 +190,16 @@ class Server(Verbose_Object):
     def handle_ADM(self, client, message):
         line = message.fold()[2][0]
         text = line.lower()
-        if text[0:7] == 'server:': self.seek_command(client, text[7:])
-        elif not re.search('[a-z]', line): self.seek_command(client, text)
+        if text[0:7] == 'server:':
+            if self.options.admin_cmd: self.seek_command(client, text[7:])
+            else: client.admin('Admin commands have been disabled.')
+        elif self.options.admin_cmd and not re.search('[a-z]', line):
+            self.seek_command(client, text)
         elif self.options.fwd_admin:
             if text[0:4] == 'all:': self.broadcast(message)
             else: client.game.broadcast(message)
         else: client.reject(message)
     def seek_command(self, client, text):
-        if not self.options.admin_cmd:
-            client.admin('Admin commands have been disabled.')
-            return
         for pattern in self.commands:
             match = pattern.pattern.search(text)
             if match:
