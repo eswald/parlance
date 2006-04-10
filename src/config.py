@@ -204,8 +204,8 @@ class variant_options(Verbose_Object):
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
         self.msg_cache  = {}
     def new_judge(self):
-        from judge import Standard_Judge
-        return Standard_Judge(self, game_options())
+        from judge import Judge
+        return Judge(self, game_options())
     def get_representation(self):
         filename = self.files.get('rem')
         if filename: return read_representation_file(filename)

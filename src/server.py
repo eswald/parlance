@@ -1135,7 +1135,7 @@ class Game(Verbose_Object):
     ]
 
 
-class Judge(Verbose_Object):
+class JudgeInterface(Verbose_Object):
     ''' The Arbitrator of Justice and Keeper of the Official Map.
         This class has the minimum skeleton required by the Server.
         

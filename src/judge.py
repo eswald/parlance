@@ -8,7 +8,7 @@
 
 import config
 from functions import DefaultDict, any, all, s, Infinity
-from server    import Judge
+from server    import JudgeInterface
 from orders    import *
 #from orders    import createUnitOrder, RemoveOrder, WaiveOrder, \
 #                      HoldOrder, DisbandOrder, OrderSet
@@ -86,12 +86,12 @@ class judge_options(config.option_class):
         self.send_SET   = self.getboolean('publish order sets',           False)
         self.send_ORD   = self.getboolean('publish individual orders',    True)
 
-class Standard_Judge(Judge):
+class Judge(JudgeInterface):
     ''' Implementation of the Judge interface, for DAIDE rules.'''
     
     def __init__(self, variant_opts, game_opts):
         ''' Initializes instance variables.'''
-        super(Standard_Judge, self).__init__(variant_opts, game_opts)
+        self.__super.__init__(variant_opts, game_opts)
         self.options = options = judge_options()
         self.datc = datc_options()
         self.last_orders = [REJ(ORD)]
