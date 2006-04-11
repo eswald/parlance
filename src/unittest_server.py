@@ -165,6 +165,7 @@ class ServerTestCase(unittest.TestCase):
             'accept admin commands' : True,
             'forward admin messages' : True,
             'host' : '',
+            'port' : 16720,
             'idle timeout for server loop' : 5,
             'publish order sets': False,
             'publish individual orders': False,
@@ -287,6 +288,19 @@ class Server_Basics(ServerTestCase):
         self.failIf(player.power in sum([msg
             for msg in player.queue if msg[0] is CCD], []),
             '%s reported in civil disorder' % (player.power,))
+    def test_history(self):
+        from language import HLD, HST, ORD, SPR, SUC
+        self.set_option('Move Time Limit', 5)
+        self.set_option('publish individual orders', True)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        self.game.run_judge()
+        player.queue = []
+        player.send(HST(SPR, 1901))
+        power = self.game.judge.map.powers[player.power]
+        self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
+                player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''

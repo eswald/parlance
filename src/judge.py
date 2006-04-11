@@ -266,7 +266,7 @@ class Judge(JudgeInterface):
                     msg = self.check_solo(growing)
                 if msg:
                     # End the game
-                    self.game_end = msg
+                    self.game_result = msg
                     results.append(msg)
                     results.append(self.map.create_NOW())
                     self.phase = None

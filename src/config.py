@@ -152,6 +152,9 @@ class game_options(option_class):
             if self.NPB: params.append((NPB,))
             if self.PTL: params.append((PTL, relative_limit(self.PTL)))
         return params
+    def tokenize(self):
+        from language import Message
+        return Message(self.get_params())
     
     # Idea for future expansion:
     # Press Types (SND?)

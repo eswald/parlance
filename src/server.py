@@ -337,8 +337,177 @@ class Server(Verbose_Object):
             '  powers - Displays the power assignments for this game'),
     ]
 
+class Historian(Verbose_Object):
+    ''' A game-like object that simply handles clients and history.'''
+    class HistoricalJudge(object):
+        def __init__(self, historian, last_turn, result):
+            self.history = historian
+            self.turn = last_turn
+            self.game_result = result
+        
+        def handle_MAP(self, client, message):
+            client.send(self.history.messages[MAP])
+        def handle_MDF(self, client, message):
+            client.send(self.history.messages[MDF])
+        def handle_NOW(self, client, message):
+            client.send(self.history.history[self.turn][NOW])
+        def handle_SCO(self, client, message):
+            client.send(self.history.history[self.turn][SCO])
+        def handle_ORD(self, client, message):
+            client.send_list(self.history.history[self.turn][ORD])
+        
+        def handle_MAP(self, client, message): client.reject(message)
+        def handle_DRW(self, client, message): client.reject(message)
+        def handle_MIS(self, client, message): client.reject(message)
+        def handle_NOT_SUB(self, client, message): client.reject(message)
+        def handle_NOT_DRW(self, client, message): client.reject(message)
+    
+    def __init__(self, server, game_id):
+        ''' Initializes certain instance variables:
+            - server           The overarching server for the program
+            - game_id          The unique identification for this game
+            - options          The game_options instance for this game
+            - started          Whether the game has started yet
+            - closed           Whether the server is trying to shut down
+            - clients          List of Clients that have accepted the map
+        '''#'''
+        self.server = server
+        self.game_id = game_id
+        self.prefix = 'Historian %d' % game_id
+        self.judge = None
+        self.closed = True
+        self.started = True
+        self.clients = []
+        self.messages = {}
+        self.history = {}
+    
+    def save(self, stream):
+        def write_message(msg): stream.write(str(msg) + '\n')
+        def write(token): write_message(self.messages[token])
+        def turnkey(turn): return (turn[1] * 0x20) + (turn[0].number % 0x1F)
+        write(LST)
+        write(MAP)
+        write(MDF)
+        write(HLO)
+        write(SCO)
+        write(NOW)
+        for turn in sorted(self.history.keys(), key=turnkey):
+            for message in self.get_history(turn, False):
+                write_message(message)
+        if self.judge.game_result: write(self.judge.game_result)
+        write(SMR)
+    def load(self, stream):
+        sco = None
+        turn = None
+        result = None
+        rep = config.protocol.base_rep
+        history = {}
+        messages = {}
+        for line in stream:
+            message = rep.translate(line)
+            first = message[0]
+            if first in (ORD, SET):
+                offset = first is ORD and 2 or 5
+                turn = (message[offset], message[offset + 1].value())
+                history.setdefault(turn, {
+                        SET: [],
+                        ORD: [],
+                        SCO: sco,
+                        NOW: None
+                })[first].append(message)
+            elif first is NOW:
+                history.get(turn, messages)[NOW] = message
+            elif first is SCO:
+                history.get(turn, messages)[SCO] = sco = message
+            elif first in (MAP, MDF, HLO, SMR):
+                messages[first] = message
+            elif first is LST:
+                messages[LST] = message
+            elif first in (DRW, SLO):
+                result = message
+        self.judge = self.HistoricalJudge(self, turn, result)
+        self.history = history
+        self.messages = messages
+    
+    # Stub routines, used by Service and Server
+    def disconnect(self, client):
+        self.log_debug(6, 'Client #%d has disconnected', client.client_id)
+        if client in self.clients:
+            self.clients.remove(client)
+            self.admin('%s has disconnected.', name)
+    def send_listing(self, client):
+        client.send(self.messages[LST])
+    def max_time(self, now): return None
+    
+    # Sending messages
+    def broadcast(self, message):
+        ''' Sends a message to each ready client, and notes it in the log.'''
+        self.log_debug(2, 'ALL << %s', message)
+        for client in self.clients: client.write(message)
+    def admin(self, line, *args):
+        if self.server.options.snd_admin:
+            self.broadcast(ADM('Server')(str(line) % args))
+    
+    # Degenerate message handlers
+    def handle_GOF(self, client, message): client.reject(message)
+    def handle_SND(self, client, message): client.reject(message)
+    def handle_TME(self, client, message): client.reject(message)
+    def handle_NOT_TME(self, client, message): client.reject(message)
+    def handle_NOT_GOF(self, client, message): client.reject(message)
+    def handle_REJ_MAP(self, client, message): self.disconnect(client)
+    def handle_YES_SVE(self, client, message): pass
+    def handle_REJ_SVE(self, client, message): pass
+    def handle_YES_LOD(self, client, message): pass
+    def handle_REJ_LOD(self, client, message): self.disconnect(client)
+    
+    # Identity messages
+    def handle_NME(self, client, message): client.reject(message)
+    def handle_IAM(self, client, message): client.reject(message)
+    def handle_OBS(self, client, message):
+        if client in self.clients: client.reject(message)
+        else:
+            if len(message) > 1:
+                msg = message.fold()
+                client.name, client.version = (msg[1][0], msg[2][0])
+            client.accept(message)
+            client.send(self.messages[MAP])
+    def handle_YES_MAP(self, client, message):
+        if client in self.clients: return # Ignore duplicate messages
+        self.clients.append(client)
+        name = client.full_name()
+        obs = client.name and ' as an observer' or ''
+        self.admin('%s has connected%s.', name, obs)
+        client.send(self.messages[HLO])
+        client.send(self.messages[SCO])
+        if self.judge.game_result: client.send(self.judge.game_result)
+        client.send(self.messages[SMR])
+        client.send(self.messages[NOW])
+    
+    # History
+    def handle_HST(self, client, message):
+        if len(message) > 1:
+            turn = (message[2], message[3].value())
+            result = self.get_history(turn, True)
+            if result: client.send_list(result)
+            else: client.reject(message)
+        elif history:
+            for turn in sorted(self.history.keys(), key=turnkey):
+                client.send_list(self.get_history(turn, False))
+        else: client.reject(message)
+    def get_history(self, key, always_sco):
+        result = []
+        turn = self.history.get(key)
+        if turn:
+            for message in sorted(turn[SET]): result.append(message)
+            for message in sorted(turn[ORD]): result.append(message)
+            if always_sco or config.order_mask[key[0]] & Turn.build_phase:
+                result.append(turn[SCO])
+            result.append(turn[NOW])
+        return result
+    
+    commands = []
 
-class Game(Verbose_Object):
+class Game(Historian):
     ''' Coordinates messages between Players and the Judge,
         administering time limits and power assignments.
         
@@ -380,18 +549,10 @@ class Game(Verbose_Object):
         def full_name(self): return '%s (%s)' % (self.name, self.version)
     
     def __init__(self, server, game_id, variant):
-        ''' Initializes the plethora of instance variables:
-            
-            # Configuration and status information
-            - server           The overarching server for the program
-            - game_id          The unique identification for this game
+        ''' Initializes yet more instance variables:
             - options          The game_options instance for this game
             - judge            The judge, handling orders and adjudication
             - press_allowed    Whether press is allowed right now
-            - started          Whether the game has started yet
-            - closed           Whether the server is trying to shut down
-            
-            # Timing and press information
             - timers           Time notification requests
             - deadline         When the current turn will end
             - press_deadline   When press must stop for the current turn
@@ -399,25 +560,23 @@ class Game(Verbose_Object):
             - time_left        Time remaining when the clock stopped
             - press_in         Whether press is allowed during a given phase
             - limits           The time limits for the phases, as well as max and press
-            
-            # Player information
-            - clients          List of Clients that have accepted the map
             - players          Power token -> player mappings
             - p_order          The order in which to assign powers
         '''#'''
+        self.__super.__init__(server, game_id)
         
-        self.server         = server
-        self.game_id        = game_id
-        self.variant        = variant
+        # Override certain Historian variables
         self.prefix         = 'Game %d' % game_id
-        
-        self.judge          = variant.new_judge()
-        self.options        = self.judge.game_opts
-        self.press_allowed  = False
         self.started        = False
         self.closed         = False
-        self.paused         = False
+        self.variant        = variant
+        self.judge          = variant.new_judge()
+        self.options        = self.judge.game_opts
+        self.messages[MAP]  = MAP(self.judge.map_name)
         
+        # Press- and time-related variables
+        self.press_allowed  = False
+        self.paused         = False
         self.timers         = {}
         self.deadline       = None
         self.press_deadline = None
@@ -427,7 +586,7 @@ class Game(Verbose_Object):
         
         self.set_limits()
         
-        self.clients        = []
+        # Player-related variables
         self.players        = {}
         self.limbo          = {}
         self.summary        = []
@@ -436,7 +595,8 @@ class Game(Verbose_Object):
         else: powers.sort()
         self.p_order        = powers
         for country in powers:
-            self.players[country] = self.Player_Struct(self.judge.player_name(country))
+            self.players[country] = self.Player_Struct(
+                    self.judge.player_name(country))
     
     def set_limits(self):
         game = self.options
@@ -587,7 +747,12 @@ class Game(Verbose_Object):
                 user.reject(message)
                 self.reveal_passcodes(user)
             self.limbo.clear()
-            self.broadcast_list(self.judge.start())
+            
+            result = self.judge.start()
+            for message in result:
+                self.broadcast(message)
+                self.messages[message[0]] = message
+            
             self.set_limits()
             self.set_deadlines()
     
@@ -660,7 +825,15 @@ class Game(Verbose_Object):
         ''' Runs the judge and handles turn transitions.'''
         if self.deadline: self.log_debug(10, 'Running the judge with %f seconds left', self.deadline - time())
         else: self.log_debug(10, 'Running the judge')
-        self.broadcast_list(self.judge.run())
+        
+        key = self.judge.turn().key
+        self.history[key] = turn = {SET: [], ORD: [], SCO: None, NOW: None}
+        for message in self.judge.run():
+            self.broadcast(message)
+            if message[0] in (ORD, SET): turn[message[0]].append(message)
+            elif message[0] in (SCO, NOW): turn[message[0]] = message
+        if not turn[SCO]: turn[SCO] = self.judge.map.create_SCO()
+        
         if self.judge.phase:
             self.set_deadlines()
             for player in self.players.itervalues():
@@ -681,10 +854,9 @@ class Game(Verbose_Object):
         country = client.country
         if country: passcode = self.players[country].passcode
         else: country = UNO; passcode = 0
-        variant = self.options.get_params()
-        client.send(HLO(country)(passcode)(variant))
+        client.send(HLO(country)(passcode)(self.options))
     def summarize(self):
-        ''' Sends the end-of-game SMR message.'''
+        ''' Creates the end-of-game SMR message.'''
         players = self.summary
         for country, player in self.players.iteritems():
             stats = [
@@ -697,21 +869,11 @@ class Game(Verbose_Object):
             if elim: stats.append(elim)
             players.append(stats)
         return SMR(self.judge.turn()) % players
-    def broadcast(self, message):
-        ''' Sends a message to each ready client, and notes it in the log.'''
-        self.log_debug(2, 'ALL << %s', message)
-        for client in self.clients: client.write(message)
-    def broadcast_list(self, message_list):
-        ''' Sends a list of messages to each ready client'''
-        for msg in message_list: self.broadcast(msg)
-    def admin(self, line, *args):
-        if self.server.options.snd_admin:
-            self.broadcast(ADM('Server')(str(line) % args))
     
     # Press and administration
     def send_listing(self, client):
         client.send(LST(self.game_id)(self.players_needed())
-            (self.variant.variant)(self.options.get_params()))
+            (self.variant.variant)(self.options))
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
@@ -816,7 +978,8 @@ class Game(Verbose_Object):
                 self.players[client.country].ready = True
             else:
                 if client.name: obs = ' as an observer'
-                if self.started: self.reveal_passcodes(client)
+                if self.started and not self.closed:
+                    self.reveal_passcodes(client)
             self.admin('%s has connected%s. %s', name, obs, self.has_need())
             
             if self.started:
@@ -824,18 +987,13 @@ class Game(Verbose_Object):
                 # This should probably be farmed out to the judge,
                 # but it works for now.
                 client.send(self.judge.map.create_SCO())
-                client.send(self.judge.map.create_NOW())
                 if self.closed:
-                    msg = self.judge.game_end
+                    msg = self.judge.game_result
                     if msg: client.send(msg)
                     client.send(self.summarize())
+                client.send(self.judge.map.create_NOW())
             else: self.check_start()
         else: client.reject(message); self.disconnect(client)
-    def handle_REJ_MAP(self, client, message): self.disconnect(client)
-    def handle_YES_SVE(self, client, message): pass
-    def handle_REJ_SVE(self, client, message): pass
-    def handle_YES_LOD(self, client, message): pass
-    def handle_REJ_LOD(self, client, message): self.disconnect(client)
     
     # Identity messages
     def handle_NME(self, client, message):
@@ -944,13 +1102,6 @@ class Game(Verbose_Object):
             self.log_debug(7, 'Passcode check failed')
             client.guesses += 1
             client.reject(message)
-    def handle_OBS(self, client, message):
-        if client in self.clients: client.reject(message)
-        else:
-            if len(message) > 1:
-                msg = message.fold()
-                client.name, client.version = (msg[1][0], msg[2][0])
-            client.send_list([YES(message), MAP(self.judge.map_name)])
     
     # Game-specific admin commands
     def find_players(self, name):
@@ -1161,7 +1312,7 @@ class JudgeInterface(Verbose_Object):
         Flags for the server:
             - unready:  True until each power has a set of valid orders.
             - phase:    Indicates the phase of the current turn.
-            - game_end: The message indicating how the game ended, if it has.
+            - game_result: The message indicating how the game ended, if it has.
         
         phase will be a Turn.phase() result for a game in progress,
         None for games ended or not yet started.
@@ -1174,7 +1325,7 @@ class JudgeInterface(Verbose_Object):
         self.mdf = variant_opts.map_mdf
         self.map_name = variant_opts.map_name
         self.game_opts = game_opts
-        self.game_end = None
+        self.game_result = None
         self.unready = True
         self.phase = None
     def reset(self):
@@ -1199,7 +1350,6 @@ class JudgeInterface(Verbose_Object):
     def handle_NOW(self, client, message): raise NotImplementedError
     def handle_SCO(self, client, message): raise NotImplementedError
     def handle_ORD(self, client, message): raise NotImplementedError
-    def handle_HST(self, client, message): raise NotImplementedError
     def handle_SUB(self, client, message): raise NotImplementedError
     def handle_DRW(self, client, message): raise NotImplementedError
     def handle_MIS(self, client, message): raise NotImplementedError
@@ -1218,3 +1368,6 @@ class JudgeInterface(Verbose_Object):
             Without a country, returns a list of eliminated countries.
         '''#'''
         raise NotImplementedError
+
+if __name__ == '__main__':
+    print 'Please use __init__ to run the server.'

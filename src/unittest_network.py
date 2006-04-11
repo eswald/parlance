@@ -59,6 +59,7 @@ class NetworkTestCase(ServerTestCase):
 class Network_Basics(NetworkTestCase):
     def test_timeout(self):
         ''' Thirty-second timeout for the Initial Message'''
+        self.set_option('port', 16721)
         self.connect_server([])
         client = self.Fake_Client(None)
         client.open()
