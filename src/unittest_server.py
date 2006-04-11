@@ -808,6 +808,10 @@ class Server_Admin_Other(Server_Admin):
                 '  Fake Human Player (Fake_Master)',
                 '  Fake Player (Fake_Player)',
         ], response)
+    
+    def test_move_time_limit(self):
+        self.assertAdminResponse(self.master, 'move time limit 30',
+                'Fake Human Player (Fake_Master) has set the move time limit to 30 seconds.')
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):

@@ -412,7 +412,7 @@ class Game(Verbose_Object):
         self.prefix         = 'Game %d' % game_id
         
         self.judge          = variant.new_judge()
-        self.options        = game = self.judge.game_opts
+        self.options        = self.judge.game_opts
         self.press_allowed  = False
         self.started        = False
         self.closed         = False
@@ -424,6 +424,22 @@ class Game(Verbose_Object):
         self.time_checked   = None
         self.time_left      = None
         self.actions        = []
+        
+        self.set_limits()
+        
+        self.clients        = []
+        self.players        = {}
+        self.limbo          = {}
+        self.summary        = []
+        powers = self.judge.players()
+        if server.options.shuffle: shuffle(powers)
+        else: powers.sort()
+        self.p_order        = powers
+        for country in powers:
+            self.players[country] = self.Player_Struct(self.judge.player_name(country))
+    
+    def set_limits(self):
+        game = self.options
         
         move_limit = absolute_limit(game.MTL)
         press_limit = absolute_limit(game.PTL)
@@ -442,17 +458,6 @@ class Game(Verbose_Object):
             Turn.build_phase   : build_limit,
             'press'            : press_limit,
         }
-        
-        self.clients        = []
-        self.players        = {}
-        self.limbo          = {}
-        self.summary        = []
-        powers = self.judge.players()
-        if server.options.shuffle: shuffle(powers)
-        else: powers.sort()
-        self.p_order        = powers
-        for country in powers:
-            self.players[country] = self.Player_Struct(self.judge.player_name(country))
     
     # Connecting and disconnecting players
     def open_position(self, country):
@@ -583,6 +588,7 @@ class Game(Verbose_Object):
                 self.reveal_passcodes(user)
             self.limbo.clear()
             self.broadcast_list(self.judge.start())
+            self.set_limits()
             self.set_deadlines()
     
     # Time Limits
@@ -1010,6 +1016,17 @@ class Game(Verbose_Object):
         if observing:
             client.admin('%s anonymous observer%s',
                     num2name(observing).capitalize(), s(observing))
+    def set_time_limit(self, client, match):
+        phase, seconds = match.groups()
+        attribute = phase.upper() + 'TL'
+        if seconds and not self.started:
+            value = int(seconds.strip())
+            setattr(self.options, attribute, value)
+            self.admin('%s has set the %s time limit to %d seconds.',
+                    client.full_name(), phase, value)
+        else:
+            value = getattr(self.options, attribute)
+            client.admin('The %s time limit is %d seconds.', phase, value)
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')
         else:
@@ -1124,6 +1141,8 @@ class Game(Verbose_Object):
             '  pause - Stops deadline timers and phase transitions'),
         Command(r'resume|unpause', resume,
             '  resume - Resumes deadline timers and phase transitions'),
+        Command(r'([mrbp]\w+) time limit( \d+|)', set_time_limit,
+            '  <phase> time limit [<seconds>] - Set or display the time limit for <phase>'),
         Command(r'(eject|boot) +(.+)', eject,
             '  eject <player> - Disconnect <player> (either name or country) from the game'),
         Command(r'end game', end_game,
