@@ -259,18 +259,17 @@ class RawClient(Verbose_Object):
         ''' Informs the player that the connection has closed.'''
         self.closed = True
     def run(self):
-        from translation import translate
         print 'Connected.'
         while not self.closed:
             try: line = raw_input()
             except EOFError: self.close()
             if line:
-                try: message = translate(line, self.rep)
-                except: print '??'
-                self.send(message)
+                try: message = self.rep.translate(line)
+                except Exception, err: print str(err) or '??'
+                else: self.send(message)
     def send(self, message):
         if not self.closed: self.send_out(message)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from main import run_player
     run_player(RawClient, False, False)

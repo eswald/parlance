@@ -517,34 +517,5 @@ class ServerSocket(SocketWrapper):
     def power_name(self): return '#' + str(self.next_id)
     def write(self, message): pass
 
-class RawClient(Verbose_Object):
-    ''' Simple client to translate DM to and from text.'''
-    name = None
-    def __init__(self, send_method, representation, **kwargs):
-        from threading import Thread
-        self.send_out  = send_method      # A function that accepts messages
-        self.rep       = representation   # The representation message
-        self.closed    = False # Whether the connection has ended, or should end
-        Thread(target=self.run).start()
-    def handle_message(self, message):
-        ''' Process a new message from the server.'''
-        print '>>', message
-    def close(self):
-        ''' Informs the player that the connection has closed.'''
-        self.closed = True
-    def run(self):
-        from translation import translate
-        print 'Connected.'
-        while not self.closed:
-            try: line = raw_input()
-            except EOFError: self.close()
-            if line:
-                try: message = translate(line, self.rep)
-                except Exception, err: print str(err) or '??'
-                else: self.send(message)
-    def send(self, message):
-        if not self.closed: self.send_out(message)
-
-if __name__ == "__main__":
-    from main import run_player
-    run_player(RawClient, False, False)
+if __name__ == '__main__':
+    print 'RawClient has been moved to the translation module.'
