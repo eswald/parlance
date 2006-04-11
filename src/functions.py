@@ -155,13 +155,13 @@ class Verbose_Object(object):
         if level <= self.verbosity:
             line = self.prefix + ': ' + str(line) % args
             if self.log_file:
-                try: output = self.__files[self.log_file]
-                except KeyError:
+                output = self.__files.get(self.log_file)
+                if not output:
                     output = file(self.log_file, 'a')
                     self.__files[self.log_file] = output
                 output.write(line + linesep)
             else:
-                try: print line
+                try: print line + '\n',
                 except IOError: self.verbosity = 0 # Ignore broken pipes
     @settable_property
     def prefix(self): return self.__class__.__name__
