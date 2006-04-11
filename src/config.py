@@ -269,18 +269,21 @@ def parse_variants(variant_file):
     else:
         name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
         file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
+        descrip = name = None
         for line in var_file:
             match = name_pattern.search(line)
             if match:
                 descrip, name = match.groups()
                 files = {}
-                while match:
-                    match = file_pattern.search(line, match.end())
-                    if match:
-                        ref, ext = match.groups()
-                        files[ext.lower()] = os.path.normpath(os.path.join(
-                            os.path.dirname(variant_file), ref))
-                variants[name] = variant_options(name, descrip, files)
+            elif name and descrip:
+                match = file_pattern.search(line)
+                if match:
+                    ref, ext = match.groups()
+                    files[ext.lower()] = os.path.normpath(os.path.join(
+                        os.path.dirname(variant_file), ref))
+                elif '</tr>' in line:
+                    variants[name] = variant_options(name, descrip, files)
+                    descrip = name = None
 
 class Protocol(Verbose_Object):
     ''' Collects various constants from the Client-Server Protocol file.
