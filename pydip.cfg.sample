@@ -110,6 +110,11 @@
 # Useful for testing, but should *not* be on for human games.
 ;close on disconnect = no
 
+# record completed games (log_games, boolean)
+# Whether to save game logs to disk before deleting them from memory.
+# Games will be saved as log/games/????????.log
+;record completed games = no
+
 # randomize power assignments (shuffle, boolean)
 # Whether to assign players to powers randomly.
 # If not true, powers are assigned in token order (usually alphabetical),

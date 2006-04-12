@@ -175,6 +175,7 @@ class ServerTestCase(unittest.TestCase):
             'time allowed for vetos': 3,
             'Move Time Limit': 60,
             'confirm order submission': False,
+            'record completed games': False,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
@@ -301,6 +302,42 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers[player.power]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
+    def test_save_game(self):
+        from language import HLD, HLO, MAP, OBS, ORD, SPR, SUC
+        self.set_option('publish individual orders', True)
+        self.connect_server()
+        self.start_game()
+        self.game.run_judge()
+        self.game.close()
+        class Stream(list):
+            def write(self, line): self.append(line)
+        result = Stream()
+        self.game.save(result)
+        expected = [
+            self.game.listing(),
+            MAP (self.game.judge.map_name),
+            self.game.variant.map_mdf,
+            HLO (OBS) (0) (self.game.options),
+            self.game.variant.start_sco,
+            self.game.variant.start_now,
+        ] + sorted([
+            ORD (SPR, 1901) ([unit], HLD) (SUC)
+            for unit in self.game.judge.map.units
+        ]) + [
+            self.game.judge.map.create_NOW(),
+            self.game.summarize()
+        ]
+        self.assertEqual([str(msg) + '\n' for msg in expected], result)
+    def test_archive_game(self):
+        from functions import any
+        self.set_option('record completed games', True)
+        self.connect_server()
+        self.start_game()
+        self.game.run_judge()
+        self.game.close()
+        self.server.check_close()
+        self.failUnless(self.game.saved)
+        self.failIf(any(self.server.games))
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''

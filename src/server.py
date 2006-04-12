@@ -8,7 +8,7 @@
 
 import config, re
 from random    import randint, shuffle
-from time      import time
+from time      import time, localtime
 from gameboard import Map, Turn
 from functions import any, s, expand_list, DefaultDict, Verbose_Object
 from functions import absolute_limit, relative_limit, num2name, instances
@@ -54,6 +54,7 @@ class server_options(config.option_class):
         self.admin_cmd = self.getboolean('accept admin commands',  False)
         self.fwd_admin = self.getboolean('forward admin messages', False)
         self.quit      = self.getboolean('close on disconnect',    False)
+        self.log_games = self.getboolean('record completed games', False)
         self.shuffle   = self.getboolean('randomize power assignments', True)
         self.variant   = self.getstring( 'default variant',        'standard')
         self.games     = self.getint(    'number of games',        1)
@@ -138,27 +139,51 @@ class Server(Verbose_Object):
         self.options   = server_options()
         self.broadcast = broadcast_function
         self.manager   = client_manager
+        self.timestamp = self.create_timestamp()
         self.games     = []
         self.closed    = False
         if not self.start_game():
             self.log_debug(1, 'Unable to start default variant')
             self.close()
+    def create_timestamp(self):
+        chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+        now = localtime()
+        year = (now[0] % 25) + 10
+        month = now[1]
+        day = now[2]
+        hour = now[3] + 10
+        return chars[year] + chars[month] + chars[day] + chars[hour]
+    def filename(self, game_id):
+        return 'log/games/%s%04d.log' % (self.timestamp, game_id)
     
     def deadline(self):
         now = time()
-        time_left = [t for t in [game.max_time(now) for game in self.games]
+        time_left = [t for t in [game.max_time(now)
+                for game in self.games if game]
             if t is not None]
         if time_left: return max([0, min(time_left)])
         else: return None
     def check(self):
-        open_games = [game for game in self.games if not game.closed]
+        open_games = [game for game in self.games if game and not game.closed]
         for game in open_games: game.check_flags()
     def check_close(self):
         ''' Closes the server if all requested games have been completed.
             Meant to be called when the last client disconnects.
         '''#'''
-        open_games = [game for game in self.games if not game.closed]
+        open_games = False
+        for index, game in enumerate(self.games):
+            # Save completed games and remove them from memory
+            if game:
+                if game.closed:
+                    if (self.options.log_games and game.started
+                            and not game.saved):
+                        saved = open(self.filename(index), 'w')
+                        game.save(saved)
+                        saved.close()
+                    self.games[index] = None
+                else: open_games = True
         if not open_games:
+            # Check whether the server itself should close
             if 0 < self.options.games <= len(self.games):
                 self.log_debug(11, 'Completed all requested games')
                 self.close()
@@ -227,19 +252,30 @@ class Server(Verbose_Object):
         else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
-        for game in self.games: game.send_listing(client)
+        for game in self.games:
+            if game: client.send(game.listing())
     
     def default_game(self):
         games = list(self.games)
         games.reverse()
         for game in games:
-            if not game.closed: return game
+            if game and not game.closed: return game
         else: return self.start_game()
     def join_game(self, client, game_id):
         if client.game.game_id == game_id: return True
         elif game_id < len(self.games):
             client.game.disconnect(client)
             new_game = self.games[game_id]
+            if not new_game:
+                if self.options.log_games:
+                    # Resuscitate an archived game as a Historian
+                    new_game = self.games[game_id] = Historian(self, game_id)
+                    try:
+                        saved = open(self.filename(game_id), 'rU')
+                        new_game.load(saved)
+                        saved.close()
+                    except: return False
+                else: return False
             client.game = new_game
             client.set_rep(new_game.variant.rep)
             return True
@@ -285,12 +321,12 @@ class Server(Verbose_Object):
     def list_status(self, client, match):
         for game in self.games:
             message = None
-            if not game.closed:
+            if game and not game.closed:
                 if game.started:
                     if game.paused: message = 'Paused'
                     else: message = 'In progress'
                 else: message = 'Forming'
-            elif game.clients: message = 'Closed'
+            elif game and game.clients: message = 'Closed'
             if message:
                 client.admin('Game %s: %s; %s', game.game_id,
                         message, game.has_need())
@@ -308,7 +344,7 @@ class Server(Verbose_Object):
             self.log_debug(10, 'Closing')
             self.closed = True
             for game in self.games:
-                if not game.closed: game.close()
+                if game and not game.closed: game.close()
             self.broadcast(+OFF)
             self.manager.close_threads()
             self.log_debug(11, 'Done closing')
@@ -375,6 +411,7 @@ class Historian(Verbose_Object):
         self.game_id = game_id
         self.prefix = 'Historian %d' % game_id
         self.judge = None
+        self.saved = False
         self.closed = True
         self.started = True
         self.clients = []
@@ -394,8 +431,9 @@ class Historian(Verbose_Object):
         for turn in sorted(self.history.keys(), key=turnkey):
             for message in self.get_history(turn, False):
                 write_message(message)
-        if self.judge.game_result: write(self.judge.game_result)
-        write(SMR)
+        if self.judge.game_result: write_message(self.judge.game_result)
+        if self.started and self.closed: write(SMR)
+        self.saved = True
     def load(self, stream):
         sco = None
         turn = None
@@ -428,6 +466,7 @@ class Historian(Verbose_Object):
         self.judge = self.HistoricalJudge(self, turn, result)
         self.history = history
         self.messages = messages
+        self.saved = True
     
     # Stub routines, used by Service and Server
     def disconnect(self, client):
@@ -435,8 +474,7 @@ class Historian(Verbose_Object):
         if client in self.clients:
             self.clients.remove(client)
             self.admin('%s has disconnected.', name)
-    def send_listing(self, client):
-        client.send(self.messages[LST])
+    def listing(self): return self.messages[LST]
     def max_time(self, now): return None
     
     # Sending messages
@@ -480,7 +518,7 @@ class Historian(Verbose_Object):
         client.send(self.messages[HLO])
         client.send(self.messages[SCO])
         if self.judge.game_result: client.send(self.judge.game_result)
-        client.send(self.messages[SMR])
+        if self.started and self.closed: client.send(self.messages[SMR])
         client.send(self.messages[NOW])
     
     # History
@@ -573,6 +611,7 @@ class Game(Historian):
         self.judge          = variant.new_judge()
         self.options        = self.judge.game_opts
         self.messages[MAP]  = MAP(self.judge.map_name)
+        self.messages[MDF]  = variant.map_mdf
         
         # Press- and time-related variables
         self.press_allowed  = False
@@ -695,7 +734,10 @@ class Game(Historian):
         self.press_allowed = False
         if not self.closed:
             self.closed = True
-            if self.started: self.broadcast(self.summarize())
+            if self.started:
+                summary = self.summarize()
+                self.broadcast(summary)
+                self.messages[SMR] = summary
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}
@@ -742,6 +784,8 @@ class Game(Historian):
             # Send starting messages, and start the timers.
             self.started = True
             self.log_debug(9, 'Starting the game')
+            self.messages[LST] = self.listing()
+            self.messages[HLO] = HLO(OBS)(0)(self.options)
             for user in self.clients: self.send_hello(user)
             for user, message in self.limbo.iteritems():
                 user.reject(message)
@@ -857,22 +901,25 @@ class Game(Historian):
         client.send(HLO(country)(passcode)(self.options))
     def summarize(self):
         ''' Creates the end-of-game SMR message.'''
-        players = self.summary
-        for country, player in self.players.iteritems():
-            stats = [
-                country,
-                [player.name or '""'],
-                [player.version or ' '],
-                self.judge.score(country)
-            ]
-            elim = self.judge.eliminated(country)
-            if elim: stats.append(elim)
-            players.append(stats)
-        return SMR(self.judge.turn()) % players
+        result = self.messages.get(SMR)
+        if not result:
+            players = self.summary
+            for country, player in self.players.iteritems():
+                stats = [
+                    country,
+                    [player.name or '""'],
+                    [player.version or ' '],
+                    self.judge.score(country)
+                ]
+                elim = self.judge.eliminated(country)
+                if elim: stats.append(elim)
+                players.append(stats)
+            self.messages[SMR] = result = SMR(self.judge.turn()) % players
+        return result
     
     # Press and administration
-    def send_listing(self, client):
-        client.send(LST(self.game_id)(self.players_needed())
+    def listing(self):
+        return (LST(self.game_id)(self.players_needed())
             (self.variant.variant)(self.options))
     def handle_GOF(self, client, message):
         country = client.country
@@ -990,7 +1037,7 @@ class Game(Historian):
                 if self.closed:
                     msg = self.judge.game_result
                     if msg: client.send(msg)
-                    client.send(self.summarize())
+                    if self.started: client.send(self.summarize())
                 client.send(self.judge.map.create_NOW())
             else: self.check_start()
         else: client.reject(message); self.disconnect(client)

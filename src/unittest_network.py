@@ -150,9 +150,10 @@ class Network_Full_Games(NetworkTestCase):
     def change_option(self, name, value):
         config.option_class.local_opts.update({name: value})
     def connect_server(self, *args):
+        from functions import any
         ServerTestCase.connect_server(self, *args)
         while not self.server.closed:
-            while [game for game in self.server.games if not game.closed]:
+            while any(not game.closed for game in self.server.games if game):
                 sleep(3)
                 self.server.check()
             self.server.check_close()
