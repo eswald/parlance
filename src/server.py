@@ -1216,7 +1216,7 @@ class Game(Historian):
                     num2name(observing).capitalize(), s(observing))
     def set_time_limit(self, client, match):
         phase, seconds = match.groups()
-        attribute = phase.upper() + 'TL'
+        attribute = phase[0].upper() + 'TL'
         if seconds and not self.started:
             value = int(seconds.strip())
             setattr(self.options, attribute, value)

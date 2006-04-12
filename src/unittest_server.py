@@ -860,9 +860,18 @@ class Server_Admin_Other(Server_Admin):
                 '  Fake Player (Fake_Player)',
         ], response)
     
-    def test_move_time_limit(self):
+    def test_set_time_limit(self):
+        from language import HLO, LVL, MTL, TME
         self.assertAdminResponse(self.master, 'move time limit 30',
-                'Fake Human Player (Fake_Master) has set the move time limit to 30 seconds.')
+                'Fake Human Player (Fake_Master)'
+                ' has set the move time limit to 30 seconds.')
+        self.start_game()
+        self.assertContains(HLO (self.master.power) (self.master.pcode)
+                ((LVL, 20), (MTL, 30)), self.master.queue)
+        self.assertContains(TME (30), self.master.queue)
+    def test_get_time_limit(self):
+        self.assertAdminResponse(self.master, 'move time limit',
+                'The move time limit is 60 seconds.')
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):
