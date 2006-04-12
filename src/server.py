@@ -1216,15 +1216,19 @@ class Game(Historian):
                     num2name(observing).capitalize(), s(observing))
     def set_time_limit(self, client, match):
         phase, seconds = match.groups()
-        attribute = phase[0].upper() + 'TL'
-        if seconds and not self.started:
-            value = int(seconds.strip())
-            setattr(self.options, attribute, value)
-            self.admin('%s has set the %s time limit to %d seconds.',
-                    client.full_name(), phase, value)
+        if phase[0] in "mrbp":
+            attribute = phase[0].upper() + 'TL'
+            if seconds and not self.started:
+                value = int(seconds.strip())
+                setattr(self.options, attribute, value)
+                self.admin('%s has set the %s time limit to %d seconds.',
+                        client.full_name(), phase, value)
+            else:
+                value = getattr(self.options, attribute)
+                client.admin('The %s time limit is %d seconds.', phase, value)
         else:
-            value = getattr(self.options, attribute)
-            client.admin('The %s time limit is %d seconds.', phase, value)
+            client.admin('Unknown phase %r; '
+                'try move, build, retreat, or press.', phase)
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')
         else:
@@ -1339,7 +1343,7 @@ class Game(Historian):
             '  pause - Stops deadline timers and phase transitions'),
         Command(r'resume|unpause', resume,
             '  resume - Resumes deadline timers and phase transitions'),
-        Command(r'([mrbp]\w+) time limit( \d+|)', set_time_limit,
+        Command(r'\b(\w+) time limit( \d+|)', set_time_limit,
             '  <phase> time limit [<seconds>] - Set or display the time limit for <phase>'),
         Command(r'(eject|boot) +(.+)', eject,
             '  eject <player> - Disconnect <player> (either name or country) from the game'),

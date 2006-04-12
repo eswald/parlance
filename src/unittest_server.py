@@ -872,6 +872,9 @@ class Server_Admin_Other(Server_Admin):
     def test_get_time_limit(self):
         self.assertAdminResponse(self.master, 'move time limit',
                 'The move time limit is 60 seconds.')
+    def test_time_limit_phase(self):
+        self.assertAdminResponse(self.master, 'SPR time limit',
+                "Unknown phase 'spr'; try move, build, retreat, or press.")
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):
