@@ -1,3 +1,4 @@
 #!/bin/sh
 exec 2>&1
+cd $(dirname $0)
 exec nice python -u src/__init__.py "$@"
