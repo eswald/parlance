@@ -177,10 +177,15 @@ class Server(Verbose_Object):
                 if game.closed:
                     if (self.options.log_games and game.started
                             and not game.saved):
-                        saved = open(self.filename(index), 'w')
-                        game.save(saved)
-                        saved.close()
-                    self.games[index] = None
+                        fname = self.filename(index)
+                        try:
+                            saved = open(fname, 'w')
+                            game.save(saved)
+                            saved.close()
+                        except IOError, err:
+                            self.log_debug(7, 'Unable to save %s: %s',
+                                    fname, err)
+                        else: self.games[index] = None
                 else: open_games = True
         if not open_games:
             # Check whether the server itself should close
