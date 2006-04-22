@@ -290,7 +290,7 @@ class Player(Observer):
         elif self.name and self.version:
             self.send(NME(self.name)(self.version))
         else: self.send(OBS)
-    def handle_REJ_NME(self):
+    def handle_REJ_NME(self, message):
         if self.power and self.pcode is not None:
             self.send(IAM(self.power)(self.pcode))
         elif self.quit: self.close()
