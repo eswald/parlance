@@ -456,12 +456,15 @@ class Historian(Verbose_Object):
                         SET: [],
                         ORD: [],
                         SCO: sco,
+                        'new_SCO': False,
                         NOW: None
                 })[first].append(message)
             elif first is NOW:
                 history.get(turn, messages)[NOW] = message
             elif first is SCO:
-                history.get(turn, messages)[SCO] = sco = message
+                when = history.get(turn, messages)
+                when[SCO] = sco = message
+                when['new_SCO'] = True
             elif first in (MAP, MDF, HLO, SMR):
                 messages[first] = message
             elif first is LST:
@@ -543,7 +546,7 @@ class Historian(Verbose_Object):
         if turn:
             for message in sorted(turn[SET]): result.append(message)
             for message in sorted(turn[ORD]): result.append(message)
-            if always_sco or config.order_mask[key[0]] & Turn.build_phase:
+            if always_sco or turn['new_SCO']:
                 result.append(turn[SCO])
             result.append(turn[NOW])
         return result
@@ -876,12 +879,15 @@ class Game(Historian):
         else: self.log_debug(10, 'Running the judge')
         
         key = self.judge.turn().key
-        self.history[key] = turn = {SET: [], ORD: [], SCO: None, NOW: None}
+        self.history[key] = turn = {
+            SET: [], ORD: [], SCO: None, NOW: None, 'new_SCO': False
+        }
         for message in self.judge.run():
             self.broadcast(message)
             if message[0] in (ORD, SET): turn[message[0]].append(message)
             elif message[0] in (SCO, NOW): turn[message[0]] = message
         if not turn[SCO]: turn[SCO] = self.judge.map.create_SCO()
+        else: turn['new_SCO'] = True
         
         if self.judge.phase:
             self.set_deadlines()
