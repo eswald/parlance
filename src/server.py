@@ -154,7 +154,7 @@ class Server(Verbose_Object):
         hour = now[3] + 10
         return chars[year] + chars[month] + chars[day] + chars[hour]
     def filename(self, game_id):
-        return 'log/games/%s%04d.log' % (self.timestamp, game_id)
+        return 'log/games/%s%04d.dpp' % (self.timestamp, game_id)
     
     def deadline(self):
         now = time()
@@ -171,21 +171,13 @@ class Server(Verbose_Object):
             Meant to be called when the last client disconnects.
         '''#'''
         open_games = False
-        for index, game in enumerate(self.games):
+        for game in self.games:
             # Save completed games and remove them from memory
             if game:
                 if game.closed:
                     if (self.options.log_games and game.started
                             and not game.saved):
-                        fname = self.filename(index)
-                        try:
-                            saved = open(fname, 'w')
-                            game.save(saved)
-                            saved.close()
-                        except IOError, err:
-                            self.log_debug(7, 'Unable to save %s: %s',
-                                    fname, err)
-                        else: self.games[index] = None
+                        self.archive(game)
                 else: open_games = True
         if not open_games:
             # Check whether the server itself should close
@@ -193,6 +185,17 @@ class Server(Verbose_Object):
                 self.log_debug(11, 'Completed all requested games')
                 self.close()
             else: self.start_game()
+    def archive(self, game):
+        fname = self.filename(game.game_id)
+        try:
+            saved = open(fname, 'w')
+            game.save(saved)
+            saved.close()
+        except IOError, err:
+            self.log_debug(7, 'Unable to save %s: %s', fname, err)
+        else:
+            self.log_debug(7, '%s archived in %s', game.prefix, fname)
+            self.games[game.game_id] = None
     
     def broadcast_admin(self, text):
         if self.options.snd_admin: self.broadcast(ADM('Server')(text))
@@ -349,6 +352,8 @@ class Server(Verbose_Object):
             self.log_debug(10, 'Closing')
             self.closed = True
             for game in self.games:
+                if game and self.options.log_games and not game.saved:
+                    self.archive(game)
                 if game and not game.closed: game.close()
             self.broadcast(+OFF)
             self.manager.close_threads()
@@ -437,8 +442,13 @@ class Historian(Verbose_Object):
             for message in self.get_history(turn, False):
                 write_message(message)
         if self.judge.game_result: write_message(self.judge.game_result)
-        if self.started and self.closed: write(SMR)
+        if self.started:
+            if self.closed: write(SMR)
+            else:
+                for country, player in self.players:
+                    write_message(IAM (country) (player.pcode))
         self.saved = True
+        self.broadcast(SVE(str(self.game_id)))
     def load(self, stream):
         sco = None
         turn = None
@@ -465,10 +475,8 @@ class Historian(Verbose_Object):
                 when = history.get(turn, messages)
                 when[SCO] = sco = message
                 when['new_SCO'] = True
-            elif first in (MAP, MDF, HLO, SMR):
+            elif first in (LST, MAP, MDF, HLO, SMR):
                 messages[first] = message
-            elif first is LST:
-                messages[LST] = message
             elif first in (DRW, SLO):
                 result = message
         self.judge = self.HistoricalJudge(self, turn, result)
@@ -744,7 +752,7 @@ class Game(Historian):
             self.closed = True
             if self.started:
                 summary = self.summarize()
-                self.broadcast(summary)
+                if not self.saved: self.broadcast(summary)
                 self.messages[SMR] = summary
     def reveal_passcodes(self, client):
         disconnected = {}
