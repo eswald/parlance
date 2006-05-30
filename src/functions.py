@@ -332,6 +332,6 @@ def fails(test_function):
     return test_wrapper
 
 def _test():
-    import doctest, functions
-    return doctest.testmod(functions)
+    import doctest
+    return doctest.testmod()
 if __name__ == "__main__": _test()
