@@ -9,7 +9,7 @@
 import config, re
 from random    import randint, shuffle
 from time      import time, localtime
-from gameboard import Map, Turn
+from gameboard import Turn
 from functions import any, s, expand_list, DefaultDict, Verbose_Object
 from functions import absolute_limit, relative_limit, num2name, instances
 from language  import *
@@ -1375,69 +1375,6 @@ class Game(Historian):
     ]
 
 
-class JudgeInterface(Verbose_Object):
-    ''' The Arbitrator of Justice and Keeper of the Official Map.
-        This class has the minimum skeleton required by the Server.
-        
-        Flags for the server:
-            - unready:  True until each power has a set of valid orders.
-            - phase:    Indicates the phase of the current turn.
-            - game_result: The message indicating how the game ended, if it has.
-        
-        phase will be a Turn.phase() result for a game in progress,
-        None for games ended or not yet started.
-    '''#'''
-    
-    def __init__(self, variant_opts, game_opts):
-        ''' Initializes instance variables.'''
-        self.map = Map(variant_opts)
-        assert self.map.valid
-        self.mdf = variant_opts.map_mdf
-        self.map_name = variant_opts.map_name
-        self.game_opts = game_opts
-        self.game_result = None
-        self.unready = True
-        self.phase = None
-    def reset(self):
-        ''' Prepares the judge to begin a fresh game with the same map.
-        '''#'''
-        self.unready = True
-        self.phase = None
-        self.map.restart()
-    def start(self):
-        ''' Starts the game, returning NOW and SCO messages.'''
-        raise NotImplementedError
-    def run(self):
-        ''' Process orders, whether or not the powers are all ready.
-            Returns applicable ORD, NOW, and SCO messages.
-            At the end of the game, returns SLO/DRW and SMY messages.
-        '''#'''
-        raise NotImplementedError
-    
-    # Interaction with players
-    def handle_MAP(self, client, message): client.send(MAP(self.map_name))
-    def handle_MDF(self, client, message): client.send(self.mdf)
-    def handle_NOW(self, client, message): raise NotImplementedError
-    def handle_SCO(self, client, message): raise NotImplementedError
-    def handle_ORD(self, client, message): raise NotImplementedError
-    def handle_SUB(self, client, message): raise NotImplementedError
-    def handle_DRW(self, client, message): raise NotImplementedError
-    def handle_MIS(self, client, message): raise NotImplementedError
-    def handle_NOT_SUB(self, client, message): raise NotImplementedError
-    def handle_NOT_DRW(self, client, message): raise NotImplementedError
-    
-    # Law of Demeter
-    def missing_orders(self, country): raise NotImplementedError
-    def players(self): return self.map.powers.keys()
-    def player_name(self, country): return self.map.powers[country].name
-    def score(self, player): return len(self.map.powers[player].centers)
-    def turn(self): return self.map.current_turn
-    def eliminated(self, country=None):
-        ''' Returns the year the power was eliminated,
-            or False if it is still in the game.
-            Without a country, returns a list of eliminated countries.
-        '''#'''
-        raise NotImplementedError
 
 if __name__ == '__main__':
     print 'Please use __init__ to run the server.'
