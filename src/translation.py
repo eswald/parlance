@@ -247,10 +247,11 @@ class RawClient(Verbose_Object):
     ''' Simple client to translate DM to and from text.'''
     name = None
     def __init__(self, send_method, representation, **kwargs):
-        from threading import Thread
         self.send_out  = send_method      # A function that accepts messages
         self.rep       = representation   # The representation message
         self.closed    = False # Whether the connection has ended, or should end
+    def register(self):
+        from threading import Thread
         Thread(target=self.run).start()
     def handle_message(self, message):
         ''' Process a new message from the server.'''
