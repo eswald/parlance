@@ -67,7 +67,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                     try: sleep(.1)
                     except KeyboardInterrupt: client.close(); bored = True
 
-def run_server():
+def run_server(server_class, *server_args):
     from functions import Verbose_Object
     from network   import ServerSocket
     verbosity = 7
@@ -88,7 +88,7 @@ def run_server():
     else:
         config.option_class.local_opts.update(opts)
         Verbose_Object.verbosity = verbosity
-        server = ServerSocket()
+        server = ServerSocket(server_class, *server_args)
         if server.open(): server.run()
         else: server.log_debug(1, 'Failed to open the server.')
 

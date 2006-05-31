@@ -29,8 +29,9 @@ class NetworkTestCase(ServerTestCase):
             while thread.isAlive(): thread.join(1)
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         from network import ServerSocket, Client
+        from server import Server, Client_Manager
         config.option_class.local_opts.update({'number of games' : games})
-        socket = ServerSocket()
+        socket = ServerSocket(Server, Client_Manager())
         if not poll: socket.polling = None
         s_thread = socket.start()
         self.server = server = socket.server

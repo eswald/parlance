@@ -1,9 +1,6 @@
 ''' PyDip game server
     Copyright (C) 2004-2006 Eric Wald
     Licensed under the Open Software License version 3.0
-    
-    Do not run this module directly; instead, run the package module.
-    That avoids having a duplicate server module imported elsewhere.
 '''#'''
 
 import config, re
@@ -1375,6 +1372,7 @@ class Game(Historian):
     ]
 
 
-
-if __name__ == '__main__':
-    print 'Please use __init__ to run the server.'
+def run():
+    from main import run_server
+    run_server(Server, Client_Manager())
+if __name__ == '__main__': run()

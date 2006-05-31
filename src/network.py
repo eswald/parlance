@@ -11,7 +11,6 @@ from time      import time, sleep
 from struct    import pack, unpack
 from language  import Message, Token, YES, REJ, ADM, OFF, MDF
 from functions import Verbose_Object, any, s
-from server    import Server, Client_Manager
 
 
 class network_options(config.option_class):
@@ -361,9 +360,11 @@ class ServerSocket(SocketWrapper):
     try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
     except AttributeError: flags = None
     
-    def __init__(self):
+    def __init__(self, server_class, *server_args):
         self.__super.__init__()
         self.server = None
+        self.server_class = server_class
+        self.server_args = server_args
         self.deadline = None
         self.log_debug(10, 'Attempting to create a poll object')
         if self.flags:
@@ -393,7 +394,7 @@ class ServerSocket(SocketWrapper):
         sock.listen(7)
         self.sock = sock
         self.add(self)
-        self.server = Server(self.broadcast, Client_Manager())
+        self.server = self.server_class(self.broadcast, *self.server_args)
         return bool(sock and self.server)
     def close(self):
         if self.server and not self.server.closed: self.server.close()
