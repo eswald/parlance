@@ -6,6 +6,7 @@
 '''#'''
 
 import config, socket, select
+from sys       import stdin
 from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
@@ -394,6 +395,8 @@ class ServerSocket(SocketWrapper):
         sock.listen(7)
         self.sock = sock
         self.add(self)
+        # FIXME: Temporary hack to enable RawServer
+        self.server_class.fd_handler = self.add
         self.server = self.server_class(self.broadcast, *self.server_args)
         return bool(sock and self.server)
     def close(self):
@@ -521,5 +524,63 @@ class ServerSocket(SocketWrapper):
     def power_name(self): return '#' + str(self.next_id)
     def write(self, message): pass
 
+class InputWaiter(Verbose_Object):
+    ''' File descriptor for waiting on standard input.'''
+    def __init__(self, supervisor):
+        self.supervisor = supervisor
+        self.deadline = None
+        self.broken = False
+        self.closed = False
+    def fileno(self): return stdin.fileno()
+    def check(self):
+        line = ''
+        try: line = raw_input()
+        except EOFError: self.close()
+        if line: self.supervisor.handle_input(line)
+    def close(self):
+        self.closed = True
+        if not self.supervisor.closed: self.supervisor.close()
+    def write(self, message): pass
+
+class RawServer(Verbose_Object):
+    ''' Simple server to translate DM to and from text.'''
+    def __init__(self, broadcast_method):
+        from server import server_options
+        class FakeGame(Verbose_Object):
+            def __init__(self, variant_name):
+                self.variant = config.variants.get(variant_name)
+            def disconnect(self, client):
+                print 'Client #%d has disconnected.' % client.client_id
+        
+        self.closed = False
+        self.broadcast = broadcast_method
+        self.options = server_options()
+        self.game = FakeGame(self.options.variant)
+        self.rep = self.game.variant.rep
+        self.input = InputWaiter(self)
+        self.fd_handler(self.input)
+        print 'Waiting for connections...'
+    def handle_message(self, client, message):
+        ''' Process a new message from the client.'''
+        print '#%d >> %s' % (client.client_id, message)
+    def close(self):
+        ''' Informs the user that the connection has closed.'''
+        self.closed = True
+        if not self.input.closed: self.input.close()
+    def check(self):
+        ''' Nothing to do.'''
+        pass
+    def check_close(self):
+        ''' All clients have disconnected.'''
+        self.close()
+    def handle_input(self, line):
+        try: message = self.rep.translate(line)
+        except Exception, err: print str(err) or '??'
+        else: self.broadcast(message)
+    def deadline(self): return None
+    def broadcast_admin(self, text): pass
+    def default_game(self): return self.game
+
 if __name__ == '__main__':
-    print 'RawClient has been moved to the translation module.'
+    from main import run_server
+    run_server(RawServer)

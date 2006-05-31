@@ -257,6 +257,7 @@ class RawClient(Verbose_Object):
         print '>>', message
     def close(self):
         ''' Informs the player that the connection has closed.'''
+        print 'Closed.'
         self.closed = True
     def run(self):
         print 'Connected.'

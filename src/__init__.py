@@ -43,4 +43,4 @@ __all__ = [
     'xtended',
 ]
 
-if __name__ == "__main__": main.run_server()
+if __name__ == "__main__": server.run()
