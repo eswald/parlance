@@ -277,13 +277,15 @@ class Server(Verbose_Object):
                     new_game = self.games[game_id] = Historian(self, game_id)
                     try:
                         saved = open(self.filename(game_id), 'rU')
-                        new_game.load(saved)
+                        result = new_game.load(saved)
                         saved.close()
                     except: return False
                 else: return False
-            client.game = new_game
-            client.set_rep(new_game.variant.rep)
-            return True
+            else: result = True
+            if result:
+                client.game = new_game
+                client.set_rep(new_game.variant.rep)
+            return result
         else: return False
     def start_game(self, client=None, match=None):
         if match and match.lastindex:
@@ -421,6 +423,7 @@ class Historian(Verbose_Object):
         self.saved = False
         self.closed = True
         self.started = True
+        self.variant = None
         self.clients = []
         self.messages = {}
         self.history = {}
@@ -428,14 +431,13 @@ class Historian(Verbose_Object):
     def save(self, stream):
         def write_message(msg): stream.write(str(msg) + '\n')
         def write(token): write_message(self.messages[token])
-        def turnkey(turn): return (turn[1] * 0x20) + (turn[0].number % 0x1F)
         write(LST)
         write(MAP)
         write(MDF)
         write(HLO)
         write(SCO)
         write(NOW)
-        for turn in sorted(self.history.keys(), key=turnkey):
+        for turn in sorted(self.history.keys(), key=self.turn_order):
             for message in self.get_history(turn, False):
                 write_message(message)
         if self.judge.game_result: write_message(self.judge.game_result)
@@ -455,6 +457,7 @@ class Historian(Verbose_Object):
         messages = {}
         for line in stream:
             message = rep.translate(line)
+            self.log_debug(13, 'Loading "%s" from game log.', message)
             first = message[0]
             if first in (ORD, SET):
                 offset = first is ORD and 2 or 5
@@ -474,12 +477,24 @@ class Historian(Verbose_Object):
                 when['new_SCO'] = True
             elif first in (LST, MAP, MDF, HLO, SMR):
                 messages[first] = message
+                if first is MAP:
+                    variant_name = message.fold()[1][0]
+                    self.variant = config.variants.get(variant_name)
+                    if self.variant:
+                        rep = self.variant.rep
+                    else:
+                        self.log_debug(7, 'Variant %r not found among %r',
+                                variant_name, config.variants.keys())
+                        return False
+                elif first is HLO:
+                    self.options = config.game_options(message)
             elif first in (DRW, SLO):
                 result = message
         self.judge = self.HistoricalJudge(self, turn, result)
         self.history = history
         self.messages = messages
         self.saved = True
+        return True
     
     # Stub routines, used by Service and Server
     def disconnect(self, client):
@@ -541,8 +556,8 @@ class Historian(Verbose_Object):
             result = self.get_history(turn, True)
             if result: client.send_list(result)
             else: client.reject(message)
-        elif history:
-            for turn in sorted(self.history.keys(), key=turnkey):
+        elif self.history:
+            for turn in sorted(self.history.keys(), key=self.turn_order):
                 client.send_list(self.get_history(turn, False))
         else: client.reject(message)
     def get_history(self, key, always_sco):
@@ -555,6 +570,8 @@ class Historian(Verbose_Object):
                 result.append(turn[SCO])
             result.append(turn[NOW])
         return result
+    @staticmethod
+    def turn_order(turn): return (turn[1] * 0x20) + (turn[0].number % 0x1F)
     
     commands = []
 

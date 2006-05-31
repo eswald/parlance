@@ -62,7 +62,7 @@ class ServerTestCase(unittest.TestCase):
         '''#'''
         name = 'Fake Player'
         def __init__(self, send_method, representation, **kwargs):
-            from language import NME, IAM, SEL
+            from language import NME, IAM, OBS, SEL
             self.log_debug(9, 'Fake player started')
             self.closed = False
             self.power = power = kwargs.get('power')
@@ -72,7 +72,10 @@ class ServerTestCase(unittest.TestCase):
             self.rep = representation
             if kwargs.has_key('game_id'): send_method(SEL(kwargs['game_id']))
             if power and pcode: send_method(IAM(power)(pcode))
-            else: send_method(NME(self.name)(self.__class__.__name__))
+            else:
+                if kwargs.has_key('observe'): key = OBS
+                else: key = NME
+                send_method(key (self.name) (self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
@@ -289,7 +292,42 @@ class Server_Basics(ServerTestCase):
         self.failIf(player.power in sum([msg
             for msg in player.queue if msg[0] is CCD], []),
             '%s reported in civil disorder' % (player.power,))
-    def test_history(self):
+    def test_historian(self):
+        from language import HLD, HST, ORD, SEL, SPR, SUC, YES
+        self.set_verbosity(7)
+        self.set_option('Move Time Limit', 5)
+        self.set_option('publish individual orders', True)
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games[game.game_id])
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        print self.server.games[game.game_id].history
+        self.assertContains(YES (SEL (game.game_id)), player.queue)
+        player.queue = []
+        player.send(HST(SPR, 1901))
+        power = self.game.judge.map.powers.values()[0]
+        self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
+                player.queue)
+    def test_history_full(self):
+        from language import HLD, HST, ORD, SPR, SUC
+        self.set_option('Move Time Limit', 5)
+        self.set_option('publish individual orders', True)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        self.game.run_judge()
+        player.queue = []
+        player.send(+HST)
+        power = self.game.judge.map.powers[player.power]
+        self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
+                player.queue)
+    def test_history_turn(self):
         from language import HLD, HST, ORD, SPR, SUC
         self.set_option('Move Time Limit', 5)
         self.set_option('publish individual orders', True)
