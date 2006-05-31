@@ -70,8 +70,10 @@ class Network_Basics(NetworkTestCase):
         ''' "Reserved for AI use" tokens must never be sent over the wire.'''
         class ReservedSender(object):
             def __init__(self, send_method, rep, *args, **kwargs):
+                self.send = send_method
+            def register(self):
                 from language import Token
-                send_method(Token('HMM', 0x585F)())
+                self.send(Token('HMM', 0x585F)())
         self.connect_server([])
         client = self.Fake_Client(ReservedSender)
         client.open()
@@ -94,7 +96,6 @@ class Network_Basics(NetworkTestCase):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             def __init__(self, send_method, representation, power, passcode):
-                from language import NME
                 self.log_debug(9, 'Fake player started')
                 self.restarted = False
                 self.closed = False
@@ -102,7 +103,9 @@ class Network_Basics(NetworkTestCase):
                 self.rep = representation
                 self.power = power
                 self.passcode = passcode
-                send_method(NME(power.text)(str(passcode)))
+            def register(self):
+                from language import NME
+                self.send(NME(self.power.text)(str(self.passcode)))
             def close(self):
                 self.log_debug(9, 'Closed')
                 self.closed = True

@@ -49,6 +49,7 @@ class Observer(Verbose_Object):
         self.client_opts = client_options(self.__class__)
         self.send_out = send_method      # A function that accepts messages
         self.rep      = representation   # The representation message
+        self.game_id  = game_id          # A specific game to connect to
         self.closed   = False  # Whether the connection has ended, or should end
         self.map      = None   # The game board
         self.saved    = {}     # Positions saved from a SVE message
@@ -62,10 +63,12 @@ class Observer(Verbose_Object):
         
         # A list of message handlers that should be called in parallel.
         self.threaded = []
-        
-        # Register with the server
-        if game_id is None: self.send_identity()
-        else: self.send(SEL(game_id))
+    def register(self):
+        ''' Registers the client with the server.
+            Should be called as soon as possible after connection.
+        '''#'''
+        if self.game_id is None: self.send_identity()
+        else: self.send(SEL(self.game_id))
     def close(self): self.closed = True
     
     # Sending messages to the Server
@@ -254,6 +257,11 @@ class Player(Observer):
         # Usefully sent through keyword arguments
         self.power = kwargs.get('power')     # The power being played, or None
         self.pcode = kwargs.get('passcode')  # The passcode from the HLO message
+        if not isinstance(self.pcode, (int, None.__class__)):
+            try: self.pcode = int(self.pcode)
+            except ValueError:
+                self.log_debug(1, 'Invalid passcode "%r"', self.pcode)
+                self.pcode = None
     def close(self):
         self.__super.close()
         self.closed = True
@@ -278,12 +286,8 @@ class Player(Observer):
                 self.send(IAM(self.power)(self.pcode))
             else:
                 self.power = self.rep.get(self.power)
-                if self.power:
-                    try: self.pcode = int(pcode)
-                    except ValueError:
-                        self.log_debug(1, 'Invalid passcode "%r"', pcode)
-                        self.pcode = None
-                else: self.log_debug(1, 'Invalid power %r', self.power)
+                if not self.power:
+                    self.log_debug(1, 'Invalid power %r', self.power)
                 
                 # Send name first, to get it into the server's records
                 self.send(NME(self.name)(self.version))
@@ -489,7 +493,6 @@ class AutoObserver(Observer):
             ...         if msg[0] is ADM:
             ...             self.player.handle_ADM(msg)
             >>> p = Responder().player
-            Echo: << OBS
             >>> p.handle_ADM(ADM('Server')('An Observer has connected. '
             ...     'Have 5 players and 1 observers. Need 2 to start'))
             >>> p.handle_ADM(ADM('Geoff')('Does the observer want to play?'))

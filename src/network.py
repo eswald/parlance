@@ -275,6 +275,7 @@ class Client(Connection):
         # Create the Player
         if self.rep and not self.closed:
             self.player = self.pclass(self.send, self.rep, **self.kwargs)
+            self.player.register()
             return True
         else: return False
     def close(self):

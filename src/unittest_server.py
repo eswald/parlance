@@ -40,6 +40,7 @@ class Fake_Service(Service):
         self.player = None
         self.__super.__init__(client_id, None, client_id, server)
         self.player = player_class(self.handle_message, self.rep, **kwargs)
+        self.player.register()
         for msg in self.queue: self.handle_message(msg)
     def write(self, message):
         self.player.handle_message(message)
@@ -62,20 +63,25 @@ class ServerTestCase(unittest.TestCase):
         '''#'''
         name = 'Fake Player'
         def __init__(self, send_method, representation, **kwargs):
-            from language import NME, IAM, OBS, SEL
+            from language import NME, OBS
             self.log_debug(9, 'Fake player started')
             self.closed = False
-            self.power = power = kwargs.get('power')
-            self.pcode = pcode = kwargs.get('passcode')
+            self.power = kwargs.get('power')
+            self.pcode = kwargs.get('passcode')
             self.queue = []
             self.send = send_method
             self.rep = representation
-            if kwargs.has_key('game_id'): send_method(SEL(kwargs['game_id']))
-            if power and pcode: send_method(IAM(power)(pcode))
+            self.game_id = kwargs.get('game_id')
+            if kwargs.has_key('observe'): self.player_type = OBS
+            else: self.player_type = NME
+        def register(self):
+            from language import IAM, SEL
+            if self.game_id is not None: self.send(SEL(self.game_id))
+            if self.power and self.pcode:
+                self.send(IAM (self.power) (self.pcode))
             else:
-                if kwargs.has_key('observe'): key = OBS
-                else: key = NME
-                send_method(key (self.name) (self.__class__.__name__))
+                self.send(self.player_type (self.name)
+                        (self.__class__.__name__))
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
@@ -147,6 +153,7 @@ class ServerTestCase(unittest.TestCase):
                 # Create the Player
                 if self.rep and not self.closed:
                     self.player = self.pclass(self.write, self.rep)
+                    self.player.register()
                     return True
             return False
         def read_error(self, code):
@@ -294,7 +301,6 @@ class Server_Basics(ServerTestCase):
             '%s reported in civil disorder' % (player.power,))
     def test_historian(self):
         from language import HLD, HST, ORD, SEL, SPR, SUC, YES
-        self.set_verbosity(7)
         self.set_option('Move Time Limit', 5)
         self.set_option('publish individual orders', True)
         self.connect_server()
@@ -307,7 +313,6 @@ class Server_Basics(ServerTestCase):
         
         player = self.connect_player(self.Fake_Player,
                 game_id=game.game_id, observe=True)
-        print self.server.games[game.game_id].history
         self.assertContains(YES (SEL (game.game_id)), player.queue)
         player.queue = []
         player.send(HST(SPR, 1901))

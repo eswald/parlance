@@ -56,6 +56,7 @@ class PlayerTestCase(unittest.TestCase):
     def rejept(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
         self.player = player_class(self.handle_message, self.variant.rep, **kwargs)
+        self.player.register()
         self.player.threaded = []
     def send_hello(self, country=None):
         from xtended import ENG
