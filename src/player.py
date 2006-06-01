@@ -288,9 +288,11 @@ class Player(Observer):
                 # Internally started
                 self.send(IAM(self.power)(self.pcode))
             else:
-                self.power = self.rep.get(self.power)
-                if not self.power:
+                power = self.rep.get(self.power)
+                if not power:
                     self.log_debug(1, 'Invalid power %r', self.power)
+                    self.power = None
+                else: self.power = power
                 
                 # Send name first, to get it into the server's records
                 self.send(NME(self.name)(self.version))
