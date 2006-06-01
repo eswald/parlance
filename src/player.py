@@ -39,7 +39,7 @@ class client_options(config.option_class):
 class Observer(Verbose_Object):
     ''' Just watches the game, declining invitations to join.'''
     # Magic variables:
-    name = None        # Set this to a string for all subclasses.
+    name = None        # This will be the class name if not otherwise set.
     version = None     # Set this to a string to allow registration as a player.
     description = None # Set this to a string to allow use as a bot.
     options = ()       # Set of tuples: (name, type, config text, default)
@@ -57,6 +57,9 @@ class Observer(Verbose_Object):
         self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
+        
+        if not self.name:
+            self.name = self.__class__.__name__
         
         # A list of variables to remember across SVE/LOD
         self.remember = ['map']
@@ -429,25 +432,9 @@ class Player(Observer):
 
 class HoldBot(Player):
     ''' A simple bot to hold units in position.'''
-    name = 'HoldBot'
-    version = version_string(__version__, name)
+    version = version_string(__version__)
     description = 'Just holds its position'
     
-    class Cycler:
-        __slots__ = ('seq', 'index')
-        def __init__(self, sequence):
-            self.seq = list(sequence)
-            shuffle(self.seq)
-            self.index = 0
-        def next(self):
-            self.index += 1
-            self.index %= len(self.seq)
-            return self.seq[self.index]
-    names = Cycler(('Ed', 'Ned', 'Ted', 'Jed', 'Zed', 'Red', 'Fred'))
-    
-    def __init__(self, *args, **kwargs):
-        self.name = self.names.next()
-        self.__super.__init__(*args, **kwargs)
     def handle_NOW(self, message):
         ''' Sends the commands to hold all units in place.
             Disbands units that must retreat.
@@ -546,9 +533,10 @@ class Clock(AutoObserver):
 
 class Ladder(AutoObserver):
     ''' An observer to implement a ratings ladder.'''
-    
-    name = 'Ladder'
-    score_file = 'log/stats/ladder_scores'
+    options = (
+            ('score_file', str, 'ratings ladder score file',
+                'log/stats/ladder_scores'),
+    )
     
     def __init__(self, *args):
         self.__super.__init__(*args)
@@ -602,12 +590,12 @@ class Ladder(AutoObserver):
     
     def read_scores(self):
         try:
-            result = load(open(self.score_file))
+            result = load(open(self.client_opts.score_file))
             if not isinstance(result, dict): result = {}
         except: result = {}
         return result
     def store_scores(self, scores):
-        try: dump(scores, open(self.score_file, 'w'))
+        try: dump(scores, open(self.client_opts.score_file, 'w'))
         except IOError: pass
 
 class Echo(AutoObserver):
