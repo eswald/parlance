@@ -1,0 +1,143 @@
+<html>
+  <head>
+    <title>PyDip Todo List</title>
+    <meta name="description" content="Features yet to be added to the PyDip
+      Diplomacy software package.">
+  </head>
+  <body>
+    <h1>PyDip Todo List</h1>
+    <p>These are items that I want to add to the PyDip package, in my
+      <a name='http://catb.org/~esr/jargon/html/C/copious-free-time.html'>copious
+        free time</a>, listed in no particular order.</p>
+
+    <h2>Scorekeeping</h2>
+    <p>The server should probably keep and publish statistics on games played.
+      Some sort of verification system would be in order, to ensure that
+      nobody is misrepresented.  This might be handled through a "Server:
+      register" command, or similar.  I don't really expect many bots to
+      verify themselves, though.</p>
+    <p>The server should make its move logs available for perusal.</p>
+    <p>A <code>playback</code> admin command could be in order, sending one
+      turn per second.  That could also be done client-side, but the Mapper
+      doesn't have such a function yet.</p>
+
+    <h2>Delayed Order Processing</h2>
+    <p>The <a href='http://www.floc.net/dpjudge/?page=About'>DPjudge</a>
+      processes moves only every twenty minutes, giving the last player to
+      submit orders a little bit of time to revise them and/or set wait.
+      In this case, I would want to delay order processing by a configurable
+      amount, probably defaulting to zero.</p>
+    
+    <h2>Rule Variants</h2>
+    <p>Rule variants are extremely tricky, both because they require extra
+      coding in the Judge, and because the syntax doesn't support them at all.
+      However, I would like to support the Loeb9 map, wing units, crystal ball,
+      payola, and other variants, if there is any interest.</p>
+
+    <h2>PeaceBot</h2>
+    <p>PeaceBot is excessively limited at the moment.  Ideally, it should
+      assign one ally to do all the tactical processing each turn, through XDO
+      and YDO.  It should also detect stabs.</p>
+    
+    <h2>ComboBot</h2>
+    <p>The first tactical engine of my own design has failed due to speed
+      issues.  Perhaps it would help if I started by looking at the most
+      valuable provinces that could be influenced.</p>
+    
+    <h2>MapChatty</h2>
+    <p>This needs a way to display orders and redraw the screen.  That would
+      probably be best as a set of panels that could be toggled through
+      irc-style /commands.  A summary panel would be good, too; disconnection
+      messages tend to push it under the map.</p>
+    <p>It would be nice if the input line used the <code>readline</code>
+      interface, with history.  It would also be nice to have keys to scroll
+      the admin line display.  Do these conflict?</p>
+    <p>Eventually, this thing should allow me to play a game, not just
+      watch.</p>
+    
+    <h2>External clients</h2>
+    <p>I would like the ability to call external commands as bots, using an
+      <code>[external]</code> section of the config file.  Python 2.4's
+      <code>subprocess</code> module would probably be helpful here.</p>
+    
+    <h2>Internal clients</h2>
+    <p>Bots started from the server could be optimized a bit.  This would
+      probably start with the socket.socketpair() call, new in Python 2.4,
+      but may extend to avoiding the network layer altogether.</p>
+    
+    <h2>Comments and code style</h2>
+    <p>I need to go through the code and verify each comment and docstring.
+      While I'm at it, I should use a consistent code style, probably based on
+      <a href="http://www.python.org/dev/peps/pep-0008/">PEP 8</a>; in
+      particular, decide whether "and" and "or" go at the end or beginning of
+      a line, and whether to put space around parentheses in DAIDE-like
+      expressions.</p>
+    <p>I should also update to Python 2.4 syntax for sorted and reversed lists,
+      generator expressions, and parenthetical import statements.</p>
+    
+    <h2>DATC Options</h2>
+    <p>I should test David's server for its response to the DATC options; for
+      that matter, I should verify that it passes the normal tests.  Again,
+      the <code>subprocess</code> module may be useful here.</p>
+    <p>Various tests have yet to be written, and many options have yet to be
+      supported.  The comments in the config file should also reflect the lack
+      of support for various options.</p>
+    
+    <h2>Refactoring</h2>
+    <p>The various bot modules should be in a subdirectory, as should the test
+      modules.  Unfortunately, this requires either Python 2.5's relative
+      import syntax, or package installation.</p>
+    <p>The validation and startup code should probably be optimized a bit
+      more, particularly near regular expressions.</p>
+    <p>Project20M also needs some refactoring for thread-safety, option
+      configuration, and global variable reduction.</p>
+    <p>Token.opts should be removed entirely, and the init_language call moved
+      to the language module.</p>
+    <p>Game and Historian should be restructured into a weak reference
+      wrapper, particularly if other clients start using LST and SEL.</p>
+    <p>The select/poll loop should be refactored into a generic class.
+      It would then be useful for client managers and user input.</p>
+    
+    <h2>User Interface</h2>
+    <p>Some modules could give explanatory messages instead of doing nothing
+      when run as a script.</p>
+    <p>The command-line interface could use some serious option parsing,
+      probably tying into the config options.</p>
+    <p>Output might be better run through the <code>logger</code> package.</p>
+    <p>Graphics would probably be a good idea.  Particularly a map.</p>
+    
+    <h2>Network Interface</h2>
+    <p>It might be nice if a client kept trying to connect until it gets
+      through or the user gets bored.  Maybe.</p>
+    <p>Disconnecting a client when its network buffer clogs up is probably not
+      the best way to go about it.  Then again, it might have received a
+      chopped message anyway, and should be processing messages faster.</p>
+    
+    <h2>Standards Compliance</h2>
+    <p>My <a href="docs/syntax.html#HLO">DSD</a> behavior differs slightly
+      from the syntax document.  I should check whether orders are due,
+      instead of whether the power has been eliminated.  Then again, the
+      document doesn't specify what happens to the deadline for the next
+      phase...</p>
+    <p>Time messages can currently send or accept negative times, meaning
+      hours.  This is not official.  Better would be to have an optional
+      second parameter for the hours, so the time can still be accurate to the
+      second.</p>
+    <p>DSD-started pauses are no longer getting unpaused automatically.
+      This is clearly a bug.</p>
+    
+    <h2>Premature Draws</h2>
+    <p>The Judge can declare a draw after a certain number of static
+      years, which it defines as years in which no supply center counts change.
+      Should that instead be years in which no supply center changes hands?</p>
+    
+    <h2>Resource cleanup</h2>
+    <p>Something is failing to close the port properly in the test_timeout
+      unit test.</p>
+    <p>Everything that interacts with files should be wrapped in try...finally
+      blocks to close the file properly.  I also need to verify that the
+      log/games directory exists before writing into it.</p>
+    <p>The saved games directory really should be configurable.</p>
+    
+  </body>
+</html>
