@@ -218,13 +218,17 @@ class DefaultDict(dict):
             self[key] = result
         return result
 
-def version_string(revision, extra=None):
+def version_string(revision, extra=''):
     ''' Converts a Subversion revision string into a NME version string.'''
     import config
-    if extra: main = extra + ' '
-    else: main = ''
-    return revision.replace(' $', '').replace('$Revision: ',
-            'PyDip %s%s.' % (main, config.__version__))
+    space = extra and ' '
+    branch = config.__version__
+    rev = revision.replace(' $', '').replace('$Revision: ', 'r')
+    if branch == 'trunk': version = rev
+    elif branch.startswith('release-'):
+        version = branch.replace('release-', 'v')
+    else: version = rev + ' ' + branch
+    return 'PyDip %s%s%s' % (extra, space, version)
 
 def num2name(number):
     ''' Converts an integer into an English phrase.

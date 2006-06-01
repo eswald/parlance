@@ -12,7 +12,7 @@ from functions import absolute_limit, relative_limit, num2name, instances
 from language  import *
 
 import player, evilbot, dumbbot, peacebot, blabberbot, project20m
-bots = dict([(klass.name.lower(), klass) for klass in
+bots = dict([((klass.name or klass.__name__).lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
     evilbot.EvilBot,
