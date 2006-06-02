@@ -153,16 +153,15 @@ up and running, ordering, retrieving results, and general game management.</p>
 <h3>(o) Choosing a game.</h3>
 
 <h4><a name="LST">client_request = LST</a></h4>
-<h4>server_message = LST (game_id) (players_needed) ('variant_name') (variant)</h4>
-<!- - <h4>game_id != 'string'</h4> - ->
-<!- - <h4>game_id = number</h4> - ->
+<h4>server_message = LST ('gamename') (players_needed) ('variant_name') (variant)</h4>
 <!- - <h4>players_needed = number</h4> - ->
 
 <p>The client can request a list of games on the server by sending
 <b>LST</b>.  The server will respond with a <b>LST</b> message for each
 game, listing:</p>
 <ul>
-	<li><b>game_id</b> &mdash; a number assigned by the server</li>
+	<li><b>'gamename'</b> &mdash; a name to uniquely identify this game,
+	as detailed in <a href="#SVE">the <b>SVE</b> command</a></li>
 	<li><b>players_needed</b> &mdash; the number of unfilled
 	or disconnected powers</li>
 	<li><b>'variant_name'</b> &mdash; the name of the variant,
@@ -174,34 +173,34 @@ game, listing:</p>
 <p>Alternatively, the server can respond with <b>REJ (LST)</b> if it
 does not have multi-game capabilities.</p>
 
-<h4>client_request = LST (game_id)</h4>
+<h4>client_request = LST ('gamename')</h4>
 
 <p>The client can send this command to request the <b>LST</b> message
 for a single game.</p>
 
-<h4>client_command = SEL (game_id)</h4>
+<h4>client_command = SEL ('gamename')</h4>
 
 <p>This command is sent by the client to the server at any time,
 including before any NME, OBS, or IAM message.  It chooses a game to
-participate in, by its <b>game_id</b>, as included in the <b>LST</b>
+participate in by its <b>'gamename'</b>, as included in the <b>LST</b>
 message.</p>
 
 <p><em>Warning:</em> After sending this command, the client must be
 prepared to receive a new <a href="protocol.html#RM">Representation Message</a>,
 in case the selected game uses a different map than the current game.</p>
 
-<p>The server will respond with <b>YES (SEL (game_id))</b> if the game
+<p>The server will respond with <b>YES (SEL ('gamename'))</b> if the game
 selection is successful, even if the client had already been
-participating in the selected game, or <b>REJ (SEL (game_id))</b> if the
-<b>game_id</b> is invalid.</p>
+participating in the selected game, or <b>REJ (SEL ('gamename'))</b> if
+there is no game by that name.</p>
 
 <h4>client_request = SEL</h4>
-<h4>server_message = SEL (game_id)</h4>
+<h4>server_message = SEL ('gamename')</h4>
 
 <p>The client can also send <b>SEL</b> with no parameters, to request
-the <b>game_id</b> of the currently selected game.  The server will
-respond with <b>SEL (game_id)</b>, or with <b>REJ (SEL)</b> if the
-current game has no <b>game_id</b>, such as in a server without
+the name of the currently selected game.  The server will
+respond with <b>SEL ('gamename')</b>, or with <b>REJ (SEL)</b> if the
+current game has no name, such as in a server without
 multi-game capabilities.</p>
 -->
 

@@ -4,11 +4,13 @@
 '''#'''
 
 import config, re
+from os        import path
 from random    import randint, shuffle
-from time      import time, localtime
+from time      import time
+
 from gameboard import Turn
-from functions import any, s, expand_list, DefaultDict, Verbose_Object
-from functions import absolute_limit, relative_limit, num2name, instances
+from functions import (absolute_limit, expand_list, instances, num2name,
+        relative_limit, s, timestamp, DefaultDict, Verbose_Object)
 from language  import *
 
 import player, evilbot, dumbbot, peacebot, blabberbot, project20m
@@ -54,6 +56,7 @@ class server_options(config.option_class):
         self.log_games = self.getboolean('record completed games', False)
         self.shuffle   = self.getboolean('randomize power assignments', True)
         self.variant   = self.getstring( 'default variant',        'standard')
+        self.gamepath  = self.getstring( 'saved game path',        path.join('log', 'games'))
         self.games     = self.getint(    'number of games',        1)
         self.veto_time = self.getint(    'time allowed for vetos', 20)
         self.bot_min   = self.getint(    'minimum player count for bots', 0)
@@ -99,23 +102,17 @@ class Server(Verbose_Object):
         self.__super.__init__()
         self.options   = server_options()
         self.manager   = thread_manager
-        self.timestamp = self.create_timestamp()
         self.clients   = {}
-        self.games     = []
+        self.games     = {}
+        self.default   = []
         self.closed    = False
+        self.started_games = 0
         if not self.start_game():
             self.log_debug(1, 'Unable to start default variant')
             self.close()
-    def create_timestamp(self):
-        chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-        now = localtime()
-        year = (now[0] % 25) + 10
-        month = now[1]
-        day = now[2]
-        hour = now[3] + 10
-        return chars[year] + chars[month] + chars[day] + chars[hour]
     def filename(self, game_id):
-        return 'log/games/%s%04d.dpp' % (self.timestamp, game_id)
+        fname = game_id + path.extsep + 'dpp'
+        return path.join(self.options.gamepath, fname)
     
     def add_client(self, client):
         self.clients[client.client_id] = client
@@ -127,21 +124,20 @@ class Server(Verbose_Object):
             Meant to be called when the last client disconnects.
         '''#'''
         open_games = False
-        for game in self.games:
-            # Save completed games and remove them from memory
-            if game:
-                if game.closed:
-                    if (self.options.log_games and game.started
-                            and not game.saved):
-                        self.archive(game)
-                else: open_games = True
+        for game_id, game in self.games.items():
+            if game.closed:
+                if game.saved:
+                    # Remove saved games from memory
+                    del self.games[game_id]
+            else: open_games = True
         if not open_games:
             # Check whether the server itself should close
-            if 0 < self.options.games <= len(self.games):
+            if 0 < self.options.games <= self.started_games:
                 self.log_debug(11, 'Completed all requested games')
                 self.close()
             else: self.start_game()
     def archive(self, game):
+        if not self.options.log_games: return
         fname = self.filename(game.game_id)
         try:
             saved = open(fname, 'w')
@@ -151,7 +147,6 @@ class Server(Verbose_Object):
             self.log_debug(7, 'Unable to save %s: %s', fname, err)
         else:
             self.log_debug(7, '%s archived in %s', game.prefix, fname)
-            self.games[game.game_id] = None
     
     def broadcast(self, message):
         self.log_debug(2, 'ALL << %s', message)
@@ -214,64 +209,67 @@ class Server(Verbose_Object):
                 else: client.admin('Unrecognized command: "%s"', text.strip())
     def handle_SEL(self, client, message):
         if len(message) > 3:
-            reply = self.join_game(client, message[2].value()) and YES or REJ
+            reply = self.join_game(client, message.fold()[1][0]) and YES or REJ
             client.send(reply(message))
         else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
-        for game in self.games:
+        for game in self.games.itervalues():
             if game: client.send(game.listing())
     
     def default_game(self):
-        games = list(self.games)
-        games.reverse()
-        for game in games:
-            if game and not game.closed: return game
+        while self.default:
+            game = self.default[-1]
+            if game.closed: self.default.pop()
+            else: return game
         else: return self.start_game()
     def join_game(self, client, game_id):
-        if client.game.game_id == game_id: return True
-        elif game_id < len(self.games):
-            client.game.disconnect(client)
+        new_game = None
+        result = False
+        
+        if client.game.game_id == game_id: result = True
+        elif self.games.has_key(game_id):
             new_game = self.games[game_id]
-            if not new_game:
-                if self.options.log_games:
-                    # Resuscitate an archived game as a Historian
-                    new_game = self.games[game_id] = Historian(self, game_id)
-                    try:
-                        saved = open(self.filename(game_id), 'rU')
-                        result = new_game.load(saved)
-                        saved.close()
-                    except: return False
-                else: return False
-            else: result = True
-            if result:
-                client.game = new_game
-                client.set_rep(new_game.variant.rep)
-            return result
-        else: return False
+            result = True
+        elif self.options.log_games:
+            # Resuscitate an archived game as a Historian
+            new_game = Historian(self, game_id)
+            try:
+                saved = open(self.filename(game_id), 'rU')
+                result = new_game.load(saved)
+                saved.close()
+            except IOError: pass
+            except Exception, e:
+                self.log_debug(1,
+                        'Exception while loading a saved game: %s %s',
+                        e.__class__.__name__, e.args)
+            if result: self.games[game_id] = new_game
+        
+        if result and new_game:
+            client.change_game(new_game)
+        return result
     def start_game(self, client=None, match=None):
         if match and match.lastindex:
             var_name = match.group(2)
         else: var_name = self.options.variant
         variant = config.variants.get(var_name)
         if variant:
-            game_id = len(self.games)
+            game_id = timestamp()
+            self.started_games += 1
             if client: client.admin('New game started, with id %s.', game_id)
             game = Game(self, game_id, variant)
-            self.games.append(game)
+            self.games[game_id] = game
+            self.default.append(game)
             self.manager.add_dynamic(game)
             self.manager.start_clients(game_id)
             return game
         elif client: client.admin('Unknown variant "%s"', var_name)
         return None
     def select_game(self, client, match):
-        try: num = int(match.group(1))
-        except ValueError:
-            client.admin('The game_id must be an integer.')
-        else:
-            if self.join_game(client, num):
-                client.admin('Joined game #%d.', num)
-            else: client.admin('Unknown game #%d.', num)
+        game_id = match.group(1)
+        if self.join_game(client, game_id):
+            client.admin('Joined game %s.', game_id)
+        else: client.admin('Unknown game %s.', game_id)
     
     def list_variants(self, client, match):
         names = config.variants.keys()
@@ -289,17 +287,13 @@ class Server(Verbose_Object):
         for bot_class in bots.itervalues():
             client.admin('  %s - %s', bot_class.name, bot_class.description)
     def list_status(self, client, match):
-        for game in self.games:
-            message = None
-            if game and not game.closed:
-                if game.started:
-                    if game.paused: message = 'Paused'
-                    else: message = 'In progress'
-                else: message = 'Forming'
-            elif game and game.clients: message = 'Closed'
-            if message:
-                client.admin('Game %s: %s; %s', game.game_id,
-                        message, game.has_need())
+        for game in self.games.itervalues():
+            if game.closed: message = 'Closed'
+            elif game.paused: message = 'Paused'
+            elif game.started: message = 'In progress'
+            else: message = 'Forming'
+            client.admin('Game %s: %s; %s', game.game_id,
+                    message, game.has_need())
     def list_powers(self, client, match):
         for player in client.game.players.values():
             if player.client:
@@ -313,10 +307,10 @@ class Server(Verbose_Object):
             self.broadcast_admin('The server is shutting down.  Good-bye.')
             self.log_debug(10, 'Closing')
             self.closed = True
-            for game in self.games:
-                if game and self.options.log_games and not game.saved:
+            for game in self.games.itervalues():
+                if game.started and not game.saved:
                     self.archive(game)
-                if game and not game.closed: game.close()
+                if not game.closed: game.close()
             self.broadcast(+OFF)
             if not self.manager.closed: self.manager.close()
             self.log_debug(11, 'Done closing')
@@ -329,7 +323,7 @@ class Server(Verbose_Object):
             '  new game - Starts a new game of Standard Diplomacy'),
         Command(r'(new|start) (\w+) game', start_game,
             '  new <variant> game - Starts a new game, with the <variant> map'),
-        #Command(r'select game #?(\w+)', select_game,
+        #Command(r'select game (\w+)', select_game,
         #    '  select game <id> - Switches to game <id>, if it exists'),
         Command(r'list variants', list_variants,
             '  list variants - Lists known map variants'),
@@ -381,7 +375,7 @@ class Historian(Verbose_Object):
         '''#'''
         self.server = server
         self.game_id = game_id
-        self.prefix = 'Historian %d' % game_id
+        self.prefix = 'Historian %s' % game_id
         self.judge = None
         self.saved = False
         self.closed = True
@@ -392,6 +386,8 @@ class Historian(Verbose_Object):
         self.history = {}
     
     def save(self, stream):
+        if not self.started:
+            raise UserWarning('Trying to save an unstarted game')
         def write_message(msg): stream.write(str(msg) + '\n')
         def write(token): write_message(self.messages[token])
         write(LST)
@@ -596,7 +592,7 @@ class Game(Historian):
         self.__super.__init__(server, game_id)
         
         # Override certain Historian variables
-        self.prefix         = 'Game %d' % game_id
+        self.prefix         = 'Game %s' % game_id
         self.started        = False
         self.closed         = False
         self.variant        = variant
@@ -730,6 +726,7 @@ class Game(Historian):
                 summary = self.summarize()
                 if not self.saved: self.broadcast(summary)
                 self.messages[SMR] = summary
+                self.server.archive(self)
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}

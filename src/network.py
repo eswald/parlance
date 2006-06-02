@@ -293,7 +293,7 @@ class Service(Connection):
         self.errors    = 0
         self.game      = server.default_game()
         self.rep       = self.game.variant.rep
-        self.prefix    = self.game.prefix + ', #' + str(client_id)
+        self.prefix    = 'Service #%d (%s)' % (client_id, self.game.game_id)
         
         server.add_client(self)
     def power_name(self):
@@ -329,10 +329,14 @@ class Service(Connection):
         self.booted = self.country
         self.country = None
         self.close()
-    def set_rep(self, representation):
+    def change_game(self, new_game):
+        self.game.disconnect(self)
+        self.game = new_game
+        representation = new_game.variant.rep
         if representation != self.rep:
             self.rep = representation
             self.send_RM()
+        self.prefix = 'Service #%d (%s)' % (self.client_id, new_game.game_id)
     def start_IM_check(self, manager):
         self.IM_check = self.TimeoutMonitor(self)
         manager.add_timed(self.IM_check, 30)
@@ -425,6 +429,7 @@ class RawServer(Verbose_Object):
         class FakeGame(Verbose_Object):
             def __init__(self, variant_name):
                 self.variant = config.variants.get(variant_name)
+                self.game_id = 'ID'
             def disconnect(self, client):
                 print 'Client #%d has disconnected.' % client.client_id
         

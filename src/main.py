@@ -306,6 +306,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
 
 def run_server(server_class, default_verbosity):
     from network   import ServerSocket
+    verbosity = default_verbosity
     opts = {}
     try:
         for arg in argv[1:]:
@@ -322,7 +323,7 @@ def run_server(server_class, default_verbosity):
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
     else:
         config.option_class.local_opts.update(opts)
-        Verbose_Object.verbosity = default_verbosity
+        Verbose_Object.verbosity = verbosity
         manager = ThreadManager()
         server = ServerSocket(server_class, manager)
         if server.open():

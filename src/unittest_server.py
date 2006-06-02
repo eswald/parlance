@@ -52,7 +52,7 @@ class Fake_Service(Service):
             self.log_debug(4, '%3s >> %s', self.power_name(), message)
             self.server.handle_message(self, message)
         else: self.queue.append(message)
-    def set_rep(self, representation): self.player.rep = representation
+    def send_RM(self): self.player.rep = self.rep
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''
@@ -259,7 +259,7 @@ class Server_Basics(ServerTestCase):
         game.run_judge()
         game.close()
         self.server.check_close()
-        self.failIf(self.server.games[game.game_id])
+        self.failIf(self.server.games.has_key(game.game_id))
         
         player = self.connect_player(self.Fake_Player,
                 game_id=game.game_id, observe=True)
@@ -322,7 +322,6 @@ class Server_Basics(ServerTestCase):
         ]
         self.assertEqual([str(msg) + '\n' for msg in expected], result)
     def test_archive_game(self):
-        from functions import any
         self.set_option('record completed games', True)
         self.connect_server()
         self.start_game()
@@ -330,7 +329,7 @@ class Server_Basics(ServerTestCase):
         self.game.close()
         self.server.check_close()
         self.failUnless(self.game.saved)
-        self.failIf(any(self.server.games))
+        self.failIf(self.server.games)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
@@ -573,7 +572,8 @@ class Server_Admin_Local(Server_Admin):
     def test_status_request(self):
         ''' Whether a local connection can request game status information'''
         self.assertAdminResponse(self.backup, 'status',
-                'Game 0: Forming; Have 3 players and 0 observers. Need 4 to start.')
+                ('Game %s: Forming; ' % self.game.game_id) +
+                'Have 3 players and 0 observers. Need 4 to start.')
     def test_power_listing(self):
         ''' Whether a local connection can power assignments'''
         game = self.game
@@ -882,7 +882,7 @@ class Server_Multigame(ServerTestCase):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
         self.connect_player(self.Fake_Player)
-        self.failUnless(len(self.server.games[1].clients))
+        self.failUnless(len(self.server.default[1].clients))
     def test_start_game(self):
         self.master.admin('Server: start standard game')
         self.failUnlessEqual(len(self.server.games), 2)
@@ -891,13 +891,13 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(len(self.server.games), 2)
         self.connect_player(self.Fake_Player)
         self.connect_player(self.Fake_Player)
-        self.failUnlessEqual(len(self.server.games[1].clients), 2)
+        self.failUnlessEqual(len(self.server.default[1].clients), 2)
     def test_old_reconnect(self):
         game = self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
         game.close()
         self.connect_player(self.Fake_Player)
-        self.failUnlessEqual(len(self.server.games[0].clients), 2)
+        self.failUnlessEqual(len(self.server.default[0].clients), 2)
     def test_old_bot_connect(self):
         ''' Starting a bot connects it to your game, not the current one.'''
         game = self.server.default_game()
@@ -914,30 +914,38 @@ class Server_Multigame(ServerTestCase):
         self.assertContains(MAP('sailho'), player.queue)
     def test_RM_change(self):
         old_rep = self.game.variant.rep
+        old_id = self.game.game_id
         self.new_game('sailho')
-        newbie = self.connect_player(self.Fake_Player, game_id=0)
+        newbie = self.connect_player(self.Fake_Player, game_id=old_id)
         self.failUnlessEqual(newbie.rep, old_rep)
     
     def test_SEL_reply(self):
         from language import SEL
         self.master.queue = []
         self.master.send(+SEL)
-        self.assertContains(SEL(0), self.master.queue)
+        self.assertContains(SEL(self.game.game_id), self.master.queue)
     def test_LST_reply(self):
         from language import LST
         self.master.queue = []
         self.master.send(+LST)
         params = self.game.options.get_params()
-        self.assertContains(LST(0)(6)('standard')(params), self.master.queue)
+        self.assertContains(
+                LST (self.game.game_id) (6) ('standard') (params),
+                self.master.queue)
     def test_multigame_LST_reply(self):
         from language import LST
         std_params = self.game.options.get_params()
+        game_id = self.game.game_id
         game = self.new_game('sailho')
         self.master.queue = []
         self.master.send(+LST)
         sailho_params = game.options.get_params()
-        self.assertContains(LST(0)(6)('standard')(std_params), self.master.queue)
-        self.assertContains(LST(1)(4)('sailho')(sailho_params), self.master.queue)
+        self.assertContains(
+                LST (game_id) (6) ('standard') (std_params),
+                self.master.queue)
+        self.assertContains(
+                LST (game.game_id) (4) ('sailho') (sailho_params),
+                self.master.queue)
 
 class Server_Bugfix(ServerTestCase):
     ''' Test cases to reproduce bugs found.'''

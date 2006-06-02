@@ -6,6 +6,7 @@
 
 from os        import linesep
 from itertools import ifilter, ifilterfalse
+from time      import localtime
 
 def any(sequence):
     ''' Returns True any item in the sequence is true.
@@ -334,6 +335,33 @@ def fails(test_function):
         except test_case.failureException: pass
         else: test_case.fail('Test unexpectedly passed')
     return test_wrapper
+
+def timestamp(static=[None, 0]):
+    ''' Creates a game name from the current time.
+        This implementation can handle up to fifty games per second;
+        beyond that, it starts creating nine-character names.
+        The names will sort chronologically in ASCII-based systems,
+        but wrap every twenty years.
+        
+        Vowels have been removed to prevent production of real words.
+        This also reduces the chance of conflict with human-given names.
+        All names will start with a letter and end in two numbers;
+        the other five characters can be letters or numbers.
+    '''#'''
+    chars = "0123456789BCDFGHJKLMNPQRSTVWXYZ"
+    now = localtime()
+    year = (now[0] % 20) + 10   # 10 - 29
+    month = now[1]              #  1 - 12
+    day = now[2] - 1            #  0 - 30
+    hour = now[3]               #  0 - 23
+    minute = now[4] // 2        #  0 - 29
+    second = now[5] // 2        #  0 - 29 (or perhaps 30)
+    result = (chars[year] + chars[month] + chars[day] +
+            chars[hour] + chars[minute] + chars[second])
+    if result == static[0]: static[1] += 1
+    else: static[1] = 0
+    static[0] = result
+    return '%s%02d' % (result, static[1])
 
 def _test():
     import doctest
