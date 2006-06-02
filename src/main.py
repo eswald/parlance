@@ -19,13 +19,13 @@ __all__ = [
 ]
 
 class ThreadManager(Verbose_Object):
-    ''' Manages three types of clients: polled, timed, and threaded.
+    ''' Manages four types of clients: polled, timed, threaded, and dynamic.
         Each type of client must have a close() method and corresponding
-        closed property.  A client will be removed if it closes itself, and
-        will be closed by the loop when the ThreadManager closes.
+        closed property.  A client will be removed if it closes itself;
+        otherwise, it will be closed when the ThreadManager closes.
         
-        Each client must also have a prefix property, which should be a string,
-        and a run() method, which is called as described below.
+        Each client must also have a prefix property, which should be a
+        string, and a run() method, which is called as described below.
         
         Polled clients have a fileno(), which indicates a file descriptor.
         The client's run() method is called whenever that file descriptor
@@ -36,6 +36,11 @@ class ThreadManager(Verbose_Object):
         The run() method of a timed client is called after the amount of
         time specified when it is registered.  The specified delay is a
         minimum, not an absolute; polled clients take precedence.
+        
+        Dynamic clients are like timed clients, but have a time_left() method
+        to specify when to call the run() method.  The time_left() method is
+        called each time through the polling loop, and should return either
+        a number of seconds (floating point is permissible) or None.
         
         The run() method of a threaded client is called immediately in
         a separate thread.  The manager will wait for all threads started
@@ -54,33 +59,29 @@ class ThreadManager(Verbose_Object):
         self.polled = {}        # fd -> client
         self.timed = []         # (time, client)
         self.threaded = []      # (thread, client)
+        self.dynamic = []       # client
         self.closed = False
         
         # Todo: Make these configurable
+        self.autostart = []
         self.wait_time = 600
         self.sleep_time = 1
+        self.pass_exceptions = False
     def clients(self):
         return [item[1] for item in chain(self.polled.iteritems(),
-                self.timed, self.threaded)]
+                self.timed, self.threaded)] + self.dynamic
     
     def run(self):
         ''' The main loop; never returns until the manager closes.'''
         self.log_debug(10, 'Main loop started')
         try:
             while not self.closed:
-                timeout = self.get_timeout()
-                result = False
-                if self.polled:
-                    method = self.polling and self.poll or self.select
-                    self.log_debug(14, '%s()ing for %.3f seconds',
-                            method.__name__, timeout)
-                    result = method(timeout)
-                elif self.timed: sleep(timeout)
-                elif self.threaded: sleep(self.sleep_time)
+                self.process(self.wait_time)
+                if self.clients():
+                    self.log_debug(7, 'sleep()ing for %.3f seconds',
+                            self.sleep_time)
+                    sleep(self.sleep_time)
                 else: self.close()
-                if not result:
-                    if self.timed: self.check_timed()
-                    elif self.threaded: self.clean_threaded()
             self.log_debug(11, 'Main loop ended')
         except KeyboardInterrupt:
             self.log_debug(7, 'Interrupted by user')
@@ -89,6 +90,25 @@ class ThreadManager(Verbose_Object):
             self.close()
             raise
         self.close()
+    def process(self, wait_time=1):
+        ''' Runs as long as there is something productive to do.'''
+        method = self.polling and self.poll or self.select
+        while not self.closed:
+            timeout = self.get_timeout()
+            result = False
+            if self.polled:
+                poll_time = (timeout is None) and wait_time or timeout
+                self.log_debug(7, '%s()ing for %.3f seconds',
+                        method.__name__, poll_time)
+                result = method(poll_time)
+            elif timeout:
+                self.log_debug(7, 'sleep()ing for %.3f seconds', timeout)
+                sleep(timeout)
+            if not result:
+                if timeout is None: break
+                if self.timed: self.check_timed()
+                if self.dynamic: self.check_dynamic()
+        self.clean_threaded()
     def attempt(self, client):
         self.log_debug(12, 'Running %s', client.prefix)
         try: client.run()
@@ -96,17 +116,24 @@ class ThreadManager(Verbose_Object):
             self.log_debug(1, 'Exception running %s: %s %s',
                     client.prefix, e.__class__.__name__, e.args)
             if not client.closed: client.close()
-            # Todo: Allow configuration to re-raise the error,
-            # or at least print the traceback.
+            if self.pass_exceptions: raise
+    def close(self):
+        self.closed = True
+        self.clean_threaded()
+        for client in self.clients():
+            if not client.closed: client.close()
+        self.wait_threads()
     
     # Polled client handling
     def add_polled(self, client):
+        self.log_debug(11, 'New polled client: %s', client.prefix)
         fd = client.fileno()
         self.polled[fd] = client
         if self.polling: self.polling.register(fd, self.flags)
     def remove_polled(self, fd):
         # Warning: Only to be used from run() or one of its calls;
         # elsewhere, call the close() method of the client.
+        self.log_debug(11, 'Removing polled client: %s', self.polled[fd].prefix)
         del self.polled[fd]
         if self.polling: self.polling.unregister(fd)
     def select(self, timeout):
@@ -158,13 +185,22 @@ class ThreadManager(Verbose_Object):
     
     # Timed client handling
     def add_timed(self, client, delay):
-        deadline = time() + delay + 0.005
+        self.log_debug(11, 'New timed client: %s', client.prefix)
+        deadline = time() + delay
         self.timed.append((deadline, client))
+        return deadline
+    def add_dynamic(self, client):
+        self.log_debug(11, 'New dynamic client: %s', client.prefix)
+        self.dynamic.append(client)
     def get_timeout(self):
         now = time()
-        deadlines = [deadline for deadline, client in self.timed]
-        if deadlines: result = max(0, min(deadlines) - now)
-        else: result = self.wait_time
+        times = [t for t in (client.time_left(now)
+                for client in self.dynamic if not client.closed)
+                if t is not None]
+        when = [t for t,c in self.timed if not c.closed]
+        if when: times.append(max(0, 0.005 + min(when) - now))
+        if times: result = min(times)
+        else: result = None
         return result
     def check_timed(self):
         self.log_debug(14, 'Checking timed clients')
@@ -172,40 +208,53 @@ class ThreadManager(Verbose_Object):
         timed = self.timed
         self.timed = []
         for deadline, client in timed:
-            if client.closed: continue
+            if client.closed:
+                self.log_debug(11, 'Removing timed client: %s', client.prefix)
+                continue
             if deadline < now: self.attempt(client)
             else: self.timed.append((deadline, client))
+    def check_dynamic(self):
+        self.log_debug(14, 'Checking dynamic clients')
+        now = time()
+        removals = []
+        for client in self.dynamic:
+            if client.closed:
+                self.log_debug(11, 'Removing dynamic client: %s', client.prefix)
+                removals.append(client)
+            elif None is not client.time_left(now) <= 0: self.attempt(client)
+        for client in removals: self.dynamic.remove(client)
     
     # Threaded client handling
     def add_threaded(self, client):
-        thread = Thread(target=self.attempt, args=(client))
+        self.log_debug(11, 'New threaded client: %s', client.prefix)
+        thread = Thread(target=self.attempt, args=(client,))
         thread.start()
         self.threaded.append((thread, client))
-    def close(self):
-        self.closed = True
-        self.clean_threaded()
-        for client in self.clients():
-            if not client.closed: client.close()
+    def add_client(self, player_class, **kwargs):
+        from network import Client
+        name = player_class.name or player_class.__name__
+        client = Client(player_class, **kwargs)
+        result = client.open()
+        if result:
+            self.add_polled(client)
+            self.log_debug(10, 'Opened a Client for ' + name)
+        else: self.log_debug(7, 'Failed to open a Client for ' + name)
+        return result and client
+    def start_clients(self, game_id):
+        for klass in self.autostart:
+            self.add_client(klass, game_id=game_id)
+    def wait_threads(self):
         for thread, client in self.threaded:
             while thread.isAlive():
                 try: sleep(self.sleep_time)
                 except KeyboardInterrupt:
+                    if not client.closed: client.close()
                     print 'Still waiting for threads...'
     def clean_threaded(self):
         self.log_debug(14, 'Checking threaded clients')
         self.threaded = [item for item in self.threaded if item[0].isAlive()]
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
-    from network   import Client
-    class ClientThread(object):
-        def __init__(self, client):
-            self.client = client
-            self.fileno = client.fileno
-            self.close = client.close
-            self.run = client.check
-            self.prefix = client.prefix
-        @property
-        def closed(self): return self.client.closed
     name = player_class.name or player_class.__name__
     num = 1
     opts = {}
@@ -243,14 +292,13 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
             num -= 1
             if countries:
                 nation, pcode = countries.popitem()
-                client = Client(player_class, power=nation, passcode=pcode)
-            else: client = Client(player_class)
-            if client.open():
-                manager.add_polled(ClientThread(client))
-            else: print 'Failed to start %s.  Sorry.' % name
+                result = manager.add_client(player_class,
+                        power=nation, passcode=pcode)
+            else: result = manager.add_client(player_class)
+            if not result: print 'Failed to start %s.  Sorry.' % name
         manager.run()
 
-def run_server(server_class, *server_args):
+def run_server(server_class):
     from network   import ServerSocket
     verbosity = 7
     opts = {}
@@ -270,8 +318,11 @@ def run_server(server_class, *server_args):
     else:
         config.option_class.local_opts.update(opts)
         Verbose_Object.verbosity = verbosity
-        server = ServerSocket(server_class, *server_args)
-        if server.open(): server.run()
+        manager = ThreadManager()
+        server = ServerSocket(server_class, manager)
+        if server.open():
+            manager.add_polled(server)
+            manager.run()
         else: server.log_debug(1, 'Failed to open the server.')
 
 # Todo: Use a full option-parsing system, instead of this ad-hoc stuff.

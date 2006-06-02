@@ -39,7 +39,7 @@ class client_options(config.option_class):
 class Observer(Verbose_Object):
     ''' Just watches the game, declining invitations to join.'''
     # Magic variables:
-    name = None        # This will be the class name if not otherwise set.
+    name = None        # Set this to a string in each instantiable subclass.
     version = None     # Set this to a string to allow registration as a player.
     description = None # Set this to a string to allow use as a bot.
     options = ()       # Set of tuples: (name, type, config text, default)
@@ -57,9 +57,6 @@ class Observer(Verbose_Object):
         self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
-        
-        if not self.name:
-            self.name = self.__class__.__name__
         
         # A list of variables to remember across SVE/LOD
         self.remember = ['map']
@@ -269,8 +266,8 @@ class Player(Observer):
         self.__super.close()
         self.closed = True
     def prefix(self):
-        if self.power: return '%s (%s)' % (self.__class__.__name__, self.power)
-        else: return self.__class__.__name__
+        if self.power: return '%s (%s)' % (self.__class__.name, self.power)
+        else: return self.__class__.name
     prefix = property(fget=prefix)
     
     # Starting the game
@@ -434,6 +431,8 @@ class Player(Observer):
 
 class HoldBot(Player):
     ''' A simple bot to hold units in position.'''
+    
+    name = 'HoldBot'
     version = version_string(__version__)
     description = 'Just holds its position'
     

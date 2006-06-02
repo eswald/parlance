@@ -12,7 +12,7 @@ from functions import absolute_limit, relative_limit, num2name, instances
 from language  import *
 
 import player, evilbot, dumbbot, peacebot, blabberbot, project20m
-bots = dict([((klass.name or klass.__name__).lower(), klass) for klass in
+bots = dict([(klass.name.lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
     evilbot.EvilBot,
@@ -87,56 +87,20 @@ class DelayedAction(object):
     def call(self):
         if self.callback: self.callback(*self.args)
 
-class Client_Manager(Verbose_Object):
-    def __init__(self):
-        opts = main_options()
-        self.classes = [klass for klass in opts.clients if klass]
-        self.reserved = len(opts.clients) - len(self.classes)
-        self.threads = []
-    def start_clients(self):
-        for klass in self.classes: self.start_thread(klass)
-    def async_start(self, player_class, number, callback=None, **kwargs):
-        from threading import Thread
-        thread = Thread(target=self.start_threads,
-                args=(player_class, number, callback), kwargs=kwargs)
-        self.threads.append((thread, None))
-        thread.start()
-    def start_threads(self, player_class, number, callback=None, **kwargs):
-        success = failure = 0
-        for dummy in range(number):
-            if self.start_thread(player_class, **kwargs):
-                success += 1
-            else: failure += 1
-        if callback: callback(success, failure)
-        return success, failure
-    def start_thread(self, player_class, **kwargs):
-        from network import Client
-        client = Client(player_class, **kwargs)
-        thread = client.start()
-        if thread:
-            self.threads.append((thread, client))
-            self.log_debug(10, 'Client %s opened' % player_class.__name__)
-        else: self.log_debug(7, 'Client %s failed to open' % player_class.__name__)
-        return thread
-    def close_threads(self):
-        for thread, client in self.threads:
-            if client and not client.closed: client.close()
-            while thread.isAlive(): thread.join(1)
-
 class Server(Verbose_Object):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
     
-    def __init__(self, broadcast_function, client_manager):
+    def __init__(self, thread_manager):
         ''' Initializes instance variables, including:
             - options          Option defaults for this program
         '''#'''
         self.__super.__init__()
         self.options   = server_options()
-        self.broadcast = broadcast_function
-        self.manager   = client_manager
+        self.manager   = thread_manager
         self.timestamp = self.create_timestamp()
+        self.clients   = {}
         self.games     = []
         self.closed    = False
         if not self.start_game():
@@ -153,16 +117,11 @@ class Server(Verbose_Object):
     def filename(self, game_id):
         return 'log/games/%s%04d.dpp' % (self.timestamp, game_id)
     
-    def deadline(self):
-        now = time()
-        time_left = [t for t in [game.max_time(now)
-                for game in self.games if game]
-            if t is not None]
-        if time_left: return max([0, min(time_left)])
-        else: return None
-    def check(self):
-        open_games = [game for game in self.games if game and not game.closed]
-        for game in open_games: game.check_flags()
+    def add_client(self, client):
+        self.clients[client.client_id] = client
+    def disconnect(self, client):
+        del self.clients[client.client_id]
+        if not self.clients: self.check_close()
     def check_close(self):
         ''' Closes the server if all requested games have been completed.
             Meant to be called when the last client disconnects.
@@ -194,6 +153,9 @@ class Server(Verbose_Object):
             self.log_debug(7, '%s archived in %s', game.prefix, fname)
             self.games[game.game_id] = None
     
+    def broadcast(self, message):
+        self.log_debug(2, 'ALL << %s', message)
+        for client in self.clients.values(): client.write(message)
     def broadcast_admin(self, text):
         if self.options.snd_admin: self.broadcast(ADM('Server')(text))
     
@@ -297,7 +259,8 @@ class Server(Verbose_Object):
             if client: client.admin('New game started, with id %s.', game_id)
             game = Game(self, game_id, variant)
             self.games.append(game)
-            self.manager.start_clients()
+            self.manager.add_dynamic(game)
+            self.manager.start_clients(game_id)
             return game
         elif client: client.admin('Unknown variant "%s"', var_name)
         return None
@@ -355,7 +318,7 @@ class Server(Verbose_Object):
                     self.archive(game)
                 if game and not game.closed: game.close()
             self.broadcast(+OFF)
-            self.manager.close_threads()
+            if not self.manager.closed: self.manager.close()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
     
@@ -501,9 +464,8 @@ class Historian(Verbose_Object):
         self.log_debug(6, 'Client #%d has disconnected', client.client_id)
         if client in self.clients:
             self.clients.remove(client)
-            self.admin('%s has disconnected.', name)
+            self.admin('%s has disconnected.', client.full_name())
     def listing(self): return self.messages[LST]
-    def max_time(self, now): return None
     
     # Sending messages
     def broadcast(self, message):
@@ -625,7 +587,7 @@ class Game(Historian):
             - deadline         When the current turn will end
             - press_deadline   When press must stop for the current turn
             - time_checked     When time notifications were last sent
-            - time_left        Time remaining when the clock stopped
+            - time_stopped     Time remaining when the clock stopped
             - press_in         Whether press is allowed during a given phase
             - limits           The time limits for the phases, as well as max and press
             - players          Power token -> player mappings
@@ -648,9 +610,9 @@ class Game(Historian):
         self.paused         = False
         self.timers         = {}
         self.deadline       = None
-        self.press_deadline = None
+        self.press_deadline = 0
         self.time_checked   = None
-        self.time_left      = None
+        self.time_stopped   = None
         self.actions        = []
         
         self.set_limits()
@@ -832,10 +794,9 @@ class Game(Historian):
     
     # Time Limits
     def pause(self):
-        if self.deadline:
-            self.time_left = self.deadline - time()
-            self.deadline = self.press_deadline = None
-            self.broadcast(NOT(TME(relative_limit(self.time_left))))
+        if self.deadline and not self.paused:
+            self.time_stopped = self.deadline - time()
+            self.broadcast(NOT(TME(relative_limit(self.time_stopped))))
         self.paused = True
     def set_deadlines(self, seconds=None):
         ''' Sets the press_allowed flag and starts turn timers.
@@ -846,26 +807,27 @@ class Game(Historian):
             seconds = self.limits[phase]
             self.press_allowed = (phase and self.press_in[phase])
             self.time_checked = seconds
-        self.deadline = self.press_deadline = self.time_left = None
+        self.deadline = self.time_stopped = None
+        self.press_deadline = 0
         if seconds and not self.closed:
             message = TME(relative_limit(seconds))
             if self.paused:
-                self.time_left = seconds
+                self.time_stopped = seconds
                 self.broadcast(NOT(message))
             else:
                 self.deadline = time() + seconds
                 if self.press_allowed and phase == Turn.move_phase:
-                    self.press_deadline = self.deadline - self.limits['press']
+                    self.press_deadline = self.limits['press']
                 self.broadcast(message)
-    def max_time(self, now):
+    def time_left(self, now):
         ''' Returns the number of seconds before the next event.
             May return None if there is no next event scheduled.
         '''#'''
         if self.ready(): return 0
         result = None
-        if self.deadline:
+        if self.deadline and not self.paused:
             timers = [sec for sec in self.timers if sec < self.time_checked]
-            timers.append(self.press_deadline and self.limits['press'] or 0)
+            timers.append(self.limits['press'] and self.press_deadline)
             result = self.deadline - max(timers)
         if self.actions:
             next_action = min([a.when for a in self.actions])
@@ -876,7 +838,7 @@ class Game(Historian):
         ''' Removes the client from the list of time requests.'''
         for client_list in self.timers.itervalues():
             while client in client_list: client_list.remove(client)
-    def check_flags(self):
+    def run(self):
         ''' Checks deadlines, time requests, wait flags, and delayed actions,
             running the judge and sending notifications when appropriate.
         '''#'''
@@ -884,16 +846,15 @@ class Game(Historian):
         for act in list(self.actions):
             if act.when <= now: act.call(); self.actions.remove(act)
         if self.ready(): self.run_judge()
-        elif self.deadline:
+        elif self.deadline and not self.paused:
             remain = self.deadline - now
             for second in [sec for sec in self.timers if remain < sec < self.time_checked]:
                 self.time_checked = second
                 for client in self.timers[second]:
                     client.send(TME(relative_limit(second)))
             if now > self.deadline: self.run_judge()
-            elif self.press_deadline and now > self.press_deadline:
+            elif remain < self.press_deadline:
                 self.press_allowed  = False
-                self.press_deadline = None
     def ready(self): return not (self.paused or self.judge.unready or self.players_unready())
     def run_judge(self):
         ''' Runs the judge and handles turn transitions.'''
@@ -1008,7 +969,7 @@ class Game(Historian):
         if self.started: self.send_hello(client)
         else: client.reject(message)
     def handle_TME(self, client, message):
-        if self.deadline: remain = self.deadline - time()
+        if self.deadline and not self.paused: remain = self.deadline - time()
         else: remain = 0
         
         if len(message) == 1:
@@ -1176,7 +1137,7 @@ class Game(Historian):
                 # Restart timers if everybody's here
                 unready = self.players_unready()
                 if unready: self.log_debug(9, 'Still waiting for %s', expand_list(unready))
-                elif self.time_left: self.set_deadlines(self.time_left)
+                elif self.time_stopped: self.set_deadlines(self.time_stopped)
             else: client.reject(message)
         else:
             self.log_debug(7, 'Passcode check failed')
@@ -1270,7 +1231,7 @@ class Game(Historian):
     def resume(self, client, match):
         if self.paused:
             self.paused = False
-            if self.time_left: self.set_deadlines(self.time_left)
+            if self.time_stopped: self.set_deadlines(self.time_stopped)
             self.admin('%s has resumed the game.', client.full_name())
         else: client.admin('The game is not currently paused.')
     def start_bot(self, client, match):
@@ -1319,15 +1280,16 @@ class Game(Historian):
                     bot_class, num, power, pcode)
         else: client.admin('Unknown bot: %s', bot_name)
     def start_bot_class(self, bot_class, number, power, pcode):
-        # Client.open() needs to be in a separate thread from the polling
         self.log_debug(11, 'Attempting to start %s %s%s',
                 num2name(number), bot_class.name, s(number))
-        def callback(success, failure):
-            if failure:
-                self.admin('%s bot%s failed to start',
-                        num2name(failure).capitalize(), s(failure))
-        self.server.manager.async_start(bot_class, number, callback,
-                game_id=self.game_id, power=power, passcode=pcode)
+        failure = 0
+        for dummy in range(number):
+            client = self.server.manager.add_client(bot_class,
+                    game_id=self.game_id, power=power, passcode=pcode)
+            if not client: failure += 1
+        if failure:
+            self.admin('%s bot%s failed to start',
+                num2name(failure).capitalize(), s(failure))
     def num_players(self):
         return len(set([p.client.address
             for p in self.players.values() if p.client]))
@@ -1391,5 +1353,5 @@ class Game(Historian):
 
 def run():
     from main import run_server
-    run_server(Server, Client_Manager())
+    run_server(Server)
 if __name__ == '__main__': run()

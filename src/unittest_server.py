@@ -6,30 +6,27 @@
 import unittest, config
 from time      import sleep, time
 from functions import absolute_limit, Verbose_Object
+from main      import ThreadManager
 from network   import Connection, Service
-from server    import Server, Client_Manager
+from server    import Server
 
-class Fake_Manager(Client_Manager):
-    def __init__(self, player_classes):
-        self.classes = player_classes
-        self.players = []
-        self.server = None
-        self.server = Server(self.broadcast, self)
-        self.start_clients()
-    def async_start(self, player_class, number, callback=None, **kwargs):
-        self.start_threads(player_class, number, callback, **kwargs)
-    def close_threads(self):
-        for player in self.players:
-            if not player.closed: player.close()
-    def start_thread(self, player_class, **kwargs):
-        if not self.server: return None
-        service = Fake_Service(len(self.players),
+class Fake_Manager(ThreadManager):
+    def __init__(self):
+        self.__super.__init__()
+        self.pass_exceptions = True
+        self.autostart = ()
+        self.next_id = 0
+        self.server = Server(self)
+        self.start_clients(self.server.default_game().game_id)
+    def add_client(self, player_class, **kwargs):
+        service = Fake_Service(self.next_id,
                 self.server, player_class, **kwargs)
-        self.players.append(service)
-        return service.player
-    def broadcast(self, message):
-        self.log_debug(2, 'ALL << %s', message)
-        for client in self.players: client.write(message)
+        self.next_id += 1
+        return service
+    def add_threaded(self, client):
+        self.attempt(client)
+    def add_dynamic(self, client):
+        self.log_debug(1, 'Blocking dynamic client: %s', client.prefix)
 
 class Fake_Service(Service):
     ''' Connects the Server straight to a player.
@@ -46,8 +43,10 @@ class Fake_Service(Service):
         self.player.handle_message(message)
         if self.player.closed: self.close()
     def close(self):
-        if not self.closed: self.game.disconnect(self)
-        self.closed = True
+        if not self.closed:
+            self.closed = True
+            self.game.disconnect(self)
+            self.server.disconnect(self)
     def handle_message(self, message):
         if self.player:
             self.log_debug(4, '%3s >> %s', self.power_name(), message)
@@ -113,58 +112,6 @@ class ServerTestCase(unittest.TestCase):
             self.send(SUB % [[unit, HLD] for unit in units])
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
-    class Fake_Client(Connection):
-        ''' A fake Client to test the server timeout.'''
-        is_server = False
-        
-        def __init__(self, player_class):
-            'Initializes instance variables'
-            self.prefix = 'Fake Client'
-            self.__super.__init__()
-            self.pclass = player_class
-        def open(self):
-            import socket
-            # Open the socket
-            self.sock = sock = socket.socket()
-            sock.connect((self.opts.host, self.opts.port))
-            sock.settimeout(None)
-            
-            # Required by the DCSP document
-            try: sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-            except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
-            
-            if self.pclass:
-                # Send initial message
-                self.log_debug(9, 'Sending Initial Message')
-                from struct import pack
-                self.send_dcsp(self.IM, pack('!HH', self.proto.version, self.proto.magic));
-                
-                # Wait for representation message
-                while not (self.closed or self.rep):
-                    result = self.read()
-                    if result: self.log_debug(7, str(result) + ' while waiting for RM')
-                if self.rep: self.log_debug(9, 'Representation received')
-                
-                # Set a reasonable timeout.
-                # Without this, we don't check for client death until
-                # the next server message; in some cases, until it dies.
-                #sock.settimeout(30)
-                
-                # Create the Player
-                if self.rep and not self.closed:
-                    self.player = self.pclass(self.write, self.rep)
-                    self.player.register()
-                    return True
-            return False
-        def read_error(self, code):
-            self.log_debug(1, 'Expecting error #%d (%s)',
-                    code, self.proto.error_strings.get(code))
-            self.error_code = None
-            self.read()
-            assert self.error_code == code
-        def send_error(self, code, from_them=False):
-            if from_them: self.error_code = code
-            self.__super.send_error(code, from_them)
     
     game_options = {
             'syntax Level': 20,
@@ -195,16 +142,19 @@ class ServerTestCase(unittest.TestCase):
         self.server = None
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
+        if self.manager and not self.manager.closed: self.manager.close()
     def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
     def set_option(self, option, value):
         config.option_class.local_opts.update({option: value})
-    def connect_server(self, clients=(), games=1):
-        self.set_option('number of games', games)
-        self.manager = manager = Fake_Manager(clients)
+    def connect_server(self):
+        self.set_option('number of games', 1)
+        self.manager = manager = Fake_Manager()
         self.server = manager.server
         self.game = self.server.default_game()
     def connect_player(self, player_class, **kwargs):
-        return self.manager.start_thread(player_class, **kwargs)
+        client = self.manager.add_client(player_class, **kwargs)
+        self.manager.process()
+        return client.player
     def start_game(self):
         game = self.server.default_game()
         while not game.started: self.connect_player(self.Fake_Player)
@@ -212,9 +162,9 @@ class ServerTestCase(unittest.TestCase):
     def wait_for_actions(self, game=None):
         if not game: game = self.server.default_game()
         while game.actions:
-            remain = game.max_time(time())
-            if remain > 0: sleep(remain)
-            game.check_flags()
+            remain = game.time_left(time())
+            if remain > 0: sleep(remain + 0.001)
+            game.run()
     
     def assertPressSent(self, press, sender, recipient):
         from language import FRM, SND, YES
@@ -257,14 +207,14 @@ class Server_Basics(ServerTestCase):
         start_phase = turn().key
         flagger.send(NOT(GOF))
         for player in players: player.hold_all()
-        self.game.check_flags()
+        self.game.run()
         self.failUnlessEqual(start_phase, turn().key)
         sleep(flagger.get_time() + 1)
-        self.game.check_flags()
+        self.game.run()
         next_phase = turn().key
         self.failIfEqual(start_phase, next_phase)
         for player in players: player.hold_all()
-        self.game.check_flags()
+        self.game.run()
         self.failIfEqual(next_phase, turn().key)
     def test_empty_MIS(self):
         ''' Server replies to MIS with MIS when no orders are outstanding.'''
@@ -284,7 +234,7 @@ class Server_Basics(ServerTestCase):
         player = self.connect_player(self.Fake_Player)
         self.start_game()
         sleep(player.get_time() + 1)
-        self.game.check_flags()
+        self.game.run()
         self.assertContains(CCD(player.power) (SPR, 1901), player.queue)
     def test_submitted_orders_CCD(self):
         ''' Submitting orders on time avoids a CCD message.'''
@@ -295,7 +245,7 @@ class Server_Basics(ServerTestCase):
         self.start_game()
         player.hold_all()
         sleep(player.get_time() + 1)
-        self.game.check_flags()
+        self.game.run()
         self.failIf(player.power in sum([msg
             for msg in player.queue if msg[0] is CCD], []),
             '%s reported in civil disorder' % (player.power,))
@@ -405,7 +355,7 @@ class Server_Press(ServerTestCase):
         self.disconnected.close()
         self.game.run_judge()
     def assertPressReply(self, press, response):
-        from language import SND, Token
+        from language import SND
         self.sender.queue = []
         self.recipient.queue = []
         msg = SND(self.recipient.power)(press)

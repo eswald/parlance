@@ -41,19 +41,7 @@ class SocketWrapper(Verbose_Object):
         self.closed = True
         self.sock = None
     def open(self): raise NotImplementedError
-    def run(self):  raise NotImplementedError
-    def start(self):
-        from threading import Thread
-        try:
-            if self.open():
-                self.log_debug(10, 'Starting a thread')
-                thread = Thread(target=self.run)
-                thread.start()
-                return thread
-            else: self.log_debug(1, 'Failed to open')
-        except socket.error, e: self.log_debug(1, 'Socket error %s', e.args)
-        return None
-    def check(self):
+    def run(self):
         ''' Called when we have data to read.'''
         raise NotImplementedError
     def fileno(self): return self.sock.fileno()
@@ -66,6 +54,7 @@ class Connection(SocketWrapper):
         self.__super.__init__()
         self.send_final = True
         self.proto = config.protocol
+        self.IM_check = None
         self.rep = None
         
         # IM, DM, FM, etc.
@@ -132,7 +121,7 @@ class Connection(SocketWrapper):
             (version, magic) = unpack('!HH', data)
             if magic == self.proto.magic:
                 if version == self.proto.version:
-                    self.deadline = None
+                    if self.IM_check: self.IM_check.close()
                     self.send_RM()
                 else: self.send_error(self.opts.Version)
             elif unpack('>H', pack('<H', magic)) == self.proto.magic:
@@ -235,13 +224,6 @@ class Client(Connection):
                 or self.pclass.__name__) + ' Client'
     prefix = property(fget=prefix)
     
-    def check(self):
-        msg = self.read()
-        if msg:
-            #self.log_debug(5, '<< %s', msg)
-            try: self.player.handle_message(msg)
-            except: self.close(); raise
-        if self.player.closed: self.close()
     def send(self, msg):
         self.log_debug(5, '>> %s', msg)
         self.write(msg)
@@ -260,45 +242,46 @@ class Client(Connection):
         self.log_debug(9, 'Sending Initial Message')
         self.send_dcsp(self.IM, pack('!HH', self.proto.version, self.proto.magic));
         
+        return True
+    def run(self):
+        ''' Reads a message from the socket.
+            Meant to be called by a ThreadManager.
+            Checks first to see if it has a representation yet.
+        '''#'''
+        msg = self.read()
+        
         # Wait for representation message
-        while not (self.closed or self.rep):
-            result = self.read()
-            if result: self.log_debug(7, str(result) + ' while waiting for RM')
-        if self.rep: self.log_debug(9, 'Representation received')
-        
-        # Set a reasonable timeout.
-        # Without this, we don't check for client death until
-        # the next server message; in some cases, until it dies.
-        # With it, the client may die prematurely.
-        #sock.settimeout(30)
-        
-        # Create the Player
-        if self.rep and not self.closed:
+        if msg and not self.rep:
+            self.log_debug(7, 'DM while waiting for RM: ' + str(msg))
+        elif self.rep and not self.player:
+            self.log_debug(9, 'Representation received')
             self.player = self.pclass(self.send, self.rep, **self.kwargs)
             self.player.register()
-            return True
-        else: return False
+        if self.player:
+            if msg: self.player.handle_message(msg)
+            if self.player.closed: self.close()
     def close(self):
         if self.player and not self.player.closed: self.player.close()
         self.__super.close()
-    def run(self):
-        ''' The main client loop.'''
-        try:
-            while not self.player.closed:
-                msg = self.read()
-                if msg: self.player.handle_message(msg)
-        except KeyboardInterrupt: self.log_debug(1, 'Killed by user')
-        except: self.close(); raise
-        self.close()
 
 class Service(Connection):
     ''' Connects a network player to the internal Server.'''
     is_server = True
+    class TimeoutMonitor(object):
+        def __init__(self, service):
+            self.service = service
+            self.closed = False
+            self.prefix = 'IM Check for ' + service.prefix
+        def run(self):
+            if not self.service.closed:
+                self.service.send_error(self.service.opts.Timeout)
+        def close(self):
+            self.closed = True
+    
     def __init__(self, client_id, connection, address, server):
         self.__super.__init__()
         self.sock      = connection
         self.client_id = client_id
-        self.deadline  = time() + 30
         self.address   = address
         self.country   = None
         self.name      = None
@@ -311,12 +294,14 @@ class Service(Connection):
         self.game      = server.default_game()
         self.rep       = self.game.variant.rep
         self.prefix    = self.game.prefix + ', #' + str(client_id)
+        
+        server.add_client(self)
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
     def full_name(self):
         return (self.name and ('%s (%s)' % (self.name, self.version))
                 or 'An observer')
-    def check(self):
+    def run(self):
         msg = self.read()
         if msg:
             self.log_debug(4, '%3s >> %s', self.power_name(), msg)
@@ -333,7 +318,9 @@ class Service(Connection):
                 else: self.admin("Please don't do that again, whatever it was.")
     def close(self):
         if not self.closed:
+            self.closed = True
             self.game.disconnect(self)
+            self.server.disconnect(self)
             self.__super.close()
     def boot(self):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
@@ -346,6 +333,9 @@ class Service(Connection):
         if representation != self.rep:
             self.rep = representation
             self.send_RM()
+    def start_IM_check(self, manager):
+        self.IM_check = self.TimeoutMonitor(self)
+        manager.add_timed(self.IM_check, 30)
     
     def send(self, message):
         if message[0] is MDF: text = 'MDF [...]'
@@ -362,18 +352,11 @@ class ServerSocket(SocketWrapper):
     try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
     except AttributeError: flags = None
     
-    def __init__(self, server_class, *server_args):
+    def __init__(self, server_class, thread_manager):
         self.__super.__init__()
         self.server = None
         self.server_class = server_class
-        self.server_args = server_args
-        self.deadline = None
-        self.log_debug(10, 'Attempting to create a poll object')
-        if self.flags:
-            try: self.polling = select.poll()
-            except: self.polling = None
-        else: self.polling = None
-        self.sockets = {}
+        self.manager = thread_manager
         self.next_id = 0
     def open(self):
         ''' Start listening for clients on the specified address.
@@ -395,19 +378,14 @@ class ServerSocket(SocketWrapper):
         sock.setblocking(False)
         sock.listen(7)
         self.sock = sock
-        self.add(self)
-        # FIXME: Temporary hack to enable RawServer
-        self.server_class.fd_handler = self.add
-        self.server = self.server_class(self.broadcast, *self.server_args)
+        self.server = self.server_class(self.manager)
         return bool(sock and self.server)
     def close(self):
-        if self.server and not self.server.closed: self.server.close()
         self.closed = True
-        for client in self.sockets.values():
-            if not client.closed: client.close()
-        #if self.sock: self.remove(self.fileno())
+        if self.server and not self.server.closed: self.server.close()
+        if not self.manager.closed: self.manager.close()
         self.__super.close()
-    def check(self):
+    def run(self):
         ''' Attempts to connect one new network player'''
         try: conn, addr = self.sock.accept()
         except socket.error: pass
@@ -419,121 +397,18 @@ class ServerSocket(SocketWrapper):
             try: conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
             conn.setblocking(False)
-            self.add(Service(self.next_id, conn, addr[0], self.server))
+            service = Service(self.next_id, conn, addr[0], self.server)
+            service.start_IM_check(self.manager)
+            self.manager.add_polled(service)
             self.next_id += 1
-    def add(self, sock):
-        fd = sock.fileno()
-        self.sockets[fd] = sock
-        if self.polling: self.polling.register(fd, self.flags)
-    def remove(self, fd):
-        # Warning: Only to be used from run() or one of its calls
-        del self.sockets[fd]
-        if self.polling: self.polling.unregister(fd)
-        remain = len(self.sockets) - 1
-        self.log_debug(6, '%d client%s still connected.', remain, s(remain))
-        if not remain: self.server.check_close()
-    def select(self, time_left):
-        for fd, sock in self.sockets.items():
-            if sock.closed: self.remove(fd)
-        try: ready = select.select(self.sockets.values(), [], [], time_left)[0]
-        except select.error, e:
-            self.log_debug(7, 'Select error received: %s', e.args)
-            if e.args[0] == 9:
-                # Bad file descriptor
-                #self.sockets = [sock for sock in self.sockets if not sock.closed]
-                pass
-            else: self.close(); raise
-        else:
-            if ready:
-                for sock in ready:
-                    self.log_debug(13, 'Checking %s', sock.prefix)
-                    sock.check()
-            else: return False
-        return True
-    def poll(self, time_left):
-        try: ready = self.polling.poll(time_left * 1000)
-        except select.error, e:
-            self.log_debug(7, 'Polling error received: %s', e.args)
-            # Ignore interrupted system calls
-            if e.args[0] != 4:
-                self.close()
-                raise
-        else:
-            if ready:
-                for fd, event in ready:
-                    sock = self.sockets[fd]
-                    self.log_debug(15, 'Event %s received for %s', event, sock.prefix)
-                    if event & select.POLLIN:
-                        self.log_debug(13, 'Checking %s', sock.prefix)
-                        sock.check()
-                    if sock.closed:
-                        self.log_debug(7, '%s closed itself', sock.prefix)
-                        self.remove(fd)
-                    elif sock.broken:
-                        self.log_debug(7, 'Done receiving from %s', sock.prefix)
-                        self.remove(fd)
-                        sock.close()
-                    elif event & (select.POLLERR | select.POLLHUP):
-                        self.log_debug(7, 'Event %s received for %s', event, sock.prefix)
-                        self.remove(fd)
-                        sock.close()
-                    elif event & select.POLLNVAL:
-                        # Assume that the socket has already been closed
-                        self.log_debug(7, 'Invalid fd for %s', sock.prefix)
-                        self.remove(fd)
-            else: return False
-        return True
-    def run(self):
-        ''' The main server loop; never returns until the server closes.'''
-        self.log_debug(10, 'Internal server loop started')
-        try:
-            while not self.server.closed:
-                timeout = self.get_deadline()
-                method = self.polling and self.poll or self.select
-                self.log_debug(14, '%s()ing for %.3f seconds', method.__name__, timeout)
-                if not method(timeout):
-                    self.log_debug(13, 'Checking clients and the server')
-                    now = time()
-                    for fd, client in self.sockets.items():
-                        if None != client.deadline < now:
-                            client.send_error(self.opts.Timeout)
-                            self.remove(fd)
-                    self.server.check()
-            self.log_debug(11, 'Server loop ended')
-        except KeyboardInterrupt:
-            self.server.broadcast_admin('The server has been killed.  Good-bye.')
-        except:
-            self.log_debug(1, 'Error in server loop; closing')
-            self.close()
-            raise
-        self.close()
-        self.log_debug(11, 'End of run()')
-    def get_deadline(self):
-        now = time()
-        result = self.server.deadline()
-        if result is None:
-            time_left = [(client.deadline - now)
-                    for client in self.sockets.values() if client.deadline]
-            if time_left: result = max([0, 0.005 + min(time_left)])
-            else: result = self.opts.wait_time
-        return result
-    def broadcast(self, message):
-        self.log_debug(2, 'ALL << %s', message)
-        for client in self.sockets.values(): client.write(message)
-    
-    # For compatibility with other types of sockets
-    def power_name(self): return '#' + str(self.next_id)
-    def write(self, message): pass
 
 class InputWaiter(Verbose_Object):
     ''' File descriptor for waiting on standard input.'''
     def __init__(self, supervisor):
         self.supervisor = supervisor
-        self.deadline = None
-        self.broken = False
         self.closed = False
     def fileno(self): return stdin.fileno()
-    def check(self):
+    def run(self):
         line = ''
         try: line = raw_input()
         except EOFError: self.close()
@@ -541,11 +416,10 @@ class InputWaiter(Verbose_Object):
     def close(self):
         self.closed = True
         if not self.supervisor.closed: self.supervisor.close()
-    def write(self, message): pass
 
 class RawServer(Verbose_Object):
     ''' Simple server to translate DM to and from text.'''
-    def __init__(self, broadcast_method):
+    def __init__(self, thread_manager):
         from server import server_options
         class FakeGame(Verbose_Object):
             def __init__(self, variant_name):
@@ -554,12 +428,12 @@ class RawServer(Verbose_Object):
                 print 'Client #%d has disconnected.' % client.client_id
         
         self.closed = False
-        self.broadcast = broadcast_method
+        self.manager = thread_manager
         self.options = server_options()
+        self.clients = {}
         self.game = FakeGame(self.options.variant)
         self.rep = self.game.variant.rep
-        self.input = InputWaiter(self)
-        self.fd_handler(self.input)
+        thread_manager.add_polled(InputWaiter(self))
         print 'Waiting for connections...'
     def handle_message(self, client, message):
         ''' Process a new message from the client.'''
@@ -567,18 +441,17 @@ class RawServer(Verbose_Object):
     def close(self):
         ''' Informs the user that the connection has closed.'''
         self.closed = True
-        if not self.input.closed: self.input.close()
-    def check(self):
-        ''' Nothing to do.'''
-        pass
-    def check_close(self):
-        ''' All clients have disconnected.'''
-        self.close()
+        if not self.manager.closed: self.manager.close()
+    def add_client(self, client):
+        self.clients[client.client_id] = client
+    def disconnect(self, client):
+        del self.clients[client.client_id]
+        if not self.clients: self.close()
     def handle_input(self, line):
         try: message = self.rep.translate(line)
         except Exception, err: print str(err) or '??'
-        else: self.broadcast(message)
-    def deadline(self): return None
+        else:
+            for client in self.clients.values(): client.write(message)
     def broadcast_admin(self, text): pass
     def default_game(self): return self.game
 
