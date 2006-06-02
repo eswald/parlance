@@ -63,7 +63,7 @@ class NetworkTestCase(ServerTestCase):
         self.manager.pass_exceptions = True
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         config.option_class.local_opts.update({'number of games' : games})
-        kwargs['manager'] = manager = self.manager
+        manager = self.manager
         sock = network.ServerSocket(Server, manager)
         if not poll: sock.polling = None
         if sock.open():
@@ -127,7 +127,8 @@ class Network_Basics(NetworkTestCase):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             name = 'Impolite Finisher'
-            def __init__(self, send_method, representation, power, passcode):
+            def __init__(self, send_method, representation,
+                    power, passcode, manager=None):
                 self.log_debug(9, 'Fake player started')
                 self.restarted = False
                 self.closed = False

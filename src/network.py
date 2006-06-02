@@ -404,18 +404,19 @@ class ServerSocket(SocketWrapper):
 
 class InputWaiter(Verbose_Object):
     ''' File descriptor for waiting on standard input.'''
-    def __init__(self, supervisor):
-        self.supervisor = supervisor
+    def __init__(self, input_handler, close_handler):
+        self.handle_input = input_handler
+        self.handle_close = close_handler
         self.closed = False
     def fileno(self): return stdin.fileno()
     def run(self):
         line = ''
         try: line = raw_input()
         except EOFError: self.close()
-        if line: self.supervisor.handle_input(line)
+        if line: self.handle_input(line)
     def close(self):
         self.closed = True
-        if not self.supervisor.closed: self.supervisor.close()
+        self.handle_close()
 
 class RawServer(Verbose_Object):
     ''' Simple server to translate DM to and from text.'''
@@ -433,7 +434,7 @@ class RawServer(Verbose_Object):
         self.clients = {}
         self.game = FakeGame(self.options.variant)
         self.rep = self.game.variant.rep
-        thread_manager.add_polled(InputWaiter(self))
+        thread_manager.add_polled(InputWaiter(self.handle_input, self.close))
         print 'Waiting for connections...'
     def handle_message(self, client, message):
         ''' Process a new message from the client.'''
@@ -457,4 +458,4 @@ class RawServer(Verbose_Object):
 
 if __name__ == '__main__':
     from main import run_server
-    run_server(RawServer)
+    run_server(RawServer, 0)

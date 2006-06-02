@@ -250,9 +250,11 @@ class RawClient(Verbose_Object):
         self.send_out  = send_method      # A function that accepts messages
         self.rep       = representation   # The representation message
         self.closed    = False # Whether the connection has ended, or should end
+        self.manager   = kwargs.get('manager')
     def register(self):
-        from threading import Thread
-        Thread(target=self.run).start()
+        from network import InputWaiter
+        print 'Connected.'
+        self.manager.add_polled(InputWaiter(self.handle_input, self.close))
     def handle_message(self, message):
         ''' Process a new message from the server.'''
         print '>>', message
@@ -260,15 +262,11 @@ class RawClient(Verbose_Object):
         ''' Informs the player that the connection has closed.'''
         print 'Closed.'
         self.closed = True
-    def run(self):
-        print 'Connected.'
-        while not self.closed:
-            try: line = raw_input()
-            except EOFError: self.close()
-            if line:
-                try: message = self.rep.translate(line)
-                except Exception, err: print str(err) or '??'
-                else: self.send(message)
+        if not self.manager.closed: self.manager.close()
+    def handle_input(self, line):
+        try: message = self.rep.translate(line)
+        except Exception, err: print str(err) or '??'
+        else: self.send(message)
     def send(self, message):
         if not self.closed: self.send_out(message)
 

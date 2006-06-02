@@ -76,11 +76,13 @@ class ThreadManager(Verbose_Object):
         self.log_debug(10, 'Main loop started')
         try:
             while not self.closed:
-                self.process(self.wait_time)
                 if self.clients():
-                    self.log_debug(7, 'sleep()ing for %.3f seconds',
-                            self.sleep_time)
-                    sleep(self.sleep_time)
+                    self.process(self.wait_time)
+                    if not (self.polled or self.closed):
+                        # Avoid turning this into a busy loop
+                        self.log_debug(7, 'sleep()ing for %.3f seconds',
+                                self.sleep_time)
+                        sleep(self.sleep_time)
                 else: self.close()
             self.log_debug(11, 'Main loop ended')
         except KeyboardInterrupt:
@@ -131,14 +133,13 @@ class ThreadManager(Verbose_Object):
         self.polled[fd] = client
         if self.polling: self.polling.register(fd, self.flags)
     def remove_polled(self, fd):
-        # Warning: Only to be used from run() or one of its calls;
-        # elsewhere, call the close() method of the client.
-        self.log_debug(11, 'Removing polled client: %s', self.polled[fd].prefix)
-        del self.polled[fd]
+        # Warning: Must be called in the same thread as the polling.
+        # Outside of this class, call the client's close() method instead.
+        self.log_debug(11, 'Removing polled client: %s',
+                self.polled.pop(fd).prefix)
         if self.polling: self.polling.unregister(fd)
     def select(self, timeout):
-        for fd, client in self.polled.items():
-            if client.closed: self.remove_polled(fd)
+        self.clean_polled()
         try: ready = select.select(self.polled.values(), [], [], timeout)[0]
         except select.error, e:
             self.log_debug(7, 'Select error received: %s', e.args)
@@ -153,6 +154,7 @@ class ThreadManager(Verbose_Object):
             else: return False
         return True
     def poll(self, timeout):
+        self.clean_polled()
         try: ready = self.polling.poll(timeout * 1000)
         except select.error, e:
             self.log_debug(7, 'Polling error received: %s', e.args)
@@ -182,6 +184,10 @@ class ThreadManager(Verbose_Object):
             # Assume that the socket has already been closed
             self.log_debug(7, 'Invalid fd for %s', client.prefix)
             self.remove_polled(fd)
+    def clean_polled(self):
+        # Warning: This doesn't catch closed players until their Clients close.
+        for fd, client in self.polled.items():
+            if client.closed: self.remove_polled(fd)
     
     # Timed client handling
     def add_timed(self, client, delay):
@@ -233,7 +239,7 @@ class ThreadManager(Verbose_Object):
     def add_client(self, player_class, **kwargs):
         from network import Client
         name = player_class.name or player_class.__name__
-        client = Client(player_class, **kwargs)
+        client = Client(player_class, manager=self, **kwargs)
         result = client.open()
         if result:
             self.add_polled(client)
@@ -298,9 +304,8 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
             if not result: print 'Failed to start %s.  Sorry.' % name
         manager.run()
 
-def run_server(server_class):
+def run_server(server_class, default_verbosity):
     from network   import ServerSocket
-    verbosity = 7
     opts = {}
     try:
         for arg in argv[1:]:
@@ -317,7 +322,7 @@ def run_server(server_class):
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
     else:
         config.option_class.local_opts.update(opts)
-        Verbose_Object.verbosity = verbosity
+        Verbose_Object.verbosity = default_verbosity
         manager = ThreadManager()
         server = ServerSocket(server_class, manager)
         if server.open():

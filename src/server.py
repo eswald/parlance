@@ -1353,5 +1353,5 @@ class Game(Historian):
 
 def run():
     from main import run_server
-    run_server(Server)
+    run_server(Server, 7)
 if __name__ == '__main__': run()
