@@ -95,8 +95,7 @@
       to the language module.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
-    <p>The select/poll loop should be refactored into a generic class.
-      It would then be useful for client managers and user input.</p>
+    <p>The remaining thread references should be moved into ThreadManager.</p>
     
     <h2>User Interface</h2>
     <p>Some modules could give explanatory messages instead of doing nothing
@@ -138,6 +137,12 @@
       blocks to close the file properly.  I also need to verify that the
       log/games directory exists before writing into it.</p>
     <p>The saved games directory really should be configurable.</p>
+    
+    <h2>Unit Testing</h2>
+    <p>The remaining doctests should probably be refactored into proper
+      unittest modules.</p>
+    <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
+    <p>THX order notes could use more testing.</p>
     
   </body>
 </html>

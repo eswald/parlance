@@ -575,7 +575,6 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         - NMR: No more removals allowed
         - NRS: Not the right season
     '''#'''
-    # Todo: Write more tests here
     def assertOrderNote(self, country, order, note):
         result = self.submitOrder(country, order)
         self.failUnlessEqual(result, note)

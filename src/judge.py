@@ -179,9 +179,6 @@ class Judge(JudgeInterface):
     def handle_NOW(self, client, message): client.send(self.map.create_NOW())
     def handle_SCO(self, client, message): client.send(self.map.create_SCO())
     def handle_ORD(self, client, message): client.send_list(self.last_orders)
-    def handle_HST(self, client, message):
-        # Todo: Learn your history!
-        client.reject(message)
     
     # Order submission
     def handle_SUB(self, client, message):
