@@ -36,7 +36,7 @@ class Message(list):
             >>> str(Message((NOT, [GOF])))
             'NOT ( GOF )'
         '''#'''
-        for item in message: list.extend(self, _tokenize(item))
+        for item in message: list.extend(self, self.to_tokens(item))
     
     def validate(self, syntax_level=0, from_server=False):
         ''' Determines whether the message is syntactically valid.
@@ -216,6 +216,51 @@ class Message(list):
         return pack('!' + 'H'*len(self), *map(int, self))
     def tokenize(self): return self
     
+    # Formerly module methods, but only used in this class.
+    @staticmethod
+    def to_tokens(value, wrap=False):
+        ''' Returns a list of Token instances based on a value.
+            If wrap is true, lists and tuples will be wrapped in parentheses.
+            (But that's meant to be used only by this method.)
+            
+            >>> Message.to_tokens(3)
+            [IntegerToken(3)]
+            >>> Message.to_tokens('YES')
+            [StringToken('Y'), StringToken('E'), StringToken('S')]
+            >>> Message.to_tokens('name')
+            [StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e')]
+            >>> Message.to_tokens([3, 0, -3])
+            [IntegerToken(3), IntegerToken(0), IntegerToken(-3)]
+            >>> Message.to_tokens([3, 0, -3], True)
+            [BRA, IntegerToken(3), IntegerToken(0), IntegerToken(-3), KET]
+            >>> Message.to_tokens([+NOT, (GOF,)])
+            [NOT, BRA, GOF, KET]
+        '''#'''
+        if   isinstance(value, (int, float, long)): return [IntegerToken(value)]
+        elif isinstance(value, str):
+            return [StringToken(c) for c in value]
+        elif hasattr(value, 'tokenize'):
+            result = value.tokenize()
+            if isinstance(result, list): return result
+            else:
+                raise TypeError('tokenize for %s returned non-list (type %s)' %
+                        (value, result.__class__.__name__))
+        elif wrap: return Message.wrap(value)
+        else:
+            try: return sum([Message.to_tokens(item, True) for item in value], [])
+            except TypeError: raise TypeError, 'Cannot tokenize ' + str(value)
+    @staticmethod
+    def wrap(value):
+        ''' Tokenizes the list and wraps it in a pair of brackets.
+            >>> Message.wrap(GOF)
+            [BRA, GOF, KET]
+            >>> Message.wrap(NOT(GOF))
+            [BRA, NOT, BRA, GOF, KET, KET]
+            >>> Message.wrap('name')
+            [BRA, StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e'), KET]
+        '''#'''
+        return [BRA] + Message.to_tokens(value) + [KET]
+    
     # Automatically translate new items into Tokens
     def append(self, value):
         ''' Adds a new token to the Message.
@@ -247,7 +292,7 @@ class Message(list):
             >>> str(m)
             'NOT GOF "name" 3'
         '''#'''
-        list.extend(self, _tokenize(value))
+        list.extend(self, self.to_tokens(value))
     def __add__(self, other):
         ''' Adds the given Message or list at the end of this Message,
             translating list items into Tokens if necessary.
@@ -268,14 +313,14 @@ class Message(list):
             >>> print CCD (ENG) (SPR, 1901)
             CCD ( ENG ) ( SPR 1901 )
         '''#'''
-        if len(args) == 1: return self + _wrap(*args)
-        else: return self + _wrap(args)
+        if len(args) == 1: return self + self.wrap(*args)
+        else: return self + self.wrap(args)
     __and__ = __call__
     def __iand__(self, other):
         try:
             if len(other) == 1: other = other[0]
         except TypeError: pass
-        list.extend(self, _wrap(other)); return self
+        list.extend(self, self.wrap(other)); return self
     def __mod__(self, other):
         ''' Wraps each element of a list individually,
             appending them to a copy of the message.
@@ -297,7 +342,7 @@ class Message(list):
             >>> str(m)
             'NOT YES 34 "na" REJ'
         '''#'''
-        try: list.__setslice__(self, from_index, to_index, _tokenize(value))
+        try: list.__setslice__(self, from_index, to_index, self.to_tokens(value))
         except TypeError: raise TypeError, 'must assign list (not "%s") to slice' % type(value).__name__
     def __setitem__(self, index, value):
         ''' Replaces a single Token of the Message with another Token.
@@ -657,51 +702,3 @@ class IntegerToken(Token):
             result = Token.__new__(klass, name, number)
             klass.cache[number] = result
         return result
-
-
-def _tokenize(value, wrap=False):
-    ''' Returns a list of Token instances based on a value.
-        If wrap is true, lists and tuples will be wrapped in parentheses.
-        (But that's meant to be used only by this method.)
-        
-        >>> _tokenize(3)
-        [IntegerToken(3)]
-        >>> _tokenize('YES')
-        [StringToken('Y'), StringToken('E'), StringToken('S')]
-        >>> _tokenize('name')
-        [StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e')]
-        >>> _tokenize([3, 0, -3])
-        [IntegerToken(3), IntegerToken(0), IntegerToken(-3)]
-        >>> _tokenize([3, 0, -3], True)
-        [BRA, IntegerToken(3), IntegerToken(0), IntegerToken(-3), KET]
-        >>> _tokenize([+NOT, (GOF,)])
-        [NOT, BRA, GOF, KET]
-    '''#'''
-    if   isinstance(value, (int, float, long)): return [IntegerToken(value)]
-    elif isinstance(value, str):
-        return [StringToken(c) for c in value]
-    elif hasattr(value, 'tokenize'):
-        result = value.tokenize()
-        if isinstance(result, list):            return result
-        else: raise TypeError, 'tokenize for %s returned non-list (type %s)' % (value, result.__class__.__name__)
-    elif wrap:                                  return _wrap(value)
-    else:
-        try: return sum([_tokenize(item, True) for item in value], [])
-        except TypeError: raise TypeError, 'Cannot tokenize ' + str(value)
-
-def _wrap(value):
-    ''' Tokenizes the list and wraps it in a pair of brackets.
-        >>> _wrap(GOF)
-        [BRA, GOF, KET]
-        >>> _wrap(NOT(GOF))
-        [BRA, NOT, BRA, GOF, KET, KET]
-        >>> _wrap('name')
-        [BRA, StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e'), KET]
-    '''#'''
-    return [BRA] + _tokenize(value) + [KET]
-
-# Testing framework
-__test__ = {
-    '_tokenize':                 _tokenize,
-    '_wrap':                     _wrap,
-}
