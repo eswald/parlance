@@ -134,9 +134,9 @@
     <p>Something is failing to close the port properly in the test_timeout
       unit test.</p>
     <p>Everything that interacts with files should be wrapped in try...finally
-      blocks to close the file properly.  I also need to verify that the
-      log/games directory exists before writing into it.</p>
-    <p>The saved games directory really should be configurable.</p>
+      blocks to close the file properly.</p>
+    <p>I might want to create the game log directory before writing into it;
+      currently, game logging simply fails and the game stays in memory.</p>
     
     <h2>Unit Testing</h2>
     <p>The remaining doctests should probably be refactored into proper

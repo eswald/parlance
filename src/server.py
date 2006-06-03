@@ -56,7 +56,7 @@ class server_options(config.option_class):
         self.log_games = self.getboolean('record completed games', False)
         self.shuffle   = self.getboolean('randomize power assignments', True)
         self.variant   = self.getstring( 'default variant',        'standard')
-        self.gamepath  = self.getstring( 'saved game path',        path.join('log', 'games'))
+        self.log_path  = self.getstring( 'game log directory',     path.join('log', 'games'))
         self.games     = self.getint(    'number of games',        1)
         self.veto_time = self.getint(    'time allowed for vetos', 20)
         self.bot_min   = self.getint(    'minimum player count for bots', 0)
@@ -112,7 +112,7 @@ class Server(Verbose_Object):
             self.close()
     def filename(self, game_id):
         fname = game_id + path.extsep + 'dpp'
-        return path.join(self.options.gamepath, fname)
+        return path.join(self.options.log_path, fname)
     
     def add_client(self, client):
         self.clients[client.client_id] = client
