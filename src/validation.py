@@ -204,8 +204,8 @@ def validate_option(msg, item_list, syntax_level):
                     if Token.cats.has_key(opt):
                         num = Token.cats[opt]
                         if isinstance(num, tuple):
-                            check = lambda x: num[0] <= x.category() <= num[1]
-                        else: check = lambda x: x.category() == num
+                            check = lambda x: num[0] <= x.category <= num[1]
+                        else: check = lambda x: x.category == num
                     elif opt == 'Token':
                         check = lambda x: x not in (BRA, KET, ERR)
                     else: raise ValueError, 'unknown category "%s"' % opt

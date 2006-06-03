@@ -476,7 +476,7 @@ class OrderSet(dict):
         >>> russian.add(MoveOrder(Moscow, Warsaw))
         >>> russian.add(WaiveOrder(France))
         >>> print russian.create_SUB()
-        SUB ( ( RUS AMY MOS ) HLD ) ( ( RUS AMY MOS ) MTO WAR ) ( FRA WVE ) ( RUS WVE )
+        SUB ( FRA WVE ) ( RUS WVE ) ( ( RUS AMY MOS ) HLD ) ( ( RUS AMY MOS ) MTO WAR )
     '''#'''
     def __init__(self, default_nation=None):
         self.default = default_nation

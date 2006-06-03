@@ -236,15 +236,15 @@ class Message(list):
             >>> Message.to_tokens([+NOT, (GOF,)])
             [NOT, BRA, GOF, KET]
         '''#'''
-        if   isinstance(value, (int, float, long)): return [IntegerToken(value)]
-        elif isinstance(value, str):
-            return [StringToken(c) for c in value]
-        elif hasattr(value, 'tokenize'):
+        if hasattr(value, 'tokenize'):
             result = value.tokenize()
             if isinstance(result, list): return result
             else:
                 raise TypeError('tokenize for %s returned non-list (type %s)' %
                         (value, result.__class__.__name__))
+        elif isinstance(value, (int, float, long)): return [IntegerToken(value)]
+        elif isinstance(value, str):
+            return [StringToken(c) for c in value]
         elif wrap: return Message.wrap(value)
         else:
             try: return sum([Message.to_tokens(item, True) for item in value], [])
@@ -375,14 +375,39 @@ class Message(list):
         list.insert(self, index, protocol.base_rep[value])
 
 
-class _tuple_Token(tuple):
-    ''' Core for the Token class, based on an tuple.
-        Disadvantages: Perceived as a series,
-        particularly in string substitution with %.
+class _integer_Token(int):
+    ''' Core for the Token class, based on an integer.
+        Advantages over the tuple-based class:
+            - Doesn't confuse string interpolation
+            - Slightly faster
+        Possible disadvantages:
+            - Easier to use improperly in arithmetic
+            - Compares equal to integers and tokens with different names
+            - Sorts by number, not text; particularly relevant for provinces
+            - Token 0x0000 is a false value
     '''#'''
     
     # Use __slots__ to save memory, and to maintain immutability
-    __slots__ = ()
+    __slots__ = ('text')
+    
+    def __new__(klass, key):
+        ''' Converts the token to an integer,
+            resulting in the numerical DCSP value.
+            
+            # Moved here from the old __int__() method
+            >>> int(YES)
+            18460
+            >>> int(Token('PAR', 0x510A))
+            20746
+            >>> int(IntegerToken(0x1980))
+            6528
+            >>> int(IntegerToken(-3))
+            16381
+        '''#'''
+        name, number = key
+        result = super(_integer_Token, klass).__new__(klass, number)
+        result.text = name
+        return result
     
     # Basic token properties
     def __str__(self):
@@ -401,40 +426,35 @@ class _tuple_Token(tuple):
             >>> str(South)
             'STH'
         '''#'''
-        return self[0]
-    def __int__(self):
-        ''' Converts the token to an integer,
-            resulting in the numerical DCSP value.
-            
-            >>> int(YES)
-            18460
-            >>> int(Token('PAR', 0x510A))
-            20746
-            >>> int(IntegerToken(0x1980))
-            6528
-            >>> int(IntegerToken(-3))
-            16381
-        '''#'''
-        return self[1]
-    text = property(fget=__str__)
-    number = property(fget=__int__)
+        return self.text
+    number = property(fget=int)
     
-    # Try to be atomic
-    def __iter__(self): raise AttributeError, 'Tokens are atomic.'
+    # Avoid changing the text
+    def __setattr__(self, name, value):
+        if hasattr(self, name):
+            raise AttributeError("'%s' object attribute '%s' is read-only" %
+                    self.__class__.__name__, name)
+        else: super(_integer_Token, self).__setattr__(name, value)
 
-class Token(_tuple_Token):
+class Token(_integer_Token):
     ''' Embodies a single token, with both text and integer components.
         Instances are (mostly) immutable, and may be used as dictionary keys.
         However, as keys they are not interchangable with numbers or strings.
     '''#'''
     
     # Use __slots__ to save memory, and to maintain immutability
-    __slots__ = ()
+    __slots__ = ('category')
     cache = {}
     
     def __new__(klass, name, number):
         ''' Returns a Token instance from its name and number.
             If you only have one, use "config.protocol.base_rep[key]".
+            
+            # Moved here from the old category() method
+            >>> YES.category
+            72
+            >>> StringToken('A').category == Token.cats['Text']
+            True
         '''#'''
         # Fiddle with parentheses
         if name == 'BRA': name = '('
@@ -442,8 +462,9 @@ class Token(_tuple_Token):
         
         key = (name, number)
         result = Token.cache.get(key)
-        if not result:
+        if result is None:
             result = super(Token, klass).__new__(klass, key)
+            result.category = (number & 0xFF00) >> 8
             Token.cache[key] = result
         return result
     
@@ -455,19 +476,9 @@ class Token(_tuple_Token):
             >>> IntegerToken(-3).category_name()
             'Integers'
         '''#'''
-        cat = self.category()
+        cat = self.category
         if self.cats.has_key(cat): return self.cats[cat]
         else: return 'Unavailable'
-    def category(self):
-        ''' Returns the first byte of the DCSP token,
-            which usually indicates its category.
-            
-            >>> YES.category()
-            72
-            >>> StringToken('A').category() == Token.cats['Text']
-            True
-        '''#'''
-        return (self.number & 0xFF00) >> 8
     def value(self):
         ''' Returns a numerical value for the token.
             For integers, this is the value of the number;
@@ -495,7 +506,7 @@ class Token(_tuple_Token):
             >>> StringToken('A').is_text()
             True
         '''#'''
-        return self.category() == self.cats['Text']
+        return self.category == self.cats['Text']
     def is_power(self):
         ''' Whether the token represents a power (country) of the game.
             >>> YES.is_power()
@@ -505,13 +516,13 @@ class Token(_tuple_Token):
             >>> Token('ENG', 0x4101).is_power()
             True
         '''#'''
-        return self.category() == self.cats['Powers']
+        return self.category == self.cats['Powers']
     def is_unit_type(self):
         ''' Whether the token represents a type of unit.'''
-        return self.category() == self.cats['Unit_Types']
+        return self.category == self.cats['Unit_Types']
     def is_coastline(self):
         ''' Whether the token represents a specific coastline of a province.'''
-        return self.category() == self.cats['Coasts']
+        return self.category == self.cats['Coasts']
     def is_supply(self):
         ''' Whether the token represents a province with a supply centre.
             >>> YES.is_supply()
@@ -521,7 +532,7 @@ class Token(_tuple_Token):
             >>> Token('NWY', 0x553E).is_supply()
             True
         '''#'''
-        return self.is_province() and self.category() & 1 == 1
+        return self.is_province() and self.category & 1 == 1
     def is_coastal(self):
         ''' Whether the token represents a coastal province;
             that is, one to or from which an army can be convoyed.
@@ -542,7 +553,7 @@ class Token(_tuple_Token):
             True
         '''#'''
         p_cat = self.cats['Provinces']
-        return p_cat[0] <= self.category() <= p_cat[1]
+        return p_cat[0] <= self.category <= p_cat[1]
     def is_integer(self):
         ''' Whether the token represents a number.
             >>> YES.is_integer()
@@ -663,14 +674,14 @@ class StringToken(Token):
     cache = {}
     
     def __new__(klass, char):
-        result = klass.cache.get(char)
-        if not result:
+        result = StringToken.cache.get(char)
+        if result is None:
             charnum = ord(char)
             if charnum > 0xFF:
                 raise OverflowError, '%s too large to convert to %s' % (type(char), klass.__name__)
             else:
                 result = Token.__new__(klass, char, Token.opts.quot_prefix + charnum)
-            klass.cache[char] = result
+            StringToken.cache[char] = result
         return result
 
 class IntegerToken(Token):
@@ -685,20 +696,21 @@ class IntegerToken(Token):
     def __new__(klass, number):
         pos = Token.opts.max_pos_int
         neg = Token.opts.max_neg_int
-        result = klass.cache.get(number) or klass.cache.get(number + neg)
-        if not result:
-            number = int(number)
+        number = int(number)
+        if number < 0: key = number + neg
+        else: key = number
+        result = IntegerToken.cache.get(key)
+        if result is None:
             if number < -pos:
                 raise OverflowError, '%s too large to convert to %s' % (
                         type(number).__name__, klass.__name__)
             elif number < pos:
                 name = str(number)
-                if number < 0: number += neg
             elif number < neg:
                 name = str(number - neg)
             else:
                 raise OverflowError, '%s too large to convert to %s' % (
                         type(number).__name__, klass.__name__)
-            result = Token.__new__(klass, name, number)
-            klass.cache[number] = result
+            result = Token.__new__(klass, name, key)
+            IntegerToken.cache[key] = result
         return result

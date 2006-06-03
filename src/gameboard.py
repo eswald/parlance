@@ -499,18 +499,19 @@ class Power(Comparable):
         self.eliminated = False
     def __cmp__(self, other):
         ''' Allows direct comparison of Powers and tokens.
-            Note: This doesn't fully work for new-style classes.
             >>> country = Power(ENG, [])
             >>> country == ENG
             True
-            >>> country == Token('Eng', 0x4101)
-            False
             >>> country == Power(ENG, [NWY])
             True
             >>> pows = [Power(UNO, []), Power(FRA, [PAR]), None, country]
             >>> pows.sort()
             >>> print ' '.join([str(item) for item in pows])
             ENG FRA UNO None
+            
+            # Changed by making Token a subclass of int:
+            >>> country == Token('Eng', 0x4101)
+            True
         '''#'''
         if other is None:              return -1
         elif isinstance(other, Token): return cmp(self.key, other)

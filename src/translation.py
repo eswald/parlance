@@ -40,7 +40,7 @@ class Representation(Verbose_Object):
     def __getitem__(self, key):
         ''' Returns a Token from its name or number.'''
         result = self.get(key)
-        if not result:
+        if result is None:
             if isinstance(key, int): key = '0x%04X' % key
             raise KeyError, 'unknown token %r' % (key,)
         return result
@@ -50,7 +50,7 @@ class Representation(Verbose_Object):
             ITA
         '''#'''
         result = self.numbers.get(key) or self.names.get(key)
-        if not result:
+        if result is None:
             if isinstance(key, Token): result = key
             elif self.base: result = self.base.get(key)
             else:
@@ -63,8 +63,8 @@ class Representation(Verbose_Object):
                         result = StringToken(chr(number & 0x00FF))
                     elif self.opts.ignore_unknown:
                         result = Token('0x%04X' % number, number)
-                    else: raise ValueError, 'unknown token number 0x%04X' % number
-        return result or default
+                    else: result = default
+        return result
     
     def has_key(self, key):
         ''' Determines whether a given TLA is in use.'''
