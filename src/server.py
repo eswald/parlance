@@ -12,6 +12,7 @@ from gameboard import Turn
 from functions import (absolute_limit, expand_list, instances, num2name,
         relative_limit, s, timestamp, DefaultDict, Verbose_Object)
 from language  import *
+from validation import Validator
 
 import player, evilbot, dumbbot, peacebot, blabberbot, project20m
 bots = dict([(klass.name.lower(), klass) for klass in
@@ -156,7 +157,7 @@ class Server(Verbose_Object):
     
     def handle_message(self, client, message):
         'Processes a single message from any client.'
-        reply = message.validate(client.game.options.LVL)
+        reply = client.game.validator.validate_client_message(message)
         if reply: client.send(reply)
         else:
             method_name = 'handle_'+message[0].text
@@ -384,6 +385,7 @@ class Historian(Verbose_Object):
         self.clients = []
         self.messages = {}
         self.history = {}
+        self.validator = Validator()
     
     def save(self, stream):
         if not self.started:
@@ -773,6 +775,7 @@ class Game(Historian):
             # Send starting messages, and start the timers.
             self.started = True
             self.log_debug(9, 'Starting the game')
+            self.validator.syntax_level = self.options.LVL
             self.messages[LST] = self.listing()
             self.messages[HLO] = HLO(OBS)(0)(self.options)
             for user in self.clients: self.send_hello(user)
@@ -924,8 +927,6 @@ class Game(Historian):
         ''' Sends the press message to the recipients,
             subject to various caveats listed in the syntax document.
         '''#'''
-        from validation import trimmed
-        
         country = client.country
         eliminated = self.judge.eliminated()
         if country and self.press_allowed and country not in eliminated:
@@ -951,11 +952,7 @@ class Game(Historian):
                     if nation in press:
                         client.send(OUT(nation)(message))
                         return
-                # Trim high-level tokens from TRY messages
-                for token,level in trimmed.items():
-                    if level > self.options.LVL:
-                        while token in press:
-                            press.remove(token)
+                self.validator.trim(press)
                 outgoing = FRM(country)(recips)(press)
                 for nation in recips:
                     # Hope that nobody disappears here...
@@ -1293,7 +1290,7 @@ class Game(Historian):
     def set_press_level(self, client, match):
         cmd, specific, level = match.groups()
         if specific:
-            try: new_level = config.press_levels[level]
+            try: new_level = self.validator.press_levels[level]
             except KeyError:
                 client.admin('Invalid press level %r', level.capitalize())
                 return
@@ -1308,7 +1305,7 @@ class Game(Historian):
             self.options.LVL = new_level
             self.admin('%s has set the press level to %d (%s).',
                     client.full_name(), new_level,
-                    config.press_levels[new_level])
+                    self.validator.press_levels[new_level])
     def end_game(self, client, match):
         if self.closed: client.admin('The game is already over.')
         else:

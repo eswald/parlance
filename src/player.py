@@ -13,6 +13,7 @@ from cPickle   import dump, load
 from random    import randrange, shuffle
 from functions import s, autosuper, Verbose_Object, version_string
 from orders    import *
+from validation import Validator
 
 __version__ = "$Revision$"
 
@@ -58,6 +59,10 @@ class Observer(Verbose_Object):
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
         
+        if self.client_opts.validate:
+            self.validator = Validator()
+        else: self.validator = None
+        
         # A list of variables to remember across SVE/LOD
         self.remember = ['map']
         
@@ -96,13 +101,13 @@ class Observer(Verbose_Object):
         '''#'''
         self.log_debug(5, '<< %s', message)
         
-        if self.client_opts.validate:
+        if self.validator:
             # Check message syntax
-            level = self.opts and self.opts.LVL or 0
             if message[0] is HLO:
                 try: level = message[message.index(LVL) + 1].value()
                 except (ValueError, IndexError): level = 0
-            reply = message.validate(level, True)
+                self.validator.syntax_level = level
+            reply = self.validator.validate_server_message(message)
         else: reply = None
         if reply:
             self.handle_invalid(message, reply=reply)

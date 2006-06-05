@@ -8,6 +8,7 @@ from random       import choice, random, randrange, shuffle
 from functions    import version_string
 from dumbbot      import DumbBot
 from language     import *
+from validation   import Validator
 
 __version__ = "$Revision$"
 
@@ -51,10 +52,15 @@ class BlabberBot(DumbBot):
     def random_expression(self, expression):
         try: items = self.syntax[expression]
         except KeyError:
-            import validation
-            items = self.syntax[expression] = [syntax
-                    for level, syntax in validation.syntax[expression]
-                    if level <= self.opts.LVL]
+            if not Validator.press_levels: Validator.read_syntax()
+            options = Validator.syntax.get(expression)
+            if options:
+                items = self.syntax[expression] = [syntax
+                        for level, syntax in options
+                        if level <= self.opts.LVL]
+            else:
+                items = self.syntax[expression] = ()
+                self.log_debug(7, 'Unknown syntax expression %r', expression)
         shuffle(items)
         
         result = None

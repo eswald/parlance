@@ -268,6 +268,7 @@ class Gameboard_Doctests(unittest.TestCase):
     ''' Tests that were once doctests, but no longer work as such.'''
     def test_map_define(self):
         ''' Test the creation of a new map from a simple MDF.'''
+        from validation import Validator
         from language import MDF, NCS, UNO
         from xtended import standard_map, ENG, FRA, \
                 EDI, LON, BRE, PAR, BEL, HOL, SPA, NWY, ECH, NTH, PIC
@@ -291,7 +292,8 @@ class Gameboard_Doctests(unittest.TestCase):
             (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
         )
         
-        self.failIf(mdf.validate(0, True), 'Invalid MDF message')
+        self.failIf(Validator().validate_server_message(mdf),
+                'Invalid MDF message')
         m = Map(config.variant_options('simplified',
             'Small board for testing purposes', {},
             config.protocol.default_rep))

@@ -93,6 +93,11 @@
       configuration, and global variable reduction.</p>
     <p>Token.opts should be removed entirely, and the init_language call moved
       to the language module.</p>
+    <p>StringToken and IntegerToken seem half-complete right now, because
+      Token can theoretically be called directly in their case.  Either
+      separate them completely (which could help with <code>value()</code>,
+      <code>is_text()</code>, and so forth), or merge them back.  Probably the
+      former, because the Message class calls them directly.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
     <p>The remaining thread references should be moved into ThreadManager.</p>
@@ -137,6 +142,7 @@
       blocks to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
       currently, game logging simply fails and the game stays in memory.</p>
+    <p>Could I possibly parse the variant file lazily?</p>
     
     <h2>Unit Testing</h2>
     <p>The remaining doctests should probably be refactored into proper

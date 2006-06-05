@@ -211,7 +211,7 @@ class variant_options(Verbose_Object):
         return Judge(self, game_options())
     def get_representation(self):
         filename = self.files.get('rem')
-        if filename: return read_representation_file(filename)
+        if filename: return parse_file(filename, read_representation_file)
         else: return protocol.default_rep
     def read_file(self, extension):
         result = self.msg_cache.get(extension)
@@ -266,27 +266,34 @@ class variant_options(Verbose_Object):
 
 
 # File parsing
-def parse_variants(variant_file):
-    try: var_file = open(variant_file, 'rU', 1)
-    except IOError: raise IOError, "Could not find variants file '%s'" % variant_file
-    else:
-        name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
-        file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
-        descrip = name = None
-        for line in var_file:
-            match = name_pattern.search(line)
+def parse_file(filename, parser):
+    result = None
+    try: stream = open(filename, 'rU', 1)
+    except IOError, err:
+        raise IOError("Failed to open configuration file %r %s" %
+                (filename, err.args))
+    try: result = parser(stream)
+    finally: stream.close()
+    return result
+
+def parse_variants(stream):
+    name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
+    file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
+    descrip = name = None
+    for line in stream:
+        match = name_pattern.search(line)
+        if match:
+            descrip, name = match.groups()
+            files = {}
+        elif name and descrip:
+            match = file_pattern.search(line)
             if match:
-                descrip, name = match.groups()
-                files = {}
-            elif name and descrip:
-                match = file_pattern.search(line)
-                if match:
-                    ref, ext = match.groups()
-                    files[ext.lower()] = os.path.normpath(os.path.join(
-                        os.path.dirname(variant_file), ref))
-                elif '</tr>' in line:
-                    variants[name] = variant_options(name, descrip, files)
-                    descrip = name = None
+                ref, ext = match.groups()
+                files[ext.lower()] = os.path.normpath(os.path.join(
+                    os.path.dirname(options.variant_file), ref))
+            elif '</tr>' in line:
+                variants[name] = variant_options(name, descrip, files)
+                descrip = name = None
 
 class Protocol(Verbose_Object):
     ''' Collects various constants from the Client-Server Protocol file.
@@ -412,13 +419,13 @@ class Protocol(Verbose_Object):
         if not self.magic: self.log_debug(1, 'Missing magic number')
         if not self.version: self.log_debug(1, 'Missing version number')
 
-def read_representation_file(rep_file_name):
+def read_representation_file(stream):
     ''' Parses a representation file.
         The first line contains a decimal integer, the number of tokens.
         The remaining lines consist of four hex digits, a colon,
         and the three-letter token name.
         
-        >>> rep = read_representation_file('variants/sailho.rem')
+        >>> rep = parse_file('variants/sailho.rem', read_representation_file)
         >>> rep['NTH']
         Token('NTH', 0x4100)
         
@@ -428,11 +435,10 @@ def read_representation_file(rep_file_name):
         >>> len(rep)
         64
     '''#'''
-    rep_file = open(rep_file_name, 'rU', 1)
-    num_tokens = int(rep_file.readline().strip())
+    num_tokens = int(stream.readline().strip())
     if num_tokens > 0:
         rep = {}
-        for line in rep_file:
+        for line in stream:
             number = int(line[0:4], 16)
             name = line[5:8]
             uname = name.upper()
@@ -443,30 +449,6 @@ def read_representation_file(rep_file_name):
         if num_tokens == 0: return Representation(rep, protocol.base_rep)
         else: raise ValueError, 'Wrong number of lines in representation file'
     else: return protocol.default_rep
-
-def read_syntax(syntax_file):
-    ''' Opens the Message Syntax file, passing it to the validation module.'''
-    from validation import parse_syntax_file
-    levels = None
-    
-    try: syn_file = open(syntax_file, 'rU', 1)
-    except IOError:
-        raise IOError, "Failed to find syntax file %r" % syntax_file
-    else:
-        levels = parse_syntax_file(syn_file)
-        syn_file.close()
-    
-    if levels:
-        # Expand press levels to be useful to the Game class
-        for i,name in levels:
-            press_levels[i] = name
-            press_levels[str(i)] = i
-            press_levels[name.lower()] = i
-    else:
-        # Set reasonable press levels if the file is missing or unparsable
-        for i in range(0, 200, 10) + [8000]:
-            press_levels[i] = str(i)
-            press_levels[str(i)] = i
 
 
 # Exporting variables
@@ -499,8 +481,7 @@ def init_language():
         elif name in opts.retreat_phases: order_mask[token] = opts.retreat_phase
         elif name in opts.build_phases:   order_mask[token] = opts.build_phase
     
-    parse_variants(opts.variant_file)
-    read_syntax(opts.syntax_file)
+    parse_file(opts.variant_file, parse_variants)
 
 def extend_globals(globs):
     ''' Inserts into the given dictionary elements required by certain doctests.
@@ -529,7 +510,6 @@ def extend_globals(globs):
 # Global variables
 options = syntax_options()
 protocol = Protocol(options.dcsp_file)
-press_levels = {}
 order_mask = {}
 variants = {}
 

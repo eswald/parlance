@@ -7,6 +7,7 @@ import unittest, config
 from functions import Verbose_Object, relative_limit, version_string
 from player    import Player, HoldBot
 from language  import *
+from validation import Validator
 
 __version__ = "$Revision$"
 
@@ -41,11 +42,12 @@ class PlayerTestCase(unittest.TestCase):
         opts = config.game_options()
         self.params = opts.get_params()
         self.level = opts.LVL
+        self.validator = Validator(opts.LVL)
         self.player = None
         self.replies = []
     def handle_message(self, message):
         #print message
-        reply = message.validate(self.level)
+        reply = self.validator.validate_client_message(message)
         self.failIf(reply, reply)
         self.replies.append(message)
     def tearDown(self):
@@ -110,16 +112,18 @@ class Player_Tests(PlayerTestCase):
         self.start_game()
         self.replies = []
         offer = THK(PCE(ENG, GER))
-        self.player.client_opts.validate = False
+        self.player.validator = None
         self.send(FRM(FRA, 0)(ENG)(offer) + WRT(ENG, 0))
         self.seek_reply(SND(FRA)(WHY(offer)))
     def test_validate_option(self):
+        # Todo: Fix this test to actually test the client_opts option again.
         self.connect_player(self.Test_Player)
-        self.player.client_opts.validate = False
+        validator = self.player.validator
+        self.player.validator = None
         self.send(REJ(YES))
         self.seek_reply(+HLO)
         self.failIf(self.player.closed)
-        self.player.client_opts.validate = True
+        self.player.validator = validator or Validator()
         self.send(REJ(YES))
         self.failUnless(self.player.closed)
     def test_known_map(self):
@@ -137,7 +141,7 @@ class Player_Tests(PlayerTestCase):
     def test_HLO_PDA(self):
         ''' The HLO message should be valid with level 10 parameters.'''
         self.connect_player(self.Test_Player)
-        self.player.client_opts.validate = True
+        if not self.player.validator: self.player.validator = Validator()
         self.start_game()
         self.failIf(self.player.closed)
     def test_press_error(self):

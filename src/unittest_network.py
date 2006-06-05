@@ -88,6 +88,10 @@ class NetworkTestCase(ServerTestCase):
         if result: self.manager.add_polled(client)
         else: raise UserWarning('Failed to open a Client for ' + name)
         return result and client
+    def set_verbosity(self, level):
+        super(Network_Full_Games, self).set_verbosity(level)
+        if network.Connection.verbosity >= 7:
+            network.Connection.verbosity = 6
 
 class Network_Basics(NetworkTestCase):
     def test_timeout(self):

@@ -11,8 +11,6 @@
         - Token: One unit of a message, containing both its name and number.
 '''#'''
 
-from functions import Verbose_Object
-
 class Message(list):
     ''' Representation of a Diplomacy Message, as a list of Tokens.
         >>> m = Message(NOT, BRA, GOF, KET)
@@ -37,72 +35,6 @@ class Message(list):
             'NOT ( GOF )'
         '''#'''
         for item in message: list.extend(self, self.to_tokens(item))
-    
-    def validate(self, syntax_level=0, from_server=False):
-        ''' Determines whether the message is syntactically valid.
-            Returns False for a good message, or an error Message
-            (HUH or PRN) to send to the client.
-            
-            # Checks unbalanced parentheses
-            >>> from translation import translate
-            >>> squeeze = base_rep.opts.squeeze_parens
-            >>> base_rep.opts.squeeze_parens = True
-            >>> print translate("IAM(NOT").validate()
-            PRN (IAM (NOT)
-            >>> print translate("IAM)NOT(").validate()
-            PRN (IAM) NOT ()
-            >>> print translate('PRN ( IAM ( NOT )').validate()
-            False
-            
-            # Checks syntax
-            >>> print translate('WHT(YES)').validate()
-            HUH (ERR WHT (YES))
-            >>> print NME('name')(-3).validate()
-            HUH (NME ("name") (ERR -3))
-            >>> print NME('name').validate()
-            HUH (NME ("name") ERR)
-            >>> print NME('name')('version').validate()
-            False
-            
-            # Checks syntax level
-            >>> Peace = AND (PCE(ENG, FRA)) (DRW)
-            >>> print SND(ENG)(PRP(Peace)).validate(40)
-            False
-            >>> m = SND(ENG)(PRP(ORR(NOT(DRW))(Peace)))
-            >>> print m.validate(40)
-            HUH (SND (ENG) (PRP (ORR (NOT (DRW)) (ERR AND (PCE (ENG FRA)) (DRW)))))
-            >>> print m.validate(100)
-            False
-            
-            # Checks messages from server, too
-            >>> msg = MAP('standard')
-            >>> print msg.validate()
-            HUH (MAP ERR ("standard"))
-            >>> print msg.validate(0, True)
-            False
-            
-            # Just to restore the state for other tests:
-            >>> base_rep.opts.squeeze_parens = squeeze
-        '''#'''
-        from validation import validate_expression
-        
-        if self.count(BRA) != self.count(KET):
-            if self[0] == PRN: return False
-            else: return PRN(self)
-        else:
-            if from_server: base_expression = 'server_message'
-            else:           base_expression = 'client_message'
-            index, valid = validate_expression(self, base_expression, syntax_level)
-            if valid and index == len(self): return False
-            else:
-                if index < len(self) and self[index] == KET:
-                    submsg = self[:index + 1]
-                    if submsg.count(BRA) != submsg.count(KET):
-                        if self[0] == PRN: return False
-                        else: return PRN(self)
-                result = HUH(self)
-                result.insert(index + 2, ERR)
-                return result
     
     def fold(self):
         ''' Folds the token into a list, with bracketed sublists as lists.
