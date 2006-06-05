@@ -19,7 +19,8 @@
 '''#'''
 
 import config
-from random       import random, randrange, shuffle
+from copy         import copy
+from random       import randint, random, randrange, shuffle
 from time         import ctime
 from player       import Player
 from gameboard    import location_key
@@ -38,6 +39,34 @@ class DumbBot_Values(config.option_class):
         A few of these values enable features not available to DumbBot;
         the default values for these disable them.
     '''#'''
+    intnames = [
+        'proximity_spring_attack_weight',
+        'proximity_spring_defence_weight',
+        'proximity_fall_attack_weight',
+        'proximity_fall_defence_weight',
+        'spring_strength_weight',
+        'spring_competition_weight',
+        'fall_strength_weight',
+        'fall_competition_weight',
+        'base_unit_weight',
+        'home_vacation_weight',
+        'home_attack_weight',
+        'home_defence_weight',
+        'build_defence_weight',
+        'remove_defence_weight',
+        'play_alternative',
+        'alternative_difference_modifier',
+        'size_square_coefficient',
+        'size_coefficient',
+        'size_constant',
+        'convoy_weight',
+    ]
+    intlistnames = [
+        'spring_proximity_weight',
+        'fall_proximity_weight',
+        'build_proximity_weight',
+        'remove_proximity_weight',
+    ]
     
     def __init__(self, section):
         self.section = section
@@ -121,12 +150,32 @@ class DumbBot_Values(config.option_class):
         try: result = map(int, strings)
         except ValueError: result = default
         return result
+    
+    def mutate(self, factor):
+        ''' Create and return a mutated version of this set of values.
+            Higher values of factor indicate greater degrees of mutation.
+        '''#'''
+        def tweak(value):
+            x = int(abs(value * factor)) + 1
+            return value + randint(-x,x)
+        mutant = copy(self)
+        for name in self.intnames:
+            setattr(mutant, name, tweak(getattr(self, name)))
+        for name in self.intlistnames:
+            values = [tweak(value) for value in getattr(self, name)]
+            setattr(mutant, name, values)
+        return mutant
+    
+    def __str__(self):
+        values = str.join(', ', (str(getattr(self, name))
+                for name in self.intnames + self.intlistnames))
+        return self.__class__.__name__ + '(' + values + ')'
 
 class Province_Values(object):
     ''' Holds various information about the provinces.
         This needs to be separate from the Map, so generate_orders()
         can be re-entrant (in case it runs overtime).
-
+        
         - proximity_map         prov -> list of PROXIMITY_DEPTH values; the value of the province, considering the N nearest spaces
         - defence_value         prov -> approximately the size of the largest enemy who has a unit next to the province
         - attack_value          prov -> approximately the size of the owning power
@@ -202,7 +251,7 @@ class DumbBot(Player):
     
     def __init__(self, *args, **kwargs):
         self.__super.__init__(*args, **kwargs)
-        self.vals = DumbBot_Values(self.name.lower())
+        self.vals = kwargs.get('values') or DumbBot_Values(self.name.lower())
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
         self.attitude = DefaultDict(1)
     def handle_SCO(self, message):
@@ -409,7 +458,7 @@ class DumbBot(Player):
                         values.strength_value[coast_id.province.key],
                         values.competition_value[coast_id.province.key]
                     ))
-
+                    
                     for proximity_counter in range(max_proximity):
                         if len(values.proximity_map[coast_id.key]) > proximity_counter:
                             fp.write("%5f," % values.proximity_map[coast_id.key][ proximity_counter ])
@@ -785,8 +834,7 @@ class DumbBot(Player):
         return use_next
     
     # Hooks for mutation
-    def get_values(self): return self.vals.get_key()
-    def set_values(self, values): self.vals.set(values)
+    def get_values(self): return self.vals
 
 
 if __name__ == "__main__":

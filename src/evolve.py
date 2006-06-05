@@ -3,130 +3,125 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-import config
+from main      import ThreadManager
+from network   import ServerSocket
+from player    import Observer
 from server    import Server
-from player    import Player
-from random    import randint
-from threading import Thread
-from time      import sleep
 
 game_number = 0
 def evolve(player_class, file_name):
+    if not hasattr(player_class, 'get_values'):
+        print "%s cannot be evolved." % (player_class.__name__)
+    log_file = open(file_name, 'a', 1)
+    try: evolve_logged(player_class, log_file)
+    finally: log_file.close()
+
+def evolve_logged(player_class, stream):
     ''' Runs a server and a bunch of bots, attempting to optimize them.'''
     global game_number
-    next_values = None
-    log_file = open(file_name, 'a', 1)
-    options = {
-        'verbosity': 0,
-    }
     
-    threads = []
-    bored = False
-    while not bored:
-        # Start a new server
-        server = Server(options)
-        server_thread = Thread(target=server.run)
-        server_thread.start()
+    name = player_class.name or player_class.__name__
+    next_values = None
+    def output(line, *args):
+        text = (str(line) % args) + "\n"
+        print text,
+        stream.write(text)
+    
+    # Start a new server
+    manager = ThreadManager()
+    manager.pass_exceptions = True
+    sock = ServerSocket(Server, manager)
+    if sock.open():
+        manager.add_polled(sock)
+        server = sock.server
+    else:
+        output('Failed to open the server.')
+        return
+    
+    while not server.closed:
+        game = server.default_game()
         game_number += 1
         
-        # Create the specified clients
-        clients = server.local_connections(player_class, 0)
-        players = []
-        for client in clients:
-            if client.open():
-                if next_values: client.player.set_values(next_values.pop())
-                players.append(client.player)
-                new_thread = Thread(target=client.player_loop)
-                threads.append((new_thread, client))
-                new_thread.start()
-            else: raise IOError, 'Client refuses to open.'
-        
-        # Create the gene splicing player
-        client = server.local_connections(Gene_Splicer, 1)[0]
-        if client.open():
+        # Create the gene splicing observer
+        client = manager.add_client(GeneSplicer, output=output)
+        if client: manager.process()
+        if client and client.player:
             splicer = client.player
-            new_thread = Thread(target=client.player_loop)
-            threads.append((new_thread, client))
-            new_thread.start()
-        else: raise IOError, 'Client refuses to open.'
+        else:
+            output('Failed to start the gene splicer.')
+            return
+        
+        # Create the specified clients
+        players = []
+        for dummy in range(game.players_needed()):
+            if next_values:
+                vals = next_values.pop()
+                output('Starting %s with %s', name, vals)
+                client = manager.add_client(player_class, values=vals)
+            else:
+                output('Starting %s with default values', name)
+                client = manager.add_client(player_class)
+            if client: manager.process()
+            if client and client.player:
+                players.append(client.player)
+            else:
+                output('Failed to start.')
+                return
         
         # Wait for all threads to terminate.
-        try:
-            while server_thread.isAlive(): sleep(1)
-        except KeyboardInterrupt:
-            print 'Interrupted.  Closing server...'
-            server.close()
-            while server_thread.isAlive(): sleep(.1)
-            bored = True
-        while threads:
-            thread,client = threads.pop()
-            if bored and thread.isAlive(): client.close()
-            try:
-                while thread.isAlive(): sleep(.1)
-            except KeyboardInterrupt:
-                print 'Interrupted.  Closing client...'
-                client.close()
-                while thread.isAlive(): sleep(.1)
-                bored = True
-            # Last call for messages
-            for msg in client.recv_list():
-                client.player.handle_message(msg)
+        while not game.closed: manager.process(30)
         
         # Find values for the next run
-        next_values = splicer.get_next_values(players, log_file)
-    log_file.close()
-    print 'Goodbye.'
+        next_values = splicer.get_next_values(players)
+    manager.close()
 
-class Gene_Splicer(Player):
+class GeneSplicer(Observer):
     ''' An observer to collect winner information for the evolver.'''
     
-    def __init__(self, *args):
-        Player.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        self.__super.__init__(*args, **kwargs)
+        self.use_map = True
         self.winners = []
+        self.output = kwargs.get('output')
     
     def handle_DRW(self, message):
-        print message
+        self.output(message)
         if len(message) > 3: self.winners = message[2:-1]
-        else:                self.winners = map.current_powers()
+        else:                self.winners = self.map.current_powers()
     def handle_SLO(self, message):
-        print message
+        self.output(message)
         self.winners = [message[2]]
     def handle_SCO(self, message):
-        print 'Game #%d, %s: %s' % (
+        self.output('Game #%d, %s: %s',
             game_number,
             self.map.current_turn.year or 'start',
             message
         )
     
-    def get_next_values(self, players, log_file):
+    def get_next_values(self, players):
         win_values = []
-        log_file.write("Players in %s, ended in %s:\n"
-            % (self.map.name, self.map.current_turn))
+        self.output("Players in %s, ended in %s:",
+                self.map.name, self.map.current_turn)
         for player in players:
-            values = player.get_values() 
-            token = player.power.token
+            values = player.get_values()
+            token = player.power.key
             if token in self.winners:
-                intro = '- Winner: '
+                status = 'Winner'
                 win_values.append(values)
-            else: intro = '- Loser:  '
-            log_file.write("%s%s as %s\n" % (intro, values, token))
+            else: status = 'Loser'
+            self.output("- %s: %s as %s", status, values, token)
         
         if win_values: cycles = len(players) // len(win_values)
         else: cycles = 0
         result = win_values[:]
         cycles -= 1
         if cycles > 1:
-            result += [self.mutate(val_set, 0.4) for val_set in win_values]
+            result += [val_set.mutate(0.4) for val_set in win_values]
             cycles -= 1
         while cycles > 0:
-            result += [self.mutate(val_set, 0.05) for val_set in win_values]
+            result += [val_set.mutate(0.05) for val_set in win_values]
             cycles -= 1
         return result
-    def mutate(self, value_list, factor):
-        def tweak(value):
-            x = int(abs(value * factor)) + 1
-            return value + randint(-x,x)
-        return [tweak(value) for value in value_list]
 
 
 if __name__ == "__main__":

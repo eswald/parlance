@@ -4,25 +4,17 @@
 '''#'''
 
 from player    import Observer
-from threading import Thread
+from network   import InputWaiter
 
 class Chatty(Observer):
     ''' An observer that simply lets a human chat with Admin messages.'''
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.name = raw_input('Name: ')
-        self.__super.__init__(*args)
+        self.__super.__init__(*args, **kwargs)
         self.quit = False
-        Thread(target=self.run).start()
-    def open(self):
-        self.output('Connecting...')
-        return self.__super.open()
-    def run(self):
-        try:
-            while not self.closed:
-                line = raw_input()
-                self.send_admin(line)
-            self.output('Goodbye.')
-        except EOFError: self.output('Thank you for playing.'); self.close()
+    def register(self):
+        self.__super.register()
+        self.manager.add_polled(InputWaiter(self.send_admin, self.close))
     def output(self, line, *args): print str(line) % args
     def handle_CCD(self, message):
         self.output('* %s has been disconnected.', message[2])
@@ -63,10 +55,13 @@ except ImportError:
 else:
     class Cursed(Chatty):
         ''' A slightly better interface for the simple admin chat.'''
-        def __init__(self, *args):
+        def __init__(self, *args, **kwargs):
             self.outwin = None
             self.chatbuf = []
-            self.__super.__init__(*args)
+            self.__super.__init__(*args, **kwargs)
+        def register(self):
+            self.manager.add_threaded(self)
+            super(Chatty, self).register()
         def run(self):
             curses.wrapper(self.run_curses)
             self.close()
@@ -74,13 +69,10 @@ else:
             self.setup_win(win)
             self.editwin = win.subwin(1, curses.COLS - 1, curses.LINES - 1, 0)
             editpad = Textbox(self.editwin)
-            try:
-                while not self.closed:
-                    line = editpad.edit()
-                    self.editwin.erase()
-                    if line: self.send_admin(line)
-                self.output('Goodbye, %s.', self.name)
-            except EOFError: self.output('Thank you for playing.')
+            while not self.closed:
+                line = editpad.edit()
+                self.editwin.erase()
+                if line: self.send_admin(line)
         def setup_win(self, win):
             win.scrollok(True)
             win.idlok(True)
@@ -103,8 +95,8 @@ else:
             self.__super.handle_OFF(message)
     class MapChat(Cursed):
         ''' An even better interface for the admin chat, displaying a map.'''
-        def __init__(self, *args):
-            self.__super.__init__(*args)
+        def __init__(self, *args, **kwargs):
+            self.__super.__init__(*args, **kwargs)
             self.use_map = True
             self.mapwin = None
             self.units = {}

@@ -5,13 +5,11 @@
 
 from __future__ import division
 
-try: from threading import Thread
-except ImportError: Thread = None
-
 import config
 from cPickle   import dump, load
 from random    import randrange, shuffle
 from functions import s, autosuper, Verbose_Object, version_string
+from main      import ThreadManager, run_player
 from orders    import *
 from validation import Validator
 
@@ -58,6 +56,7 @@ class Observer(Verbose_Object):
         self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
+        self.manager  = kwargs.get('manager') or ThreadManager()
         
         if self.client_opts.validate:
             self.validator = Validator()
@@ -129,9 +128,8 @@ class Observer(Verbose_Object):
             # Then call client handlers
             method = getattr(self, method_name, None)
             if method:
-                if Thread and method_name in self.threaded:
-                    Thread(target=self.apply_handler,
-                            args=(method, message)).start()
+                if method_name in self.threaded:
+                    self.manager.new_thread(self.apply_handler, method, message)
                 else: self.apply_handler(method, message)
         self.log_debug(12, 'Finished %s message', message[0])
     def apply_handler(self, method, message):
@@ -615,6 +613,4 @@ class Echo(AutoObserver):
         self.__super.handle_message(message)
 
 
-if __name__ == "__main__":
-    from main import run_player
-    run_player(HoldBot, True, True)
+if __name__ == "__main__": run_player(HoldBot, True, True)

@@ -3,7 +3,6 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from time         import sleep
 from random       import choice, random, randrange, shuffle
 from functions    import version_string
 from dumbbot      import DumbBot
@@ -33,8 +32,7 @@ class BlabberBot(DumbBot):
             countries.remove(me)
             self.countries = list(countries)
             self.syntax = {}
-            from threading import Thread
-            Thread(target=self.blab).start()
+            self.run()
         else: self.close()
     def handle_FRM(self, message):
         folded = message.fold()
@@ -44,11 +42,10 @@ class BlabberBot(DumbBot):
         replies = (YES, REJ, BWX)
         if press[0] not in replies + (HUH, TRY):
             self.send_press(sender, choice(replies)(press))
-    def blab(self):
-        while not self.closed:
-            self.send_press(choice(self.countries),
-                    self.random_expression('press_message'))
-            sleep(5 + random() * 10)
+    def run(self):
+        self.send_press(choice(self.countries),
+                self.random_expression('press_message'))
+        self.manager.add_timed(self, 5 + random() * 10)
     def random_expression(self, expression):
         try: items = self.syntax[expression]
         except KeyError:

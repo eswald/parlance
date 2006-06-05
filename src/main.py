@@ -6,8 +6,10 @@
 import select
 from itertools import chain
 from sys import argv
-from threading import Thread
 from time import sleep, time
+
+try: from threading import Thread
+except ImportError: Thread = None
 
 import config
 from functions import Verbose_Object
@@ -114,6 +116,9 @@ class ThreadManager(Verbose_Object):
     def attempt(self, client):
         self.log_debug(12, 'Running %s', client.prefix)
         try: client.run()
+        except KeyboardInterrupt:
+            self.log_debug(7, 'Interrupted by user')
+            self.close()
         except Exception, e:
             self.log_debug(1, 'Exception running %s: %s %s',
                     client.prefix, e.__class__.__name__, e.args)
@@ -231,11 +236,34 @@ class ThreadManager(Verbose_Object):
         for client in removals: self.dynamic.remove(client)
     
     # Threaded client handling
+    class ThreadClient(object):
+        def __init__(self, target, *args, **kwargs):
+            from itertools import chain
+            self.target = target
+            self.args = args
+            self.kwargs = kwargs
+            self.closed = False
+            arguments = chain((repr(arg) for arg in args),
+                    ("%s=%r" % (name, value)
+                        for name, value in kwargs.iteritems()))
+            self.prefix = (target.__name__ + '(' +
+                    str.join(', ', arguments) + ')')
+        def run(self):
+            self.target(*self.args, **self.kwargs)
+            self.close()
+        def close(self):
+            self.closed = True
     def add_threaded(self, client):
-        self.log_debug(11, 'New threaded client: %s', client.prefix)
-        thread = Thread(target=self.attempt, args=(client,))
-        thread.start()
-        self.threaded.append((thread, client))
+        if Thread:
+            self.log_debug(11, 'New threaded client: %s', client.prefix)
+            thread = Thread(target=self.attempt, args=(client,))
+            thread.start()
+            self.threaded.append((thread, client))
+        else:
+            self.log_debug(11, 'Emulating threaded client: %s', client.prefix)
+            self.attempt(client)
+    def new_thread(self, target, *args, **kwargs):
+        self.add_threaded(self.ThreadClient(target, *args, **kwargs))
     def add_client(self, player_class, **kwargs):
         from network import Client
         name = player_class.name or player_class.__name__

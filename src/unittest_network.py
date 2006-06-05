@@ -89,7 +89,7 @@ class NetworkTestCase(ServerTestCase):
         else: raise UserWarning('Failed to open a Client for ' + name)
         return result and client
     def set_verbosity(self, level):
-        super(Network_Full_Games, self).set_verbosity(level)
+        super(NetworkTestCase, self).set_verbosity(level)
         if network.Connection.verbosity >= 7:
             network.Connection.verbosity = 6
 
