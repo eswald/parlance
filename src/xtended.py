@@ -7,6 +7,10 @@
     but offers a convenient way to import all those names.
 '''#'''
 
-import config, xtended
-for key, value in config.extend_globals({}).iteritems():
-    setattr(xtended, key, value)
+import sys
+import config
+module = sys.modules[__name__]
+extended = config.extend_globals({})
+for key, value in extended.iteritems():
+    setattr(module, key, value)
+__all__ = extended.keys()
