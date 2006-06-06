@@ -186,38 +186,36 @@ def relative_limit(seconds):
     if -result > max_int: result = -max_int
     return result
 
-class DefaultDict(dict):
+class defaultdict(dict):
     ''' Shortcut for a self-initializing dictionary;
         for example, to keep counts of something.
+        Designed to emulate the implemenation in Python 2.5
         
-        Taken from Peter Norvig's Infrequently Answered Questions,
-        at http://www.norvig.com/python-iaq.html
-        Modified to resemble Maxim Krikun's solution, at
-        http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/259173
-        
-        >>> d = DefaultDict(0)
+        >>> d = defaultdict(lambda: 1)
         >>> d['hello'] += 1
         >>> d
-        {'hello': 1}
-        >>> d2 = DefaultDict([])
+        {'hello': 2}
+        >>> d2 = defaultdict(list)
         >>> d2[1].append('hello')
         >>> d2[2].append('world')
         >>> d2[1].append('there')
         >>> d2
         {1: ['hello', 'there'], 2: ['world']}
     '''#'''
-    __slots__ = ('default',)
-    def __init__(self, default): self.default = default
+    __slots__ = ('default_factory',)
+    def __init__(self, default_factory=None):
+        self.default_factory = default_factory
     def __getitem__(self, key):
         try: result = dict.__getitem__(self, key)
-        except KeyError:
-            item = self.default
-            if callable(item): result = item()
-            else:
-                import copy
-                result = copy.deepcopy(item)
-            self[key] = result
+        except KeyError: result = self.__missing__(key)
         return result
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError(key)
+        else:
+            result = self.default_factory()
+            self[key] = result
+            return result
 
 def version_string(revision, extra=''):
     ''' Converts a Subversion revision string into a NME version string.'''

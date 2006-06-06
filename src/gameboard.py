@@ -7,7 +7,7 @@
 
 import config
 from itertools   import chain
-from functions   import DefaultDict, Verbose_Object, Comparable, any, all, Infinity
+from functions   import defaultdict, Verbose_Object, Comparable, any, all, Infinity
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
 def location_key(unit_type, loc):
@@ -379,7 +379,7 @@ class Map(Verbose_Object):
             # Restore original map
             >>> standard_map.restart()
         '''#'''
-        net_growth = DefaultDict(0)
+        net_growth = defaultdict(int)
         for unit in self.units:
             power = unit.nation
             loser = unit.takeover()

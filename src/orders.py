@@ -8,7 +8,7 @@
 
 import config
 from operator    import lt, gt
-from functions   import any, all, autosuper, Comparable
+from functions   import any, all, autosuper, defaultdict, Comparable
 from gameboard   import Turn, Power, Coast, Unit
 from language    import *
 #from language    import Message, \
@@ -464,7 +464,7 @@ def createUnitOrder(order, nation, board, datc):
     '''#'''
     return _class_types[order[1]].create(order, nation, board, datc)
 
-class OrderSet(dict):
+class OrderSet(defaultdict):
     ''' A mapping of Coast key -> UnitOrder, with special provisions for Waives.
         >>> Moscow = standard_map.spaces[MOS].unit
         >>> Warsaw = standard_map.spaces[WAR].unit.coast
@@ -479,11 +479,8 @@ class OrderSet(dict):
         SUB ( FRA WVE ) ( RUS WVE ) ( ( RUS AMY MOS ) HLD ) ( ( RUS AMY MOS ) MTO WAR )
     '''#'''
     def __init__(self, default_nation=None):
+        super(OrderSet, self).__init__(list)
         self.default = default_nation
-    def __getitem__(self, key):
-        ''' Similar to DefaultDict, from Peter Norvig's IAQ.'''
-        if key in self: return self.get(key)
-        return self.setdefault(key, [])
     def __len__(self):
         ''' Primarily to allow "if order_set:" to work as expected,
             but also makes iteration slightly more efficient.

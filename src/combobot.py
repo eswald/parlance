@@ -52,7 +52,7 @@ class ComboBot(DumbBot):
         return [OrderCombo(self, [HoldOrder(unit)])
             for unit in self.power.units]
     def generate_move_combos(self):
-        adj_provs = DefaultDict([])
+        adj_provs = defaultdict(list)
         for unit in self.power.units:
             for key in unit.coast.borders_out:
                 dest = self.map.coasts[key]

@@ -7,7 +7,7 @@
 '''#'''
 
 import config
-from functions import DefaultDict, any, all, s, Infinity, Verbose_Object
+from functions import defaultdict, any, all, s, Infinity, Verbose_Object
 from gameboard import Map
 from orders    import *
 #from orders    import createUnitOrder, RemoveOrder, WaiveOrder, \
@@ -441,7 +441,7 @@ class Judge(JudgeInterface):
         '''#'''
         orders = []
         removed = []
-        destinations = DefaultDict([])
+        destinations = defaultdict(list)
         turn = self.map.current_turn
         for unit in self.map.units:
             if unit.dislodged:
@@ -778,7 +778,7 @@ class Judge(JudgeInterface):
         return True
 
 
-class Decision_Set(DefaultDict):
+class Decision_Set(defaultdict):
     ''' Holds a set of Decisions, separating them by type.
         As a list, they are returned in the following order:
         PATH decisions, ATTACK decisions, SUPPORT decisions, DEFEND decisions,
@@ -786,7 +786,7 @@ class Decision_Set(DefaultDict):
         This order attempts to maximize decisions made in the first pass.
         (But it could be better by alternating attack and support...)
     '''#'''
-    def __init__(self): super(Decision_Set, self).__init__([])
+    def __init__(self): super(Decision_Set, self).__init__(list)
     def add(self, decision): self[decision.type].append(decision)
     def __iter__(self):
         from itertools import chain

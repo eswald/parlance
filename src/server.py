@@ -10,7 +10,7 @@ from time      import time
 
 from gameboard import Turn
 from functions import (absolute_limit, expand_list, instances, num2name,
-        relative_limit, s, timestamp, DefaultDict, Verbose_Object)
+        relative_limit, s, timestamp, defaultdict, Verbose_Object)
 from language  import *
 from validation import Validator
 
@@ -1168,7 +1168,7 @@ class Game(Historian):
                 veto_verb = 'ejection'
                 terms = ('eject', 'ejection')
             
-            names = DefaultDict(0)
+            names = defaultdict(int)
             for c,n in players: names[n] += 1
             itemlist = [(num,nam) for nam,num in names.items()]
             itemlist.sort()

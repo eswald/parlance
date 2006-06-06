@@ -24,7 +24,7 @@ from random       import randint, random, randrange, shuffle
 from time         import ctime
 from player       import Player
 from gameboard    import location_key
-from functions    import DefaultDict, expand_list, all, version_string
+from functions    import defaultdict, expand_list, all, version_string
 from orders       import *
 
 __version__ = "$Revision$"
@@ -189,8 +189,8 @@ class Province_Values(object):
         self.attack_value      = dict.fromkeys(provs, 0)
         self.strength_value    = dict.fromkeys(provs, 0)
         self.competition_value = dict.fromkeys(provs, 0)
-        self.proximity_map     = DefaultDict([0] * PROXIMITY_DEPTH)
-        self.adjacent_units    = DefaultDict(DefaultDict([]))
+        self.proximity_map     = defaultdict(lambda: [0] * PROXIMITY_DEPTH)
+        self.adjacent_units    = defaultdict(lambda: defaultdict(list))
 
 class DumbBot(Player):
     ''' The main DumbBot algorithm.
@@ -253,7 +253,7 @@ class DumbBot(Player):
         self.__super.__init__(**kwargs)
         self.vals = values or DumbBot_Values(self.name.lower())
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
-        self.attitude = DefaultDict(1)
+        self.attitude = defaultdict(lambda: 1)
     def handle_SCO(self, message):
         ''' Stores the size of each power,
             modified by the Ax^2 + Bx + C formula from DumbBot_Values.
@@ -475,7 +475,7 @@ class DumbBot(Player):
         self.check_for_wasted_holds(orders, values)
         return orders
     def dumb_movement(self, values, orders, units):
-        waiting = DefaultDict([])
+        waiting = defaultdict(list)
         our_units = list(units)
         
         while our_units:
