@@ -270,7 +270,7 @@ class Validator(Verbose_Object):
                 self.log_debug(16, '%sChecking "%s" against %s',
                         ' ' * self.spaces, msg, sub_list)
                 result, good = self.validate_option(msg, sub_list)
-                self.log_debug(16, 'Result: %s, %s',
+                self.log_debug(16, '%sResult: %s, %s',
                         ' ' * self.spaces, result, good)
                 self.spaces -= 1
                 if good == valid and result > best:
