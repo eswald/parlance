@@ -330,12 +330,12 @@ class Server(Verbose_Object):
             '  list variants - Lists known map variants'),
         Command(r'list bots', list_bots,
             '  list bots - Lists bots that can be started by the server'),
+        Command(r'status', list_status,
+            '  status - Displays the status of each game'),
     ]
     local_commands = [
         Command(r'shutdown', close,
             '  shutdown - Stops the server'),
-        Command(r'status', list_status,
-            '  status - Displays the status of each game'),
         Command(r'powers', list_powers,
             '  powers - Displays the power assignments for this game'),
     ]

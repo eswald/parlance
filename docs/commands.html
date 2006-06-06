@@ -1,0 +1,170 @@
+<html>
+  <head>
+    <title>PyDip Diplomacy Server - Admin Commands</title>
+    <meta name="description" content="Description of the administrative
+      commands used to manipulate the PyDip Diplomacy server.">
+  </head>
+  <body>
+    <h1>PyDip Diplomacy Server - Admin Commands</h1>
+
+    <p>To use any of these commands, either begin an admin message with
+      "Server:" or type the whole command in capital letters.  If the first
+      form is entered correctly, the command itself will <em>never</em> be
+      returned or forwarded like a usual admin message; instead, there will
+      always be a message from the server.  If the command is in all caps,
+      however, it will be forwarded if admin commands are disabled.</p>
+
+
+    <h2>Information Commands</h2>
+    <p>These commands simply list information about the server.  Other players
+      won't even know that you entered them.</p>
+
+    <h3><a name="help">Help</a></h3>
+    <p>Lists the admin commands accepted by the server, with a brief
+      description of each.</p>
+
+    <h3><a name="list_variants">List Variants</a></h3>
+    <p>Lists the variant names accepted by the <a href="#new_variant_game">New
+        <em>&lt;variant&gt;</em> Game</a> command.</p>
+
+    <h3><a name="list_bots">List Bots</a></h3>
+    <p>Lists the types of bot that can be started with the
+      <a href="#start_bot">Start <em>&lt;bot&gt;</em></a> commands, with a
+      short description of each.  <strong>Note:</strong> You may also start
+      bots on your own machine, pointing them to this server.</p>
+
+    <h3><a name="list_players">List Players</a></h3>
+    <p>Lists the names of the players connected to your current game, and the
+      number of observers.  <strong>Note:</strong> Their power assignments will
+      <em>not</em> be listed.</p>
+
+    <h3><a name="who">Who</a></h3>
+    <p>Synonym for <a href="#list_players">List Players</a>.</p>
+
+    <h3><a name="status">Status</a></h3>
+    <p>Displays the status of each game currently hosted by the server.</p>
+
+
+    <h2>Vetoable Commands</h2>
+    <p>These commands modify the game state.  After one of these commands is
+      issued, any player or observer in the affected game can
+      <a href="#veto">veto</a> it within twenty seconds to completely block
+      and/or reverse its effects.  In most cases, this means the command is
+      not actually carried out until that time expires.</p>
+
+    <h3><a name="resume">Resume</a></h3>
+    <p>Reverses the effects of the <a href="#pause">Pause</a> command.  The
+      deadline timer (if any) starts with the same amount of time it had when
+      the game was paused, and the phase will end if all players have
+      submitted orders.  <strong>Note:</strong> If the game was paused because
+      one or more players disconnected, this <em>will</em> resume it before
+      they reconnect.</p>
+    <p>The server may also attempt to resume the game when players reconnect.
+      Currently, this does not depend on whether the game was paused
+      automatically or manually; this behavior may change.</p>
+
+    <h3><a name="start_bot">Start <em>&lt;number&gt;</em>
+        <em>&lt;bot&gt;</em></a></h3>
+    <p>Invites one or more copies of a bot player into the game.  For example,
+      "Start a Dumberbot" will create one imitation copy of David's DumbBot.
+      "Start evilbots" will start as many cheaters as it takes to fill up the
+      game.  "Start 2 HoldBots" will do exactly that.  Bots started in this way
+      will connect to your current game, even if another one has been
+      started.</p>
+
+    <p><strong>Note:</strong> This currently requires at least two different
+      players to be connected to the game.  If you wish to play a solo game on
+      this server, use your own bots.</p>
+
+    <h3><a name="start_bot_as">Start <em>&lt;bot&gt;</em> as
+        <em>&lt;power&gt;</em></a></h3>
+    <p>As <a href="#start_bot">above</a>, but you get to choose the power that
+      the bot will play.  The chosen power may not be that of a currently
+      connected player, but this command works before the game starts or after
+      a player disconnects.</p>
+
+    <h3><a name="eject">Eject <em>&lt;player&gt;</em></a></h3>
+    <p>Forcibly removes a player from the game.  You can specify
+      <em>&lt;player&gt;</em> as either a player's name (usually the same as in
+      their admin messages) or their country (full name or three-letter
+      abbreviation).</p>
+
+    <p>If multiple players share the name (usually because they're all bots),
+      they will all be ejected unless the game has already started.  After the
+      game starts, eject them one by one, using their country names.  Observers
+      cannot (yet) be ejected from a game.</p>
+
+    <h3><a name="boot">Boot <em>&lt;player&gt;</em></a></h3>
+    <p>A stronger form of <a href="#eject">Eject</a>.  The player(s) being
+      booted cannot veto this command, but other players and observers can.</p>
+
+    <h3><a name="end_game">End Game</a></h3>
+    <p>Ends the game, without declaring a winner or a draw.  However, if the
+      game has been started, a <a href="syntax.html#SMR">summary
+        message</a> is sent.</p>
+
+
+    <h2>Non-Vetoable Commands</h2>
+    <p>These commands, for various reasons, cannot be vetoed, even though they
+      affect the game state.  Their effects will generally be reported to all
+      players and observers in your current game.</p>
+
+    <h3><a name="veto">Veto</a></h3>
+    <p>Cancels any vetoable commands for the current game.  Another word may be
+      added to restrict the type of command vetoed; for example, "veto end"
+      would only veto <a href="#end_game">End Game</a> commands.</p>
+
+    <h3><a name="cancel">Cancel</a></h3>
+    <p>Synonym for <a href="#veto">Veto</a>.  May in the future be restricted
+      to cancelling only actions that you initiated.</p>
+
+    <h3><a name="reject">Reject</a></h3>
+    <p>Synonym for <a href="#veto">Veto</a>.  The Maginot version of this
+      command seems to only veto pause commands.</p>
+
+    <h3><a name="enable_press">Enable Press</a></h3>
+    <p>Sets the press level to 8000 (Free Text).  <strong>Note:</strong>
+      Enable/disable press commands can only be used <em>before</em> the game
+      starts, so the server can send the correct syntax level to the
+      players.</p>
+
+    <h3><a name="enable_press_level">Enable Press Level
+        <em>&lt;N&gt;</em></a></h3>
+    <p>Sets the press level to level <em>&lt;N&gt;</em>.  <em>&lt;N&gt;</em>
+      must be either the number or the name of a level listed in <a
+          href="syntax.html">the message syntax document</a>; for example,
+      "Enable press level 30" and "Enable press level Multipart Offers" are
+      equivalent.  Abbreviations and alternate spellings are not allowed,
+      nor are intermediate numeric levels.</p>
+
+    <h3><a name="disable_press">Disable Press</a></h3>
+    <p>Sets the press level to 0 (no press).  This has the side effect of
+      disabling noDIAS draws, even if the PDA flag has already been sent in
+      HLO messages.</p>
+    
+    <h3><a name="time_limits"><em>&lt;phase&gt;</em> Time Limit
+        [<em>&lt;seconds&gt;</em>]</a></h3>
+    <p>Sets the time limit for <em>&lt;phase&gt;</em> (move, build, retreat,
+      or press) to <em>&lt;seconds&gt;</em>.  If <em>&lt;seconds&gt;</em> is
+      omitted or the game has already started, instead reports the current
+      time limit.</p>
+
+    <h3><a name="pause">Pause</a></h3>
+    <p>Stops the current deadline timer, if any.  Also prevents the judge from
+      adjudicating any phases, until the next <a href="#resume">Resume</a>
+      command (which may be sent automatically).</p>
+
+    <h3><a name="new_game">New Game</a></h3>
+    <p>Begins a new game, with the standard map.  You will stay connected to
+      the current game, and it will keep running as normal; however, no new
+      players or observers, except server-started bots and SEL-aware clients,
+      can connect to it until the new game finishes.</p>
+
+    <h3><a name="new_variant_game">New <em>&lt;variant&gt;</em> Game</a></h3>
+    <p>Begins a new game, with the <em>&lt;variant&gt;</em> map.  Otherwise,
+      the same as the <a href="#new_game">New Game</a> command.  The
+      <em>&lt;variant&gt;</em> must be specified by its DAIDE name, as listed
+      on <a href='variants.html'>the map variant page</a>.</p>
+
+  </body>
+</html>
