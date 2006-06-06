@@ -1271,7 +1271,7 @@ class Game(Historian):
                 if num < 1: num += self.players_needed()
             
             name = bot_class.name
-            self.queue_action(self, self.start_bot_class, 'starting %s%s.' %
+            self.queue_action(client, self.start_bot_class, 'starting %s%s.' %
                     (instances(num, name), power and ' as %s' % pname or ''),
                     None, 'the %s%s.' % (name, s(num)),
                     ('start', 'bot', 'bots', name, name + 's'),
