@@ -34,9 +34,9 @@ class EvilBot(DumbBot):
             self.orders = None
             self.turn = None
     
-    def __init__(self, *args, **kwargs):
-        self.__super.__init__(*args, **kwargs)
-        self.game_id = game = kwargs.get('game_id')
+    def __init__(self, **kwargs):
+        self.__super.__init__(**kwargs)
+        game = self.game_id
         try:
             self.log_debug(11, 'Acquiring init lock')
             self.main_lock.acquire()

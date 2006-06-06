@@ -20,9 +20,6 @@ class NetworkTestCase(ServerTestCase):
     class Disconnector(ServerTestCase.Fake_Player):
         sleep_time = 14
         name = 'Loose connection'
-        def __init__(self, *args, **kwargs):
-            self.manager = kwargs.get('manager')
-            self.__super.__init__(*args, **kwargs)
         def handle_message(self, message):
             self.__super.handle_message(message)
             if message[0] is HLO:
@@ -103,7 +100,7 @@ class Network_Basics(NetworkTestCase):
     def test_reserved_tokens(self):
         ''' "Reserved for AI use" tokens must never be sent over the wire.'''
         class ReservedSender(object):
-            def __init__(self, send_method, rep, *args, **kwargs):
+            def __init__(self, send_method, **kwargs):
                 self.send = send_method
                 self.closed = False
             def register(self):

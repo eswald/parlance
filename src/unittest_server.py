@@ -20,7 +20,7 @@ class Fake_Manager(ThreadManager):
         self.start_clients(self.server.default_game().game_id)
     def add_client(self, player_class, **kwargs):
         service = Fake_Service(self.next_id,
-                self.server, player_class, **kwargs)
+                self.server, player_class, manager=self, **kwargs)
         self.next_id += 1
         return service
     def add_threaded(self, client):
@@ -36,7 +36,8 @@ class Fake_Service(Service):
         self.queue = []
         self.player = None
         self.__super.__init__(client_id, None, client_id, server)
-        self.player = player_class(self.handle_message, self.rep, **kwargs)
+        self.player = player_class(send_method=self.handle_message,
+                representation=self.rep, **kwargs)
         self.player.register()
         for msg in self.queue: self.handle_message(msg)
     def write(self, message):
@@ -61,17 +62,19 @@ class ServerTestCase(unittest.TestCase):
             Also useful to learn country passcodes.
         '''#'''
         name = 'Fake Player'
-        def __init__(self, send_method, representation, **kwargs):
+        def __init__(self, send_method, representation, manager,
+                power=None, passcode=None, game_id=None, observe=False):
             from language import NME, OBS
             self.log_debug(9, 'Fake player started')
             self.closed = False
-            self.power = kwargs.get('power')
-            self.pcode = kwargs.get('passcode')
+            self.power = power
+            self.pcode = passcode
             self.queue = []
             self.send = send_method
             self.rep = representation
-            self.game_id = kwargs.get('game_id')
-            if kwargs.has_key('observe'): self.player_type = OBS
+            self.manager = manager
+            self.game_id = game_id
+            if observe: self.player_type = OBS
             else: self.player_type = NME
         def register(self):
             from language import IAM, SEL

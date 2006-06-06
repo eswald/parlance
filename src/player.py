@@ -43,7 +43,7 @@ class Observer(Verbose_Object):
     description = None # Set this to a string to allow use as a bot.
     options = ()       # Set of tuples: (name, type, config text, default)
     
-    def __init__(self, send_method, representation, game_id=None, **kwargs):
+    def __init__(self, send_method, representation, game_id=None, manager=None):
         ''' Initializes the instance variables.'''
         self.client_opts = client_options(self.__class__)
         self.send_out = send_method      # A function that accepts messages
@@ -56,7 +56,7 @@ class Observer(Verbose_Object):
         self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
-        self.manager  = kwargs.get('manager') or ThreadManager()
+        self.manager  = manager or ThreadManager()
         
         if self.client_opts.validate:
             self.validator = Validator()
@@ -240,9 +240,9 @@ class Player(Observer):
         Most of them do everything you will need,
         in combination with instance variables.
     '''#'''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, power=None, passcode=None, **kwargs):
         ''' Initializes the instance variables.'''
-        self.__super.__init__(*args, **kwargs)
+        self.__super.__init__(**kwargs)
         self.in_game   = False # Whether the game is currently in progress
         self.submitted = False # Whether any orders have been submitted this turn
         self.press_tokens = [] # Tokens to be sent in a TRY message
@@ -258,12 +258,12 @@ class Player(Observer):
         self.threaded += ['handle_NOW']
         
         # Usefully sent through keyword arguments
-        self.power = kwargs.get('power')     # The power being played, or None
-        self.pcode = kwargs.get('passcode')  # The passcode from the HLO message
-        if not isinstance(self.pcode, (int, None.__class__)):
-            try: self.pcode = int(self.pcode)
+        self.power = power     # The power being played, or None
+        self.pcode = passcode  # The passcode from the HLO message
+        if not isinstance(passcode, (int, None.__class__)):
+            try: self.pcode = int(passcode)
             except ValueError:
-                self.log_debug(1, 'Invalid passcode "%r"', self.pcode)
+                self.log_debug(1, 'Invalid passcode "%r"', passcode)
                 self.pcode = None
     def close(self):
         self.__super.close()
@@ -542,8 +542,8 @@ class Ladder(AutoObserver):
                 'log/stats/ladder_scores'),
     )
     
-    def __init__(self, *args):
-        self.__super.__init__(*args)
+    def __init__(self, **kwargs):
+        self.__super.__init__(**kwargs)
         self.winners = []
     
     def handle_DRW(self, message):

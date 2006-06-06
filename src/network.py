@@ -255,7 +255,8 @@ class Client(Connection):
             self.log_debug(7, 'DM while waiting for RM: ' + str(msg))
         elif self.rep and not self.player:
             self.log_debug(9, 'Representation received')
-            self.player = self.pclass(self.send, self.rep, **self.kwargs)
+            self.player = self.pclass(send_method=self.send,
+                    representation=self.rep, **self.kwargs)
             self.player.register()
         if self.player:
             if msg: self.player.handle_message(msg)

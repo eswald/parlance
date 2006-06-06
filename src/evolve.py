@@ -78,11 +78,11 @@ def evolve_logged(player_class, stream):
 class GeneSplicer(Observer):
     ''' An observer to collect winner information for the evolver.'''
     
-    def __init__(self, *args, **kwargs):
-        self.__super.__init__(*args, **kwargs)
+    def __init__(self, output, **kwargs):
+        self.__super.__init__(**kwargs)
         self.use_map = True
         self.winners = []
-        self.output = kwargs.get('output')
+        self.output = output
     
     def handle_DRW(self, message):
         self.output(message)

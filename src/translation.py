@@ -246,11 +246,11 @@ def maybe_int(word):
 class RawClient(Verbose_Object):
     ''' Simple client to translate DM to and from text.'''
     name = None
-    def __init__(self, send_method, representation, **kwargs):
+    def __init__(self, send_method, representation, manager):
         self.send_out  = send_method      # A function that accepts messages
         self.rep       = representation   # The representation message
         self.closed    = False # Whether the connection has ended, or should end
-        self.manager   = kwargs.get('manager')
+        self.manager   = manager
     def register(self):
         from network import InputWaiter
         print 'Connected.'

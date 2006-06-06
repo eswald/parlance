@@ -249,9 +249,9 @@ class DumbBot(Player):
     print_csv = False
     description = "A mimic of David Norman's DumbBot"
     
-    def __init__(self, *args, **kwargs):
-        self.__super.__init__(*args, **kwargs)
-        self.vals = kwargs.get('values') or DumbBot_Values(self.name.lower())
+    def __init__(self, values=None, **kwargs):
+        self.__super.__init__(**kwargs)
+        self.vals = values or DumbBot_Values(self.name.lower())
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
         self.attitude = DefaultDict(1)
     def handle_SCO(self, message):

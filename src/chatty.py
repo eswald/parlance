@@ -8,9 +8,9 @@ from network   import InputWaiter
 
 class Chatty(Observer):
     ''' An observer that simply lets a human chat with Admin messages.'''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.name = raw_input('Name: ')
-        self.__super.__init__(*args, **kwargs)
+        self.__super.__init__(**kwargs)
         self.quit = False
     def register(self):
         self.__super.register()
@@ -55,10 +55,10 @@ except ImportError:
 else:
     class Cursed(Chatty):
         ''' A slightly better interface for the simple admin chat.'''
-        def __init__(self, *args, **kwargs):
+        def __init__(self, **kwargs):
             self.outwin = None
             self.chatbuf = []
-            self.__super.__init__(*args, **kwargs)
+            self.__super.__init__(**kwargs)
         def register(self):
             self.manager.add_threaded(self)
             super(Chatty, self).register()
@@ -95,8 +95,8 @@ else:
             self.__super.handle_OFF(message)
     class MapChat(Cursed):
         ''' An even better interface for the admin chat, displaying a map.'''
-        def __init__(self, *args, **kwargs):
-            self.__super.__init__(*args, **kwargs)
+        def __init__(self, **kwargs):
+            self.__super.__init__(**kwargs)
             self.use_map = True
             self.mapwin = None
             self.units = {}

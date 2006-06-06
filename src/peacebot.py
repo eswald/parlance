@@ -23,8 +23,8 @@ class PeaceBot(DumbBot):
     # Static variables
     print_csv = True
     
-    def __init__(self, *args, **kwargs):
-        self.__super.__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        self.__super.__init__(**kwargs)
         self.friends = set()
         self.draws = [self.friends]
         self.order_list = None
