@@ -798,6 +798,9 @@ class Game(Historian):
             self.time_stopped = self.deadline - time()
             self.broadcast(NOT(TME(relative_limit(self.time_stopped))))
         self.paused = True
+    def unpause(self):
+        self.paused = False
+        if self.time_stopped: self.set_deadlines(self.time_stopped)
     def set_deadlines(self, seconds=None):
         ''' Sets the press_allowed flag and starts turn timers.
             Use seconds when the clock starts again after DSD.
@@ -886,6 +889,7 @@ class Game(Historian):
                 veto_line, veto_terms, delay, *args))
             self.admin('(You may veto within %s seconds.)', num2name(delay))
         else: action_callback(*args)
+    def full_name(self): return 'The server'
     
     # Sending messages
     def send_hello(self, client):
@@ -1131,7 +1135,7 @@ class Game(Historian):
                 # Restart timers if everybody's here
                 unready = self.players_unready()
                 if unready: self.log_debug(9, 'Still waiting for %s', expand_list(unready))
-                elif self.time_stopped: self.set_deadlines(self.time_stopped)
+                elif self.paused: self.resume()
             else: client.reject(message)
         else:
             self.log_debug(7, 'Passcode check failed')
@@ -1222,12 +1226,12 @@ class Game(Historian):
         else:
             self.pause()
             self.admin('%s has paused the game.', client.full_name())
-    def resume(self, client, match):
+    def resume(self, client=None, match=None):
         if self.paused:
-            self.paused = False
-            if self.time_stopped: self.set_deadlines(self.time_stopped)
-            self.admin('%s has resumed the game.', client.full_name())
-        else: client.admin('The game is not currently paused.')
+            self.queue_action(client or self, self.unpause,
+                    'resuming the game.', None, 'resuming the game.',
+                    ('resume', 'unpause'))
+        elif client: client.admin('The game is not currently paused.')
     def start_bot(self, client, match):
         ''' Starts the specified number of the specified kind of bot.
             If number is less than one, it will be added to
@@ -1267,7 +1271,7 @@ class Game(Historian):
                 if num < 1: num += self.players_needed()
             
             name = bot_class.name
-            self.queue_action(client, self.start_bot_class, 'starting %s%s.' %
+            self.queue_action(self, self.start_bot_class, 'starting %s%s.' %
                     (instances(num, name), power and ' as %s' % pname or ''),
                     None, 'the %s%s.' % (name, s(num)),
                     ('start', 'bot', 'bots', name, name + 's'),
@@ -1318,8 +1322,9 @@ class Game(Historian):
         if actions:
             for vetoed in actions: vetoed.veto(client)
         else:
-            client.admin('%s to %s.', match.group(1),
-                word and ('No %s commands' % word) or 'Nothing')
+            client.admin('%s to %s.',
+                word and ('No %s commands' % word) or 'Nothing',
+                match.group(1))
     
     commands = [
         Command(r'who|list players', list_players,

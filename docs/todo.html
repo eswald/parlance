@@ -122,12 +122,14 @@
       instead of whether the power has been eliminated.  Then again, the
       document doesn't specify what happens to the deadline for the next
       phase...</p>
+    <p>In addition, DSD-started pauses are now treated exactly like
+      admin-command pauses.  When all players reconnect, either one will
+      trigger a server-generated vetoable resume command.  However, this
+      can cause a delay, where the official behavior specifies none.</p>
     <p>Time messages can currently send or accept negative times, meaning
       hours.  This is not official.  Better would be to have an optional
       second parameter for the hours, so the time can still be accurate to the
       second.</p>
-    <p>DSD-started pauses are no longer getting unpaused automatically.
-      This is clearly a bug.</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static

@@ -783,21 +783,48 @@ class Server_Admin_Other(Server_Admin):
     
     def test_pause(self):
         ''' Players can pause the game.'''
-        self.start_game()
+        game = self.start_game()
         self.assertAdminResponse(self.master, 'pause',
                 'Fake Human Player (Fake_Master) has paused the game.')
+        self.failUnless(game.paused)
         self.assertEqual(self.master.get_time(), None)
     def test_resume(self):
         ''' Players can resume a paused game.'''
-        self.start_game()
+        game = self.start_game()
         start = self.master.get_time()
         self.master.admin('Server: pause')
         sleep(7)
-        self.assertAdminResponse(self.master, 'resume',
-                'Fake Human Player (Fake_Master) has resumed the game.')
+        self.assertAdminVetoable(self.master, 'resume',
+                'Fake Human Player (Fake_Master) is resuming the game.')
+        self.wait_for_actions()
+        self.failIf(game.paused)
         end = self.master.get_time()
         self.failUnless(0 <= start - end <= 2,
                 'Time difference: %g' % (start - end))
+    def test_resume_veto_resume(self):
+        ''' An resume command can be vetoed with "veto resume".'''
+        game = self.start_game()
+        start = self.master.get_time()
+        self.master.admin('Server: pause')
+        sleep(7)
+        self.master.admin('Server: resume')
+        self.assertAdminResponse(self.robot, 'veto resume',
+                'Fake Player (Fake_Player) has vetoed resuming the game.')
+        self.wait_for_actions()
+        self.failUnless(game.paused)
+        self.assertEqual(self.master.get_time(), None)
+    def test_resume_veto(self):
+        ''' A resume command can be vetoed with "veto".'''
+        game = self.start_game()
+        start = self.master.get_time()
+        self.master.admin('Server: pause')
+        sleep(7)
+        self.master.admin('Server: resume')
+        self.assertAdminResponse(self.robot, 'veto',
+                'Fake Player (Fake_Player) has vetoed resuming the game.')
+        self.wait_for_actions()
+        self.failUnless(game.paused)
+        self.assertEqual(self.master.get_time(), None)
     
     def test_end_cleanup(self):
         ''' Someone can connect to an abandoned game and end it.'''
@@ -1000,5 +1027,22 @@ class Server_Bugfix(ServerTestCase):
         game.set_deadlines()
         offer = PRP(PCE(sender.power, recipient.power))
         self.assertPressSent(offer, sender, recipient)
+    def test_DSD_reconnect(self):
+        ''' The server should resume a paused game when all players reconnect.
+        '''#'''
+        self.set_option('Deadline Stops on Disconnection', True)
+        self.set_option('close on disconnect', False)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        control = self.connect_player(self.Fake_Player)
+        game = self.start_game()
+        player.close()
+        control.admin('Ping.')
+        self.wait_for_actions()
+        self.failUnless(game.paused)
+        new_player = self.connect_player(self.Fake_Player,
+                power=player.power, passcode=player.pcode)
+        self.wait_for_actions()
+        self.failIf(game.paused)
     
 if __name__ == '__main__': unittest.main()
