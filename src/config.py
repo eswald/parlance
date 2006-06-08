@@ -178,22 +178,6 @@ class SyntaxOptions(Configuration):
             'Document specifying protocol information, including token names and numbers.'),
         ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
             'Document specifying syntax rules and level names.'),
-        
-        # It would be nice if the tokens themselves contained this information.
-        ('move_phases', list, ('SPR','FAL'), 'move phases',
-            'Tokens that indicate movement phases'),
-        ('retreat_phases', list, ('SUM','AUT'), 'retreat phases',
-            'Tokens that indicate retreat phases'),
-        ('build_phases', list, ('WIN',), 'build phases',
-            'Tokens that indicate build phases'),
-        
-        # I might want to check sometime that these are powers of two
-        ('move_phase_bit', int, 0x20, 'move order mask',
-            'Bit that indicates movement phase in order token numbers.'),
-        ('retreat_phase_bit', int, 0x40, 'retreat order mask',
-            'Bit that indicates retreat phase in order token numbers.'),
-        ('build_phase_bit', int, 0x80, 'build order mask',
-            'Bit that indicates build phase in order token numbers.'),
     )
 class GameOptions(Configuration):
     ''' Options sent in the HLO message.'''
@@ -633,11 +617,6 @@ def init_language():
     '''#'''
     opts = options
     
-    # Masks to determine whether an order is valid during a given phase
-    opts.order_mask = mask = {
-        None: opts.move_phase_bit|opts.retreat_phase_bit|opts.build_phase_bit
-    }
-    
     # Export variables into the language globals
     import language
     language.Token.cats = protocol.token_cats
@@ -646,9 +625,6 @@ def init_language():
     for name, token in protocol.base_rep.items():
         #print 'Adding language.%s' % (name,)
         setattr(language, name, token)
-        if   name in opts.move_phases:    mask[token] = opts.move_phase_bit
-        elif name in opts.retreat_phases: mask[token] = opts.retreat_phase_bit
-        elif name in opts.build_phases:   mask[token] = opts.build_phase_bit
     
     parse_file(opts.variant_file, parse_variants)
 

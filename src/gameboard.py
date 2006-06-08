@@ -5,8 +5,9 @@
     Defines classes to represent parts of the Diplomacy game.
 '''#'''
 
-import config
 from itertools   import chain
+
+from config      import protocol, Configuration, VerboseObject
 from functions   import defaultdict, Comparable, any, all, Infinity
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
@@ -14,7 +15,7 @@ def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
     else:                      return (unit_type, loc[0], loc[1])
 
-class Map(config.VerboseObject):
+class Map(VerboseObject):
     ''' The map for the game, with various notes.
         Variables:
             - name:     The name used to request this map
@@ -26,7 +27,7 @@ class Map(config.VerboseObject):
     '''#'''
     
     def __init__(self, options):
-        ''' Initializes the map from an instance of config.variant_options.'''
+        ''' Initializes the map from a MapVariant instance.'''
         self.__super.__init__()
         self.powers  = {}
         self.opts    = options
@@ -401,10 +402,43 @@ class Turn(Comparable):
             - Turn.retreat_phase
             - Turn.build_phase
     '''#'''
-    opts = config.options
-    move_phase    = opts.move_phase_bit
-    retreat_phase = opts.retreat_phase_bit
-    build_phase   = opts.build_phase_bit
+    class TurnOptions(Configuration):
+        __section__ = 'syntax'
+        __options__ = (
+            # It would be nice if the tokens themselves contained this info.
+            ('move_phases', list, ('SPR','FAL'), 'move phases',
+                'Tokens that indicate movement phases'),
+            ('retreat_phases', list, ('SUM','AUT'), 'retreat phases',
+                'Tokens that indicate retreat phases'),
+            ('build_phases', list, ('WIN',), 'build phases',
+                'Tokens that indicate build phases'),
+            
+            # Todo: Check that these are powers of two
+            ('move_phase_bit', int, 0x20, 'move order mask',
+                'Bit that indicates movement phase in order token numbers.'),
+            ('retreat_phase_bit', int, 0x40, 'retreat order mask',
+                'Bit that indicates retreat phase in order token numbers.'),
+            ('build_phase_bit', int, 0x80, 'build order mask',
+                'Bit that indicates build phase in order token numbers.'),
+        )
+        
+        def __init__(self):
+            self.__super.__init__()
+            
+            # Masks to determine whether an order is valid during a given phase
+            self.phase_mask = mask = {None: (self.move_phase_bit |
+                    self.retreat_phase_bit | self.build_phase_bit)}
+            for name in self.move_phases:
+                mask[protocol.base_rep[name]] = self.move_phase_bit
+            for name in self.retreat_phases:
+                mask[protocol.base_rep[name]] = self.retreat_phase_bit
+            for name in self.build_phases:
+                mask[protocol.base_rep[name]] = self.build_phase_bit
+    
+    options = TurnOptions()
+    move_phase    = options.move_phase_bit
+    retreat_phase = options.retreat_phase_bit
+    build_phase   = options.build_phase_bit
     
     def __init__(self, season_list=None):
         self.season_list  = season_list
@@ -445,8 +479,8 @@ class Turn(Comparable):
             >>> t.phase() == Turn.retreat_phase
             True
         '''#'''
-        default = self.season.value() & self.opts.order_mask[None]
-        return self.opts.order_mask.get(self.season, default)
+        default = self.season.value() & self.options.phase_mask[None]
+        return self.options.phase_mask.get(self.season, default)
     def __cmp__(self, other):
         ''' Compares Turns with each other, or with their keys.
             >>> ts = Turn(); ts.set(SPR, IntegerToken(1901))
@@ -605,7 +639,7 @@ class Province(Comparable):
     def unit(self): return self.units and self.units[0] or None
 
 
-class Coast(Comparable, config.VerboseObject):
+class Coast(Comparable, VerboseObject):
     ''' A place where a unit can be.
         Each Province has one per unit type allowed there,
         with extra fleet Coasts for multi-coastal provinces.
