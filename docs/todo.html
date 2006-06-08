@@ -67,13 +67,14 @@
     
     <h2>Comments and code style</h2>
     <p>I need to go through the code and verify each comment and docstring.
+      __init__() docstrings should all document the variables they create.
       While I'm at it, I should use a consistent code style, probably based on
       <a href="http://www.python.org/dev/peps/pep-0008/">PEP 8</a>; in
       particular, decide whether "and" and "or" go at the end or beginning of
       a line, and whether to put space around parentheses in DAIDE-like
       expressions.</p>
-    <p>I should also update to Python 2.4 syntax for sorted and reversed lists,
-      generator expressions, and parenthetical import statements.</p>
+    <p>Mac OS X ships with Python 2.2; as nice as the 2.4 syntax is, I want
+      Mac users to be able to run this out of the box (so to speak).</p>
     
     <h2>DATC Options</h2>
     <p>I should test David's server for its response to the DATC options; for
@@ -100,14 +101,29 @@
       former, because the Message class calls them directly.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
+    <p>Module importation definitely needs to be sorted out, particularly
+      between config, language, and translation.</p>
     
     <h2>User Interface</h2>
     <p>Some modules could give explanatory messages instead of doing nothing
-      when run as a script.</p>
+      when run as a script.  Ideas:
+      <table>
+        <tr><td>config</td><td>create a sample pydip.cfg file</td></tr>
+        <tr><td>gameboard</td><td>?</td></tr>
+        <tr><td>judge</td><td>?</td></tr>
+        <tr><td>language</td><td>Show the base token values?</td></tr>
+        <tr><td>main</td><td>graphical user interface</td></tr>
+        <tr><td>orders</td><td>?</td></tr>
+        <tr><td>validation</td><td>extract-bnf.pl functionality</td></tr>
+        <tr><td>xtended</td><td>Show the standard token values?</td></tr>
+      </table>
+    </p>
     <p>The command-line interface could use some serious option parsing,
       probably tying into the config options.</p>
     <p>Output might be better run through the <code>logger</code> package.</p>
     <p>Graphics would probably be a good idea.  Particularly a map.</p>
+    <p>Bot developers are requesting a real-time display of all press in the
+      game, which would have to be done server-side.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
@@ -130,6 +146,13 @@
       hours.  This is not official.  Better would be to have an optional
       second parameter for the hours, so the time can still be accurate to the
       second.</p>
+    <p>The LST command could use a "status" field, with basically the
+      information returned by <a href='commands.html#status'>the status admin
+        command</a>.  A text field seems appropriate, because we don't have
+      good tokens for most possibilities, and it's more general; however, text
+      is harder for bots to rely on.</p>
+    <p>The new syntax doesn't distinguish between client and player messages.
+      That just might be possible after all.</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static
@@ -149,6 +172,7 @@
     <p>The remaining doctests should probably be refactored into proper
       unittest modules.</p>
     <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
+    <p>The network tests could use better assertions for some tests.</p>
     <p>THX order notes could use more testing.</p>
     
   </body>
