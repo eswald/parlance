@@ -158,7 +158,6 @@ class Validator(VerboseObject):
             (HUH or PRN) to send to the client.
             
             # Setup for the following tests
-            >>> from translation import translate
             >>> def validate(msg, level=0, from_server=False):
             ...     if from_server:
             ...         return Validator(level).validate_server_message(msg)
@@ -169,15 +168,15 @@ class Validator(VerboseObject):
             >>> base_rep.opts.squeeze_parens = True
             
             # Checks unbalanced parentheses
-            >>> print translate("IAM(NOT").validate()
+            >>> print base_rep.translate("IAM(NOT").validate()
             PRN (IAM (NOT)
-            >>> print translate("IAM)NOT(").validate()
+            >>> print base_rep.translate("IAM)NOT(").validate()
             PRN (IAM) NOT ()
-            >>> print translate('PRN ( IAM ( NOT )').validate()
+            >>> print base_rep.translate('PRN ( IAM ( NOT )').validate()
             False
             
             # Checks syntax
-            >>> print translate('WHT(YES)').validate()
+            >>> print base_rep.translate('WHT(YES)').validate()
             HUH (ERR WHT (YES))
             >>> print NME('name')(-3).validate()
             HUH (NME ("name") (ERR -3))

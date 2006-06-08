@@ -48,14 +48,13 @@ class Message(list):
             []
             >>> NME('name')(-3).fold()
             [NME, ['name'], [-3]]
-            >>> from translation import translate
-            >>> translate('(()(()()))()').fold()
+            >>> base_rep.translate('(()(()()))()').fold()
             [[[], [[], []]], []]
-            >>> translate('(()()))()(()').fold()
+            >>> base_rep.translate('(()()))()(()').fold()
             Traceback (most recent call last):
                 ...
             ValueError: unbalanced parentheses in folded Message
-            >>> translate('NOT ( GOF').fold()
+            >>> base_rep.translate('NOT ( GOF').fold()
             Traceback (most recent call last):
                 ...
             ValueError: unbalanced parentheses in folded Message
@@ -265,8 +264,7 @@ class Message(list):
     
     def __setslice__(self, from_index, to_index, value):
         ''' Replaces a portion of the Message, with Tokens.
-            >>> from translation import translate
-            >>> m = translate('NOT ( GOF )')
+            >>> m = base_rep.translate('NOT ( GOF )')
             >>> m[1:3] = [YES, 34, 'name']
             >>> str(m)
             'NOT YES 34 "name" )'

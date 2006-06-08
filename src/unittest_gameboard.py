@@ -45,7 +45,6 @@ class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
     def test_empty_UNO(self):
         ''' Test whether Map can define maps with no non-home supply centers.'''
-        from translation import translate
         # Almost Standard...
         mdf = '''
             MDF (AUS ENG FRA GER ITA RUS TUR)
@@ -134,7 +133,7 @@ class Map_Bugfix(unittest.TestCase):
             )
         '''#'''
         options = config.variants['standard']
-        options.map_mdf = translate(mdf, options.rep)
+        options.map_mdf = options.rep.translate(mdf)
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))

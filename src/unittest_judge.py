@@ -531,16 +531,18 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
     def test_major_problem(self):
         ''' This situation started chewing up memory and CPU like mad.'''
         from threading   import Thread
-        from translation import translate
         rep = self.judge.map.opts.rep
-        now = translate('''NOW ( FAL 1848 ) ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO ) ( MXC FLT NPO ) ( MXC FLT WCB )''', rep)
-        sub = translate('''SUB
+        now = rep.translate('''NOW ( FAL 1848 )
+                ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO )
+                ( MXC FLT NPO ) ( MXC FLT WCB )
+        ''') #'''
+        sub = rep.translate('''SUB
                 ( ( MXC FLT WCB ) MTO ( NIC ECS ) )
                 ( ( MXC FLT NPO ) CVY ( MXC AMY ORE ) CTO ALA )
                 ( ( MXC FLT COM ) MTO GOT )
                 ( ( MXC AMY ORE ) CTO ALA VIA ( NPO ) )
                 ( ( MXC FLT MPO ) MTO GAL )
-        ''', rep) #'''
+        ''') #'''
         self.judge.map.handle_NOW(now)
         self.judge.init_turn()
         client = self.Fake_Service(rep['MXC'])

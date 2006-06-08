@@ -11,7 +11,7 @@ import re, os
 import weakref
 import ConfigParser
 from functions import autosuper, settable_property
-from translation import Representation, read_message_file
+from translation import Representation
 
 # Main program version; used for bot versions
 repository = '$URL$'
@@ -391,7 +391,7 @@ class MapVariant(VerboseObject):
         if not result:
             filename = self.files.get(extension)
             if filename:
-                result = read_message_file(filename, self.rep)
+                result = self.rep.read_message_file(filename)
                 self.msg_cache[extension] = result
         return result
     def cache_msg(self, extension, message):

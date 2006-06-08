@@ -5,22 +5,7 @@
 
 from language import IntegerToken, Message, StringToken, Token
 
-__all__ = ['Representation', 'translate', 'read_message_file']
-
-# Temporary stubs while I get this sorted out
-def read_message_file(filename, rep=None):
-    ''' Reads a Diplomacy message written in a text file.
-        >>> msg = read_message_file('variants/standard.sco', default_rep)
-        >>> msg.fold()[2]
-        [ENG, LVP, EDI, LON]
-    '''#'''
-    from config import protocol
-    return (rep or protocol.base_rep).read_message_file(filename)
-
-def translate(text, rep=None):
-    ''' Translates a diplomacy message string into a Message.'''
-    from config import protocol
-    return (rep or protocol.base_rep).translate(text)
+__all__ = ['Representation']
 
 class Representation(object):
     ''' Holds and translates all tokens for a variant.
