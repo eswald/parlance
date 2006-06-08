@@ -494,12 +494,7 @@ class Protocol(VerboseObject):
         self.version = None
         self.magic = None
         
-        try: dcsp_file = open(filename, 'rU', 1)
-        except IOError:
-            raise IOError("Failed to open protocol file '%s'" % filename)
-        else:
-            try: self.parse_dcsp(dcsp_file)
-            finally: dcsp_file.close()
+        parse_file(filename, self.parse_dcsp)
         
         # Calculated constants needed by the language module
         # Todo: Move these to a more appropriate place
