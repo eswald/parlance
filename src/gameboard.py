@@ -7,14 +7,14 @@
 
 import config
 from itertools   import chain
-from functions   import defaultdict, Verbose_Object, Comparable, any, all, Infinity
+from functions   import defaultdict, Comparable, any, all, Infinity
 from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
     else:                      return (unit_type, loc[0], loc[1])
 
-class Map(Verbose_Object):
+class Map(config.VerboseObject):
     ''' The map for the game, with various notes.
         Variables:
             - name:     The name used to request this map
@@ -27,6 +27,7 @@ class Map(Verbose_Object):
     
     def __init__(self, options):
         ''' Initializes the map from an instance of config.variant_options.'''
+        self.__super.__init__()
         self.powers  = {}
         self.opts    = options
         self.name    = options.map_name
@@ -400,11 +401,10 @@ class Turn(Comparable):
             - Turn.retreat_phase
             - Turn.build_phase
     '''#'''
-    
-    opts = config.syntax_options()
-    move_phase    = opts.move_phase
-    retreat_phase = opts.retreat_phase
-    build_phase   = opts.build_phase
+    opts = config.options
+    move_phase    = opts.move_phase_bit
+    retreat_phase = opts.retreat_phase_bit
+    build_phase   = opts.build_phase_bit
     
     def __init__(self, season_list=None):
         self.season_list  = season_list
@@ -445,10 +445,8 @@ class Turn(Comparable):
             >>> t.phase() == Turn.retreat_phase
             True
         '''#'''
-        try: return config.order_mask[self.season]
-        except KeyError:
-            # Not defined by the DAIDE, so make an assumption
-            return self.season.value() & config.order_mask[None]
+        default = self.season.value() & self.opts.order_mask[None]
+        return self.opts.order_mask.get(self.season, default)
     def __cmp__(self, other):
         ''' Compares Turns with each other, or with their keys.
             >>> ts = Turn(); ts.set(SPR, IntegerToken(1901))
@@ -607,7 +605,7 @@ class Province(Comparable):
     def unit(self): return self.units and self.units[0] or None
 
 
-class Coast(Comparable, Verbose_Object):
+class Coast(Comparable, config.VerboseObject):
     ''' A place where a unit can be.
         Each Province has one per unit type allowed there,
         with extra fleet Coasts for multi-coastal provinces.
@@ -623,6 +621,7 @@ class Coast(Comparable, Verbose_Object):
     '''#'''
     def __init__(self, unit_type, province, coastline, adjacencies):
         # Warning: a fake Coast can have a unit_type of None.
+        self.__super.__init__()
         self.unit_type   = unit_type
         self.coastline   = coastline
         self.province    = province

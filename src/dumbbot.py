@@ -18,10 +18,12 @@
      **/
 '''#'''
 
-import config
 from copy         import copy
+from os           import path
 from random       import randint, random, randrange, shuffle
 from time         import ctime
+
+from config       import Configuration
 from player       import Player
 from gameboard    import location_key
 from functions    import defaultdict, expand_list, all, version_string
@@ -32,124 +34,103 @@ __version__ = "$Revision$"
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10
 
-class DumbBot_Values(config.option_class):
+class DumbBot_Values(Configuration):
     ''' Various constants that affect how the bot plays.
         These are the values used by the original DumbBot;
         there has been no attempt to optimise them for best play.
         A few of these values enable features not available to DumbBot;
         the default values for these disable them.
     '''#'''
-    intnames = [
-        'proximity_spring_attack_weight',
-        'proximity_spring_defence_weight',
-        'proximity_fall_attack_weight',
-        'proximity_fall_defence_weight',
-        'spring_strength_weight',
-        'spring_competition_weight',
-        'fall_strength_weight',
-        'fall_competition_weight',
-        'base_unit_weight',
-        'home_vacation_weight',
-        'home_attack_weight',
-        'home_defence_weight',
-        'build_defence_weight',
-        'remove_defence_weight',
-        'play_alternative',
-        'alternative_difference_modifier',
-        'size_square_coefficient',
-        'size_coefficient',
-        'size_constant',
-        'convoy_weight',
-    ]
-    intlistnames = [
-        'spring_proximity_weight',
-        'fall_proximity_weight',
-        'build_proximity_weight',
-        'remove_proximity_weight',
-    ]
-    
-    def __init__(self, section):
-        self.section = section
-        
-        # Importance of attacking centres we don't own, in Spring
-        self.proximity_spring_attack_weight = self.getint('spring attack', 700)
-        
-        # Importance of defending our own centres in Spring
-        self.proximity_spring_defence_weight = self.getint('spring defence', 300)
-        
-        # Same for fall.
-        self.proximity_fall_attack_weight = self.getint('fall attack', 600)
-        self.proximity_fall_defence_weight = self.getint('fall defence', 400)
-        
-        # Importance of proximity[n] in Spring
-        self.spring_proximity_weight = self.getintlist('spring proximity',
-                [100, 1000, 30, 10, 6, 5, 4, 3, 2, 1])
-        
-        # Importance of our attack strength on a province in Spring
-        self.spring_strength_weight = self.getint('spring strength', 1000)
-        
-        # Importance of lack of competition for the province in Spring
-        self.spring_competition_weight = self.getint('spring competition', 1000)
-        
-        # Importance of proximity[n] in Fall
-        self.fall_proximity_weight = self.getintlist('fall proximity',
-                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
-        
-        # Importance of our attack strength on a province in Fall
-        self.fall_strength_weight = self.getint('fall strength', 1000)
-        
-        # Importance of lack of competition for the province in Fall
-        self.fall_competition_weight = self.getint('fall competition', 1000)
-        
-        # Importance of attacking opposing units
-        self.base_unit_weight = self.getint('unit attack', 0)
-        
-        # Importance of vacating unattacked home SCs
-        self.home_vacation_weight = self.getint('home vacation', 0)
-        
-        # Importance of attacking another power's home supply centers
-        self.home_attack_weight = self.getint('home attack', 1)
-        
-        # Importance of defending or regaining our own home supply centers
-        self.home_defence_weight = self.getint('home defence', 1)
-        
-        # Importance of building in provinces we need to defend
-        self.build_defence_weight = self.getint('build defence', 1000)
-        
-        # Importance of proximity[n] when building
-        self.build_proximity_weight = self.getintlist('build proximity',
-                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
-        
-        # Importance of removing in provinces we don't need to defend
-        self.remove_defence_weight = self.getint('remove defence', 1000)
-        
-        # Importance of proximity[n] when removing
-        self.remove_proximity_weight = self.getintlist('remove proximity',
-                [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1])
-        
-        # Percentage change of not automatically playing the best move
-        self.play_alternative = self.getint('play alternative', 50)
-        
-        # If not automatic, chance of playing best move
-        # if inferior move is nearly as good.
-        # Larger numbers mean less chance.
-        self.alternative_difference_modifier = self.getint('alternative modifier', 500)
-        
-        # Formula for power size. These are A,B,C in S = Ax^2 + Bx + C
-        # where x is centre count and S is size of power
-        self.size_square_coefficient = self.getint('square coefficient', 1)
-        self.size_coefficient = self.getint('size coefficient', 4)
-        self.size_constant = self.getint('size constant', 16)
-        
-        # Percentage value a convoy has compared to a comparable move.
-        # 0 prevents convoys; 100 gives them equal weight.
-        self.convoy_weight = self.getint('convoy weight', 0)
-    
-    def getintlist(self, option, default):
-        strings = self.getlist(option, '') or default
-        try: result = map(int, strings)
-        except ValueError: result = default
+    def intlist(self, option, section):
+        strings = self.getlist(option, section)
+        if strings:
+            try: result = map(int, strings)
+            except ValueError:
+                self.warn('Invalid list of integers', option, section)
+                result = None
+        else: result = None
         return result
+    
+    __options__ = (
+        ('proximity_spring_attack_weight', int, 700, 'spring attack',
+            "Importance of attacking centres we don't own, in Spring"),
+        
+        ('proximity_spring_defence_weight', int, 300, 'spring defence',
+            "Importance of defending our own centres in Spring"),
+        
+        ('proximity_fall_attack_weight', int, 600, 'fall attack',
+            "Importance of attacking centres we don't own, in Fall"),
+        ('proximity_fall_defence_weight', int, 400, 'fall defence',
+            "Importance of defending our own centres in Fall"),
+        
+        ('spring_proximity_weight', intlist,
+            [100, 1000, 30, 10, 6, 5, 4, 3, 2, 1], 'spring proximity',
+            "Importance of proximity[n] in Spring"),
+        
+        ('spring_strength_weight', int, 1000, 'spring strength',
+            "Importance of our attack strength on a province in Spring"),
+        
+        ('spring_competition_weight', int, 1000, 'spring competition',
+            "Importance of lack of competition for the province in Spring"),
+        
+        ('fall_proximity_weight', intlist,
+            [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1], 'fall proximity',
+            "Importance of proximity[n] in Fall"),
+        
+        ('fall_strength_weight', int, 1000, 'fall strength',
+            "Importance of our attack strength on a province in Fall"),
+        
+        ('fall_competition_weight', int, 1000, 'fall competition',
+            "Importance of lack of competition for the province in Fall"),
+        
+        ('base_unit_weight', int, 0, 'unit attack',
+            "Importance of attacking opposing units"),
+        
+        ('home_vacation_weight', int, 0, 'home vacation',
+            "Importance of vacating unattacked home SCs"),
+        
+        ('home_attack_weight', int, 1, 'home attack',
+            "Importance of attacking another power's home supply centers"),
+        
+        ('home_defence_weight', int, 1, 'home defence',
+            "Importance of defending or regaining our own home supply centers"),
+        
+        ('build_defence_weight', int, 1000, 'build defence',
+            "Importance of building in provinces we need to defend"),
+        
+        ('build_proximity_weight', intlist,
+            [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1], 'build proximity',
+            "Importance of proximity[n] when building"),
+        
+        ('remove_defence_weight', int, 1000, 'remove defence',
+            "Importance of removing in provinces we don't need to defend"),
+        
+        ('remove_proximity_weight', intlist,
+            [1000, 100, 30, 10, 6, 5, 4, 3, 2, 1], 'remove proximity',
+            "Importance of proximity[n] when removing"),
+        
+        ('play_alternative', int, 50, 'play alternative',
+            "Percentage change of not automatically playing the best move"),
+        
+        ('alternative_difference_modifier', int, 500, 'alternative modifier',
+            'If not automatic, chance of playing best move',
+            'if inferior move is nearly as good.',
+            "Larger numbers mean less chance."),
+        
+        ('size_square_coefficient', int, 1, 'square coefficient',
+            "Formula for power size. A in S = Ax^2 + Bx + C",
+            "where x is centre count and S is size of power"),
+        ('size_coefficient', int, 4, 'size coefficient',
+            "Formula for power size. B in S = Ax^2 + Bx + C",
+            "where x is centre count and S is size of power"),
+        ('size_constant', int, 16, 'size constant',
+            "Formula for power size. C in S = Ax^2 + Bx + C",
+            "where x is centre count and S is size of power"),
+        
+        ('convoy_weight', int, 0, 'convoy weight',
+            "Percentage value a convoy has compared to a comparable move.",
+            "0 prevents convoys; 100 gives them equal weight."),
+    )
     
     def mutate(self, factor):
         ''' Create and return a mutated version of this set of values.
@@ -159,17 +140,20 @@ class DumbBot_Values(config.option_class):
             x = int(abs(value * factor)) + 1
             return value + randint(-x,x)
         mutant = copy(self)
-        for name in self.intnames:
-            setattr(mutant, name, tweak(getattr(self, name)))
-        for name in self.intlistnames:
-            values = [tweak(value) for value in getattr(self, name)]
-            setattr(mutant, name, values)
+        for klass in self.__class__.__mro__:
+            for item in getattr(klass, '__options__', ()):
+                name = item[0]
+                option_type = item[1]
+                if option_type is int:
+                    setattr(mutant, name, tweak(getattr(self, name)))
+                elif option_type is self.intlist:
+                    values = [tweak(value) for value in getattr(self, name)]
+                    setattr(mutant, name, values)
         return mutant
     
     def __str__(self):
-        values = str.join(', ', (str(getattr(self, name))
-                for name in self.intnames + self.intlistnames))
-        return self.__class__.__name__ + '(' + values + ')'
+        values = (str(getattr(self, item[0])) for item in self.__options__)
+        return self.__class__.__name__ + '(' + str.join(', ', values) + ')'
 
 class Province_Values(object):
     ''' Holds various information about the provinces.
@@ -245,13 +229,16 @@ class DumbBot(Player):
     # Items for the NME message
     name    = 'DumberBot'
     version = version_string(__version__)
-    
-    print_csv = False
     description = "A mimic of David Norman's DumbBot"
+    
+    __options__ = (
+        ('print_csv', bool, False, None,
+            'Whether to print a statistics file every turn, with province values.'),
+    )
     
     def __init__(self, values=None, **kwargs):
         self.__super.__init__(**kwargs)
-        self.vals = values or DumbBot_Values(self.name.lower())
+        self.vals = values or DumbBot_Values()
         self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
         self.attitude = defaultdict(lambda: 1)
     def handle_SCO(self, message):
@@ -311,7 +298,7 @@ class DumbBot(Player):
             else: self.log_debug(1, 'Unknown phase %s', phase)
             
             if orders: self.submit_set(orders)
-            if self.print_csv: self.generate_csv(values);
+            if self.options.print_csv: self.generate_csv(values);
         except:
             self.log_debug(1, 'Error while handling NOW %s message', turn)
             if values: self.generate_csv(values)

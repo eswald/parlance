@@ -28,13 +28,12 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.option_class.local_opts.update(self.game_options)
+        config.Configuration._local_opts.update(self.game_options)
         variant = config.variants[self.variant_name]
-        self.judge = variant.new_judge()
+        self.judge = variant.new_judge(config.GameOptions())
         self.judge.start()
     def set_verbosity(self, verbosity):
-        from functions import Verbose_Object
-        Verbose_Object.verbosity = verbosity
+        config.Configuration.set_globally('verbosity', verbosity)
     def init_state(self, season, year, unit_list):
         self.judge.map.handle_NOW(NOW(season, year) % unit_list)
         self.judge.init_turn()

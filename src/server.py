@@ -10,7 +10,7 @@ from time      import time
 
 from gameboard import Turn
 from functions import (absolute_limit, expand_list, instances, num2name,
-        relative_limit, s, timestamp, defaultdict, Verbose_Object)
+        relative_limit, s, timestamp, defaultdict)
 from language  import *
 from validation import Validator
 
@@ -23,44 +23,6 @@ bots = dict([(klass.name.lower(), klass) for klass in
     blabberbot.BlabberBot,
     project20m.Project20M,
 ])
-
-class main_options(config.option_class):
-    ''' Options used to start clients and the server, including:
-        - verbosity    How much debug or logging information to display
-        - external     A list of external programs to start each game
-        - clients      A list of internal clients to start each game
-        - countries    A mapping of country -> passcode to start as
-        - fill         The internal client used to fill empty slots each game
-    '''#'''
-    section = 'main'
-    def __init__(self):
-        self.clients     = self.getlist('clients', '')
-        self.countries   = {}
-        self.external    = []
-        self.fill        = None
-        self.verbosity   = self.getint('output verbosity', 1)
-class server_options(config.option_class):
-    ''' Options for the server, including:
-        - takeovers    Whether to allow taking over an existing power
-        - snd_admin    Whether to send admin messages created by the server
-        - fwd_admin    Whether to send admin messages from other players
-        - games        Number of games to play
-    '''#'''
-    section = 'server'
-    def __init__(self):
-        self.takeovers = self.getboolean('allow takeovers',        False)
-        self.replaced  = self.getboolean('show replaced powers in summary', False)
-        self.snd_admin = self.getboolean('send admin messages',    False)
-        self.admin_cmd = self.getboolean('accept admin commands',  False)
-        self.fwd_admin = self.getboolean('forward admin messages', False)
-        self.quit      = self.getboolean('close on disconnect',    False)
-        self.log_games = self.getboolean('record completed games', False)
-        self.shuffle   = self.getboolean('randomize power assignments', True)
-        self.variant   = self.getstring( 'default variant',        'standard')
-        self.log_path  = self.getstring( 'game log directory',     path.join('log', 'games'))
-        self.games     = self.getint(    'number of games',        1)
-        self.veto_time = self.getint(    'time allowed for vetos', 20)
-        self.bot_min   = self.getint(    'minimum player count for bots', 0)
 
 class Command(object):
     def __init__(self, pattern, callback, help):
@@ -91,17 +53,47 @@ class DelayedAction(object):
     def call(self):
         if self.callback: self.callback(*self.args)
 
-class Server(Verbose_Object):
+class Server(config.VerboseObject):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
+    __options__ = (
+        ('games', int, 1, 'number of games',
+            'Minimum number of games to play before server stops.',
+            'Use 0 to prevent the server from shutting down automatically.'),
+        ('variant', str, 'standard', 'default variant',
+            'The map to use for games not started with the "start <variant> game" command.',
+            "This should be the variant's DAIDE name as specified in the variants file."),
+        ('log_games', bool, False, 'record completed games',
+            'Whether to save game logs to disk and delete them from memory.',
+            'If this is on, games will be saved with a .dpp extension,',
+            'in the directory indicated by log_path (below).',
+            'However, the server will stop reporting them in game listings.'),
+        ('log_path', file, path.join('log', 'games'), 'game log directory',
+            'The directory in which to save game logs.'),
+        
+        # Admin messages
+        ('snd_admin', bool, False, 'send admin messages',
+            'Whether the server should broadcast admin messages.',
+            'This includes server-generated and forwarded messages,',
+            'but not individual responses to admin commands.'),
+        ('fwd_admin', bool, False, 'forward admin messages',
+            'Whether non-command admin messages from clients should be re-broadcast.'),
+        ('admin_cmd', bool, False, 'accept admin commands',
+            'Whether the server should accept admin commands.',
+            'These allow players to do things outside the scope of DAIDE syntax,',
+            'such as pausing the game, starting bots, or booting each other.'),
+    )
     
     def __init__(self, thread_manager):
         ''' Initializes instance variables, including:
-            - options          Option defaults for this program
+            - manager       The ThreadManager instance in charge of the program
+            - clients       client_id -> Service for all connected clients
+            - games         game_id -> Historian for currently hosted games
+            - default       A list of Games that could be joined automatically
+            - started_games The number of games that have been started
         '''#'''
         self.__super.__init__()
-        self.options   = server_options()
         self.manager   = thread_manager
         self.clients   = {}
         self.games     = {}
@@ -340,7 +332,7 @@ class Server(Verbose_Object):
             '  powers - Displays the power assignments for this game'),
     ]
 
-class Historian(Verbose_Object):
+class Historian(config.VerboseObject):
     ''' A game-like object that simply handles clients and history.'''
     class HistoricalJudge(object):
         def __init__(self, historian, last_turn, result):
@@ -369,13 +361,15 @@ class Historian(Verbose_Object):
         ''' Initializes certain instance variables:
             - server           The overarching server for the program
             - game_id          The unique identification for this game
-            - options          The game_options instance for this game
+            - game_options     The GameOptions instance for this game
             - started          Whether the game has started yet
             - closed           Whether the server is trying to shut down
             - clients          List of Clients that have accepted the map
         '''#'''
+        self.__super.__init__()
         self.server = server
         self.game_id = game_id
+        self.game_options = config.GameOptions()
         self.prefix = 'Historian %s' % game_id
         self.judge = None
         self.saved = False
@@ -448,7 +442,7 @@ class Historian(Verbose_Object):
                                 variant_name, config.variants.keys())
                         return False
                 elif first is HLO:
-                    self.options = config.game_options(message)
+                    self.game_options.parse_message(message)
             elif first in (DRW, SLO):
                 result = message
         self.judge = self.HistoricalJudge(self, turn, result)
@@ -544,6 +538,34 @@ class Game(Historian):
         amounts of last-second traffic from preventing someone's orders
         from going through, but can be abused.
     '''#'''
+    __options__ = (
+        ('shuffle', bool, True, 'randomize power assignments',
+            'Whether to assign players to powers randomly.',
+            'If not true, powers are assigned in token order',
+            '(usually alphabetical), to each player as it connects.'),
+        ('quit', bool, False, 'close on disconnect',
+            'Whether a game should end when a player disconnects.',
+            'Useful for testing, but should *not* be on for human games.'),
+        ('veto_time', int, 20, 'time allowed for vetos',
+            'Time (in seconds) to wait for vetos before processing certain admin commands.',
+            'Use 0 to disable vetos entirely.'),
+        ('takeovers', bool, False, 'allow takeovers',
+            'Whether IAM messages can take over non-abandoned powers.',
+            'This can be disturbing to the original player, so use with care.',
+            'However, it allows new players to take over bot positions,',
+            'and prevents problems with an undetected nonresponsive client.'),
+        ('replaced', bool, False, 'show replaced powers in summary',
+            'Whether SMR messages should list players that have been replaced.',
+            'If true, the original player will be listed first,',
+            'with the year of replacement and their center count at that time,',
+            'but only if the new player reports a different name and/or version.'),
+        ('bot_min', int, 0, 'minimum player count for bots',
+            'Blocks the bot-starting admin commands, in favor of more individual players.',
+            'Specifically, starting bots requires that at least this many players',
+            'be connected from different IP addresses.',
+            'Use 0 to always allow starting bots.'),
+    )
+    
     class Player_Struct(object):
         def __init__(self, power_name):
             self.client   = None
@@ -578,7 +600,6 @@ class Game(Historian):
     
     def __init__(self, server, game_id, variant):
         ''' Initializes yet more instance variables:
-            - options          The game_options instance for this game
             - judge            The judge, handling orders and adjudication
             - press_allowed    Whether press is allowed right now
             - timers           Time notification requests
@@ -598,8 +619,7 @@ class Game(Historian):
         self.started        = False
         self.closed         = False
         self.variant        = variant
-        self.judge          = variant.new_judge()
-        self.options        = self.judge.game_opts
+        self.judge          = variant.new_judge(self.game_options)
         self.messages[MAP]  = MAP(self.judge.map_name)
         self.messages[MDF]  = variant.map_mdf
         
@@ -620,7 +640,7 @@ class Game(Historian):
         self.limbo          = {}
         self.summary        = []
         powers = self.judge.players()
-        if server.options.shuffle: shuffle(powers)
+        if self.options.shuffle: shuffle(powers)
         else: powers.sort()
         self.p_order        = powers
         for country in powers:
@@ -628,7 +648,7 @@ class Game(Historian):
                     self.judge.player_name(country))
     
     def set_limits(self):
-        game = self.options
+        game = self.game_options
         
         move_limit = absolute_limit(game.MTL)
         press_limit = absolute_limit(game.PTL)
@@ -664,7 +684,7 @@ class Game(Historian):
             self.log_debug(6, pcode)
             if not self.judge.eliminated(country):
                 #self.admin(pcode)
-                if self.options.DSD: self.pause()
+                if self.game_options.DSD: self.pause()
         elif self.limbo: self.offer_power(country, *self.limbo.popitem())
     def offer_power(self, country, client, message):
         ''' Sets the client as the player for the power,
@@ -713,7 +733,7 @@ class Game(Historian):
         
         # For testing purposes: stop the game if a player quits
         if opening and not self.closed:
-            quitting = self.server.options.quit
+            quitting = self.options.quit
             self.log_debug(11, 'Deciding whether to quit (%s)', quitting)
             if quitting: self.close()
             else: self.open_position(opening)
@@ -742,7 +762,7 @@ class Game(Historian):
             if len(disconnected) > 1: msg = 'have been disconnected'
             else: msg = 'has been disconnected'
             slate = disconnected
-        elif robotic and self.server.options.takeovers:
+        elif robotic and self.options.takeovers:
             if len(robotic) > 1: msg = 'seem to be bots'
             else: msg = 'seems to be a bot'
             slate = robotic
@@ -775,9 +795,9 @@ class Game(Historian):
             # Send starting messages, and start the timers.
             self.started = True
             self.log_debug(9, 'Starting the game')
-            self.validator.syntax_level = self.options.LVL
+            self.validator.syntax_level = self.game_options.LVL
             self.messages[LST] = self.listing()
-            self.messages[HLO] = HLO(OBS)(0)(self.options)
+            self.messages[HLO] = HLO(OBS)(0)(self.game_options)
             for user in self.clients: self.send_hello(user)
             for user, message in self.limbo.iteritems():
                 user.reject(message)
@@ -882,7 +902,7 @@ class Game(Historian):
         else: self.close()
     def queue_action(self, client, action_callback, action_line,
             veto_callback, veto_line, veto_terms, *args):
-        delay = self.server.options.veto_time
+        delay = self.options.veto_time
         self.admin('%s is %s', client.full_name(), action_line)
         if delay > 0:
             self.actions.append(DelayedAction(action_callback, veto_callback,
@@ -896,7 +916,7 @@ class Game(Historian):
         country = client.country
         if country: passcode = self.players[country].passcode
         else: country = UNO; passcode = 0
-        client.send(HLO(country)(passcode)(self.options))
+        client.send(HLO(country)(passcode)(self.game_options))
     def summarize(self):
         ''' Creates the end-of-game SMR message.'''
         result = self.messages.get(SMR)
@@ -918,7 +938,7 @@ class Game(Historian):
     # Press and administration
     def listing(self):
         return (LST(self.game_id)(self.players_needed())
-            (self.variant.variant)(self.options))
+            (self.variant.variant)(self.game_options))
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
@@ -1101,7 +1121,7 @@ class Game(Historian):
                 # Allow taking over empty slots, but not by existing players
                 good = not client.country
                 if good: self.broadcast(NOT(CCD(country)))
-            elif self.server.options.takeovers:
+            elif self.options.takeovers:
                 # The current client might be dead, but we haven't noticed yet.
                 # Or this could be a legitimate GM decision,
                 # to replace a bot with a human player
@@ -1113,7 +1133,7 @@ class Game(Historian):
                 if client not in self.clients: self.clients.append(client)
                 if client.country: self.open_position(client.country)
                 client.country = country
-                if (client.name and self.server.options.replaced and
+                if (client.name and self.options.replaced and
                         (slot.name, slot.version) !=
                         (client.name, client.version)):
                     # Slight abuse of the syntax:
@@ -1212,11 +1232,11 @@ class Game(Historian):
             attribute = phase[0].upper() + 'TL'
             if seconds and not self.started:
                 value = int(seconds.strip())
-                setattr(self.options, attribute, value)
+                setattr(self.game_options, attribute, value)
                 self.admin('%s has set the %s time limit to %d seconds.',
                         client.full_name(), phase, value)
             else:
-                value = getattr(self.options, attribute)
+                value = getattr(self.game_options, attribute)
                 client.admin('The %s time limit is %d seconds.', phase, value)
         else:
             client.admin('Unknown phase %r; '
@@ -1237,7 +1257,7 @@ class Game(Historian):
             If number is less than one, it will be added to
             the number of empty power slots in the client's game.
         '''#'''
-        if self.num_players() < self.server.options.bot_min:
+        if self.num_players() < self.options.bot_min:
             #client.admin('This server is not designed for solo games;')
             client.admin('Recruit more players first, or use your own bots.')
             return
@@ -1300,13 +1320,13 @@ class Game(Historian):
                 return
         elif cmd == 'en': new_level = 8000
         elif cmd == 'dis': new_level = 0
-        old_level = self.options.LVL
+        old_level = self.game_options.LVL
         if new_level == old_level:
             client.admin('The press level is already %d', old_level)
         elif self.started:
             client.admin('The press level can only be changed before the game starts.')
         else:
-            self.options.LVL = new_level
+            self.game_options.LVL = new_level
             self.admin('%s has set the press level to %d (%s).',
                     client.full_name(), new_level,
                     self.validator.press_levels[new_level])

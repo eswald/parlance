@@ -5,13 +5,12 @@
 
 import re
 
-from config import options, parse_file, protocol
-from functions import Verbose_Object
+from config import options, parse_file, protocol, VerboseObject
 from language import Token, BRA, ERR, HUH, KET, PRN
 
 __all__ = ['Validator']
 
-class Validator(Verbose_Object):
+class Validator(VerboseObject):
     ''' Syntax checker, with a few other features.
         Meant to have one instance per game or client;
         usually, it will start out with syntax_level 0,
@@ -23,6 +22,7 @@ class Validator(Verbose_Object):
     trimmed = {}
     
     def __init__(self, syntax_level=0):
+        self.__super.__init__()
         self.syntax_level = syntax_level
         self.spaces = 0
         if not self.press_levels:

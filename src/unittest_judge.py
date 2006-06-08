@@ -287,12 +287,11 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
 class Judge_Doctests(unittest.TestCase):
     ''' Tests that were once in doctest format.'''
     def setUp(self):
-        from functions import Verbose_Object
-        Verbose_Object.verbosity = 0
+        config.Configuration.set_globally('verbosity', 0)
     
     def test_startup(self):
         variant = config.variants['standard']
-        judge = variant.new_judge()
+        judge = variant.new_judge(config.GameOptions())
         messages = judge.start()
         self.failUnlessEqual([msg[0] for msg in messages], [SCO, NOW])
         self.failUnlessEqual(judge.phase, 0x20)

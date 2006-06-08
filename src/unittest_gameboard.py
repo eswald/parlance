@@ -153,7 +153,7 @@ class Map_Bugfix(unittest.TestCase):
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
     def test_cache_mdf(self):
-        opts = config.variant_options('testing', 'Test map', {})
+        opts = config.MapVariant('testing', 'Test map', {})
         Map(opts).handle_MDF(config.variants['standard'].map_mdf)
         new_map = Map(opts)
         self.failUnless(new_map.valid)
@@ -171,10 +171,10 @@ class Coast_Bugfix(unittest.TestCase):
 class Order_Strings(unittest.TestCase):
     def check_order(self, order, result):
         from xtended import standard_map, FRA
-        from judge   import datc_options
+        from judge   import DatcOptions
         from orders  import createUnitOrder
         order = createUnitOrder(order, standard_map.powers[FRA],
-                standard_map, datc_options())
+                standard_map, DatcOptions())
         self.failUnlessEqual(str(order), result)
     def test_hold_string(self):
         from xtended import standard_map, FRA, BRE
@@ -294,7 +294,7 @@ class Gameboard_Doctests(unittest.TestCase):
         
         self.failIf(Validator().validate_server_message(mdf),
                 'Invalid MDF message')
-        m = Map(config.variant_options('simplified',
+        m = Map(config.MapVariant('simplified',
             'Small board for testing purposes', {},
             config.protocol.default_rep))
         self.failIf(m.valid, 'Map valid before MDF')

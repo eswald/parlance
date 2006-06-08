@@ -11,8 +11,7 @@ from time import sleep, time
 try: from threading import Thread
 except ImportError: Thread = None
 
-import config
-from functions import Verbose_Object
+from config import variants, Configuration, VerboseObject
 
 __all__ = [
     'ThreadManager',
@@ -20,7 +19,7 @@ __all__ = [
     'run_server',
 ]
 
-class ThreadManager(Verbose_Object):
+class ThreadManager(VerboseObject):
     ''' Manages four types of clients: polled, timed, threaded, and dynamic.
         Each type of client must have a close() method and corresponding
         closed property.  A client will be removed if it closes itself;
@@ -50,8 +49,31 @@ class ThreadManager(Verbose_Object):
     '''#'''
     try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
     except AttributeError: flags = None
+    __options__ = (
+        ('wait_time', int, 600, 'idle timeout for server loop',
+            'Default time (in seconds) to wait for select() or poll() system calls.',
+            'Not used when any client or game has a time limit.',
+            'Higher numbers waste less CPU time, up to a point,',
+            'but may make the program less responsive to certain inputs.'),
+        ('sleep_time', int, 1, 'idle timeout for busy loops',
+            'Default time (in seconds) to sleep in potential busy loops.',
+            'Higher numbers may waste less CPU time in certain situations,',
+            'but will make the program less responsive to certain inputs.'),
+        ('block_exceptions', bool, True, None,
+            'Whether to block exceptions seen by the ThreadManager.',
+            'When on, the program is more robust, but harder to debug.'),
+        ('autostart', list, [], None,
+            'A list of internal clients to start each game.'),
+    #    ('external', list, [], None,
+    #        'A list of external programs to start each game.'),
+    #    ('countries', dict, {}, None,
+    #        'A mapping of country -> passcode as which to start clients.'),
+    #    ('fill', Player, HoldBot, None,
+    #        'An internal client used to fill empty slots each game'),
+    )
     
     def __init__(self):
+        self.__super.__init__()
         self.log_debug(10, 'Attempting to create a poll object')
         if self.flags:
             try: self.polling = select.poll()
@@ -63,12 +85,6 @@ class ThreadManager(Verbose_Object):
         self.threaded = []      # (thread, client)
         self.dynamic = []       # client
         self.closed = False
-        
-        # Todo: Make these configurable
-        self.autostart = []
-        self.wait_time = 600
-        self.sleep_time = 1
-        self.pass_exceptions = False
     def clients(self):
         return [item[1] for item in chain(self.polled.iteritems(),
                 self.timed, self.threaded)] + self.dynamic
@@ -79,12 +95,12 @@ class ThreadManager(Verbose_Object):
         try:
             while not self.closed:
                 if self.clients():
-                    self.process(self.wait_time)
+                    self.process(self.options.wait_time)
                     if not (self.polled or self.closed):
                         # Avoid turning this into a busy loop
                         self.log_debug(7, 'sleep()ing for %.3f seconds',
-                                self.sleep_time)
-                        sleep(self.sleep_time)
+                                self.options.sleep_time)
+                        sleep(self.options.sleep_time)
                 else: self.close()
             self.log_debug(11, 'Main loop ended')
         except KeyboardInterrupt:
@@ -112,7 +128,7 @@ class ThreadManager(Verbose_Object):
                 if timeout is None: break
                 if self.timed: self.check_timed()
                 if self.dynamic: self.check_dynamic()
-        self.clean_threaded()
+        if self.threaded: self.clean_threaded()
     def attempt(self, client):
         self.log_debug(12, 'Running %s', client.prefix)
         try: client.run()
@@ -123,10 +139,10 @@ class ThreadManager(Verbose_Object):
             self.log_debug(1, 'Exception running %s: %s %s',
                     client.prefix, e.__class__.__name__, e.args)
             if not client.closed: client.close()
-            if self.pass_exceptions: raise
+            if self.options.block_exceptions: raise
     def close(self):
         self.closed = True
-        self.clean_threaded()
+        if self.threaded: self.clean_threaded()
         for client in self.clients():
             if not client.closed: client.close()
         self.wait_threads()
@@ -275,12 +291,12 @@ class ThreadManager(Verbose_Object):
         else: self.log_debug(7, 'Failed to open a Client for ' + name)
         return result and client
     def start_clients(self, game_id):
-        for klass in self.autostart:
+        for klass in self.options.autostart:
             self.add_client(klass, game_id=game_id)
     def wait_threads(self):
         for thread, client in self.threaded:
             while thread.isAlive():
-                try: sleep(self.sleep_time)
+                try: thread.join(self.options.sleep_time)
                 except KeyboardInterrupt:
                     if not client.closed: client.close()
                     print 'Still waiting for threads...'
@@ -300,7 +316,8 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                 if len(arg) > 3 and arg[3] == '=':
                     if allow_country: countries[arg[:3].upper()] = int(arg[4:])
                     else: raise ValueError
-                elif arg[:2] == '-v': Verbose_Object.verbosity = int(arg[2:])
+                elif arg[:2] == '-v':
+                    Configuration.set_globally('verbosity', int(arg[2:]))
                 elif arg[0] == '-' or opts.has_key('host'): raise ValueError
                 else:
                     index = arg.find(':')
@@ -320,7 +337,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
                     allow_country and ' [power=passcode]' or '')
             print 'Connects a copy of %s to <host>:<port>' % name
     else:
-        config.option_class.local_opts.update(opts)
+        Configuration._local_opts.update(opts)
         manager = ThreadManager()
         while num > 0 or countries:
             num -= 1
@@ -343,15 +360,15 @@ def run_server(server_class, default_verbosity):
                 games = int(arg[2:])
                 opts['games'] = games
                 opts['number of games'] = games
-            elif config.variants.has_key(arg):
+            elif variants.has_key(arg):
                 opts['variant'] = arg
                 opts['default variant'] = arg
     except:
         print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % (argv[0],)
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
     else:
-        config.option_class.local_opts.update(opts)
-        Verbose_Object.verbosity = verbosity
+        Configuration._local_opts.update(opts)
+        Configuration.set_globally('verbosity', verbosity)
         manager = ThreadManager()
         server = ServerSocket(server_class, manager)
         if server.open():

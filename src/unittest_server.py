@@ -5,7 +5,7 @@
 
 import unittest, config
 from time      import sleep, time
-from functions import absolute_limit, Verbose_Object
+from functions import absolute_limit
 from main      import ThreadManager
 from network   import Connection, Service
 from server    import Server
@@ -57,7 +57,7 @@ class Fake_Service(Service):
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''
-    class Fake_Player(Verbose_Object):
+    class Fake_Player(config.VerboseObject):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
         '''#'''
@@ -65,6 +65,7 @@ class ServerTestCase(unittest.TestCase):
         def __init__(self, send_method, representation, manager,
                 power=None, passcode=None, game_id=None, observe=False):
             from language import NME, OBS
+            self.__super.__init__()
             self.log_debug(9, 'Fake player started')
             self.closed = False
             self.power = power
@@ -117,40 +118,40 @@ class ServerTestCase(unittest.TestCase):
         name = 'Fake Human Player'
     
     game_options = {
-            'syntax Level': 20,
-            'default variant' : 'standard',
-            'close on disconnect' : True,
-            'use internal server' : True,
-            'send admin messages' : True,
-            'accept admin commands' : True,
-            'forward admin messages' : True,
-            'host' : '',
-            'port' : 16720,
-            'idle timeout for server loop' : 5,
-            'publish order sets': False,
-            'publish individual orders': False,
-            'total years before setting draw': 3,
-            'invalid message response': 'croak',
-            'minimum player count for bots': 2,
-            'time allowed for vetos': 3,
-            'Move Time Limit': 60,
-            'confirm order submission': False,
-            'record completed games': False,
+        'LVL': 20,
+        'variant' : 'standard',
+        'quit' : True,
+        'snd_admin' : True,
+        'admin_cmd' : True,
+        'fwd_admin' : True,
+        'host' : '',
+        'port' : 16720,
+        'wait_time' : 5,
+        'send_SET': False,
+        'send_ORD': False,
+        'draw': 3,
+        'response': 'croak',
+        'bot_min': 2,
+        'veto_time': 3,
+        'MTL': 60,
+        'confirm': False,
+        'log_games': False,
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.option_class.local_opts.update(self.game_options)
+        config.Configuration._local_opts.update(self.game_options)
         self.manager = None
         self.server = None
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
         if self.manager and not self.manager.closed: self.manager.close()
-    def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
+    def set_verbosity(self, verbosity):
+        config.Configuration.set_globally('verbosity', verbosity)
     def set_option(self, option, value):
-        config.option_class.local_opts.update({option: value})
+        config.Configuration.set_globally(option, value)
     def connect_server(self):
-        self.set_option('number of games', 1)
+        self.set_option('games', 1)
         self.manager = manager = Fake_Manager()
         self.server = manager.server
         self.game = self.server.default_game()
@@ -200,7 +201,7 @@ class Server_Basics(ServerTestCase):
     def test_GOF_each_turn(self):
         ''' GOF should be assumed for each player each turn.'''
         from language import GOF, NOT
-        self.set_option('Move Time Limit', 15)
+        self.set_option('MTL', 15)
         self.connect_server()
         players = []
         while not self.game.started:
@@ -232,7 +233,7 @@ class Server_Basics(ServerTestCase):
     def test_missing_orders_CCD(self):
         ''' Failing to submit orders on time results in a CCD message.'''
         from language import CCD, SPR
-        self.set_option('Move Time Limit', 5)
+        self.set_option('MTL', 5)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.start_game()
@@ -242,7 +243,7 @@ class Server_Basics(ServerTestCase):
     def test_submitted_orders_CCD(self):
         ''' Submitting orders on time avoids a CCD message.'''
         from language import CCD
-        self.set_option('Move Time Limit', 5)
+        self.set_option('MTL', 5)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.start_game()
@@ -254,8 +255,8 @@ class Server_Basics(ServerTestCase):
             '%s reported in civil disorder' % (player.power,))
     def test_historian(self):
         from language import HLD, HST, ORD, SEL, SPR, SUC, YES
-        self.set_option('Move Time Limit', 5)
-        self.set_option('publish individual orders', True)
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
         self.connect_server()
         self.server.options.log_games = True
         game = self.start_game()
@@ -274,8 +275,8 @@ class Server_Basics(ServerTestCase):
                 player.queue)
     def test_history_full(self):
         from language import HLD, HST, ORD, SPR, SUC
-        self.set_option('Move Time Limit', 5)
-        self.set_option('publish individual orders', True)
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.start_game()
@@ -287,8 +288,8 @@ class Server_Basics(ServerTestCase):
                 player.queue)
     def test_history_turn(self):
         from language import HLD, HST, ORD, SPR, SUC
-        self.set_option('Move Time Limit', 5)
-        self.set_option('publish individual orders', True)
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.start_game()
@@ -300,7 +301,7 @@ class Server_Basics(ServerTestCase):
                 player.queue)
     def test_save_game(self):
         from language import HLD, HLO, MAP, OBS, ORD, SPR, SUC
-        self.set_option('publish individual orders', True)
+        self.set_option('send_ORD', True)
         self.connect_server()
         self.start_game()
         self.game.run_judge()
@@ -313,7 +314,7 @@ class Server_Basics(ServerTestCase):
             self.game.listing(),
             MAP (self.game.judge.map_name),
             self.game.variant.map_mdf,
-            HLO (OBS) (0) (self.game.options),
+            HLO (OBS) (0) (self.game.game_options),
             self.game.variant.start_sco,
             self.game.variant.start_now,
         ] + sorted([
@@ -325,8 +326,8 @@ class Server_Basics(ServerTestCase):
         ]
         self.assertEqual([str(msg) + '\n' for msg in expected], result)
     def test_archive_game(self):
-        self.set_option('record completed games', True)
         self.connect_server()
+        self.server.options.log_games = True
         self.start_game()
         self.game.run_judge()
         self.game.close()
@@ -339,8 +340,8 @@ class Server_Press(ServerTestCase):
     def setUp(self):
         from language import FAL, SPR
         ServerTestCase.setUp(self)
-        self.set_option('close on disconnect', False)
-        self.set_option('randomize power assignments', False)
+        self.set_option('quit', False)
+        self.set_option('shuffle', False)
         self.connect_server()
         self.sender = self.connect_player(self.Fake_Player) # Austria
         self.recipient = self.connect_player(self.Fake_Player) # England
@@ -437,7 +438,7 @@ class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
     game_options = {}
     game_options.update(ServerTestCase.game_options)
-    game_options['close on disconnect'] = False
+    game_options['quit'] = False
     
     def setUp(self):
         ServerTestCase.setUp(self)
@@ -461,7 +462,7 @@ class Server_Admin(ServerTestCase):
     def assertAdminVetoable(self, player, command, response):
         from functions import num2name
         self.assertEqual([response, '(You may veto within %s seconds.)' %
-                    num2name(self.game_options['time allowed for vetos'])],
+                    num2name(self.game_options['veto_time'])],
                 player.admin('Server: %s', command))
 
 class Server_Admin_Bots(Server_Admin):
@@ -958,18 +959,18 @@ class Server_Multigame(ServerTestCase):
         from language import LST
         self.master.queue = []
         self.master.send(+LST)
-        params = self.game.options.get_params()
+        params = self.game.game_options.get_params()
         self.assertContains(
                 LST (self.game.game_id) (6) ('standard') (params),
                 self.master.queue)
     def test_multigame_LST_reply(self):
         from language import LST
-        std_params = self.game.options.get_params()
+        std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
         game = self.new_game('sailho')
         self.master.queue = []
         self.master.send(+LST)
-        sailho_params = game.options.get_params()
+        sailho_params = game.game_options.get_params()
         self.assertContains(
                 LST (game_id) (6) ('standard') (std_params),
                 self.master.queue)
@@ -1006,7 +1007,7 @@ class Server_Bugfix(ServerTestCase):
         '''#'''
         from language import PCE, PRP
         from gameboard import Turn
-        self.set_option('No Press during Retreats', True)
+        self.set_option('NPR', True)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
@@ -1021,7 +1022,7 @@ class Server_Bugfix(ServerTestCase):
         '''#'''
         from language import PCE, PRP
         from gameboard import Turn
-        self.set_option('No Press during Retreats', False)
+        self.set_option('NPR', False)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
@@ -1033,8 +1034,8 @@ class Server_Bugfix(ServerTestCase):
     def test_DSD_reconnect(self):
         ''' The server should resume a paused game when all players reconnect.
         '''#'''
-        self.set_option('Deadline Stops on Disconnection', True)
-        self.set_option('close on disconnect', False)
+        self.set_option('DSD', True)
+        self.set_option('quit', False)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         control = self.connect_player(self.Fake_Player)
@@ -1043,7 +1044,7 @@ class Server_Bugfix(ServerTestCase):
         control.admin('Ping.')
         self.wait_for_actions()
         self.failUnless(game.paused)
-        new_player = self.connect_player(self.Fake_Player,
+        self.connect_player(self.Fake_Player,
                 power=player.power, passcode=player.pcode)
         self.wait_for_actions()
         self.failIf(game.paused)

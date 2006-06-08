@@ -5,60 +5,57 @@
 
 from __future__ import division
 
-import config
 from cPickle   import dump, load
+from os        import path
 from random    import randrange, shuffle
-from functions import s, autosuper, Verbose_Object, version_string
+
+from config    import variants, GameOptions, MapVariant, VerboseObject
+from functions import s, version_string
 from main      import ThreadManager, run_player
 from orders    import *
 from validation import Validator
 
 __version__ = "$Revision$"
 
-class client_options(config.option_class):
-    ''' Options for client behavior, including:
-        - response      What to do when the Server sends something we don't understand
-        - validate      Whether to check the syntax of incoming messages
-        - confirm       Whether to send admin messages reporting order submission
-    '''#'''
-    section = 'clients'
-    def __init__(self, player_class):
-        self.response    = self.getstring('invalid message response', 'ignore').lower()
-        self.validate    = self.getboolean('validate incoming messages', False)
-        self.confirm     = self.getboolean('confirm order submission', False)
-        functions = {
-            int:  self.getint,
-            str:  self.getstring,
-            bool: self.getboolean,
-            list: self.getlist,
-        }
-        for name,otype,text,default in player_class.options:
-            setattr(self, name, functions[otype](text, default))
-
-class Observer(Verbose_Object):
+class Observer(VerboseObject):
     ''' Just watches the game, declining invitations to join.'''
     # Magic variables:
     name = None        # Set this to a string in each instantiable subclass.
     version = None     # Set this to a string to allow registration as a player.
     description = None # Set this to a string to allow use as a bot.
-    options = ()       # Set of tuples: (name, type, config text, default)
+    
+    __section__ = 'clients'
+    __options__ = (
+        ('response', str, 'HUH', 'invalid message response',
+            'How to react when a message fails a syntax check or results in an error.',
+            '"close"  or "die":         Send a final message to the server, and stop',
+            '"print"  or "warn":        Display a warning to the user',
+            '"HUH"    or "complain":    Send an error message to the server',
+            '"carp"   or "croak":       All three of the above',
+            '"ignore" or anything else: None of the above',
+            'The second option will also re-raise the error, if any.'),
+        ('validate', bool, False, 'validate incoming messages',
+            'Whether to validate messages received from the server.',
+            'Turn this on when testing a server or to protect against garbage;',
+            'however, doing so will slow down the game, particularly startup.'),
+    )
     
     def __init__(self, send_method, representation, game_id=None, manager=None):
         ''' Initializes the instance variables.'''
-        self.client_opts = client_options(self.__class__)
+        self.__super.__init__()
         self.send_out = send_method      # A function that accepts messages
         self.rep      = representation   # The representation message
         self.game_id  = game_id          # A specific game to connect to
+        self.game_opts= GameOptions()    # Variant options for the current game
         self.closed   = False  # Whether the connection has ended, or should end
         self.map      = None   # The game board
         self.saved    = {}     # Positions saved from a SVE message
-        self.opts     = None   # The variant options for the current game
         self.use_map  = False  # Whether to initialize a Map; saves time for simple observers
         self.quit     = True   # Whether to close immediately when a game ends
         self.power    = None
         self.manager  = manager or ThreadManager()
         
-        if self.client_opts.validate:
+        if self.options.validate:
             self.validator = Validator()
         else: self.validator = None
         
@@ -137,7 +134,7 @@ class Observer(Verbose_Object):
         try: method(message)
         except Exception, e: self.handle_invalid(message, error=e)
     def handle_invalid(self, message, error=None, reply=None):
-        response = self.client_opts.response
+        response = self.options.response
         if response in ('print', 'warn', 'carp', 'croak'):
             if error: self.log_debug(1, 'Error processing command: ' + str(message))
             else:     self.log_debug(1, 'Invalid server command: '   + str(message))
@@ -163,7 +160,7 @@ class Observer(Verbose_Object):
     def handle_REJ_SEL(self, message):
         if self.quit: self.close()
     def handle_HLO(self, message):
-        self.opts = config.game_options(message)
+        self.game_opts.parse_message(message)
     
     # Automatic map handling
     def handle_MAP(self, message):
@@ -173,10 +170,10 @@ class Observer(Verbose_Object):
         if self.use_map:
             from gameboard import Map
             mapname = message.fold()[1][0]
-            variant = config.variants.get(mapname)
+            variant = variants.get(mapname)
             if not variant:
-                variant = config.variant_options(mapname, mapname, {}, self.rep)
-                config.variants[mapname] = variant
+                variant = MapVariant(mapname, mapname, {}, self.rep)
+                variants[mapname] = variant
             self.map = Map(variant)
             if self.map.valid:
                 self.accept(message)
@@ -240,6 +237,13 @@ class Player(Observer):
         Most of them do everything you will need,
         in combination with instance variables.
     '''#'''
+    __section__ = 'clients'
+    __options__ = (
+        ('confirm', bool, False, 'confirm order submission',
+            'Whether to send admin messages reporting that orders have been sent.',
+            'Useful for testing, but should *not* be on for human games.'),
+    )
+    
     def __init__(self, power=None, passcode=None, **kwargs):
         ''' Initializes the instance variables.'''
         self.__super.__init__(**kwargs)
@@ -328,7 +332,7 @@ class Player(Observer):
         current = set(self.map.current_powers())
         for power_set in self.draws:
             if power_set == current: self.send(DRW)
-            elif self.opts.PDA and power_set <= current:
+            elif self.game_opts.PDA and power_set <= current:
                 self.send(DRW(power_set))
     def generate_orders(self):
         ''' Create and send orders.
@@ -345,7 +349,7 @@ class Player(Observer):
             if self.submitted: self.send(NOT(SUB))
             self.submitted = True
             self.send(sub)
-            if (self.client_opts.confirm and not self.missing_orders()):
+            if (self.options.confirm and not self.missing_orders()):
                 self.send_admin('Submitted.')
     def submit(self, order):
         self.orders.add(order, self.power)
@@ -525,7 +529,7 @@ class Clock(AutoObserver):
     name = 'Time Keeper'
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)
-        max_time = max(self.opts.BTL, self.opts.MTL, self.opts.RTL)
+        max_time = max(self.game_opts.BTL, self.game_opts.MTL, self.game_opts.RTL)
         if max_time > 0:
             for seconds in range(5, max_time, 5): self.send(TME(seconds))
         else: self.close()
@@ -537,9 +541,11 @@ class Clock(AutoObserver):
 
 class Ladder(AutoObserver):
     ''' An observer to implement a ratings ladder.'''
-    options = (
-            ('score_file', str, 'ratings ladder score file',
-                'log/stats/ladder_scores'),
+    __section__ = 'clients'
+    __options__ = (
+        ('score_file', file, path.join('log', 'stats', 'ladder_scores'),
+            'ratings ladder score file',
+            'The file in which to store scores generated by the Ladder observer.'),
     )
     
     def __init__(self, **kwargs):
@@ -594,12 +600,12 @@ class Ladder(AutoObserver):
     
     def read_scores(self):
         try:
-            result = load(open(self.client_opts.score_file))
+            result = load(open(self.options.score_file))
             if not isinstance(result, dict): result = {}
         except: result = {}
         return result
     def store_scores(self, scores):
-        try: dump(scores, open(self.client_opts.score_file, 'w'))
+        try: dump(scores, open(self.options.score_file, 'w'))
         except IOError: pass
 
 class Echo(AutoObserver):

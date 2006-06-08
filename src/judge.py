@@ -6,8 +6,8 @@
     Rule variants, in particular, will need a new Judge class.
 '''#'''
 
-import config
-from functions import defaultdict, any, all, s, Infinity, Verbose_Object
+from config import Configuration, VerboseObject
+from functions import defaultdict, any, all, s, Infinity
 from gameboard import Map
 from orders    import *
 #from orders    import createUnitOrder, RemoveOrder, WaiveOrder, \
@@ -22,72 +22,286 @@ def minmax(decision_list):
         if decision.max_value > max_found: max_found = decision.max_value
     return min_found, max_found
 
-class datc_options(config.option_class):
+class DatcOptions(Configuration):
     ''' Options from the Diplomacy Adjudicator Test Cases,
         as written by Lucas B. Kruijswijk.
         A few options have additional possibilities, and some are unsupported.
     '''#'''
-    section = 'datc'
-    def __init__(self):
-        self.datc_4a1 = self.getdatc('multi-route convoy disruption',                                          'ab',    'b') # Done!
-        self.datc_4a2 = self.getdatc('convoy disruption paradoxes',                                            'bdef',  'd')
-        self.datc_4a3 = self.getdatc('convoying to adjacent place',                                            'abcdef','f') # Done!
-        self.datc_4a4 = self.getdatc('support cut on attack on itself via convoy',                             'ab',    'a')
-        self.datc_4a5 = self.getdatc('retreat when dislodged by convoy',                                       'ab',    'b')
-        self.datc_4a6 = self.getdatc('convoy path specification',                                              'abc',   'b')
-        self.datc_4a7 = self.getdatc('avoiding a head to head battle to bounce a unit',                        'ab',    'b')
-        self.datc_4b1 = self.getdatc('omitted coast specification in move order when two coasts are possible', 'ab',    'a') # Done!
-        self.datc_4b2 = self.getdatc('omitted coast specification in move order when one coast is possible',   'abc',   'c') # Done!
-        self.datc_4b3 = self.getdatc('move order to impossible coast',                                         'ab',    'b') # Done!
-        self.datc_4b4 = self.getdatc('coast specification in support order',                                   'ade',   'd') # Done, except for b and c
-        self.datc_4b5 = self.getdatc('wrong coast of ordered unit',                                            'ab',    'a')
-        self.datc_4b6 = self.getdatc('unknown coasts or irrelevant coasts',                                    'ab',    'a')
-        self.datc_4b7 = self.getdatc('coast specification in build order',                                     'a',     'a')
-        self.datc_4c1 = self.getdatc('missing unit designation',                                               'ab',    'a')
-        self.datc_4c2 = self.getdatc('wrong unit designation',                                                 'ab',    'a')
-        self.datc_4c3 = self.getdatc('missing unit designation in build order',                                'abc',   'a')
-        self.datc_4c4 = self.getdatc('building a fleet in a land area',                                        'ab',    'a')
-        self.datc_4c5 = self.getdatc('missing nationality in support order',                                   'ab',    'a')
-        self.datc_4c6 = self.getdatc('wrong nationality in support order',                                     'ab',    'a')
-        self.datc_4d1 = self.getdatc('multiple order sets with defined order',                                 'b',     'b')
-        self.datc_4d2 = self.getdatc('multiple order sets with undefined order',                               'b',     'b')
-        self.datc_4d3 = self.getdatc('multiple orders to the same unit',                                       'b',     'b')
-        self.datc_4d4 = self.getdatc('too many build orders',                                                  'b',     'b')
-        self.datc_4d5 = self.getdatc('multiple build orders for one area',                                     'c',     'c')
-        self.datc_4d6 = self.getdatc('too many disband orders',                                                'b',     'b')
-        self.datc_4d7 = self.getdatc('waiving builds',                                                         'ab',    'a')
-        self.datc_4d8 = self.getdatc('removing a unit in civil disorder',                                      'abcde', 'd')
-        self.datc_4d9 = self.getdatc('receiving hold support in civil disorder',                               'ab',    'b')
-        self.datc_4e1 = self.getdatc('illegal orders',                                                         'abcd',  'd') # Done!
-        self.datc_4e2 = self.getdatc('poorly written orders',                                                  'e',     'e')
-        self.datc_4e3 = self.getdatc('implicit orders',                                                        'ab',    'b')
-        self.datc_4e4 = self.getdatc('perpetual orders',                                                       'ab',    'b')
-        self.datc_4e5 = self.getdatc('proxy orders',                                                           'abc',   'c')
-        self.datc_4e6 = self.getdatc('flying dutchman',                                                        'a',     'a')
-    def getdatc(self, option, supported, default):
-        if self.user_config.has_option(self.section, option):
-            value = self.user_config.get(self.section, option)[0]
-            if value in supported: return value
-        return default
-class judge_options(config.option_class):
-    ''' Options for the judge, including:
-        - draw         Number of total years before a draw is declared
-        - static       Number of static years before a draw is declared
-        - variant      Name of the variant (not necessarily the map)
-    '''#'''
-    section = 'judge'
-    def __init__(self):
-        self.draw       = self.getint('total years before setting draw',  4000)
-        self.static     = self.getint('static years before setting draw', 1000)
-        self.var_start  = self.getint('years before variable end',        5000)
-        self.var_length = self.getint('length of variable end',           0)
-        self.variation  = self.getfloat('variation of variable end',      1.55)
-        self.full_DRW   = self.getboolean('list draw parties in DIAS',    False)
-        self.send_SET   = self.getboolean('publish order sets',           False)
-        self.send_ORD   = self.getboolean('publish individual orders',    True)
+    class datc(object):
+        def __init__(self, possible, supported):
+            self.possible = possible
+            self.supported = supported
+        def __call__(self, conf, option, section):
+            result = None
+            if conf._user_config.has_option(section, option):
+                value = conf._user_config.get(section, option)
+                if len(text) > 1:
+                    conf.warn('Only one character expected', option, section)
+                    value = text[0]
+                if value in self.supported: result = value
+                elif value in self.possible:
+                    conf.warn('Unknown option', option, section)
+                else: conf.warn('Unsupported option', option, section)
+            return result
+    
+    __section__ = 'datc'
+    __options__ = (
+        # Convoy issues
+        ('datc_4a1', datc('ab', 'ab'), 'b',
+            'multi-route convoy disruption',
+            '4.A.1.  MULTI-ROUTE CONVOY DISRUPTION',
+            'a: A convoy is disrupted when any possible route is disrupted.',
+            'b: A convoy is disrupted when all possible routes are disrupted.',
+            'DATC: b; DPTG: a; DAIDE: ?'),
+        ('datc_4a2', datc('abcdef', 'def'), 'd', # Todo: b
+            'convoy disruption paradoxes',
+            '4.A.2.  CONVOY DISRUPTION PARADOXES',
+            "a: Convoyed armies don't cut support to fleets attacking its convoy fleet.",
+            "b: Convoyed armies don't cut support to or against any convoying fleet.",
+            "c: Convoyed armies don't cut support to fleets necessary for the convoy.",
+            "d: Convoyed armies in a paradoxical situation don't move.",
+            'e: All moves in a paradoxical situation fail.',
+            'f: All convoys fail if consistent; otherwise, all moves fail.',
+            'DATC: d; DPTG: f; DAIDE: ?'),
+        ('datc_4a3', datc('abcdef', 'abcdef'), 'f',
+            'convoying to adjacent place',
+            '4.A.3.  CONVOYING TO ADJACENT PLACE',
+            'a: Always choose the convoy route.',
+            'b: Choose the land route except in head-to-head situations.',
+            'c: Choose the land route except in head-to-head with undisrupted route.',
+            "d: Determine the intent from the player's order set.",
+            'e: Use the land route unless specifically ordered to be convoyed.',
+            'f: Never convoy unless specifically ordered.',
+            'DATC: d(c); DPTG: e; DAIDE: f'),
+        ('datc_4a4', datc('ab', 'a'), 'a', # Todo: b
+            'support cut on attack on itself via convoy',
+            '4.A.4.  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY',
+            'a: Support is not cut.',
+            'b: Support is cut.',
+            'DATC: a; DPTG: b; DAIDE: ?'),
+        ('datc_4a5', datc('ab', 'a'), 'b', # Todo: b
+            'retreat when dislodged by convoy',
+            '4.A.5.  RETREAT WHEN DISLODGED BY CONVOY',
+            'a: Dislodged units may not retreat to the starting place of any attacker.',
+            'b: Dislodged units may retreat to the starting place of a convoyed attacker.',
+            'DATC: b; DPTG: b; DAIDE: ?'),
+        ('datc_4a6', datc('abc', 'b'), 'b', # Todo: ac
+            'convoy path specification',
+            '4.A.6.  CONVOY PATH SPECIFICATION',
+            'a: Path specifications are ignored.',
+            'b: Path specifications are allowed, but not required.',
+            'c: Path specifications are required.',
+            'DATC: a(b); DPTG: a; DAIDE: c'),
+        ('datc_4a7', datc('ab', 'b'), 'b', # Todo: a
+            'avoiding a head to head battle to bounce a unit',
+            '4.A.7.  AVOIDING A HEAD TO HEAD BATTLE TO BOUNCE A UNIT',
+            "a: Dislodged units never have effect on attacker's space.",
+            "b: Dislodged units have no effect on attacker's space in head-to-head combat.",
+            'DATC: b; DPTG: b; DAIDE: ?'),
+        
+        # Coastal issues
+        ('datc_4b1', datc('ab', 'a'), 'a',
+            'omitted coast specification in move order when two coasts are possible',
+            '4.B.1.  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN TWO COASTS ARE POSSIBLE',
+            'a: Such a move fails.',
+            'b: A move is attempted to a default coast.',
+            'DATC: a; DPTG: a; DAIDE: a'),
+        ('datc_4b2', datc('abc', 'ac'), 'c',
+            'omitted coast specification in move order when one coast is possible',
+            '4.B.2.  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE',
+            'a: A move is attempted to the only possible coast.',
+            'b: A move is attempted to a default coast.',
+            'c: The move fails.',
+            'DATC: a; DPTG: a; DAIDE: c'),
+        ('datc_4b3', datc('ab', 'ab'), 'b',
+            'move order to impossible coast',
+            '4.B.3.  MOVE ORDER TO IMPOSSIBLE COAST',
+            'a: A move is attempted to the only possible coast.',
+            'b: The move fails.',
+            'DATC: b; DPTG: ?; DAIDE: b'),
+        ('datc_4b4', datc('abcde', 'ade'), 'd', # Todo: c
+            'coast specification in support order',
+            '4.B.4.  COAST SPECIFICATION IN SUPPORT ORDER',
+            'a: Missing coast in a support order fails.',
+            'b: Missing coast in a support order goes to a default coast.',
+            'c: Missing coast in a support order fails unless unambiguous.',
+            'd: Support to a specific coast is allowed, but not required.',
+            'e: Support to a specific coast is not allowed.',
+            'DATC: d; DPTG: e; DAIDE: e'),
+        ('datc_4b5', datc('ab', 'a'), 'a', # Todo: b
+            'wrong coast of ordered unit',
+            '4.B.5.  WRONG COAST OF ORDERED UNIT',
+            'a: The move fails.',
+            'b: Coast specification is ignored.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        ('datc_4b6', datc('ab', 'a'), 'a', # Todo: b
+            'unknown coasts or irrelevant coasts',
+            '4.B.6.  UNKNOWN COASTS OR IRRELEVANT COASTS',
+            'a: The move fails.',
+            'b: Coast specification is ignored.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        ('datc_4b7', datc('ab', 'a'), 'a',
+            'coast specification in build order',
+            '4.B.7.  COAST SPECIFICATION IN BUILD ORDER',
+            'a: A fleet build fails if it does not specify a coast when necessary.',
+            'b: The fleet is built on a default coast.',
+            'DATC: a; DPTG: ?; DAIDE: a'),
+        
+        # Unit designation and nationality issues
+        ('datc_4c1', datc('abc', 'b'), 'b', # Todo: a
+            'missing unit designation',
+            '4.C.1.  MISSING UNIT DESIGNATION',
+            'a: The order is invalid.',
+            'b: The order is valid.',
+            'c: The order is valid unless a correct order exists.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        ('datc_4c2', datc('abc', 'a'), 'a', # Todo: b
+            'wrong unit designation',
+            '4.C.2.  WRONG UNIT DESIGNATION',
+            'a: The order is invalid.',
+            'b: The order is valid.',
+            'c: The order is valid unless a correct order exists.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        ('datc_4c3', datc('abc', 'b'), 'b', # Todo: ac
+            'missing unit designation in build order',
+            '4.C.3.  MISSING UNIT DESIGNATION IN BUILD ORDER',
+            'a: The build always fails.',
+            'b: The build fails in coastal areas, but succeeds when unambiguous.',
+            'c: Armies are built inland, fleets when a specific coast is specified.',
+            'DATC: c; DPTG: ?; DAIDE: a'),
+        ('datc_4c4', datc('ab', 'a'), 'a', # Todo: b
+            'building a fleet in a land area',
+            '4.C.4.  BUILDING A FLEET IN A LAND AREA',
+            'a: The build always fails.',
+            'b: An army us built instead.',
+            'DATC: a; DPTG: ?; DAIDE: a'),
+        ('datc_4c5', datc('abc', 'b'), 'b', # Todo: a
+            'missing nationality in support order',
+            '4.C.5.  MISSING NATIONALITY IN SUPPORT ORDER',
+            'a: The order is invalid.',
+            'b: The order is valid.',
+            'c: The order is valid unless another order uses the correct nationality.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        ('datc_4c6', datc('abc', 'a'), 'a', # Todo: b
+            'wrong nationality in support order',
+            '4.C.6.  WRONG NATIONALITY IN SUPPORT ORDER',
+            'a: The order is invalid.',
+            'b: The order is valid.',
+            'c: The order is valid unless another order uses the correct nationality.',
+            'DATC: b; DPTG: ?; DAIDE: a'),
+        
+        # Too many and too few orders
+        ('datc_4d1', datc('abcd', 'b'), 'b',
+            'multiple order sets with defined order',
+            '4.D.1.  MULTIPLE ORDER SETS WITH DEFINED ORDER',
+            'a: All order sets are combined to one set of orders.',
+            'b: All order sets are combined, unless latest clearly replaces all earlier.',
+            'c: Only the latest order set is considered, unless otherwise specified.',
+            'd: Only the latest order set is considered.',
+            'DATC: c; DPTG: ?; DAIDE: b'),
+        ('datc_4d2', datc('ab', ''), None,
+            'multiple order sets with undefined order',
+            '4.D.2.  MULTIPLE ORDER SETS WITH UNDEFINED ORDER',
+            'a: All units hold.',
+            'b: All order sets are combined.',
+            'DATC: b; DPTG: ?; DAIDE: n/a'),
+        ('datc_4d3', datc('abc', 'b'), 'b',
+            'multiple orders to the same unit',
+            '4.D.3.  MULTIPLE ORDERS TO THE SAME UNIT',
+            'a: The first order in a set is used.',
+            'b: The last order in a set is used.',
+            'c: The orders are illegal (the unit holds).',
+            'DATC: c; DPTG: ?; DAIDE: b'),
+        ('datc_4d4', datc('abc', 'b'), 'b',
+            'too many build orders',
+            '4.D.4.  TOO MANY BUILD ORDERS',
+            'a: All build orders are invalid.',
+            'b: The first legal build orders are used.',
+            'c: The last legal build orders are used.',
+            'DATC: b; DPTG: ?; DAIDE: b'),
+        ('datc_4d5', datc('abc', 'c'), 'c',
+            'multiple build orders for one area',
+            '4.D.5.  MULTIPLE BUILD ORDERS FOR ONE AREA',
+            'a: Both build orders fail.',
+            'b: The first build order is used.',
+            'c: The last build order is used.',
+            'DATC: b; DPTG: ?; DAIDE: c'),
+        ('datc_4d6', datc('abc', 'b'), 'b',
+            'too many disband orders',
+            '4.D.6.  TOO MANY DISBAND ORDERS',
+            'a: All disbands are handled by civil disorder rules.',
+            'b: The first legal disband orders are used.',
+            'c: The last legal disband orders are used.',
+            'DATC: b; DPTG: ?; DAIDE: b'),
+        ('datc_4d7', datc('ab', 'a'), 'a', # Todo: b
+            'waiving builds',
+            '4.D.7.  WAIVING BUILDS',
+            'a: Waiving builds is allowed.',
+            'b: Waiving builds is not allowed.',
+            'DATC: a; DPTG: ?; DAIDE: a'),
+        ('datc_4d8', datc('abcdef', 'e'), 'e', # Todo: abcd
+            'removing a unit in civil disorder',
+            '4.D.8.  REMOVING A UNIT IN CIVIL DISORDER',
+            'a: Convoys count as one move; no fleet necessary.',
+            'b: Convoys count as one move, but require fleets of the same nation.',
+            'c: Convoys count as one move, but require fleets of any nation.',
+            'd: Armies may move as a fleet.',
+            'e: Armies may move as a fleet, and fleets may move as an army.',
+            'f: The oldest unit not at a supply center is removed.',
+            'DATC: d; DPTG: d; DAIDE: ?'),
+        ('datc_4d9', datc('ab', 'b'), 'b', # Todo: a?
+            'receiving hold support in civil disorder',
+            '4.D.9.  RECEIVING HOLD SUPPORT IN CIVIL DISORDER',
+            'a: Units in civil disorder cannot receive support.',
+            'b: Units in civil disorder can receive support.',
+            'DATC: b; DPTG: ?; DAIDE: ?'),
+        
+        # Miscellaneous issues
+        ('datc_4e1', datc('abcd', 'abcd'), 'd',
+            'illegal orders',
+            '4.E.1.  ILLEGAL ORDERS',
+            'a: Every order with the right format is legal.',
+            'b: Legal orders may only use places on the map.',
+            'c: Only orders that can be valid in a game situation are legal.',
+            'd: Only orders that can be valid in the current game situation are legal.',
+            'DATC: d; DPTG: a; DAIDE: d'),
+        ('datc_4e2', datc('abcde', 'e'), 'e',
+            'poorly written orders',
+            '4.E.2.  POORLY WRITTEN ORDERS',
+            'a: No knowledge of Diplomacy must be used to correct orders.',
+            'b: Each order may be corrected to make it legal.',
+            'c: Other orders in the set may be considered when correcting an order.',
+            'd: Orders may be corrected to match other orders within the set.',
+            'e: Orders may not be corrected.',
+            'DATC: d; DPTG: ?; DAIDE: e'),
+        ('datc_4e3', datc('ab', 'b'), 'b', # Todo: a
+            'implicit orders',
+            '4.E.3.  IMPLICIT ORDERS',
+            'a: Implicit orders are allowed.',
+            'b: Implicit orders are not allowed.',
+            'DATC: b; DPTG: ?; DAIDE: b'),
+        ('datc_4e4', datc('ab', 'ab'), 'b',
+            'perpetual orders',
+            '4.E.4.  PERPETUAL ORDERS',
+            'a: Perpetual orders are allowed.',
+            'b: Perpetual orders are not allowed.',
+            'DATC: b; DPTG: ?; DAIDE: b'),
+        ('datc_4e5', datc('abc', 'abc'), 'c', # Todo: ab
+            'proxy orders',
+            '4.E.5.  PROXY ORDERS',
+            'a: Proxy orders are allowed, with prior notification to the judge.',
+            'b: Proxy orders are allowed as part of the normal order set.',
+            'c: Proxy orders are not allowed.',
+            'DATC: c; DPTG: ?; DAIDE: c'),
+        ('datc_4e6', datc('a', 'a'), 'a',
+            'flying dutchman',
+            '4.E.6.  FLYING DUTCHMAN',
+            'a: Allowed, as long as it is a deception.',
+            'DATC: a; DPTG: ?; DAIDE: ?'),
+    )
 
 
-class JudgeInterface(Verbose_Object):
+class JudgeInterface(VerboseObject):
     ''' The Arbitrator of Justice and Keeper of the Official Map.
         This class has the minimum skeleton required by the Server.
         
@@ -102,6 +316,7 @@ class JudgeInterface(Verbose_Object):
     
     def __init__(self, variant_opts, game_opts):
         ''' Initializes instance variables.'''
+        self.__super.__init__()
         self.map = Map(variant_opts)
         assert self.map.valid
         self.mdf = variant_opts.map_mdf
@@ -153,21 +368,66 @@ class JudgeInterface(Verbose_Object):
 
 class Judge(JudgeInterface):
     ''' Implementation of the Judge interface, for DAIDE rules.'''
+    __options__ = (
+        # Premature draw conditions
+        ('draw', int, 4000, 'total years before setting draw',
+            'Maximum length of a game, in game years.',
+            'Games exceeding this length will be declared DIAS draws.',
+            'Values greater than 8191 might disable this, but could cause other problems.'),
+        ('static', int, 1000, 'static years before setting draw',
+            'Maximum number of years in which supply center counts do not change.',
+            'Comparable to the 50-move rule in FIDE chess.',
+            'After this many game years, the game will be declared a DIAS draw.',
+            'Note that supply centers changing hands is not enough;',
+            'at least one power must have a different total supply center count.',
+            'Setting this higher than "total years before setting draw" will disable it.'),
+        
+        # Parameters for David Norman's Variable-Length mix-in rule.
+        ('var_start', int, 5000, 'years before variable end',
+            "Parameter for David Norman's Variable-Length mix-in rule,",
+            'documented at http://www.diplom.org/Zine/S1998R/Norman/VarLength.html',
+            'After this many years, the winning condition will start to decrease.',
+            "For David's suggested conditions, use 3 here."),
+        ('var_length', int, 0, 'length of variable end',
+            "Parameter for David Norman's Variable-Length mix-in rule.",
+            'This many years after starting to decrease the winning condition,',
+            'it will stop decreasing and remain at its new low value.',
+            "For David's suggested conditions, use 9 here.",
+            'Setting this to 0 will disable the rule entirely.'),
+        ('variation', float, 1.55, 'variation of variable end',
+            "Parameter for David Norman's Variable-Length mix-in rule.",
+            'The number of centers by which to decrease the winning condition per year.',
+            "For David's suggested conditions, use 1.55 here.",
+            'Setting this to 0 will disable the rule entirely.'),
+        
+        # DAIDE compliance settings
+        ('full_DRW', bool, False, 'list draw parties in DIAS',
+            'Whether to list the countries participating in a draw even in non-PDA games.',
+            'Doing so technically violates the syntax, but makes some clients easier.'),
+        ('send_SET', bool, False, 'publish order sets',
+            'Whether to send SET messages, listing orders actually given by each power.',
+            'This message was rejected by the DAIDE community, after it was implemented.',
+            'Advantage over ORD messages: It can represent *any* order,',
+            'even those to non-existent or foreign units.',
+            "Disadvantage: Doesn't list results, and may be large."),
+        ('send_ORD', bool, True, 'publish individual orders',
+            'Whether to send ORD messages each turn, as required by DAIDE.',
+            'Can slow down the game, particularly when syntax-checked by each client.'),
+    )
     
     def __init__(self, variant_opts, game_opts):
         ''' Initializes instance variables.'''
         self.__super.__init__(variant_opts, game_opts)
-        self.options = options = judge_options()
-        self.datc = datc_options()
+        self.datc = DatcOptions()
         self.last_orders = [REJ(ORD)]
         self.next_orders = OrderSet()
         
         # Game-end conditions
         year = self.map.current_turn.year
-        self.var_start  = year + options.var_start
-        self.var_stop   = self.var_start + options.var_length
-        self.draw_year  = year + options.draw - 1
-        self.max_static = options.static
+        self.var_start  = year + self.options.var_start
+        self.var_stop   = self.var_start + self.options.var_length
+        self.draw_year  = year + self.options.draw - 1
+        self.max_static = self.options.static
         
         centers = 0
         for prov in self.map.spaces.itervalues():

@@ -3,7 +3,6 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from functions import Verbose_Object
 from language import IntegerToken, Message, StringToken, Token
 
 __all__ = ['Representation', 'translate', 'read_message_file']
@@ -23,14 +22,14 @@ def translate(text, rep=None):
     from config import protocol
     return (rep or protocol.base_rep).translate(text)
 
-class Representation(Verbose_Object):
+class Representation(object):
     ''' Holds and translates all tokens for a variant.
         Warning: Abuses the traditional dict methods.
     '''#'''
     def __init__(self, tokens, base):
-        from config import token_options
+        from config import TokenOptions
         # tokens is a number -> name mapping
-        self.opts = token_options()
+        self.opts = TokenOptions()
         self.base = base
         self.names = names = {}
         self.numbers = nums = {}
@@ -243,7 +242,7 @@ def maybe_int(word):
     except: return word
     else:   return n
 
-class RawClient(Verbose_Object):
+class RawClient(object):
     ''' Simple client to translate DM to and from text.'''
     name = None
     def __init__(self, send_method, representation, manager):

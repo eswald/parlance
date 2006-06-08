@@ -5,34 +5,30 @@
     This should be the only module that cares about the client-server protocol.
 '''#'''
 
-import config, socket, select
+import select
+import socket
 from sys       import stdin
 from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
+
+from config    import protocol, VerboseObject
 from language  import Message, Token, YES, REJ, ADM, OFF, MDF
-from functions import Verbose_Object, any, s
+from functions import any
 
 
-class network_options(config.option_class):
-    ''' Options used to establish DCSP connections.'''
-    section = 'network'
-    def __init__(self):
-        self.echo_final   = self.getboolean('send unnecessary final messages', False)
-        self.host         = self.getstring('host', '')
-        self.port         = self.getint('port', 16713)
-        self.wait_time    = self.getint('idle timeout for server loop', 600)
-        
-        error_number = self.getint('first error number', 1)
-        default_errors = 'Timeout, NotIM, Endian, BadMagic, Version, DupIM, ServerIM, MessType, Short, QuickDM, NotRM, UnexpectedRM, ClientRM, IllegalToken'
-        for code in self.getlist('error codes', default_errors):
-            setattr(self, code, error_number)
-            error_number += 1
+class SocketWrapper(VerboseObject):
+    __options__ = (
+        ('host', str, '', None,
+            'The name or IP address of the server.',
+            'If blank, the server will listen on all possible addresses,',
+            'and clients will connect to localhost.'),
+        ('port', int, 16713, None,
+            'The port that the server listens on.'),
+    )
     
-
-class SocketWrapper(Verbose_Object):
     def __init__(self):
-        self.opts = network_options()
+        self.__super.__init__()
         self.broken = False  # Whether the write pipe has been broken
         self.closed = False
         self.sock = None
@@ -49,17 +45,41 @@ class SocketWrapper(Verbose_Object):
 class Connection(SocketWrapper):
     ''' Base methods for the DAIDE Client-Server Protocol.'''
     is_server = NotImplemented
+    __options__ = (
+        ('echo_final', bool, False, 'send unnecessary final messages',
+            'Whether to send FM after receiving EM or FM.',
+            'The extra FM may be useful to terminate input loops,',
+            'particularly when using threads, but the protocol prohibits it.'),
+        
+        # Todo: Embed this information in the protocol document,
+        #       probably as anchor names
+        ('error_number', int, 1, 'first error number',
+            'The number of the first error in "error codes" as listed below.',
+            'Should generally be 1 or 0, depending on the protocol.'),
+        ('default_errors', list, ['Timeout', 'NotIM', 'Endian', 'BadMagic',
+            'Version', 'DupIM', 'ServerIM', 'MessType', 'Short', 'QuickDM',
+            'NotRM', 'UnexpectedRM', 'ClientRM', 'IllegalToken'],
+            'error codes',
+            'Short names for the error codes, separated by commas.',
+            'Several of these names are used by the code, so they should not be changed.'),
+    )
     
     def __init__(self):
         self.__super.__init__()
         self.send_final = True
-        self.proto = config.protocol
+        self.proto = protocol
         self.IM_check = None
         self.rep = None
         
         # IM, DM, FM, etc.
         for name, value in self.proto.message_types.iteritems():
             setattr(Connection, name[0] + 'M', value)
+        
+        # Shorthand for the various error codes
+        error_number = self.options.error_number
+        for code in self.options.default_errors:
+            setattr(self.options, code, error_number)
+            error_number += 1
     def close(self):
         if self.send_final: self.send_dcsp(self.FM, '')
         self.send_final = False
@@ -96,24 +116,24 @@ class Connection(SocketWrapper):
         message = None
         if   type_code == self.IM:
             if self.is_server:     self.process_IM(data)
-            else:                  self.send_error(self.opts.ServerIM)
+            else:                  self.send_error(self.options.ServerIM)
         elif type_code == self.RM:
-            if self.is_server:     self.send_error(self.opts.ClientRM)
-            elif len(data) % 6:    self.send_error(self.opts.Short)
-            #elif self.rep:         self.send_error(self.opts.UnexpectedRM)
+            if self.is_server:     self.send_error(self.options.ClientRM)
+            elif len(data) % 6:    self.send_error(self.options.Short)
+            #elif self.rep:         self.send_error(self.options.UnexpectedRM)
             else:                  self.read_representation(data)
         elif type_code == self.DM:
-            if not data:           self.send_error(self.opts.Short)
-            elif len(data) % 2:    self.send_error(self.opts.Short)
+            if not data:           self.send_error(self.options.Short)
+            elif len(data) % 2:    self.send_error(self.options.Short)
             elif self.rep:         message = self.unpack_message(data)
-            else:                  self.send_error(self.opts.QuickDM)
-        elif type_code == self.FM: self.send_final = self.opts.echo_final; self.close()
+            else:                  self.send_error(self.options.QuickDM)
+        elif type_code == self.FM: self.send_final = self.options.echo_final; self.close()
         elif type_code == self.EM:
             if len(data) == 2:     self.send_error(unpack('!H', data)[0], True)
-            else:                  self.send_error(self.opts.Short)
+            else:                  self.send_error(self.options.Short)
         else:
             self.log_debug(7, 'Unknown message type %s received', type_code)
-            self.send_error(self.opts.MessType)
+            self.send_error(self.options.MessType)
         return message
     def process_IM(self, data):
         ''' Verifies the Initial Message from the client.'''
@@ -123,11 +143,11 @@ class Connection(SocketWrapper):
                 if version == self.proto.version:
                     if self.IM_check: self.IM_check.close()
                     self.send_RM()
-                else: self.send_error(self.opts.Version)
+                else: self.send_error(self.options.Version)
             elif unpack('>H', pack('<H', magic)) == self.proto.magic:
-                self.send_error(self.opts.Endian)
-            else: self.send_error(self.opts.BadMagic)
-        else: self.send_error(self.opts.Short)
+                self.send_error(self.options.Endian)
+            else: self.send_error(self.options.BadMagic)
+        else: self.send_error(self.options.Short)
     def read_representation(self, data):
         ''' Creates a representation dictionary from the RM.
             This dictionary maps names to numbers and vice-versa.
@@ -157,13 +177,13 @@ class Connection(SocketWrapper):
                 for x in unpack('!' + 'H'*(len(data)//2), data)])
         except ValueError:
             # Someone foolishly chose to disconnect over an unknown token.
-            self.send_error(self.opts.IllegalToken)
+            self.send_error(self.options.IllegalToken)
             result = None
         else:
             # Tokens in the "Reserved for AI use" category
             # must never be sent over the wire.
             if any('Reserved' in token.category_name() for token in result):
-                self.send_error(self.opts.IllegalToken)
+                self.send_error(self.options.IllegalToken)
                 result = None
         return result
     
@@ -184,7 +204,7 @@ class Connection(SocketWrapper):
             self.log_debug(7, '%s unknown error "%s"', sender, code)
         
         # Terminate the connection
-        self.send_final = self.opts.echo_final
+        self.send_final = self.options.echo_final
         self.close()
     def send_RM(self):
         ''' Sends the representation message to the client.
@@ -231,7 +251,7 @@ class Client(Connection):
     def open(self):
         # Open the socket
         self.sock = sock = socket.socket()
-        sock.connect((self.opts.host or 'localhost', self.opts.port))
+        sock.connect((self.options.host or 'localhost', self.options.port))
         sock.settimeout(None)
         
         # Required by the DCSP document
@@ -275,7 +295,7 @@ class Service(Connection):
             self.prefix = 'IM Check for ' + service.prefix
         def run(self):
             if not self.service.closed:
-                self.service.send_error(self.service.opts.Timeout)
+                self.service.send_error(self.service.options.Timeout)
         def close(self):
             self.closed = True
     
@@ -354,9 +374,6 @@ class Service(Connection):
     def admin(self, line, *args): self.send(ADM('Server')(str(line) % args))
 
 class ServerSocket(SocketWrapper):
-    try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
-    except AttributeError: flags = None
-    
     def __init__(self, server_class, thread_manager):
         self.__super.__init__()
         self.server = None
@@ -370,7 +387,7 @@ class ServerSocket(SocketWrapper):
         # Initialize a new socket
         wait_time = .125
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        addr = (self.opts.host, self.opts.port)
+        addr = (self.options.host, self.options.port)
         while True:
             try: sock.bind(addr)
             except socket.error, e:
@@ -407,9 +424,10 @@ class ServerSocket(SocketWrapper):
             self.manager.add_polled(service)
             self.next_id += 1
 
-class InputWaiter(Verbose_Object):
+class InputWaiter(VerboseObject):
     ''' File descriptor for waiting on standard input.'''
     def __init__(self, input_handler, close_handler):
+        self.__super.__init__()
         self.handle_input = input_handler
         self.handle_close = close_handler
         self.closed = False
@@ -423,23 +441,20 @@ class InputWaiter(Verbose_Object):
         self.closed = True
         self.handle_close()
 
-class RawServer(Verbose_Object):
+class RawServer(object):
     ''' Simple server to translate DM to and from text.'''
+    class FakeGame(object):
+        def __init__(self, server):
+            self.variant = server
+            self.game_id = 'ID'
+        def disconnect(self, client):
+            print 'Client #%d has disconnected.' % client.client_id
     def __init__(self, thread_manager):
-        from server import server_options
-        class FakeGame(Verbose_Object):
-            def __init__(self, variant_name):
-                self.variant = config.variants.get(variant_name)
-                self.game_id = 'ID'
-            def disconnect(self, client):
-                print 'Client #%d has disconnected.' % client.client_id
-        
         self.closed = False
         self.manager = thread_manager
-        self.options = server_options()
         self.clients = {}
-        self.game = FakeGame(self.options.variant)
-        self.rep = self.game.variant.rep
+        self.rep = protocol.default_rep
+        self.game = self.FakeGame(self)
         thread_manager.add_polled(InputWaiter(self.handle_input, self.close))
         print 'Waiting for connections...'
     def handle_message(self, client, message):

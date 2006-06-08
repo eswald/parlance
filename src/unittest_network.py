@@ -11,7 +11,7 @@ from time import sleep
 import config
 import network
 from main import ThreadManager
-from functions import any, Verbose_Object
+from functions import any
 from language import Token, ADM, HLO, IAM, NME, REJ, YES
 from server import Server
 from unittest_server import ServerTestCase
@@ -36,7 +36,7 @@ class NetworkTestCase(ServerTestCase):
         def open(self):
             # Open the socket
             self.sock = sock = socket.socket()
-            sock.connect((self.opts.host or 'localhost', self.opts.port))
+            sock.connect((self.options.host or 'localhost', self.options.port))
             sock.settimeout(None)
             
             # Required by the DCSP document
@@ -59,7 +59,8 @@ class NetworkTestCase(ServerTestCase):
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True
     def connect_server(self, clients, games=1, poll=True, **kwargs):
-        config.option_class.local_opts.update({'number of games' : games})
+        config.Configuration._local_opts.update(self.game_options)
+        config.Configuration.set_globally('games', games)
         manager = self.manager
         sock = network.ServerSocket(Server, manager)
         if not poll: sock.polling = None
@@ -85,10 +86,6 @@ class NetworkTestCase(ServerTestCase):
         if result: self.manager.add_polled(client)
         else: raise UserWarning('Failed to open a Client for ' + name)
         return result and client
-    def set_verbosity(self, level):
-        super(NetworkTestCase, self).set_verbosity(level)
-        if network.Connection.verbosity >= 7:
-            network.Connection.verbosity = 6
 
 class Network_Basics(NetworkTestCase):
     def test_timeout(self):
@@ -96,7 +93,7 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([])
         client = self.fake_client(None)
         self.manager.process()
-        self.failUnlessEqual(client.error_code, client.opts.Timeout)
+        self.failUnlessEqual(client.error_code, client.options.Timeout)
     def test_reserved_tokens(self):
         ''' "Reserved for AI use" tokens must never be sent over the wire.'''
         class ReservedSender(object):
@@ -109,7 +106,7 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([])
         client = self.fake_client(ReservedSender)
         self.manager.process()
-        self.failUnlessEqual(client.error_code, client.opts.IllegalToken)
+        self.failUnlessEqual(client.error_code, client.options.IllegalToken)
     def test_full_connection(self):
         ''' Seven fake players, polling if possible'''
         self.set_verbosity(15)
@@ -124,12 +121,13 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([Clock] + ([self.Disconnector] * 7))
     def test_takeover(self):
         ''' Takeover ability after game start'''
-        class Fake_Takeover(Verbose_Object):
+        class Fake_Takeover(config.VerboseObject):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             name = 'Impolite Finisher'
             def __init__(self, send_method, representation,
                     power, passcode, manager=None):
+                self.__super.__init__()
                 self.log_debug(9, 'Fake player started')
                 self.restarted = False
                 self.closed = False
@@ -161,7 +159,7 @@ class Network_Basics(NetworkTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_verbosity(15)
-        self.set_option('allow takeovers', True)
+        self.set_option('takeovers', True)
         self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''
@@ -180,8 +178,6 @@ class Network_Basics(NetworkTestCase):
                 master.admin('Server: start holdbot'))
 
 class Network_Full_Games(NetworkTestCase):
-    def change_option(self, name, value):
-        config.option_class.local_opts.update({name: value})
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
         from player import HoldBot
@@ -191,7 +187,6 @@ class Network_Full_Games(NetworkTestCase):
         from player  import HoldBot
         from dumbbot import DumbBot
         self.set_verbosity(1)
-        DumbBot.verbosity = 20
         self.connect_server([DumbBot, HoldBot, HoldBot,
                 HoldBot, HoldBot, HoldBot, HoldBot])
     def test_dumbbots(self):
@@ -210,9 +205,9 @@ class Network_Full_Games(NetworkTestCase):
         from player  import HoldBot
         from evilbot import EvilBot
         self.set_verbosity(4)
-        #self.change_option('move time limit', 10)
-        #self.change_option('validate incoming messages', False)
-        #self.change_option('publish individual orders', True)
+        #self.set_option('MTL', 10)
+        #self.set_option('validate', False)
+        #self.set_option('send_ORD', True)
         self.connect_server([HoldBot, EvilBot, EvilBot,
                 EvilBot, EvilBot, EvilBot, EvilBot])
 

@@ -22,7 +22,7 @@
 
 # Important initialization
 import config
-import main
+import server
 
 # List of available modules
 __all__ = [

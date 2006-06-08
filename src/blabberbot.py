@@ -27,7 +27,7 @@ class BlabberBot(DumbBot):
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)
         me = message[2]
-        if me.is_power() and self.opts.LVL >= 10:
+        if me.is_power() and self.game_opts.LVL >= 10:
             countries = set(self.map.powers.keys())
             countries.remove(me)
             self.countries = list(countries)
@@ -54,7 +54,7 @@ class BlabberBot(DumbBot):
             if options:
                 items = self.syntax[expression] = [syntax
                         for level, syntax in options
-                        if level <= self.opts.LVL]
+                        if level <= self.game_opts.LVL]
             else:
                 items = self.syntax[expression] = ()
                 self.log_debug(7, 'Unknown syntax expression %r', expression)

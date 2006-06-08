@@ -36,7 +36,7 @@ class PeaceBot(DumbBot):
         if me.is_power():
             self.friends.add(me)
             self.countries = set(self.map.powers.keys())
-            if self.opts.LVL >= 10:
+            if self.game_opts.LVL >= 10:
                 for country in self.countries:
                     if country is not me:
                         self.send_press(country, PRP(PCE(country, me)))

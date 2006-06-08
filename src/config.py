@@ -8,8 +8,9 @@
 '''#'''
 
 import re, os
+import weakref
 import ConfigParser
-from functions import Verbose_Object, settable_property
+from functions import autosuper, settable_property
 from translation import Representation, read_message_file
 
 # Main program version; used for bot versions
@@ -17,125 +18,251 @@ repository = '$URL$'
 __version__ = repository.split('/')[-3]
 
 # Various option classes.
-class option_class(object):
-    section = None
-    user_config = ConfigParser.RawConfigParser()
-    user_config.read(['pydip.cfg', os.path.expanduser('~/.pydiprc')])
-    local_opts = {}
+class Configuration(object):
+    ''' Container for various configurable settings and constants.
+        Each subclass may have an __options__ member, treated somewhat like
+        __slots__ in that it builds on, rather than supplants, those in parent
+        classes.  The __options__ member should be a sequence of tuples:
+        (name, type, default, alternate name(s), help line, ...)
+        
+        For each item of __options__, all instances of the class will have
+        a member by that name, set either from the command line, the main
+        configuration files, the default value, or elsewhere in the program.
+        Each instance may be modified independently, but set_globally()
+        can be used to set all of them at once.
+        
+        The subclass may also have a __section__ member, indicating the
+        section of the configuration file under which its corresponding
+        options should be located.  If it does not have one, the name of
+        the class's module will be used.
+    '''#'''
+    __metaclass__ = autosuper
+    _user_config = ConfigParser.RawConfigParser()
+    _user_config.read(['pydip.cfg', os.path.expanduser('~/.pydiprc')])
+    _local_opts = {}
+    _configurations = weakref.WeakValueDictionary()
+    
+    def __init__(self):
+        self.parse_options(self.__class__)
+        self._configurations[id(self)] = self
+    def parse_options(self, klass):
+        for cls in reversed(klass.__mro__):
+            section = getattr(cls, '__section__', cls.__module__)
+            opts = getattr(cls, '__options__', ())
+            for item in opts: self.add_option(section, *item)
+    def add_option(self, section, name, option_type, default, alt_names, *help):
+        value = default
+        if self._local_opts.has_key(name):
+            value = self._local_opts[name]
+        else:
+            get = self.__getters.get(option_type, option_type)
+            conf_val = get(self, name, section)
+            if conf_val is not None: value = conf_val
+            elif isinstance(alt_names, str):
+                if len(alt_names) > 1:
+                    val = get(self, name, section)
+                    if val is not None: value = val
+            elif alt_names:
+                for item in alt_names:
+                    if len(item) > 1:
+                        val = get(self, name, section)
+                        if val is not None:
+                            value = val
+                            break
+            self._local_opts[name] = value
+        setattr(self, name, value)
+    
+    @classmethod
+    def set_globally(klass, name, value):
+        klass._local_opts[name] = value
+        for conf in klass._configurations.values():
+            if hasattr(conf, name): setattr(conf, name, value)
     def update(self, option_dict):
         for key in option_dict:
             if hasattr(self, key):
                 setattr(self, key, option_dict[key])
+    def warn(self, line, option, section, suggestion=None):
+        line = 'Warning: %s for %s, in section %s of the configuration file.'
+        if suggestion: line += '  ' % suggestion
+        print line % (line, option, section)
     
-    def setboolean(self, varname, option, default):
-        setattr(self, varname, self.local_opts.get(varname,
-            self.getboolean(option, default)))
-    def getboolean(self, option, default):
-        if self.local_opts.has_key(option): return self.local_opts[option]
-        if self.user_config.has_option(self.section, option):
-            try: return self.user_config.getboolean(self.section, option)
+    # Getters for standard item types
+    def getboolean(self, option, section):
+        if self._user_config.has_option(section, option):
+            try: result = self._user_config.getboolean(section, option)
             except ValueError:
-                print 'Warning: Unrecognized boolean value for %s, in section %s of the configuration file.  Try "yes" or "no".' % (option, self.section)
-                return default
-        else: return default
-    def getfloat(self, option, default):
-        if self.local_opts.has_key(option): return self.local_opts[option]
-        if self.user_config.has_option(self.section, option):
-            try: return float(self.getstring(option, default))
+                self.warn('Unrecognized boolean value', option, section,
+                        'Try "yes" or "no".')
+                result = None
+        else: result = None
+        return result
+    def getfloat(self, option, section):
+        if self._user_config.has_option(section, option):
+            try: result = float(self.getstring(option, section))
             except ValueError:
-                print 'Warning: Unrecognized numeric value for %s, in section %s of the configuration file.' % (option, self.section)
-                return default
-        else: return default
-    def getint(self, option, default):
-        if self.local_opts.has_key(option): return self.local_opts[option]
-        if self.user_config.has_option(self.section, option):
-            try: return self.user_config.getint(self.section, option)
+                self.warn('Unrecognized numeric value', option, section)
+                result = None
+        else: result = None
+        return result
+    def getint(self, option, section):
+        if self._user_config.has_option(section, option):
+            try: result = self._user_config.getint(section, option)
             except ValueError:
-                try: return int(self.getstring(option, default), 16)
+                try: result = int(self.getstring(option, section), 16)
                 except ValueError:
-                    print 'Warning: Unrecognized integer value for %s, in section %s of the configuration file.' % (option, self.section)
-                    return default
-        else: return default
-    def getstring(self, option, default):
-        if self.local_opts.has_key(option): return self.local_opts[option]
-        if self.user_config.has_option(self.section, option):
-            return self.user_config.get(self.section, option)
-        else: return default
-    def getlist(self, option, default):
-        if self.local_opts.has_key(option): return self.local_opts[option]
-        text = self.getstring(option, default)
-        return [r for r in [s.strip() for s in text.split(',')] if r]
-class token_options(option_class):
+                    self.warn('Unrecognized integer value', option, section)
+                    result = None
+        else: result = None
+        return result
+    def getstring(self, option, section):
+        if self._user_config.has_option(section, option):
+            result = self._user_config.get(section, option)
+        else: result = None
+        return result
+    def getlist(self, option, section):
+        text = self.getstring(option, section)
+        if text is None: result = None
+        else: result = [r for r in [s.strip() for s in text.split(',')] if r]
+        return result
+    
+    __getters = {
+        bool: getboolean,
+        float: getfloat,
+        int: getint,
+        str: getstring,
+        file: getstring,  # Todo: Write something to verify this
+        list: getlist,
+    }
+
+class TokenOptions(Configuration):
     ''' Options for token and message handling.
-        - squeeze_parens   Whether to print spaces on the inside of parentheses
-        - ignore_unknown   Whether to send error messages on receipt of unknown tokens in Diplomacy Messages
-        - escape_char      The character that indicates an escaped quotation mark
-        - quot_char        The character in which to wrap text in Messages
+        This class will also be outfitted with the following:
         - max_token        The largest number legal for a token
         - quot_prefix      The number to add to a character's ordinal value, to get its token number
         - max_pos_int      One greater than the largest positive number representable by a token
         - max_neg_int      One greater than the token number of the most negative number representable by a token
     '''#'''
-    section = 'tokens'
-    def __init__(self):
-        # Load values from the configuration files
-        self.squeeze_parens = self.getboolean('squeeze parentheses', False)
-        self.ignore_unknown = self.getboolean('ignore unknown tokens', True)
-        self.input_escape   = self.getstring('input escape chararacter', '\\')[0]
-        self.output_escape  = self.getstring('output escape chararacter', '\\')[0]
-        self.quot_char      = self.getstring('quotation mark', '"')[0]
-class syntax_options(option_class):
-    ''' Options needed by this configuration script.'''
-    section = 'syntax'
-    def __init__(self):
-        # os.path.abspath(__file__) would be useful here.
-        self.variant_file   = self.getstring('variants file',  os.path.join('docs', 'variants.html'))
-        self.dcsp_file      = self.getstring('protocol file',  os.path.join('docs', 'protocol.html'))
-        self.syntax_file    = self.getstring('syntax file',    os.path.join('docs', 'syntax.html'))
-        self.move_phases    = self.getlist('move phases',      'SPR,FAL')
-        self.retreat_phases = self.getlist('retreat phases',   'SUM,AUT')
-        self.build_phases   = self.getlist('build phases',     'WIN')
-        self.move_phase     = self.getint('move order mask',    0x20)
-        self.retreat_phase  = self.getint('retreat order mask', 0x40)
-        self.build_phase    = self.getint('build order mask',   0x80)
-class game_options(option_class):
-    "Options sent in the HLO message."
-    BTL = RTL = MTL = PTL = TRN = 0
-    PDA = AOA = NPB = NPR = DSD = False
-    section = 'game'
+    def character(self, option, section):
+        text = self.getstring(option, section)
+        if not text: result = None
+        elif len(text) > 1:
+            self.warn('Only one character expected', option, section)
+            result = text[0]
+        else: result = text
+        return result
     
-    def __init__(self, message=None):
-        ''' Creates a new instance from a HLO message,
-            from a dictionary, or from the configuration files.
-        '''#'''
-        from language import Message
-        if isinstance(message, Message):
-            for var_opt in message.fold()[3]:
-                if   len(var_opt) == 1: setattr(self, var_opt[0].text, True)
-                elif len(var_opt) == 2: setattr(self, var_opt[0].text, var_opt[1])
-                else: raise ValueError, 'invalid HLO message'
-        else:
-            # Initialize from configuration files
-            self.LVL = self.getint('syntax Level',                    0)
-            self.BTL = self.getint('Build Time Limit',                0)
-            self.RTL = self.getint('Retreat Time Limit',              0)
-            self.MTL = self.getint('Move Time Limit',                 0)
-            self.PTL = self.getint('Press Time Limit',                0)
-            self.setboolean('PDA', 'Partial Draws Allowed',           False)
-            self.setboolean('AOA', 'Any Orders Allowed',              False)
-            self.setboolean('NPB', 'No Press during Builds',          False)
-            self.setboolean('NPR', 'No Press during Retreats',        False)
-            self.setboolean('DSD', 'Deadline Stops on Disconnection', False)
-            self.setboolean('TRN', 'Tournament',                      False)
-            
-            # Sanity checks
-            if self.LVL >= 10:
-                if self.MTL > 0:
-                    if self.PTL >= self.MTL: self.PTL = self.MTL
-                else: self.PTL = 0
+    __section__ = 'tokens'
+    __options__ = (
+        ('squeeze_parens', bool, False, 'squeeze parentheses',
+            'Whether to omit the spaces just inside parentheses when printing messages.'),
+        ('ignore_unknown', bool, True, 'ignore unknown tokens',
+            'Whether to allow tokens not represented in the protocol document or RM.',
+            'If this is false, unknown tokens in a DM will result in an Error Message.'),
+        ('input_escape', character, '\\', 'input escape chararacter',
+            'The character which escapes quotation marks when translating messages.',
+            'This can be the same as the quotation mark character itself.'),
+        ('output_escape', character, '\\', 'output escape chararacter',
+            'The character with which to escape quotation marks when printing messages.',
+            'This can be the same as the quotation mark character itself.'),
+        ('quot_char', character, '"', 'quotation mark',
+            'The character to use for quoting strings when printing messages.'),
+    )
+class SyntaxOptions(Configuration):
+    ''' Options needed by this configuration script.'''
+    __section__ = 'syntax'
+    __options__ = (
+        # os.path.abspath(__file__) would be useful here.
+        ('variant_file', file, os.path.join('docs', 'variants.html'), 'variants file',
+            'Document listing the available map variants, with their names and files.'),
+        ('dcsp_file', file, os.path.join('docs', 'protocol.html'), 'protocol file',
+            'Document specifying protocol information, including token names and numbers.'),
+        ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
+            'Document specifying syntax rules and level names.'),
+        
+        # It would be nice if the tokens themselves contained this information.
+        ('move_phases', list, ('SPR','FAL'), 'move phases',
+            'Tokens that indicate movement phases'),
+        ('retreat_phases', list, ('SUM','AUT'), 'retreat phases',
+            'Tokens that indicate retreat phases'),
+        ('build_phases', list, ('WIN',), 'build phases',
+            'Tokens that indicate build phases'),
+        
+        # I might want to check sometime that these are powers of two
+        ('move_phase_bit', int, 0x20, 'move order mask',
+            'Bit that indicates movement phase in order token numbers.'),
+        ('retreat_phase_bit', int, 0x40, 'retreat order mask',
+            'Bit that indicates retreat phase in order token numbers.'),
+        ('build_phase_bit', int, 0x80, 'build order mask',
+            'Bit that indicates build phase in order token numbers.'),
+    )
+class GameOptions(Configuration):
+    ''' Options sent in the HLO message.'''
+    __section__ = 'game'
+    __options__ = (
+        ('LVL', int, 0, 'syntax level',
+            'Syntax level of the game.',
+            'Mostly determines what kind of press can be sent.',
+            'See the message syntax document for more details.'),
+        ('MTL', int, 0, 'Move Time Limit',
+            'Time limit for movement phases, in seconds.',
+            'A setting of 0 disables movement time limits.',
+            'The standard "real-time" setting is 600 (five minutes).'),
+        ('RTL', int, 0, 'Retreat Time Limit',
+            'Time limit for retreat phases, in seconds.',
+            'A setting of 0 disables retreat time limits.',
+            'The standard "real-time" setting is 120 (two minutes).'),
+        ('BTL', int, 0, 'Build Time Limit',
+            'Time limit for build phases, in seconds.',
+            'A setting of 0 disables build time limits.',
+            'The standard "real-time" setting is 180 (three minutes).'),
+        ('PTL', int, 0, 'Press Time Limit',
+            'Time (in seconds) before movement deadlines to start blocking press.',
+            'If there is no movement time limit, this has no effect;',
+            'otherwise, if this is greater than or equal to MTL,',
+            'press is entirely blocked in movement phases.'),
+        
+        ('NPR', bool, False, 'No Press during Retreats',
+            'Whether press is blocked during retreat phases.'),
+        ('NPB', bool, False, 'No Press during Builds',
+            'Whether press is blocked during build phases.'),
+        ('DSD', bool, False, 'Deadline Stops on Disconnection',
+            'Whether time limits pause when a non-eliminated player disconnects.',
+            'The standard "real-time" setting is yes.'),
+        ('AOA', bool, False, 'Any Orders Allowed',
+            'Whether to accept any syntactically valid order, regardless of legality.',
+            "This server is more permissive than David's in AOA games;",
+            "the latter doesn't accept orders for non-existent or foreign units.",
+            'See also DATC option 4.E.1, which only comes up in AOA games.',
+            'The standard "real-time" setting is no.'),
+        ('PDA', bool, False, 'Partial Draws Allowed',
+            "Whether to allow draws that don't include all survivors.",
+            'When this is on, clients can specify powers to allow in the draw,',
+            'and the server can specify the powers in a draw.',
+            'Only available at syntax level 10 or above.'),
+    )
+    
+    def __init__(self):
+        self.__super.__init__()
+        self.sanitize()
+    def parse_message(self, message):
+        ''' Collects the information from a HLO or LST message.'''
+        for var_opt in message.fold()[-1]:
+            if   len(var_opt) == 1: setattr(self, var_opt[0].text, True)
+            elif len(var_opt) == 2: setattr(self, var_opt[0].text, var_opt[1])
             else:
-                self.PTL = 0
-                self.PDA = False
+                raise ValueError('Unknown variant option in %s message' %
+                        message[0].text)
+            
+    def sanitize(self):
+        ''' Performs a few sanity checks on the options.'''
+        # Todo: Ensure that all numbers are positive.
+        if self.LVL >= 10:
+            if self.MTL > 0:
+                if self.PTL >= self.MTL: self.PTL = self.MTL
+            else: self.PTL = 0
+        else:
+            self.PTL = 0
+            self.PDA = False
     def get_params(self):
         from functions import relative_limit
         from language import LVL, MTL, RTL, BTL, AOA, DSD, PDA, NPR, NPB, PTL
@@ -182,7 +309,52 @@ class game_options(option_class):
         # Touch:    1025 Only between powers with touching units
         # Backseat: 4128 Only non-map powers, and them broadcast-only
     # Tournaments (TRN)
-class variant_options(Verbose_Object):
+
+
+class Configurable(object):
+    ''' Generic class for anything that can be configured by pydip.cfg files.
+        __options__ and __section__ will be used to build a Configuration
+        instance for each Configurable instance, which will be available
+        as self.options.
+    '''#'''
+    __metaclass__ = autosuper
+    def __init__(self):
+        self.options = Configuration()
+        self.options.parse_options(self.__class__)
+
+class VerboseObject(Configurable):
+    ''' Basic logging system.
+        Provides one function, log_debug, to print lines either to stdout
+        or to a configurable file, based on verbosity level.
+        Classes or instances may override prefix to set the label on each
+        line written by that item.
+    '''#'''
+    __files = {}
+    __section__ = 'main'
+    __options__ = (
+        ('verbosity', int, 1, 'v',
+            'How much debug or logging information to display.'),
+        ('log_file', file, None, None,
+            'File in which to log output lines, instead of printing them.'),
+    )
+    
+    def log_debug(self, level, line, *args):
+        if level <= self.options.verbosity:
+            line = self.prefix + ': ' + str(line) % args
+            filename = self.options.log_file
+            if filename:
+                output = self.__files.get(filename)
+                if not output:
+                    output = file(filename, 'a')
+                    self.__files[filename] = output
+                output.write(line + os.linesep)
+            else:
+                try: print line + '\n',
+                except IOError: self.verbosity = 0 # Ignore broken pipes
+    @settable_property
+    def prefix(self): return self.__class__.__name__
+
+class MapVariant(VerboseObject):
     ''' Options set by the game variant.
         - map_name     The name to send in MAP messages
         - map_mdf      The map definition message
@@ -198,7 +370,8 @@ class variant_options(Verbose_Object):
             Throws exceptions if something is wrong.
         '''#'''
         from language import SPR, SUM, FAL, AUT, WIN
-        self.prefix      = 'variant_options(%r)' % variant_name
+        self.__super.__init__()
+        self.prefix      = '%s(%r)' % (self.__class__.__name__, variant_name)
         self.variant     = variant_name
         self.map_name    = variant_name.lower()
         self.description = description
@@ -206,9 +379,9 @@ class variant_options(Verbose_Object):
         self.rep         = rep or self.get_representation()
         self.seasons     = [SPR, SUM, FAL, AUT, WIN]
         self.msg_cache  = {}
-    def new_judge(self):
+    def new_judge(self, game_options):
         from judge import Judge
-        return Judge(self, game_options())
+        return Judge(self, game_options)
     def get_representation(self):
         filename = self.files.get('rem')
         if filename: return parse_file(filename, read_representation_file)
@@ -264,7 +437,6 @@ class variant_options(Verbose_Object):
         self.names = names
         return names
 
-
 # File parsing
 def parse_file(filename, parser):
     result = None
@@ -292,10 +464,10 @@ def parse_variants(stream):
                 files[ext.lower()] = os.path.normpath(os.path.join(
                     os.path.dirname(options.variant_file), ref))
             elif '</tr>' in line:
-                variants[name] = variant_options(name, descrip, files)
+                variants[name] = MapVariant(name, descrip, files)
                 descrip = name = None
 
-class Protocol(Verbose_Object):
+class Protocol(VerboseObject):
     ''' Collects various constants from the Client-Server Protocol file.
         Rather dependent on precise formatting.
         
@@ -331,11 +503,11 @@ class Protocol(Verbose_Object):
         
         # Calculated constants needed by the language module
         # Todo: Move these to a more appropriate place
-        token_options.max_token = (max([cat for cat in self.token_cats.keys()
+        TokenOptions.max_token = (max([cat for cat in self.token_cats.keys()
             if isinstance(cat, int)]) + 1) << 8
-        token_options.quot_prefix = self.token_cats['Text'] << 8
-        token_options.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
-        token_options.max_neg_int = token_options.max_pos_int << 1
+        TokenOptions.quot_prefix = self.token_cats['Text'] << 8
+        TokenOptions.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
+        TokenOptions.max_neg_int = TokenOptions.max_pos_int << 1
     
     def parse_dcsp(self, dcsp_file):
         # Local variable initialization
@@ -467,7 +639,9 @@ def init_language():
     opts = options
     
     # Masks to determine whether an order is valid during a given phase
-    order_mask[None] = opts.move_phase + opts.retreat_phase + opts.build_phase
+    opts.order_mask = mask = {
+        None: opts.move_phase_bit|opts.retreat_phase_bit|opts.build_phase_bit
+    }
     
     # Export variables into the language globals
     import language
@@ -477,9 +651,9 @@ def init_language():
     for name, token in protocol.base_rep.items():
         #print 'Adding language.%s' % (name,)
         setattr(language, name, token)
-        if   name in opts.move_phases:    order_mask[token] = opts.move_phase
-        elif name in opts.retreat_phases: order_mask[token] = opts.retreat_phase
-        elif name in opts.build_phases:   order_mask[token] = opts.build_phase
+        if   name in opts.move_phases:    mask[token] = opts.move_phase_bit
+        elif name in opts.retreat_phases: mask[token] = opts.retreat_phase_bit
+        elif name in opts.build_phases:   mask[token] = opts.build_phase_bit
     
     parse_file(opts.variant_file, parse_variants)
 
@@ -508,9 +682,8 @@ def extend_globals(globs):
     return extension
 
 # Global variables
-options = syntax_options()
+options = SyntaxOptions()
 protocol = Protocol(options.dcsp_file)
-order_mask = {}
 variants = {}
 
 # Main initialization

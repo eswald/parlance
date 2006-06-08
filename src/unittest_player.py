@@ -4,7 +4,7 @@
 '''#'''
 
 import unittest, config
-from functions import Verbose_Object, relative_limit, version_string
+from functions import relative_limit, version_string
 from player    import Player, HoldBot
 from language  import *
 from validation import Validator
@@ -24,22 +24,22 @@ class PlayerTestCase(unittest.TestCase):
     ''' Basic Player Functionality'''
     
     game_options = {
-            'syntax Level': 8000,
-            'Partial Draws Allowed': True,
-            'default variant' : 'standard',
-            'close on disconnect' : True,
-            'host' : '',
-            'publish order sets': False,
-            'publish individual orders': False,
-            'total years before setting draw': 3,
-            'invalid message response': 'die',
+        'LVL': 8000,
+        'PDA': True,
+        'variant' : 'standard',
+        'quit' : True,
+        'host' : '',
+        'send_SET': False,
+        'send_ORD': False,
+        'draw': 3,
+        'response': 'die',
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.option_class.local_opts.update(self.game_options)
+        config.Configuration._local_opts.update(self.game_options)
         self.variant = config.variants['standard']
-        opts = config.game_options()
+        opts = config.GameOptions()
         self.params = opts.get_params()
         self.level = opts.LVL
         self.validator = Validator(opts.LVL)
@@ -52,7 +52,8 @@ class PlayerTestCase(unittest.TestCase):
         self.replies.append(message)
     def tearDown(self):
         if self.player: self.send(+OFF)
-    def set_verbosity(self, verbosity): Verbose_Object.verbosity = verbosity
+    def set_verbosity(self, verbosity):
+        config.Configuration.set_globally('verbosity', verbosity)
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
     def rejept(self, message): self.send(REJ(message))

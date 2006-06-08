@@ -4,7 +4,6 @@
     so "from functions import *" is discouraged.
 '''#'''
 
-from os        import linesep
 from itertools import ifilter, ifilterfalse
 from time      import localtime
 
@@ -146,26 +145,6 @@ Infinity = Infinity()
 class settable_property(object):
     def __init__(self, fget): self.fget = fget
     def __get__(self, obj, type): return self.fget(obj)
-
-class Verbose_Object(object):
-    __metaclass__ = autosuper
-    log_file = None
-    verbosity = 1
-    __files = {}
-    def log_debug(self, level, line, *args):
-        if level <= self.verbosity:
-            line = self.prefix + ': ' + str(line) % args
-            if self.log_file:
-                output = self.__files.get(self.log_file)
-                if not output:
-                    output = file(self.log_file, 'a')
-                    self.__files[self.log_file] = output
-                output.write(line + linesep)
-            else:
-                try: print line + '\n',
-                except IOError: self.verbosity = 0 # Ignore broken pipes
-    @settable_property
-    def prefix(self): return self.__class__.__name__
 
 def absolute_limit(time_limit):
     ''' Converts a TME message number into a number of seconds.

@@ -4,9 +4,9 @@
 '''#'''
 
 import random
-import config
+from config       import VerboseObject
 from player       import Player
-from functions    import Verbose_Object, version_string
+from functions    import version_string
 from gameboard    import Power, Province, Unit
 from orders       import *
 from language     import *
@@ -93,9 +93,10 @@ class Project20M(Player):
         else:
             self.log_debug(7, "PrimeMinister: No orders to send")
 
-class Tactics(Verbose_Object):
+class Tactics(VerboseObject):
     #*************************** public functions ****************************#
     def __init__(self, board):
+        self.__super.__init__()
         self.map = board
         # the independent orders we generated last turn
         self.lastTurnsOrders = []
@@ -592,10 +593,11 @@ class Tactics(Verbose_Object):
     def compareTo(self, this, o):
         return int(o.evaluate(self.map) - this.evaluate(self.map))
 
-class Coordinator(Verbose_Object):
+class Coordinator(VerboseObject):
     #*************************** public functions ****************************#
     
     def __init__(self, board, tactics):
+        self.__super.__init__()
         self.map = board
         self.tactics = tactics
         self.wantedOrders = []
