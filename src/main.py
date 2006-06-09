@@ -201,11 +201,11 @@ class ThreadManager(VerboseObject):
         elif event & (select.POLLERR | select.POLLHUP):
             self.log_debug(7, 'Event %s received for %s', event, client.prefix)
             self.remove_polled(fd)
-            client.close()
+            if not client.closed: client.close()
         elif event & select.POLLNVAL:
-            # Assume that the socket has already been closed
             self.log_debug(7, 'Invalid fd for %s', client.prefix)
             self.remove_polled(fd)
+            if not client.closed: client.close()
     def clean_polled(self):
         # Warning: This doesn't catch closed players until their Clients close.
         for fd, client in self.polled.items():

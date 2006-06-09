@@ -62,6 +62,7 @@ class NetworkTestCase(ServerTestCase):
         self.manager = ThreadManager()
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True
+        self.set_verbosity(1)
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         Configuration._local_opts.update(self.game_options)
         Configuration._local_opts['games'] = games
