@@ -13,20 +13,15 @@ def _test():
     import functions
     import gameboard
     import language
-    import network
     import orders
-    import player
     import validation
     
     # List of modules to test
     modules = [
-        config,
         functions,
         gameboard,
         language,
-        network,
         orders,
-        player,
         validation,
     ]
     

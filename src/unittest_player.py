@@ -8,7 +8,7 @@ import unittest
 from config     import Configuration, GameOptions, variants
 from functions  import version_string
 from language   import Token
-from player     import Player, HoldBot
+from player     import AutoObserver, Player, HoldBot
 from tokens     import *
 from validation import Validator
 
@@ -157,6 +157,25 @@ class Player_Tests(PlayerTestCase):
         offer = SUG(DRW)
         self.send(FRM(GER)(ENG)(offer))
         self.seek_reply(SND(GER)(HUH(offer ++ ERR)))
+    def test_AutoObserver(self):
+        ''' Former doctests of the AutoObserver class.'''
+        result = []
+        def handle_message(msg):
+            if msg[0] is ADM:
+                result.append(msg)
+                player.handle_ADM(msg)
+        player = AutoObserver(send_method=handle_message,
+                representation=self.variant.rep)
+        player.handle_ADM(ADM('Server')('An Observer has connected. '
+            'Have 5 players and 1 observers. Need 2 to start'))
+        player.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
+        self.failUnlessEqual(result[-1],
+                ADM ( "Observer" ) ( "Sorry; I'm just a bot." ))
+        player.handle_ADM(ADM('Geoff')('Are you sure about that?'))
+        self.failUnlessEqual(result[-1],
+                ADM ( "Observer" ) ( "Yes, I'm sure." ))
+        player.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
+        self.failUnlessEqual(len(result), 2)
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):

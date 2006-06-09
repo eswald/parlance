@@ -12,12 +12,12 @@ from config          import Configuration, VerboseObject
 from dumbbot         import DumbBot
 from evilbot         import EvilBot
 from functions       import any
-from language        import Token, protocol
+from language        import Representation, Token, protocol
 from main            import ThreadManager
-from network         import Client, ServerSocket
+from network         import Client, Connection, ServerSocket
 from player          import Clock, HoldBot
 from server          import Server
-from tokens          import ADM, HLO, IAM, NME, REJ, YES
+from tokens          import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
 from unittest_server import ServerTestCase
 
 class NetworkTestCase(ServerTestCase):
@@ -285,6 +285,14 @@ class Network_Basics(NetworkTestCase):
         master.admin('Server: become master')
         self.assertContains('Recruit more players first, or use your own bots.',
                 master.admin('Server: start holdbot'))
+    def test_unpack_message(self):
+        ''' Former docstring tests from Connection.unpack_message().'''
+        c = Connection()
+        c.rep = Representation({0x4101: 'Sth'}, c.proto.base_rep)
+        msg = [HLO.number, BRA.number, 0x4101, KET.number]
+        unpacked = c.unpack_message(pack('!HHHH', *msg))
+        self.failUnlessEqual(repr(unpacked),
+            "Message([HLO, [Token('Sth', 0x4101)]])")
 
 class Network_Full_Games(NetworkTestCase):
     def test_holdbots(self):

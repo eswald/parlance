@@ -5,6 +5,7 @@
 
 import unittest
 
+from config     import parse_file, read_representation_file
 from config     import MapVariant, variants
 from functions  import fails
 from gameboard  import Map, Province, Turn
@@ -305,5 +306,15 @@ class Gameboard_Doctests(unittest.TestCase):
         t = Turn()
         t.set(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
+    
+    # Tests from other modules
+    def test_read_representation_file(self):
+        ''' Tests the config.read_representation_file() function.'''
+        rep = parse_file('variants/sailho.rem', read_representation_file)
+        self.failUnlessEqual(repr(rep['NTH']), "Token('NTH', 0x4100)")
+        
+        # This used to be 'Psy'; it was probably changed for consistency.
+        self.failUnlessEqual(repr(rep[0x563B]), "Token('PSY', 0x563B)")
+        self.failUnlessEqual(len(rep), 64)
 
 if __name__ == '__main__': unittest.main()

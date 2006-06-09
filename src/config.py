@@ -424,16 +424,6 @@ def read_representation_file(stream):
         The first line contains a decimal integer, the number of tokens.
         The remaining lines consist of four hex digits, a colon,
         and the three-letter token name.
-        
-        >>> rep = parse_file('variants/sailho.rem', read_representation_file)
-        >>> rep['NTH']
-        Token('NTH', 0x4100)
-        
-        # This used to be 'Psy'; it was probably changed for consistency.
-        >>> rep[0x563B]
-        Token('PSY', 0x563B)
-        >>> len(rep)
-        64
     '''#'''
     from language import Representation, protocol
     num_tokens = int(stream.readline().strip())

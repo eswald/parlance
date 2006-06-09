@@ -483,21 +483,6 @@ class AutoObserver(Observer):
     def handle_ADM(self, message):
         ''' Try to politely decline invitations,
             without producing too many false positives.
-            
-            >>> class Responder:
-            ...     def __init__(self):
-            ...         self.player = Echo(self.send_back, {})
-            ...     def send_back(self, msg):
-            ...         if msg[0] is ADM:
-            ...             self.player.handle_ADM(msg)
-            >>> p = Responder().player
-            >>> p.handle_ADM(ADM('Server')('An Observer has connected. '
-            ...     'Have 5 players and 1 observers. Need 2 to start'))
-            >>> p.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
-            Echo: << ADM ( "Observer" ) ( "Sorry; I'm just a bot." )
-            >>> p.handle_ADM(ADM('Geoff')('Are you sure about that?'))
-            Echo: << ADM ( "Observer" ) ( "Yes, I'm sure." )
-            >>> p.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         '''#'''
         sorry = "Sorry; I'm just a bot."
         s = message.fold()[2][0]

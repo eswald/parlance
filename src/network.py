@@ -160,12 +160,6 @@ class Connection(SocketWrapper):
     def unpack_message(self, data):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
-            
-            >>> c = Connection()
-            >>> c.rep = Representation({0x4101: 'Sth'}, c.proto.base_rep)
-            >>> msg = [HLO.number, BRA.number, 0x4101, KET.number]
-            >>> c.unpack_message(pack('!HHHH', *msg))
-            Message([HLO, [Token('Sth', 0x4101)]])
         '''#'''
         try:
             result = Message([self.rep[x]
