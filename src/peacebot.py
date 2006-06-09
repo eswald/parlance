@@ -3,10 +3,10 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from orders       import OrderSet
-from functions    import version_string
 from dumbbot      import DumbBot
+from functions    import version_string
 from language     import Message
+from orders       import OrderSet
 from tokens       import ERR, PCE, PRP, YES
 
 __version__ = "$Revision$"
@@ -99,5 +99,5 @@ class PeaceBot(DumbBot):
 
 
 if __name__ == "__main__":
-    import main
-    main.run_player(PeaceBot)
+    from main import run_player
+    run_player(PeaceBot)

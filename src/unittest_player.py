@@ -3,11 +3,13 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-import unittest, config
-from functions import relative_limit, version_string
-from language  import Token
-from player    import Player, HoldBot
-from tokens    import *
+import unittest
+
+from config     import Configuration, GameOptions, variants
+from functions  import version_string
+from language   import Token
+from player     import Player, HoldBot
+from tokens     import *
 from validation import Validator
 
 __version__ = "$Revision$"
@@ -38,9 +40,9 @@ class PlayerTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.Configuration._local_opts.update(self.game_options)
-        self.variant = config.variants['standard']
-        opts = config.GameOptions()
+        Configuration._local_opts.update(self.game_options)
+        self.variant = variants['standard']
+        opts = GameOptions()
         self.params = opts.get_params()
         self.level = opts.LVL
         self.validator = Validator(opts.LVL)
@@ -54,7 +56,7 @@ class PlayerTestCase(unittest.TestCase):
     def tearDown(self):
         if self.player: self.send(+OFF)
     def set_verbosity(self, verbosity):
-        config.Configuration.set_globally('verbosity', verbosity)
+        Configuration.set_globally('verbosity', verbosity)
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
     def rejept(self, message): self.send(REJ(message))
@@ -139,7 +141,7 @@ class Player_Tests(PlayerTestCase):
         self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
         self.send(MAP('unknown'))
         self.seek_reply(+MDF)
-        self.send(config.variants['fleet_rome'].map_mdf)
+        self.send(variants['fleet_rome'].map_mdf)
         self.seek_reply(YES(MAP('unknown')))
     def test_HLO_PDA(self):
         ''' The HLO message should be valid with level 10 parameters.'''

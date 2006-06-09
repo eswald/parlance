@@ -3,13 +3,18 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-import unittest, config
-from time      import sleep, time
-from functions import absolute_limit
-from main      import ThreadManager
-from network   import Connection, Service
-from server    import Server
-from tokens    import *
+import unittest
+from time       import sleep, time
+
+from config     import Configuration, VerboseObject
+from functions  import absolute_limit, num2name
+from gameboard  import Turn
+from main       import ThreadManager
+from network    import Service
+from player     import HoldBot
+from server     import Server
+from tokens     import *
+from xtended    import ITA, LON, PAR
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
@@ -58,7 +63,7 @@ class Fake_Service(Service):
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''
-    class Fake_Player(config.VerboseObject):
+    class Fake_Player(VerboseObject):
         ''' A false player, to test the network classes.
             Also useful to learn country passcodes.
         '''#'''
@@ -135,16 +140,16 @@ class ServerTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.Configuration._local_opts.update(self.game_options)
+        Configuration._local_opts.update(self.game_options)
         self.manager = None
         self.server = None
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
         if self.manager and not self.manager.closed: self.manager.close()
     def set_verbosity(self, verbosity):
-        config.Configuration.set_globally('verbosity', verbosity)
+        Configuration.set_globally('verbosity', verbosity)
     def set_option(self, option, value):
-        config.Configuration.set_globally(option, value)
+        Configuration.set_globally(option, value)
     def connect_server(self):
         self.set_option('games', 1)
         self.manager = manager = Fake_Manager()
@@ -430,7 +435,6 @@ class Server_Admin(ServerTestCase):
             if substring in item:
                 self.fail('%r found within %s' % (substring, messages))
     def assertAdminVetoable(self, player, command, response):
-        from functions import num2name
         self.assertEqual([response, '(You may veto within %s seconds.)' %
                     num2name(self.game_options['veto_time'])],
                 player.admin('Server: %s', command))
@@ -487,7 +491,6 @@ class Server_Admin_Bots(Server_Admin):
         self.failUnless(game.players[out.power.key].client)
     def test_start_bot_country(self):
         ''' The master can start a bot to take a specific country.'''
-        from xtended import ITA
         game = self.game
         old_client = game.players[ITA].client
         old_id = old_client and old_client.client_id
@@ -498,7 +501,6 @@ class Server_Admin_Bots(Server_Admin):
         self.failUnless(new_client and new_client.client_id != old_id)
     def test_start_bot_illegal(self):
         ''' Bots cannot be started to take over players still in the game.'''
-        from xtended import ITA
         game = self.start_game()
         old_client = game.players[ITA].client.client_id
         self.assertAdminResponse(self.master, 'start holdbot as Italy',
@@ -561,7 +563,6 @@ class Server_Admin_Press(Server_Admin):
     
     def test_press_enable(self):
         ''' The enable press admin command works'''
-        from xtended  import LON, PAR
         self.assertAdminResponse(self.master, 'enable press',
                 'Fake Human Player (Fake_Master) has set the press level to 8000 (Free Text).')
         self.wait_for_actions()
@@ -580,7 +581,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer, sender, recipient)
     def test_press_enable_number(self):
         ''' The enable press admin command works with a numeric level'''
-        from xtended  import LON, PAR
         self.assertAdminResponse(self.master, 'enable press level 40',
                 'Fake Human Player (Fake_Master) has set the press level to 40 (Sharing out the Supply Centres).')
         self.wait_for_actions()
@@ -599,7 +599,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_enable_verbal(self):
         ''' The enable press admin command works with a verbal level'''
-        from xtended  import LON, PAR
         self.assertAdminResponse(self.master,
                 'enable press level Sharing out the supply centres',
                 'Fake Human Player (Fake_Master) has set the press level to 40 (Sharing out the Supply Centres).')
@@ -631,7 +630,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 0)
     def test_press_enable_blocked(self):
         ''' The enable press command is blocked after the game starts.'''
-        from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
         self.start_game()
@@ -650,7 +648,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_disable_blocked(self):
         ''' The disable admin command is blocked after the game starts.'''
-        from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
         self.start_game()
@@ -679,7 +676,6 @@ class Server_Admin_Eject(Server_Admin):
                 'Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
-        from player import HoldBot
         game = self.game
         while not game.started: self.connect_player(HoldBot)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
@@ -960,7 +956,6 @@ class Server_Bugfix(ServerTestCase):
         ''' The NPR parameter should block press during retreat phases.
             A code overview revealed that it probably doesn't.
         '''#'''
-        from gameboard import Turn
         self.set_option('NPR', True)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
@@ -974,7 +969,6 @@ class Server_Bugfix(ServerTestCase):
         ''' The NPR parameter should block press during retreat phases.
             A code overview revealed that it probably doesn't.
         '''#'''
-        from gameboard import Turn
         self.set_option('NPR', False)
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)

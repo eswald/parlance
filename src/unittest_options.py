@@ -8,10 +8,11 @@
 '''#'''
 
 import unittest
+
+from functions     import fails
+from tokens        import *
 from unittest_datc import DiplomacyAdjudicatorTestCase
-from functions import fails
-from tokens import *
-from xtended import *
+from xtended       import *
 
 class DATC_4_A(DiplomacyAdjudicatorTestCase):
     ''' 4.A.  CONVOY ISSUES

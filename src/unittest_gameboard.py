@@ -4,16 +4,21 @@
 '''#'''
 
 import unittest
-import config
-from functions import fails
-from gameboard import Map, Turn, Province
-from language  import protocol, IntegerToken, Token
-from tokens    import *
+
+from config     import MapVariant, variants
+from functions  import fails
+from gameboard  import Map, Province, Turn
+from judge      import DatcOptions
+from language   import IntegerToken, protocol
+from orders     import createUnitOrder
+from tokens     import *
+from validation import Validator
+from xtended    import *
 
 class Map_Variants(unittest.TestCase):
     ''' Validity checks for each of the known variants'''
     def define_variant(self, variant_name):
-        options = config.variants[variant_name]
+        options = variants[variant_name]
         game_map = Map(options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_abstraction2_map(self):     self.define_variant('abstraction2')
@@ -36,7 +41,7 @@ class Map_Variants(unittest.TestCase):
     def test_versailles3_map(self):      self.define_variant('versailles3')
     def test_world3_map(self):           self.define_variant('world3')
     def test_all_variant_maps(self):
-        for name, options in config.variants.iteritems():
+        for name, options in variants.iteritems():
             game_map = Map(options)
             if not game_map.valid:
                 err = game_map.define(options.map_mdf)
@@ -133,14 +138,14 @@ class Map_Bugfix(unittest.TestCase):
              (yor(AMY edi lon lvp wal)(FLT edi nth lon))
             )
         '''#'''
-        options = config.variants['standard']
+        options = variants['standard']
         options.map_mdf = options.rep.translate(mdf)
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options)
         if not game_map.valid: self.fail(game_map.define(options.map_mdf))
     def test_island_Pale(self):
         ''' Check for The Pale in Hundred3, which is an island.'''
-        options = config.variants['hundred3']
+        options = variants['hundred3']
         game_map = Map(options)
         prov = options.rep['PAL']
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
@@ -149,19 +154,18 @@ class Map_Bugfix(unittest.TestCase):
         self.failUnless(coast.province.is_valid())
     def test_island_province(self):
         ''' Test whether Province can define island spaces.'''
-        from xtended     import NAF, MAO, WES
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
     def test_cache_mdf(self):
-        opts = config.MapVariant('testing', 'Test map', {})
-        Map(opts).handle_MDF(config.variants['standard'].map_mdf)
+        opts = MapVariant('testing', 'Test map', {})
+        Map(opts).handle_MDF(variants['standard'].map_mdf)
         new_map = Map(opts)
         self.failUnless(new_map.valid)
 
 class Coast_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Coast class'''
     def test_infinite_convoy(self):
-        variant = config.variants['americas4']
+        variant = variants['americas4']
         board = Map(variant)
         Alaska = board.spaces[variant.rep['ALA']]
         Oregon = board.coasts[(AMY, variant.rep['ORE'], None)]
@@ -170,97 +174,74 @@ class Coast_Bugfix(unittest.TestCase):
 
 class Order_Strings(unittest.TestCase):
     def check_order(self, order, result):
-        from xtended import standard_map, FRA
-        from judge   import DatcOptions
-        from orders  import createUnitOrder
         order = createUnitOrder(order, standard_map.powers[FRA],
                 standard_map, DatcOptions())
         self.failUnlessEqual(str(order), result)
     def test_hold_string(self):
-        from xtended import standard_map, FRA, BRE
         self.check_order([[FRA, FLT, BRE], HLD], 'Fleet Brest HOLD')
     def test_hold_coastal(self):
-        from xtended import standard_map, FRA, SPA
         self.check_order([[FRA, FLT, [SPA, SCS]], HLD],
                 'Fleet Spain (south coast) HOLD')
     def test_move_string(self):
-        from xtended import standard_map, FRA, BRE, MAO
         self.check_order([[FRA, FLT, BRE], MTO, MAO],
                 'Fleet Brest -> Mid-Atlantic Ocean')
     def test_move_to_coast(self):
-        from xtended import standard_map, FRA, MAO, SPA
         self.check_order([[FRA, FLT, MAO], MTO, [SPA, SCS]],
                 'Fleet Mid-Atlantic Ocean -> Spain (south coast)')
     def test_move_from_coast(self):
-        from xtended import standard_map, FRA, MAO, SPA
         self.check_order([[FRA, FLT, [SPA, SCS]], MTO, MAO],
                 'Fleet Spain (south coast) -> Mid-Atlantic Ocean')
     
     def test_support_hold_string(self):
-        from xtended import standard_map, FRA, BRE, MAO
         self.check_order([[FRA, FLT, BRE], SUP, MAO, HLD],
                 'Fleet Brest SUPPORT Fleet Mid-Atlantic Ocean')
     def test_support_hold_ambiguous(self):
         # Perhaps not the best form, but it works.
-        from xtended import standard_map, FRA, BRE, GAS
         self.check_order([[FRA, FLT, BRE], SUP, GAS, HLD],
                 'Fleet Brest SUPPORT  Gascony')
     def test_support_hold_foreign(self):
-        from xtended import standard_map, FRA, BRE, LON
         self.check_order([[FRA, FLT, BRE], SUP, LON, HLD],
                 'Fleet Brest SUPPORT English Fleet London')
     def test_support_move_string(self):
-        from xtended import standard_map, FRA, PAR, MAR, GAS
         self.check_order([[FRA, AMY, PAR], SUP, MAR, MTO, GAS],
                 'Army Paris SUPPORT Army Marseilles -> Gascony')
     
     def test_convoying_string(self):
-        from xtended import standard_map, FRA, BRE, MAR, GAS
         self.check_order([[FRA, FLT, BRE], CVY, MAR, CTO, GAS],
                 'Fleet Brest CONVOY Army Marseilles -> Gascony')
     def test_convoyed_string(self):
-        from xtended import standard_map, FRA, BRE, MAR, GAS
         self.check_order([[FRA, AMY, MAR], CTO, GAS, VIA, [BRE]],
                 'Army Marseilles -> Brest -> Gascony')
     def test_convoyed_long(self):
-        from xtended import standard_map, FRA, MAR, GAS, GOL, WES, MAO
         self.check_order([[FRA, AMY, MAR], CTO, GAS, VIA, [GOL, WES, MAO]],
                 'Army Marseilles -> Gulf of Lyon -> Western Mediterranean Sea -> Mid-Atlantic Ocean -> Gascony')
     
     def test_retreat_string(self):
-        from xtended import standard_map, FRA, PAR, GAS
         self.check_order([[FRA, AMY, PAR], RTO, GAS],
                 'Army Paris -> Gascony')
     def test_disband_string(self):
-        from xtended import standard_map, FRA, PAR
         self.check_order([[FRA, AMY, PAR], DSB],
                 'Army Paris DISBAND')
     
     def test_build_string(self):
-        from xtended import standard_map, FRA, PAR
         self.check_order([[FRA, AMY, PAR], BLD],
                 'Builds an army in Paris')
     @fails
     def test_build_foreign(self):
-        from xtended import standard_map, GER, PAR
         self.check_order([[GER, AMY, PAR], BLD],
                 'Builds a German army in Paris')
     def test_remove_string(self):
-        from xtended import standard_map, FRA, PAR
         self.check_order([[FRA, AMY, PAR], REM],
                 'Removes the army in Paris')
     @fails
     def test_remove_foreign(self):
-        from xtended import standard_map, GER, PAR
         self.check_order([[GER, AMY, PAR], REM],
                 'Removes the German army in Paris')
     def test_waive_string(self):
-        from xtended import standard_map, FRA
         self.check_order([FRA, WVE],
                 'Waives a build')
     @fails
     def test_waive_foreign(self):
-        from xtended import standard_map, GER
         self.check_order([GER, WVE],
                 'Waives a German build')
 
@@ -268,9 +249,6 @@ class Gameboard_Doctests(unittest.TestCase):
     ''' Tests that were once doctests, but no longer work as such.'''
     def test_map_define(self):
         ''' Test the creation of a new map from a simple MDF.'''
-        from validation import Validator
-        from xtended import standard_map, ENG, FRA, \
-                EDI, LON, BRE, PAR, BEL, HOL, SPA, NWY, ECH, NTH, PIC
         
         mdf = MDF (ENG, FRA) ([
             (ENG, EDI, LON),
@@ -293,7 +271,7 @@ class Gameboard_Doctests(unittest.TestCase):
         
         self.failIf(Validator().validate_server_message(mdf),
                 'Invalid MDF message')
-        m = Map(config.MapVariant('simplified',
+        m = Map(MapVariant('simplified',
             'Small board for testing purposes', {},
             protocol.default_rep))
         self.failIf(m.valid, 'Map valid before MDF')

@@ -3,19 +3,20 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-import config, re
-from os        import path
-from random    import randint, shuffle
-from time      import time
+import re
+from os         import path
+from random     import randint, shuffle
+from time       import time
 
-from gameboard import Turn
-from functions import (absolute_limit, expand_list, instances, num2name,
-        relative_limit, s, timestamp, defaultdict)
-from language import protocol, Message
-from tokens import *
+from config     import GameOptions, VerboseObject, variants
+from functions  import absolute_limit, defaultdict, expand_list, \
+        instances, num2name, relative_limit, s, timestamp
+from gameboard  import Turn
+from language   import Message, protocol
+from tokens     import *
 from validation import Validator
 
-import player, evilbot, dumbbot, peacebot, blabberbot, project20m
+import blabberbot, dumbbot, evilbot, peacebot, player, project20m
 bots = dict([(klass.name.lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
@@ -54,7 +55,7 @@ class DelayedAction(object):
     def call(self):
         if self.callback: self.callback(*self.args)
 
-class Server(config.VerboseObject):
+class Server(VerboseObject):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
@@ -246,7 +247,7 @@ class Server(config.VerboseObject):
         if match and match.lastindex:
             var_name = match.group(2)
         else: var_name = self.options.variant
-        variant = config.variants.get(var_name)
+        variant = variants.get(var_name)
         if variant:
             game_id = timestamp()
             self.started_games += 1
@@ -266,7 +267,7 @@ class Server(config.VerboseObject):
         else: client.admin('Unknown game %s.', game_id)
     
     def list_variants(self, client, match):
-        names = config.variants.keys()
+        names = variants.keys()
         names.sort()
         client.admin('Known map variants: %s', expand_list(names))
     def list_help(self, client, match):
@@ -333,7 +334,7 @@ class Server(config.VerboseObject):
             '  powers - Displays the power assignments for this game'),
     ]
 
-class Historian(config.VerboseObject):
+class Historian(VerboseObject):
     ''' A game-like object that simply handles clients and history.'''
     class HistoricalJudge(object):
         def __init__(self, historian, last_turn, result):
@@ -370,7 +371,7 @@ class Historian(config.VerboseObject):
         self.__super.__init__()
         self.server = server
         self.game_id = game_id
-        self.game_options = config.GameOptions()
+        self.game_options = GameOptions()
         self.prefix = 'Historian %s' % game_id
         self.judge = None
         self.saved = False
@@ -435,12 +436,12 @@ class Historian(config.VerboseObject):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
-                    self.variant = config.variants.get(variant_name)
+                    self.variant = variants.get(variant_name)
                     if self.variant:
                         rep = self.variant.rep
                     else:
                         self.log_debug(7, 'Variant %r not found among %r',
-                                variant_name, config.variants.keys())
+                                variant_name, variants.keys())
                         return False
                 elif first is HLO:
                     self.game_options.parse_message(message)

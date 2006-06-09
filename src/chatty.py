@@ -3,8 +3,10 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from player    import Observer
+from functions import expand_list
+from language  import Token
 from network   import InputWaiter
+from player    import Observer
 from tokens    import NOW, SCO
 
 class Chatty(Observer):
@@ -33,7 +35,6 @@ class Chatty(Observer):
         self.output('Supply Centres: ' + '; '.join(
             ['%s, %d' % (dist[0], len(dist) - 1) for dist in dists]))
     def handle_DRW(self, message):
-        from functions import expand_list
         if len(message) > 2:
             self.output('Draw declared among %s', expand_list(message[2:-1]))
         else: self.output('Draw declared among surviving players')
@@ -113,7 +114,6 @@ else:
                 self.send(NOW)
                 self.send(SCO)
         def show_map(self, message):
-            from language import Token
             self.init_colors()
             folded = message.fold()
             lines = [item[0] for item in folded[2]]

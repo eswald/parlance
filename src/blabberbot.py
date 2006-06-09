@@ -4,9 +4,10 @@
 '''#'''
 
 from random       import choice, random, randrange, shuffle
-from functions    import version_string
+
 from dumbbot      import DumbBot
-from language     import protocol, IntegerToken, Message, StringToken, Token
+from functions    import version_string
+from language     import IntegerToken, Message, StringToken, Token, protocol
 from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, TRY, YES
 from validation   import Validator
 
@@ -136,5 +137,5 @@ class BlabberBot(DumbBot):
 
 
 if __name__ == "__main__":
-    import main
-    main.run_player(BlabberBot)
+    from main import run_player
+    run_player(BlabberBot)

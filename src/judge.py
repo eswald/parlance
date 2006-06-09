@@ -6,11 +6,13 @@
     Rule variants, in particular, will need a new Judge class.
 '''#'''
 
+from itertools import chain
+
 from config import Configuration, VerboseObject
-from functions import defaultdict, any, all, s, Infinity
+from functions import Infinity, all, any, defaultdict, s
 from gameboard import Map
-from orders import createUnitOrder, RemoveOrder, WaiveOrder, \
-        HoldOrder, DisbandOrder, OrderSet
+from orders import DisbandOrder, HoldOrder, OrderSet, \
+        RemoveOrder, WaiveOrder, createUnitOrder
 from tokens import *
 
 def minmax(decision_list):
@@ -1047,9 +1049,7 @@ class Decision_Set(defaultdict):
     '''#'''
     def __init__(self): super(Decision_Set, self).__init__(list)
     def add(self, decision): self[decision.type].append(decision)
-    def __iter__(self):
-        from itertools import chain
-        return chain(*self.itervalues())
+    def __iter__(self): return chain(*self.itervalues())
     def sorted(self):
         return (self[Decision.PATH] +
                 self[Decision.HEAD] +

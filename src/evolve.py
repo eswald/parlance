@@ -125,5 +125,5 @@ class GeneSplicer(Observer):
 
 
 if __name__ == "__main__":
-    import dumbbot
-    evolve(dumbbot.DumbBot, 'log/stats/evolution')
+    from dumbbot import DumbBot
+    evolve(DumbBot, 'log/stats/evolution')

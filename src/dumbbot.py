@@ -19,15 +19,14 @@
 '''#'''
 
 from copy         import copy
-from os           import path
-from random       import randint, random, randrange, shuffle
+from random       import randint, random, shuffle
 from time         import ctime
 
 from config       import Configuration
-from player       import Player
-from gameboard    import location_key, Unit
-from functions    import defaultdict, expand_list, all, version_string
+from functions    import defaultdict, expand_list, version_string
+from gameboard    import Unit
 from orders       import *
+from player       import Player
 from tokens       import AUT, FAL, SPR, SUM, UNO, WIN
 
 __version__ = "$Revision$"

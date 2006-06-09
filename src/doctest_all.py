@@ -6,7 +6,8 @@
 '''#'''
 
 def _test():
-    import doctest, sys
+    import doctest
+    import sys
     
     import config
     import functions
@@ -29,14 +30,13 @@ def _test():
         validation,
     ]
     
-    extension = config.extend_globals(dict([(k,v)
-        for k,v in language.__dict__.iteritems() if k[0] != '_']))
+    extension = config.extend_globals(dict(language.protocol.base_rep))
     verbose = "-v" in sys.argv
     
     for mod in modules:
         print 'Testing', mod.__name__
         # Configure basic options assumed by docstrings
-        opts = config.protocol.base_rep.opts
+        opts = language.protocol.base_rep.options
         opts.squeeze_parens = False
         opts.output_escape = '"'
         opts.quot_char = '"'

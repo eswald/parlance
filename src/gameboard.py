@@ -8,8 +8,8 @@
 from itertools   import chain
 
 from config      import Configuration, VerboseObject
-from functions   import defaultdict, Comparable, any, all, Infinity
-from language    import protocol, Token, Message
+from functions   import Comparable, Infinity, all, any, defaultdict
+from language    import Token, Message, protocol
 from tokens      import AMY, FLT, MRT, NOW, SCO, UNO
 
 def location_key(unit_type, loc):
@@ -484,8 +484,8 @@ class Turn(Comparable):
         return self.options.phase_mask.get(self.season, default)
     def __cmp__(self, other):
         ''' Compares Turns with each other, or with their keys.
-            >>> ts = Turn(); ts.set(SPR, IntegerToken(1901))
-            >>> tf = Turn(); tf.set(FAL, IntegerToken(1901))
+            >>> ts = Turn(); ts.set(SPR, base_rep[1901])
+            >>> tf = Turn(); tf.set(FAL, base_rep[1901])
             >>> cmp(ts, tf)
             -1
             >>> cmp(tf, ts.key)

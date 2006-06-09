@@ -20,10 +20,6 @@
     When run directly as a script, this module starts the server.
 '''#'''
 
-# Important initialization
-import config
-import server
-
 # List of available modules
 __all__ = [
     'config',
@@ -43,4 +39,6 @@ __all__ = [
     'xtended',
 ]
 
-if __name__ == "__main__": server.run()
+if __name__ == "__main__":
+    import server
+    server.run()

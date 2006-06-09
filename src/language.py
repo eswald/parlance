@@ -4,9 +4,11 @@
 '''#'''
 
 import re
-from os import path
+from os        import path
+from struct    import pack
 
-from config import parse_file, Configurable, VerboseObject
+from functions import rindex
+from config    import Configurable, VerboseObject, parse_file
 
 __all__ = [
     'Message',
@@ -65,7 +67,6 @@ class Message(list):
                 ...
             ValueError: unbalanced parentheses in folded Message
         '''#'''
-        from functions import rindex
         complaint = 'unbalanced parentheses in folded Message'
         if self.count(BRA) != self.count(KET): raise ValueError, complaint
         series = self.convert()
@@ -148,7 +149,6 @@ class Message(list):
             >>> print map(lambda x: hex(ord(x)), NOT(GOF).pack())
             ['0x48', '0xd', '0x40', '0x0', '0x48', '0x3', '0x40', '0x1']
         '''#'''
-        from struct import pack
         return pack('!' + 'H'*len(self), *map(int, self))
     def tokenize(self): return self
     
@@ -898,7 +898,7 @@ class Protocol(VerboseObject):
     ''' Collects various constants from the Client-Server Protocol file.
         Rather dependent on precise formatting.
         
-        >>> proto = Protocol('docs/protocol.html')
+        >>> proto = Protocol()
         >>> proto.token_cats[0x42]
         'Unit Types'
         >>> proto.token_cats['Unit_Types']

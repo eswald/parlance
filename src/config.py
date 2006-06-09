@@ -7,14 +7,12 @@
     and ~/.pydiprc in the user's home directory.
 '''#'''
 
-import re, os
+import os
+import re
 import weakref
 import ConfigParser
-from functions import autosuper, settable_property
 
-# Main program version; used for bot versions
-repository = '$URL$'
-__version__ = repository.split('/')[-3]
+from functions import autosuper, settable_property
 
 # Various option classes.
 class Configuration(object):
@@ -395,24 +393,31 @@ def parse_file(filename, parser):
     finally: stream.close()
     return result
 
-def parse_variants(stream):
-    name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
-    file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
-    descrip = name = None
-    for line in stream:
-        match = name_pattern.search(line)
-        if match:
-            descrip, name = match.groups()
-            files = {}
-        elif name and descrip:
-            match = file_pattern.search(line)
+class VariantDict(dict):
+    ''' Simple way to avoid parsing the variants file until we need to.'''
+    options = SyntaxOptions()
+    
+    def __getitem__(self, key):
+        if not self: parse_file(self.options.variant_file, self.parse_variants)
+        return dict.__getitem__(self, key)
+    def parse_variants(self, stream):
+        name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
+        file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
+        descrip = name = None
+        for line in stream:
+            match = name_pattern.search(line)
             if match:
-                ref, ext = match.groups()
-                files[ext.lower()] = os.path.normpath(os.path.join(
-                    os.path.dirname(options.variant_file), ref))
-            elif '</tr>' in line:
-                variants[name] = MapVariant(name, descrip, files)
-                descrip = name = None
+                descrip, name = match.groups()
+                files = {}
+            elif name and descrip:
+                match = file_pattern.search(line)
+                if match:
+                    ref, ext = match.groups()
+                    files[ext.lower()] = os.path.normpath(os.path.join(
+                        os.path.dirname(self.options.variant_file), ref))
+                elif '</tr>' in line:
+                    self[name] = MapVariant(name, descrip, files)
+                    descrip = name = None
 
 def read_representation_file(stream):
     ''' Parses a representation file.
@@ -430,7 +435,7 @@ def read_representation_file(stream):
         >>> len(rep)
         64
     '''#'''
-    from language import protocol, Representation
+    from language import Representation, protocol
     num_tokens = int(stream.readline().strip())
     if num_tokens > 0:
         rep = {}
@@ -458,10 +463,10 @@ def extend_globals(globs):
         
         This takes several seconds, so only do it if necessary.
     '''#'''
-    import gameboard
+    from gameboard import Map
     from language import protocol
     opts = variants['standard']
-    standard_map = gameboard.Map(opts)
+    standard_map = Map(opts)
     extension = {
         'standard_map': standard_map,
         'standard_sco': opts.start_sco,
@@ -474,6 +479,4 @@ def extend_globals(globs):
     return extension
 
 # Global variables
-options = SyntaxOptions()
-variants = {}
-parse_file(options.variant_file, parse_variants)
+variants = VariantDict()

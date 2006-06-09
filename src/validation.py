@@ -6,9 +6,9 @@
 import os
 import re
 
-from config import parse_file, VerboseObject
-from language import protocol, Token
-from tokens import BRA, ERR, HUH, KET, PRN
+from config   import VerboseObject, parse_file
+from language import Token, protocol
+from tokens   import BRA, ERR, HUH, KET, PRN
 
 __all__ = ['Validator']
 
@@ -170,9 +170,10 @@ class Validator(VerboseObject):
             ...         return Validator(level).validate_server_message(msg)
             ...     else:
             ...         return Validator(level).validate_client_message(msg)
+            >>> from language import Message
             >>> Message.validate = validate
-            >>> squeeze = base_rep.opts.squeeze_parens
-            >>> base_rep.opts.squeeze_parens = True
+            >>> squeeze = base_rep.options.squeeze_parens
+            >>> base_rep.options.squeeze_parens = True
             
             # Checks unbalanced parentheses
             >>> print base_rep.translate("IAM(NOT").validate()
@@ -210,7 +211,7 @@ class Validator(VerboseObject):
             False
             
             # Just to restore the state for other tests:
-            >>> base_rep.opts.squeeze_parens = squeeze
+            >>> base_rep.options.squeeze_parens = squeeze
         '''#'''
         if msg.count(BRA) != msg.count(KET):
             if msg[0] == PRN: return False
@@ -295,7 +296,7 @@ class Validator(VerboseObject):
             
             >>> def validate_option(msg, option, level):
             ...     return Validator(level).validate_option(msg, option) 
-            >>> validate_option([BRA, KET, BRA, YES, IntegerToken(-3)],
+            >>> validate_option([BRA, KET, BRA, YES, base_rep[-3]],
             ...     ['repeat', 'cat', 'Miscellaneous', YES, 'number'], 200)
             (5, True)
             >>> Eng = Token('ENG', 0x4101)

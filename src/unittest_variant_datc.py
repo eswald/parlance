@@ -7,6 +7,8 @@
     nor have the tested maps been implemented at all.
 '''#'''
 
+import unittest
+
 from unittest_datc import DiplomacyAdjudicatorTestCase
 
 # 7.  COLONIAL VARIANT
@@ -233,6 +235,4 @@ class DATC_12(DiplomacyAdjudicatorTestCase):
     def _test_12D(self):
         ''' 12.D.  CIVIL DISORDER STILL BASED ON HOME SUPPLY CENTERS''' 
 
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
+if __name__ == '__main__': unittest.main()

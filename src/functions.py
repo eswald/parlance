@@ -198,10 +198,11 @@ class defaultdict(dict):
 
 def version_string(revision, extra=''):
     ''' Converts a Subversion revision string into a NME version string.'''
-    import config
+    repository = '$URL$'
+    branch = repository.split('/')[-3]
     space = extra and ' '
-    branch = config.__version__
     rev = revision.replace(' $', '').replace('$Revision: ', 'r')
+    
     if branch == 'trunk': version = rev
     elif branch.startswith('release-'):
         version = branch.replace('release-', 'v')
@@ -341,6 +342,6 @@ def timestamp(static=[None, 0]):
     return '%s%02d' % (result, static[1])
 
 def _test():
-    import doctest
-    return doctest.testmod()
+    from doctest import testmod
+    return testmod()
 if __name__ == "__main__": _test()

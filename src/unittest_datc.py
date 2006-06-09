@@ -6,11 +6,12 @@
 '''#'''
 
 import unittest
-import config
+
+from config    import Configuration, GameOptions, variants
 from functions import fails
-from language import Message
-from tokens import *
-from xtended import *
+from language  import Message
+from tokens    import *
+from xtended   import *
 
 class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     ''' Unit Test base class for testing Diplomacy adjudication.
@@ -29,12 +30,12 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        config.Configuration._local_opts.update(self.game_options)
-        variant = config.variants[self.variant_name]
-        self.judge = variant.new_judge(config.GameOptions())
+        Configuration._local_opts.update(self.game_options)
+        variant = variants[self.variant_name]
+        self.judge = variant.new_judge(GameOptions())
         self.judge.start()
     def set_verbosity(self, verbosity):
-        config.Configuration.set_globally('verbosity', verbosity)
+        Configuration.set_globally('verbosity', verbosity)
     def init_state(self, season, year, unit_list):
         self.judge.map.handle_NOW(NOW(season, year) % unit_list)
         self.judge.init_turn()

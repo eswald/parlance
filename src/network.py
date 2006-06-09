@@ -5,16 +5,14 @@
     This should be the only module that cares about the client-server protocol.
 '''#'''
 
-import select
 import socket
-from sys       import stdin
-from copy      import copy
-from time      import time, sleep
 from struct    import pack, unpack
+from sys       import stdin
+from time      import sleep
 
 from config    import VerboseObject
-from language  import protocol, Message, Representation
 from functions import any
+from language  import Message, Representation, protocol
 from tokens    import ADM, MDF, OFF, REJ, YES
 
 

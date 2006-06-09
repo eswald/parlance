@@ -6,10 +6,11 @@
     that you might expect to find in the Judge.
 '''#'''
 
-import config
+from itertools   import chain
 from operator    import lt, gt
-from functions   import any, all, autosuper, defaultdict, Comparable
-from gameboard   import Turn, Power, Coast, Unit
+
+from functions   import Comparable, all, any, autosuper, defaultdict
+from gameboard   import Coast, Power, Turn, Unit
 from language    import Message
 from tokens      import *
 
@@ -506,7 +507,6 @@ class OrderSet(defaultdict):
         return sum([len(orders) for orders in self.itervalues()])
     def __iter__(self):
         ''' Allows the construction "for order in order_set:" '''
-        from itertools import chain
         return chain(*self.values())
     def __str__(self):
         nations = {}

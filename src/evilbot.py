@@ -4,10 +4,10 @@
 '''#'''
 
 from thread       import allocate_lock
-from operator     import add
-from orders       import OrderSet
-from functions    import version_string
+
 from dumbbot      import DumbBot
+from functions    import version_string
+from orders       import OrderSet
 
 __version__ = "$Revision$"
 
@@ -111,5 +111,5 @@ class EvilBot(DumbBot):
 
 
 if __name__ == "__main__":
-    import main
-    main.run_player(EvilBot)
+    from main import run_player
+    run_player(EvilBot)

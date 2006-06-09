@@ -5,16 +5,19 @@
 
 import socket
 import unittest
-from struct import pack
-from time import sleep
+from struct          import pack
+from time            import sleep
 
-import config
-import network
-from main import ThreadManager
-from functions import any
-from language import Token
-from server import Server
-from tokens import ADM, HLO, IAM, NME, REJ, YES
+from config          import Configuration, VerboseObject
+from dumbbot         import DumbBot
+from evilbot         import EvilBot
+from functions       import any
+from language        import Token
+from main            import ThreadManager
+from network         import Client, ServerSocket
+from player          import Clock, HoldBot
+from server          import Server
+from tokens          import ADM, HLO, IAM, NME, REJ, YES
 from unittest_server import ServerTestCase
 
 class NetworkTestCase(ServerTestCase):
@@ -28,7 +31,7 @@ class NetworkTestCase(ServerTestCase):
         def run(self):
             self.send(ADM(str(self.power))('Passcode: %d' % self.pcode))
             self.close()
-    class FakeClient(network.Client):
+    class FakeClient(Client):
         ''' A fake Client to test the server timeout.'''
         is_server = False
         prefix = 'Fake Client'
@@ -60,10 +63,10 @@ class NetworkTestCase(ServerTestCase):
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True
     def connect_server(self, clients, games=1, poll=True, **kwargs):
-        config.Configuration._local_opts.update(self.game_options)
-        config.Configuration.set_globally('games', games)
+        Configuration._local_opts.update(self.game_options)
+        Configuration.set_globally('games', games)
         manager = self.manager
-        sock = network.ServerSocket(Server, manager)
+        sock = ServerSocket(Server, manager)
         if not poll: sock.polling = None
         if sock.open():
             self.server = server = sock.server
@@ -118,11 +121,10 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         ''' Seven fake players and an observer'''
-        from player  import Clock
         self.connect_server([Clock] + ([self.Disconnector] * 7))
     def test_takeover(self):
         ''' Takeover ability after game start'''
-        class Fake_Takeover(config.VerboseObject):
+        class Fake_Takeover(VerboseObject):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             name = 'Impolite Finisher'
@@ -181,30 +183,23 @@ class Network_Basics(NetworkTestCase):
 class Network_Full_Games(NetworkTestCase):
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
-        from player import HoldBot
         self.connect_server([HoldBot] * 7)
     def test_one_dumbbot(self):
         ''' Six drawing holdbots and a dumbbot'''
-        from player  import HoldBot
-        from dumbbot import DumbBot
         self.set_verbosity(1)
         self.connect_server([DumbBot, HoldBot, HoldBot,
                 HoldBot, HoldBot, HoldBot, HoldBot])
     def test_dumbbots(self):
         ''' seven dumbbots, quick game'''
-        from dumbbot import DumbBot
         self.set_verbosity(1)
         self.connect_server([DumbBot] * 7)
     def test_two_games(self):
         ''' seven holdbots; two games'''
         self.set_verbosity(4)
-        from player import HoldBot
         self.connect_server([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
     def test_evilbots(self):
         ''' Six drawing evilbots and a holdbot'''
-        from player  import HoldBot
-        from evilbot import EvilBot
         self.set_verbosity(4)
         #self.set_option('MTL', 10)
         #self.set_option('validate', False)

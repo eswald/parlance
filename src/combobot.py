@@ -3,8 +3,10 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from random       import random
 from copy         import copy
+from operator     import mul
+from random       import random
+
 from dumbbot      import DumbBot
 from functions    import all, any, defaultdict, sublists, version_string
 from orders       import *
@@ -420,7 +422,6 @@ class ComboSet(object):
             if force == 1: result = entering and 1 or 0
             elif len(supports) >= force - 1:
                 # Will my supports work?
-                from operator import mul
                 result = 1 - (bias and min or max)([reduce(mul, sl, 1)
                         for sl in sublists(supports) if len(sl) == force - 1])
         
@@ -493,5 +494,5 @@ class ComboSet(object):
 
 
 if __name__ == "__main__":
-    import main
-    main.run_player(ComboBot)
+    from main import run_player
+    run_player(ComboBot)

@@ -8,11 +8,12 @@
     but not including standard provinces and powers.
 '''#'''
 
-import sys
+from sys import modules
+
 from language import protocol
 
 __all__ = protocol.base_rep.keys()
 
-module = sys.modules[__name__]
+module = modules[__name__]
 for name in __all__:
     setattr(module, name, protocol.base_rep[name])

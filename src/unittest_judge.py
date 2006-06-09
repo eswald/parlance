@@ -7,11 +7,15 @@
 '''#'''
 
 import unittest
-import config
+from time          import time
+
+from config        import variants, Configuration, GameOptions
+from language      import Token
+from main          import Thread
 from unittest_datc import DiplomacyAdjudicatorTestCase
-from language  import Token
-from tokens    import *
-from xtended   import *
+from tokens        import *
+from xtended       import *
+
 SWI = Token('SWI', 0x504B)
 
 class Judge_Movement(DiplomacyAdjudicatorTestCase):
@@ -288,11 +292,11 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
 class Judge_Doctests(unittest.TestCase):
     ''' Tests that were once in doctest format.'''
     def setUp(self):
-        config.Configuration.set_globally('verbosity', 0)
+        Configuration.set_globally('verbosity', 0)
     
     def test_startup(self):
-        variant = config.variants['standard']
-        judge = variant.new_judge(config.GameOptions())
+        variant = variants['standard']
+        judge = variant.new_judge(GameOptions())
         messages = judge.start()
         self.failUnlessEqual([msg[0] for msg in messages], [SCO, NOW])
         self.failUnlessEqual(judge.phase, 0x20)
@@ -529,9 +533,8 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''
     variant_name = 'americas4'
-    def test_major_problem(self):
+    def test_convoy_problem(self):
         ''' This situation started chewing up memory and CPU like mad.'''
-        from threading   import Thread
         rep = self.judge.map.opts.rep
         now = rep.translate('''NOW ( FAL 1848 )
                 ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO )
@@ -547,11 +550,17 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
         self.judge.map.handle_NOW(now)
         self.judge.init_turn()
         client = self.Fake_Service(rep['MXC'])
-        thread = Thread(target=self.judge.handle_SUB, args=(client, sub))
-        thread.setDaemon(True)
-        thread.start()
-        thread.join(10)
-        if thread.isAlive(): self.fail('Convoy took too long.')
+        if Thread:
+            thread = Thread(target=self.judge.handle_SUB, args=(client, sub))
+            thread.setDaemon(True)
+            thread.start()
+            thread.join(10)
+            if thread.isAlive(): self.fail('Convoy took too long.')
+        else:
+            begin = time()
+            self.judge.handle_SUB(client, sub)
+            end = time()
+            self.failUnless(end - begin < 10)
 
 class Judge_Errors(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:

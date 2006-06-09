@@ -5,13 +5,14 @@
 
 import select
 from itertools import chain
-from sys import argv
-from time import sleep, time
+from sys       import argv
+from time      import sleep, time
 
 try: from threading import Thread
 except ImportError: Thread = None
 
-from config import variants, Configuration, VerboseObject
+from config    import Configuration, VerboseObject, variants
+from network   import Client, InputWaiter, ServerSocket
 
 __all__ = [
     'ThreadManager',
@@ -254,7 +255,6 @@ class ThreadManager(VerboseObject):
     # Threaded client handling
     class ThreadClient(object):
         def __init__(self, target, *args, **kwargs):
-            from itertools import chain
             self.target = target
             self.args = args
             self.kwargs = kwargs
@@ -281,7 +281,6 @@ class ThreadManager(VerboseObject):
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
     def add_client(self, player_class, **kwargs):
-        from network import Client
         name = player_class.name or player_class.__name__
         client = Client(player_class, manager=self, **kwargs)
         result = client.open()
@@ -350,7 +349,6 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
         manager.run()
 
 def run_server(server_class, default_verbosity):
-    from network   import ServerSocket
     verbosity = default_verbosity
     opts = {}
     try:
@@ -387,7 +385,6 @@ class RawClient(object):
         self.closed    = False # Whether the connection has ended, or should end
         self.manager   = manager
     def register(self):
-        from network import InputWaiter
         print 'Connected.'
         self.manager.add_polled(InputWaiter(self.handle_input, self.close))
     def handle_message(self, message):

@@ -5,16 +5,20 @@
 
 from __future__ import division
 
-from cPickle   import dump, load
-from os        import path
-from random    import randrange, shuffle
+import re
+from copy       import deepcopy
+from cPickle    import dump, load
+from os         import path
+from random     import shuffle
+from time       import ctime
 
-from config    import variants, GameOptions, MapVariant, VerboseObject
-from functions import s, version_string
-from language  import Message, Token
-from main      import ThreadManager, run_player
-from orders    import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
-from tokens    import *
+from config     import GameOptions, MapVariant, VerboseObject, variants
+from functions  import s, version_string
+from gameboard  import Map, Turn
+from language   import Message, Token
+from main       import ThreadManager, run_player
+from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
+from tokens     import *
 from validation import Validator
 
 __version__ = "$Revision$"
@@ -170,7 +174,6 @@ class Observer(VerboseObject):
             Sends MDF for unknown maps, YES for valid.
         '''#'''
         if self.use_map:
-            from gameboard import Map
             mapname = message.fold()[1][0]
             variant = variants.get(mapname)
             if not variant:
@@ -206,7 +209,6 @@ class Observer(VerboseObject):
     # Other generic handlers
     def handle_SVE(self, message):
         ''' Attempts to save everything named by self.remember.'''
-        from copy import deepcopy
         try:
             game = {}
             for name in self.remember:
@@ -454,7 +456,6 @@ class HoldBot(Player):
         '''#'''
         self.submitted = False
         if self.in_game and self.power:
-            from gameboard import Turn
             self.send(DRW)
             orders = OrderSet(self.power)
             phase = self.map.current_turn.phase()
@@ -498,7 +499,6 @@ class AutoObserver(Observer):
             Echo: << ADM ( "Observer" ) ( "Yes, I'm sure." )
             >>> p.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         '''#'''
-        import re
         sorry = "Sorry; I'm just a bot."
         s = message.fold()[2][0]
         if self.admin_state == 0:
@@ -536,9 +536,8 @@ class Clock(AutoObserver):
             for seconds in range(5, max_time, 5): self.send(TME(seconds))
         else: self.close()
     def handle_TME(self, message):
-        import time
         seconds = message[2].value()
-        self.log_debug(1, '%d seconds left at %s', seconds, time.ctime())
+        self.log_debug(1, '%d seconds left at %s', seconds, ctime())
 
 
 class Ladder(AutoObserver):

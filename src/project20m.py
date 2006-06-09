@@ -3,12 +3,13 @@
     Rewritten for PyDip by Eric Wald, and included with permision.
 '''#'''
 
-import random
+from random       import random
+
 from config       import VerboseObject
-from player       import Player
 from functions    import version_string
 from gameboard    import Power, Province, Unit
 from orders       import *
+from player       import Player
 from tokens       import AMY, FLT, SPR, SUM, WIN
 
 __version__ = "$Revision$"
@@ -401,7 +402,7 @@ class Tactics(VerboseObject):
                     order in self.lastTurnsOrders)
         if bestOrder in self.lastTurnsOrders:
             # should choose the next best order with some random probability
-            if len(filteredOrders) > 1 and random.random() > 0.9:
+            if len(filteredOrders) > 1 and random() > 0.9:
                 # 10% probability
                 self.log_debug(7,
                         "RANDOM: CHOOSING THE 2ND BEST ORDER FOR %s", u)
@@ -1170,5 +1171,5 @@ SupportOrder.target = property(targetSupport)
 
 
 if __name__ == "__main__":
-    import main
-    main.run_player(Project20M)
+    from main import run_player
+    run_player(Project20M)
