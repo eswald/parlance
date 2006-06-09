@@ -92,8 +92,6 @@
       more, particularly near regular expressions.</p>
     <p>Project20M also needs some refactoring for thread-safety, option
       configuration, and global variable reduction.</p>
-    <p>Token.opts should be removed entirely, and the init_language call moved
-      to the language module.</p>
     <p>StringToken and IntegerToken seem half-complete right now, because
       Token can theoretically be called directly in their case.  Either
       separate them completely (which could help with <code>value()</code>,
@@ -101,8 +99,6 @@
       former, because the Message class calls them directly.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
-    <p>Module importation definitely needs to be sorted out, particularly
-      between config, language, and translation.</p>
     
     <h2>User Interface</h2>
     <p>Some modules could give explanatory messages instead of doing nothing
@@ -112,9 +108,9 @@
         <tr><td>gameboard</td><td>?</td></tr>
         <tr><td>judge</td><td>?</td></tr>
         <tr><td>language</td><td>Show the base token values?</td></tr>
-        <tr><td>main</td><td>graphical user interface</td></tr>
         <tr><td>orders</td><td>?</td></tr>
-        <tr><td>validation</td><td>extract-bnf.pl functionality</td></tr>
+        <tr><td>validation</td>
+          <td>validate a message file, or print syntax rules</td></tr>
         <tr><td>xtended</td><td>Show the standard token values?</td></tr>
       </table>
     </p>
@@ -133,7 +129,7 @@
       chopped message anyway, and should be processing messages faster.</p>
     
     <h2>Standards Compliance</h2>
-    <p>My <a href="syntax.html#HLO">DSD</a> behavior differs slightly
+    <p>My <a href="syntax.html#DSD">DSD</a> behavior differs slightly
       from the syntax document.  I should check whether orders are due,
       instead of whether the power has been eliminated.  Then again, the
       document doesn't specify what happens to the deadline for the next
@@ -166,7 +162,6 @@
       blocks to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
       currently, game logging simply fails and the game stays in memory.</p>
-    <p>Could I possibly parse the variant file lazily?</p>
     
     <h2>Unit Testing</h2>
     <p>The remaining doctests should probably be refactored into proper
