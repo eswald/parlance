@@ -158,8 +158,8 @@ def relative_limit(seconds):
         Negative message numbers indicate hours; positive, seconds.
         Negative times are cropped to zero.
     '''#'''
-    from language import Token
-    max_int = Token.opts.max_pos_int
+    from language import protocol
+    max_int = protocol.max_pos_int
     if seconds > max_int: result = -seconds // 3600
     else: result = max(0, seconds)
     if -result > max_int: result = -max_int

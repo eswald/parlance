@@ -12,8 +12,9 @@ import config
 import network
 from main import ThreadManager
 from functions import any
-from language import Token, ADM, HLO, IAM, NME, REJ, YES
+from language import Token
 from server import Server
+from tokens import ADM, HLO, IAM, NME, REJ, YES
 from unittest_server import ServerTestCase
 
 class NetworkTestCase(ServerTestCase):

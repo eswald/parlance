@@ -15,7 +15,6 @@ def _test():
     import network
     import orders
     import player
-    import translation
     import validation
     
     # List of modules to test
@@ -27,7 +26,6 @@ def _test():
         network,
         orders,
         player,
-        translation,
         validation,
     ]
     

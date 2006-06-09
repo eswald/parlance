@@ -3,10 +3,12 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
+import os
 import re
 
-from config import options, parse_file, protocol, VerboseObject
-from language import Token, BRA, ERR, HUH, KET, PRN
+from config import parse_file, VerboseObject
+from language import protocol, Token
+from tokens import BRA, ERR, HUH, KET, PRN
 
 __all__ = ['Validator']
 
@@ -20,6 +22,12 @@ class Validator(VerboseObject):
     syntax = {'string': [(0, ['repeat', 'cat', 'Text'])]}
     press_levels = {}
     trimmed = {}
+    __section__ = 'syntax'
+    __options__ = (
+        # os.path.abspath(__file__) would be useful here.
+        ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
+            'Document specifying syntax rules and level names.'),
+    )
     
     def __init__(self, syntax_level=0):
         self.__super.__init__()
@@ -28,21 +36,20 @@ class Validator(VerboseObject):
         if not self.press_levels:
             self.read_syntax()
     
-    @classmethod
-    def read_syntax(klass):
-        levels = parse_file(options.syntax_file, klass.parse_syntax_file)
+    def read_syntax(self):
+        levels = parse_file(self.options.syntax_file, self.parse_syntax_file)
         
         if levels:
             # Expand press levels to be useful to the Game class
             for i,name in levels:
-                klass.press_levels[i] = name
-                klass.press_levels[str(i)] = i
-                klass.press_levels[name.lower()] = i
+                self.press_levels[i] = name
+                self.press_levels[str(i)] = i
+                self.press_levels[name.lower()] = i
         else:
             # Set reasonable press levels if the file is unparsable
             for i in range(0, 200, 10) + [8000]:
-                klass.press_levels[i] = str(i)
-                klass.press_levels[str(i)] = i
+                self.press_levels[i] = str(i)
+                self.press_levels[str(i)] = i
     
     @classmethod
     def parse_syntax_file(klass, stream):
@@ -57,7 +64,7 @@ class Validator(VerboseObject):
         lev_mark = re.compile(r'<h2><a name="level(\d+)">.*: (\w[a-zA-Z ]*)<')
         bnf_rule = re.compile(r'<(?:h4|li><b)>({\w\w\w} |)(?:<a name="\w+">|)(\w+) (\+|-|)= (.*?)</(?:h4|b)>')
         syntax_level = 0
-        neg_level = Token.opts.max_neg_int
+        neg_level = protocol.max_neg_int
         levels = []
         
         def parse_bnf(name, level, rule):
@@ -318,8 +325,8 @@ class Validator(VerboseObject):
                         if not (result and good): break
                     elif in_cat:
                         # Category name
-                        if Token.cats.has_key(opt):
-                            num = Token.cats[opt]
+                        if protocol.token_cats.has_key(opt):
+                            num = protocol.token_cats[opt]
                             if isinstance(num, tuple):
                                 check = lambda x: num[0] <= x.category <= num[1]
                             else: check = lambda x: x.category == num

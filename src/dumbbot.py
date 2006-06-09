@@ -25,9 +25,10 @@ from time         import ctime
 
 from config       import Configuration
 from player       import Player
-from gameboard    import location_key
+from gameboard    import location_key, Unit
 from functions    import defaultdict, expand_list, all, version_string
 from orders       import *
+from tokens       import AUT, FAL, SPR, SUM, UNO, WIN
 
 __version__ = "$Revision$"
 
@@ -261,12 +262,11 @@ class DumbBot(Player):
             This means that it won't kill the whole bot on errors,
             but it might get called again before completing.
         '''#'''
-        #from language import SPR, SUM, FAL, AUT, WIN
-        
         turn   = self.map.current_turn
         season = turn.season
         phase  = turn.phase()
         orders = values = None
+        
         try:
             self.log_debug(10, 'Starting NOW %s message', turn)
             if not (self.in_game and self.missing_orders()): return

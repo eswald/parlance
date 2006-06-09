@@ -12,9 +12,10 @@ from copy      import copy
 from time      import time, sleep
 from struct    import pack, unpack
 
-from config    import protocol, VerboseObject
-from language  import Message, Token, YES, REJ, ADM, OFF, MDF
+from config    import VerboseObject
+from language  import protocol, Message, Representation
 from functions import any
+from tokens    import ADM, MDF, OFF, REJ, YES
 
 
 class SocketWrapper(VerboseObject):
@@ -152,7 +153,6 @@ class Connection(SocketWrapper):
         ''' Creates a representation dictionary from the RM.
             This dictionary maps names to numbers and vice-versa.
         '''#'''
-        from translation import Representation
         if data:
             rep = {}
             while len(data) >= 6:
@@ -165,7 +165,6 @@ class Connection(SocketWrapper):
         ''' Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
             
-            >>> from translation import Representation
             >>> c = Connection()
             >>> c.rep = Representation({0x4101: 'Sth'}, c.proto.base_rep)
             >>> msg = [HLO.number, BRA.number, 0x4101, KET.number]

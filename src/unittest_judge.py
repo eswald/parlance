@@ -9,7 +9,8 @@
 import unittest
 import config
 from unittest_datc import DiplomacyAdjudicatorTestCase
-from language  import *
+from language  import Token
+from tokens    import *
 from xtended   import *
 SWI = Token('SWI', 0x504B)
 

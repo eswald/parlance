@@ -5,6 +5,7 @@
 
 from player    import Observer
 from network   import InputWaiter
+from tokens    import NOW, SCO
 
 class Chatty(Observer):
     ''' An observer that simply lets a human chat with Admin messages.'''
@@ -101,7 +102,6 @@ else:
             self.mapwin = None
             self.units = {}
         def handle_MAP(self, message):
-            from language    import NOW, SCO
             self.__super.handle_MAP(message)
             if self.map.valid:
                 try:

@@ -9,6 +9,7 @@ from functions import absolute_limit
 from main      import ThreadManager
 from network   import Connection, Service
 from server    import Server
+from tokens    import *
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
@@ -64,7 +65,6 @@ class ServerTestCase(unittest.TestCase):
         name = 'Fake Player'
         def __init__(self, send_method, representation, manager,
                 power=None, passcode=None, game_id=None, observe=False):
-            from language import NME, OBS
             self.__super.__init__()
             self.log_debug(9, 'Fake player started')
             self.closed = False
@@ -78,7 +78,6 @@ class ServerTestCase(unittest.TestCase):
             if observe: self.player_type = OBS
             else: self.player_type = NME
         def register(self):
-            from language import IAM, SEL
             if self.game_id is not None: self.send(SEL(self.game_id))
             if self.power and self.pcode:
                 self.send(IAM (self.power) (self.pcode))
@@ -89,7 +88,6 @@ class ServerTestCase(unittest.TestCase):
             self.log_debug(9, 'Closed')
             self.closed = True
         def handle_message(self, message):
-            from language import HLO, LOD, MAP, OFF, SVE, YES
             self.log_debug(5, '<< %s', message)
             self.queue.append(message)
             if message[0] is HLO:
@@ -98,19 +96,16 @@ class ServerTestCase(unittest.TestCase):
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             elif message[0] is OFF: self.close()
         def admin(self, line, *args):
-            from language import ADM
             self.queue = []
             self.send(ADM(self.name)(str(line) % args))
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
         def get_time(self):
-            from language import TME
             self.queue = []
             self.send(+TME)
             times = [absolute_limit(msg[2].value())
                     for msg in self.queue if msg[0] is TME]
             return times and times[0] or None
         def hold_all(self):
-            from language import HLD, MIS, SUB, TME
             self.send(+MIS)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
             self.send(SUB % [[unit, HLD] for unit in units])
@@ -171,7 +166,6 @@ class ServerTestCase(unittest.TestCase):
             game.run()
     
     def assertPressSent(self, press, sender, recipient):
-        from language import FRM, SND, YES
         sender.queue = []
         recipient.queue = []
         msg = SND(recipient.power)(press)
@@ -180,13 +174,11 @@ class ServerTestCase(unittest.TestCase):
         msg = FRM(sender.power)(recipient.power)(press)
         self.assertContains(msg, recipient.queue)
     def assertPressRejected(self, press, sender, recipient):
-        from language import REJ, SND
         sender.queue = []
         msg = SND(recipient.power)(press)
         sender.send(msg)
         self.assertContains(REJ(msg), sender.queue)
     def assertPressHuhd(self, press, sender, recipient, error_loc):
-        from language import ERR, HUH, SND
         sender.queue = []
         msg = SND(recipient.power)(press)
         sender.send(msg)
@@ -200,7 +192,6 @@ class Server_Basics(ServerTestCase):
     ''' Basic Server Functionality'''
     def test_GOF_each_turn(self):
         ''' GOF should be assumed for each player each turn.'''
-        from language import GOF, NOT
         self.set_option('MTL', 15)
         self.connect_server()
         players = []
@@ -222,7 +213,6 @@ class Server_Basics(ServerTestCase):
         self.failIfEqual(next_phase, turn().key)
     def test_empty_MIS(self):
         ''' Server replies to MIS with MIS when no orders are outstanding.'''
-        from language import MIS
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         self.start_game()
@@ -232,7 +222,6 @@ class Server_Basics(ServerTestCase):
         self.assertContains(+MIS, sender.queue)
     def test_missing_orders_CCD(self):
         ''' Failing to submit orders on time results in a CCD message.'''
-        from language import CCD, SPR
         self.set_option('MTL', 5)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
@@ -242,7 +231,6 @@ class Server_Basics(ServerTestCase):
         self.assertContains(CCD(player.power) (SPR, 1901), player.queue)
     def test_submitted_orders_CCD(self):
         ''' Submitting orders on time avoids a CCD message.'''
-        from language import CCD
         self.set_option('MTL', 5)
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
@@ -254,7 +242,6 @@ class Server_Basics(ServerTestCase):
             for msg in player.queue if msg[0] is CCD], []),
             '%s reported in civil disorder' % (player.power,))
     def test_historian(self):
-        from language import HLD, HST, ORD, SEL, SPR, SUC, YES
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
         self.connect_server()
@@ -274,7 +261,6 @@ class Server_Basics(ServerTestCase):
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
     def test_history_full(self):
-        from language import HLD, HST, ORD, SPR, SUC
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
         self.connect_server()
@@ -287,7 +273,6 @@ class Server_Basics(ServerTestCase):
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
     def test_history_turn(self):
-        from language import HLD, HST, ORD, SPR, SUC
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
         self.connect_server()
@@ -300,7 +285,6 @@ class Server_Basics(ServerTestCase):
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
     def test_save_game(self):
-        from language import HLD, HLO, MAP, OBS, ORD, SPR, SUC
         self.set_option('send_ORD', True)
         self.connect_server()
         self.start_game()
@@ -338,7 +322,6 @@ class Server_Basics(ServerTestCase):
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
     def setUp(self):
-        from language import FAL, SPR
         ServerTestCase.setUp(self)
         self.set_option('quit', False)
         self.set_option('shuffle', False)
@@ -358,7 +341,6 @@ class Server_Press(ServerTestCase):
         self.disconnected.close()
         self.game.run_judge()
     def assertPressReply(self, press, response):
-        from language import SND
         self.sender.queue = []
         self.recipient.queue = []
         msg = SND(self.recipient.power)(press)
@@ -366,39 +348,32 @@ class Server_Press(ServerTestCase):
         reply = response(msg)
         self.assertContains(reply, self.sender.queue)
     def assertPressSent(self, press):
-        from language import YES
         self.assertPressReply(press, YES)
     def assertPressReceived(self, press):
-        from language import FRM
         msg = FRM(self.sender.power)(self.recipient.power)(press)
         self.assertContains(msg, self.recipient.queue)
     def assertPressNotReceived(self, press):
-        from language import FRM
         msg = FRM(self.sender.power)(self.recipient.power)(press)
         self.failIf(msg in self.recipient.queue,
                 '"%s" accidentally sent.' % press)
     
     def test_send_press(self):
         ''' The server forwards press of the appropriate level.'''
-        from language import PCE, PRP
         press = PRP(PCE(self.sender.power, self.recipient.power))
         self.assertPressSent(press)
         self.assertPressReceived(press)
     def test_send_try(self):
         ''' The server trims high-level tokens from TRY messages.'''
-        from language import IOU, PRP, QRY, TRY
         self.assertPressSent(TRY(IOU, PRP, QRY))
         self.assertPressReceived(TRY(PRP))
     def test_send_eliminated(self):
         ''' The server rejects press including eliminated powers.'''
-        from language import ALY, OUT, PRP, VSS
         out = self.eliminated.power
         press = PRP(ALY(self.sender.power, self.recipient.power) + VSS(out))
         self.assertPressReply(press, OUT(out))
         self.assertPressNotReceived(press)
     def test_send_to_eliminated(self):
         ''' The server rejects press to eliminated powers.'''
-        from language import ALY, OUT, PRP, VSS
         self.recipient = self.eliminated
         out = self.eliminated.power
         press = PRP(ALY(self.sender.power, out) + VSS(self.disconnected.power))
@@ -406,7 +381,6 @@ class Server_Press(ServerTestCase):
         self.assertPressNotReceived(press)
     def test_send_to_disconnected(self):
         ''' The server rejects press to disconnected powers.'''
-        from language import ALY, CCD, PRP, VSS
         self.recipient = self.disconnected
         out = self.disconnected.power
         press = PRP(ALY(self.sender.power, out) + VSS(self.eliminated.power))
@@ -414,7 +388,6 @@ class Server_Press(ServerTestCase):
         self.assertPressNotReceived(press)
     def test_send_mid(self):
         ''' The server accepts press with a message id, but does not send it.'''
-        from language import SND, PCE, PRP, YES
         self.sender.queue = []
         self.recipient.queue = []
         press = PRP(PCE(self.sender.power, self.recipient.power))
@@ -424,7 +397,6 @@ class Server_Press(ServerTestCase):
         self.assertPressReceived(press)
     def test_send_wrt(self):
         ''' The server accepts press with WRT, but does not send it.'''
-        from language import SND, PCE, PRP, WRT, YES
         self.sender.queue = []
         self.recipient.queue = []
         press = PRP(PCE(self.sender.power, self.recipient.power))
@@ -447,14 +419,12 @@ class Server_Admin(ServerTestCase):
         self.backup = self.connect_player(self.Fake_Master)
         self.robot  = self.connect_player(self.Fake_Player)
     def assertAdminResponse(self, player, command, response):
-        from language import ADM
         if command:
             self.assertContains(response, player.admin('Server: %s', command))
         else:
             self.assertContains(response,
                 [msg.fold()[2][0] for msg in player.queue if msg[0] is ADM])
     def failIfAdminContains(self, player, substring):
-        from language import ADM
         messages = [msg.fold()[2][0] for msg in player.queue if msg[0] is ADM]
         for item in messages:
             if substring in item:
@@ -591,7 +561,6 @@ class Server_Admin_Press(Server_Admin):
     
     def test_press_enable(self):
         ''' The enable press admin command works'''
-        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         self.assertAdminResponse(self.master, 'enable press',
                 'Fake Human Player (Fake_Master) has set the press level to 8000 (Free Text).')
@@ -611,7 +580,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressSent(offer, sender, recipient)
     def test_press_enable_number(self):
         ''' The enable press admin command works with a numeric level'''
-        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         self.assertAdminResponse(self.master, 'enable press level 40',
                 'Fake Human Player (Fake_Master) has set the press level to 40 (Sharing out the Supply Centres).')
@@ -631,7 +599,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_enable_verbal(self):
         ''' The enable press admin command works with a verbal level'''
-        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         self.assertAdminResponse(self.master,
                 'enable press level Sharing out the supply centres',
@@ -652,7 +619,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_disable(self):
         ''' The disable press admin command works'''
-        from language import PCE, PRP
         self.assertAdminResponse(self.master, 'disable press',
                 'Fake Human Player (Fake_Master) has set the press level to 0 (No Press).')
         self.wait_for_actions()
@@ -665,7 +631,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 0)
     def test_press_enable_blocked(self):
         ''' The enable press command is blocked after the game starts.'''
-        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
@@ -685,7 +650,6 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
     def test_press_disable_blocked(self):
         ''' The disable admin command is blocked after the game starts.'''
-        from language import PCE, PRP, SCD, SUG
         from xtended  import LON, PAR
         sender = self.backup
         recipient = self.robot
@@ -716,7 +680,6 @@ class Server_Admin_Eject(Server_Admin):
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
         from player import HoldBot
-        from language import CCD
         game = self.game
         while not game.started: self.connect_player(HoldBot)
         self.assertAdminVetoable(self.master, 'eject Fake Player',
@@ -745,7 +708,6 @@ class Server_Admin_Eject(Server_Admin):
                 'Unknown player "%s"' % name)
     def test_eject_power_started(self):
         ''' Powers can be ejected by power name after the game starts.'''
-        from language import CCD
         game = self.start_game()
         name = game.judge.player_name(self.robot.power)
         self.assertAdminVetoable(self.master, 'eject ' + name,
@@ -885,7 +847,6 @@ class Server_Admin_Other(Server_Admin):
         ], response)
     
     def test_set_time_limit(self):
-        from language import HLO, LVL, MTL, TME
         self.assertAdminResponse(self.master, 'move time limit 30',
                 'Fake Human Player (Fake_Master)'
                 ' has set the move time limit to 30 seconds.')
@@ -938,7 +899,6 @@ class Server_Multigame(ServerTestCase):
         self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
     def test_sailho_game(self):
-        from language import MAP
         self.new_game('sailho')
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
@@ -951,12 +911,10 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(newbie.rep, old_rep)
     
     def test_SEL_reply(self):
-        from language import SEL
         self.master.queue = []
         self.master.send(+SEL)
         self.assertContains(SEL(self.game.game_id), self.master.queue)
     def test_LST_reply(self):
-        from language import LST
         self.master.queue = []
         self.master.send(+LST)
         params = self.game.game_options.get_params()
@@ -964,7 +922,6 @@ class Server_Multigame(ServerTestCase):
                 LST (self.game.game_id) (6) ('standard') (params),
                 self.master.queue)
     def test_multigame_LST_reply(self):
-        from language import LST
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
         game = self.new_game('sailho')
@@ -988,14 +945,12 @@ class Server_Bugfix(ServerTestCase):
         master.admin('Server: start 5 holdbots')
         self.connect_player(self.Fake_Player)
     def test_hello_leak(self):
-        from language import HLO
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         player.send(+HLO)
         for message in player.queue:
             if message[0] is HLO: self.fail('Server sent HLO before game start')
     def test_admin_forward(self):
-        from language import ADM
         self.connect_server()
         sender = self.connect_player(self.Fake_Player)
         recipient = self.connect_player(self.Fake_Player)
@@ -1005,7 +960,6 @@ class Server_Bugfix(ServerTestCase):
         ''' The NPR parameter should block press during retreat phases.
             A code overview revealed that it probably doesn't.
         '''#'''
-        from language import PCE, PRP
         from gameboard import Turn
         self.set_option('NPR', True)
         self.connect_server()
@@ -1020,7 +974,6 @@ class Server_Bugfix(ServerTestCase):
         ''' The NPR parameter should block press during retreat phases.
             A code overview revealed that it probably doesn't.
         '''#'''
-        from language import PCE, PRP
         from gameboard import Turn
         self.set_option('NPR', False)
         self.connect_server()

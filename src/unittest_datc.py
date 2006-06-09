@@ -8,7 +8,8 @@
 import unittest
 import config
 from functions import fails
-from language import *
+from language import Message
+from tokens import *
 from xtended import *
 
 class DiplomacyAdjudicatorTestCase(unittest.TestCase):

@@ -7,9 +7,10 @@
 
 from itertools   import chain
 
-from config      import protocol, Configuration, VerboseObject
+from config      import Configuration, VerboseObject
 from functions   import defaultdict, Comparable, any, all, Infinity
-from language    import Token, Message, AMY, FLT, MRT, NOW, SCO, UNO
+from language    import protocol, Token, Message
+from tokens      import AMY, FLT, MRT, NOW, SCO, UNO
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)

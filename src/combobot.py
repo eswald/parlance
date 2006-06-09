@@ -6,7 +6,7 @@
 from random       import random
 from copy         import copy
 from dumbbot      import DumbBot
-from functions    import sublists, any, version_string
+from functions    import all, any, defaultdict, sublists, version_string
 from orders       import *
 
 __version__ = "$Revision$"

@@ -6,7 +6,8 @@
 from random       import choice, random, randrange, shuffle
 from functions    import version_string
 from dumbbot      import DumbBot
-from language     import *
+from language     import protocol, IntegerToken, Message, StringToken, Token
+from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, TRY, YES
 from validation   import Validator
 
 __version__ = "$Revision$"
@@ -26,6 +27,8 @@ class BlabberBot(DumbBot):
     
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)
+        # Just so it can read the syntax
+        self.validator or Validator()
         me = message[2]
         if me.is_power() and self.game_opts.LVL >= 10:
             countries = set(self.map.powers.keys())
@@ -49,7 +52,6 @@ class BlabberBot(DumbBot):
     def random_expression(self, expression):
         try: items = self.syntax[expression]
         except KeyError:
-            if not Validator.press_levels: Validator.read_syntax()
             options = Validator.syntax.get(expression)
             if options:
                 items = self.syntax[expression] = [syntax
@@ -116,7 +118,7 @@ class BlabberBot(DumbBot):
         elif category == 'Provinces':
             result = choice(self.map.spaces.keys())
         elif category == 'Integers':
-            result = IntegerToken(randrange(Token.opts.max_pos_int))
+            result = IntegerToken(randrange(protocol.max_pos_int))
         elif category == 'Phases':
             result = choice(self.map.opts.seasons)
         elif category == 'Coasts':

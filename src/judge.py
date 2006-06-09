@@ -9,10 +9,9 @@
 from config import Configuration, VerboseObject
 from functions import defaultdict, any, all, s, Infinity
 from gameboard import Map
-from orders    import *
-#from orders    import createUnitOrder, RemoveOrder, WaiveOrder, \
-#                      HoldOrder, DisbandOrder, OrderSet
-#from language  import *
+from orders import createUnitOrder, RemoveOrder, WaiveOrder, \
+        HoldOrder, DisbandOrder, OrderSet
+from tokens import *
 
 def minmax(decision_list):
     ''' Returns the highest maximum and minimum values in the decision list.'''

@@ -11,8 +11,10 @@ from random    import randrange, shuffle
 
 from config    import variants, GameOptions, MapVariant, VerboseObject
 from functions import s, version_string
+from language  import Message, Token
 from main      import ThreadManager, run_player
-from orders    import *
+from orders    import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
+from tokens    import *
 from validation import Validator
 
 __version__ = "$Revision$"

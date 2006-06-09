@@ -7,7 +7,8 @@ import unittest
 import config
 from functions import fails
 from gameboard import Map, Turn, Province
-from language  import IntegerToken, Token, AMY, FLT, HLD, MTO, SUP, CVY, CTO, VIA, RTO, DSB, BLD, REM, WVE, SCS
+from language  import protocol, IntegerToken, Token
+from tokens    import *
 
 class Map_Variants(unittest.TestCase):
     ''' Validity checks for each of the known variants'''
@@ -268,7 +269,6 @@ class Gameboard_Doctests(unittest.TestCase):
     def test_map_define(self):
         ''' Test the creation of a new map from a simple MDF.'''
         from validation import Validator
-        from language import MDF, NCS, UNO
         from xtended import standard_map, ENG, FRA, \
                 EDI, LON, BRE, PAR, BEL, HOL, SPA, NWY, ECH, NTH, PIC
         
@@ -295,41 +295,35 @@ class Gameboard_Doctests(unittest.TestCase):
                 'Invalid MDF message')
         m = Map(config.MapVariant('simplified',
             'Small board for testing purposes', {},
-            config.protocol.default_rep))
+            protocol.default_rep))
         self.failIf(m.valid, 'Map valid before MDF')
         result = m.define(mdf)
         self.failIf(result, result)
     def test_turn_compare_lt(self):
-        from language import SPR, FAL
         spring = Turn()
         spring.set(SPR, IntegerToken(1901))
         fall = Turn()
         fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(spring, fall), -1)
     def test_turn_compare_gt(self):
-        from language import SPR, FAL
         spring = Turn()
         spring.set(SPR, IntegerToken(1901))
         fall = Turn()
         fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(fall, spring.key), 1)
     def test_turn_compare_eq(self):
-        from language import SPR, FAL
         spring = Turn()
         spring.set(SPR, IntegerToken(1901))
         fall = Turn()
         fall.set(FAL, IntegerToken(1901))
         self.failUnlessEqual(cmp(fall, fall.key), 0)
     def test_turn_compare_list(self):
-        from language import SPR
         self.failUnless(Turn() < [SPR, 1901])
     def test_turn_phase_hex(self):
-        from language import SUM
         t = Turn()
         t.set(SUM, 1901)
         self.failUnlessEqual(t.phase(), 0x40)
     def test_turn_phase_name(self):
-        from language import SUM
         t = Turn()
         t.set(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)

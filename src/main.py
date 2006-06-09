@@ -377,3 +377,33 @@ def run_server(server_class, default_verbosity):
         else: server.log_debug(1, 'Failed to open the server.')
 
 # Todo: Use a full option-parsing system, instead of this ad-hoc stuff.
+
+class RawClient(object):
+    ''' Simple client to translate DM to and from text.'''
+    name = None
+    def __init__(self, send_method, representation, manager):
+        self.send_out  = send_method      # A function that accepts messages
+        self.rep       = representation   # The representation message
+        self.closed    = False # Whether the connection has ended, or should end
+        self.manager   = manager
+    def register(self):
+        from network import InputWaiter
+        print 'Connected.'
+        self.manager.add_polled(InputWaiter(self.handle_input, self.close))
+    def handle_message(self, message):
+        ''' Process a new message from the server.'''
+        print '>>', message
+    def close(self):
+        ''' Informs the player that the connection has closed.'''
+        print 'Closed.'
+        self.closed = True
+        if not self.manager.closed: self.manager.close()
+    def handle_input(self, line):
+        try: message = self.rep.translate(line)
+        except Exception, err: print str(err) or '??'
+        else: self.send(message)
+    def send(self, message):
+        if not self.closed: self.send_out(message)
+
+if __name__ == '__main__':
+    run_player(RawClient, False, False)

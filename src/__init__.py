@@ -14,7 +14,7 @@
         network     -- Classes to exchange information between client and server.
         player      -- Basic clients.
         server      -- The main server classes.
-        translation -- The function to translate strings into Messages.
+        tokens      -- Tokens of the core DPP language.
         validation  -- The function to validate incoming Messages.
     
     When run directly as a script, this module starts the server.
@@ -38,7 +38,7 @@ __all__ = [
     'orders',
     'player',
     'server',
-    'translation',
+    'tokens',
     'validation',
     'xtended',
 ]

@@ -1,15 +1,21 @@
 ''' PyDip language classes
     Copyright (C) 2004-2006 Eric Wald
     Licensed under the Open Software License version 3.0
-    
-    This package is designed to be used as "from language import *"
-    but only after importing config somewhere.
-    Doing so will import all DCSP tokens, with upper-case names,
-    including BRA ('(') and KET (')').
-    It will also import the following classes:
-        - Message: A list of network tokens, usually representing a diplomacy message.
-        - Token: One unit of a message, containing both its name and number.
 '''#'''
+
+import re
+from os import path
+
+from config import parse_file, Configurable, VerboseObject
+
+__all__ = [
+    'Message',
+    'Token',
+    'StringToken',
+    'IntegerToken',
+    'Representation',
+    'protocol',
+]
 
 class Message(list):
     ''' Representation of a Diplomacy Message, as a list of Tokens.
@@ -97,8 +103,7 @@ class Message(list):
             >>> str(Message('name'))
             '"name"'
         '''#'''
-        from config import protocol
-        opts = protocol.base_rep.opts
+        opts = protocol.base_rep.options
         quot = opts.quot_char
         escape = opts.output_escape
         squeeze = opts.squeeze_parens
@@ -208,7 +213,6 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import protocol
         list.append(self, protocol.base_rep[value])
     def extend(self, value):
         ''' Adds a list of new tokens to the Message, without parentheses.
@@ -288,7 +292,6 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import protocol
         list.__setitem__(self, index, protocol.base_rep[value])
     def insert(self, index, value):
         ''' Inserts a single token into the Message.
@@ -301,7 +304,6 @@ class Message(list):
                 ...
             TypeError: list objects are unhashable
         '''#'''
-        from config import protocol
         list.insert(self, index, protocol.base_rep[value])
 
 
@@ -383,7 +385,7 @@ class Token(_integer_Token):
             # Moved here from the old category() method
             >>> YES.category
             72
-            >>> StringToken('A').category == Token.cats['Text']
+            >>> StringToken('A').category == protocol.token_cats['Text']
             True
         '''#'''
         # Fiddle with parentheses
@@ -407,7 +409,7 @@ class Token(_integer_Token):
             'Integers'
         '''#'''
         cat = self.category
-        if self.cats.has_key(cat): return self.cats[cat]
+        if protocol.token_cats.has_key(cat): return protocol.token_cats[cat]
         else: return 'Unavailable'
     def value(self):
         ''' Returns a numerical value for the token.
@@ -425,7 +427,7 @@ class Token(_integer_Token):
             -3
         '''#'''
         if   self.is_positive(): return self.number
-        elif self.is_negative(): return self.number - self.opts.max_neg_int
+        elif self.is_negative(): return self.number - protocol.max_neg_int
         else:                    return self.number & 0x00FF
     
     # Types
@@ -436,7 +438,7 @@ class Token(_integer_Token):
             >>> StringToken('A').is_text()
             True
         '''#'''
-        return self.category == self.cats['Text']
+        return self.category == protocol.token_cats['Text']
     def is_power(self):
         ''' Whether the token represents a power (country) of the game.
             >>> YES.is_power()
@@ -446,13 +448,13 @@ class Token(_integer_Token):
             >>> Token('ENG', 0x4101).is_power()
             True
         '''#'''
-        return self.category == self.cats['Powers']
+        return self.category == protocol.token_cats['Powers']
     def is_unit_type(self):
         ''' Whether the token represents a type of unit.'''
-        return self.category == self.cats['Unit_Types']
+        return self.category == protocol.token_cats['Unit_Types']
     def is_coastline(self):
         ''' Whether the token represents a specific coastline of a province.'''
-        return self.category == self.cats['Coasts']
+        return self.category == protocol.token_cats['Coasts']
     def is_supply(self):
         ''' Whether the token represents a province with a supply centre.
             >>> YES.is_supply()
@@ -482,7 +484,7 @@ class Token(_integer_Token):
             >>> Token('NWY', 0x553E).is_province()
             True
         '''#'''
-        p_cat = self.cats['Provinces']
+        p_cat = protocol.token_cats['Provinces']
         return p_cat[0] <= self.category <= p_cat[1]
     def is_integer(self):
         ''' Whether the token represents a number.
@@ -493,7 +495,7 @@ class Token(_integer_Token):
             >>> IntegerToken(-3).is_integer()
             True
         '''#'''
-        return self.number < self.opts.max_neg_int
+        return self.number < protocol.max_neg_int
     def is_positive(self):
         ''' Whether the token represents a positive number.
             >>> YES.is_positive()
@@ -505,7 +507,7 @@ class Token(_integer_Token):
             >>> IntegerToken(0).is_positive()
             False
         '''#'''
-        return 0 < self.number < self.opts.max_pos_int
+        return 0 < self.number < protocol.max_pos_int
     def is_negative(self):
         ''' Whether the token represents a negative number.
             >>> YES.is_negative()
@@ -517,7 +519,7 @@ class Token(_integer_Token):
             >>> IntegerToken(0).is_positive()
             False
         '''#'''
-        return self.opts.max_pos_int <= self.number < self.opts.max_neg_int
+        return protocol.max_pos_int <= self.number < protocol.max_neg_int
     
     # Conversions
     def __hex__(self):
@@ -542,7 +544,6 @@ class Token(_integer_Token):
             >>> repr(Token('STH', 0x4101))
             "Token('STH', 0x4101)"
         '''#'''
-        from config import protocol
         name = self.__class__.__name__
         if self.is_integer() and self.text == str(self.value()):
             return name + '(' + self.text + ')'
@@ -610,7 +611,7 @@ class StringToken(Token):
             if charnum > 0xFF:
                 raise OverflowError, '%s too large to convert to %s' % (type(char), klass.__name__)
             else:
-                result = Token.__new__(klass, char, Token.opts.quot_prefix + charnum)
+                result = Token.__new__(klass, char, protocol.quot_prefix + charnum)
             StringToken.cache[char] = result
         return result
 
@@ -624,8 +625,8 @@ class IntegerToken(Token):
     cache = {}
     
     def __new__(klass, number):
-        pos = Token.opts.max_pos_int
-        neg = Token.opts.max_neg_int
+        pos = protocol.max_pos_int
+        neg = protocol.max_neg_int
         number = int(number)
         if number < 0: key = number + neg
         else: key = number
@@ -644,3 +645,388 @@ class IntegerToken(Token):
             result = Token.__new__(klass, name, key)
             IntegerToken.cache[key] = result
         return result
+
+
+def maybe_int(word):
+    ''' Converts a string to an int if possible.
+        Returns either the int, or the original string.
+        >>> [(type(x), x) for x in [maybe_int('-3'), maybe_int('three')]]
+        [(<type 'int'>, -3), (<type 'str'>, 'three')]
+    '''#'''
+    try:    n = int(word)
+    except: return word
+    else:   return n
+
+def character(conf, option, section):
+    ''' Configuration getter for a single-character string.'''
+    text = conf.getstring(option, section)
+    if not text: result = None
+    elif len(text) > 1:
+        conf.warn('Only one character expected', option, section)
+        result = text[0]
+    else: result = text
+    return result
+
+class Representation(Configurable):
+    ''' Holds and translates all tokens for a variant.
+        Warning: Abuses the traditional dict methods.
+    '''#'''
+    __section__ = 'tokens'
+    __options__ = (
+        ('squeeze_parens', bool, False, 'squeeze parentheses',
+            'Whether to omit the spaces just inside parentheses when printing messages.'),
+        ('ignore_unknown', bool, True, 'ignore unknown tokens',
+            'Whether to allow tokens not represented in the protocol document or RM.',
+            'If this is false, unknown tokens in a DM will result in an Error Message.'),
+        ('input_escape', character, '\\', 'input escape chararacter',
+            'The character which escapes quotation marks when translating messages.',
+            'This can be the same as the quotation mark character itself.'),
+        ('output_escape', character, '\\', 'output escape chararacter',
+            'The character with which to escape quotation marks when printing messages.',
+            'This can be the same as the quotation mark character itself.'),
+        ('quot_char', character, '"', 'quotation mark',
+            'The character to use for quoting strings when printing messages.'),
+    )
+    
+    def __init__(self, tokens, base):
+        # tokens is a number -> name mapping
+        self.__super.__init__()
+        self.base = base
+        self.names = names = {}
+        self.numbers = nums = {}
+        for number, name in tokens.iteritems():
+            nums[number] = names[name] = Token(name, number)
+    
+    def __getitem__(self, key):
+        ''' Returns a Token from its name or number.'''
+        result = self.get(key)
+        if result is None:
+            if isinstance(key, int): key = '0x%04X' % key
+            raise KeyError, 'unknown token %r' % (key,)
+        return result
+    def get(self, key, default=None):
+        ''' Returns a Token from its name or number.
+            >>> default_rep.get('ITA')
+            ITA
+        '''#'''
+        result = self.numbers.get(key) or self.names.get(key)
+        if result is None:
+            if isinstance(key, Token): result = key
+            elif self.base: result = self.base.get(key)
+            else:
+                try: number = int(key)
+                except ValueError: result = default
+                else:
+                    if number < protocol.max_neg_int:
+                        result = IntegerToken(number)
+                    elif (number & 0xFF00) == protocol.quot_prefix:
+                        result = StringToken(chr(number & 0x00FF))
+                    elif self.options.ignore_unknown:
+                        result = Token('0x%04X' % number, number)
+                    else: result = default
+        return result
+    
+    def has_key(self, key):
+        ''' Determines whether a given TLA is in use.'''
+        return ((key in self.names) or (key in self.numbers) or
+                (self.base and self.base.has_key(key)))
+    
+    def __len__(self):
+        return len(self.numbers)
+    
+    def items(self):
+        ''' Creates a name -> token mapping.'''
+        return self.names.items()
+    
+    def keys(self):
+        ''' Returns a list of token TLAs.'''
+        return self.names.keys()
+    
+    def read_message_file(self, filename):
+        ''' Reads a Diplomacy message written in a text file.
+            >>> msg = default_rep.read_message_file('variants/standard.sco')
+            >>> msg.fold()[2]
+            [ENG, LVP, EDI, LON]
+        '''#'''
+        message_file = open(filename, 'r', 1)
+        text = str.join(' ', message_file.readlines())
+        message_file.close()
+        return self.translate(text)
+    
+    def translate(self, text):
+        ''' Translates diplomacy message strings into Messages,
+            choosing an escape model based on options.
+            
+            # Black magic: This test exploits an implementation detail or two.
+            # This test avoids backslashes because they get halved too often.
+            >>> s = 'NME("name^""KET""BRA"KET""BRA" ^")'
+            >>> default_rep.options.input_escape = '"'
+            >>> str(default_rep.translate(s))
+            'NME ( "name^""KET""BRA" ) ( " ^" )'
+            >>> default_rep.options.input_escape = '^'
+            >>> str(default_rep.translate(s))
+            Traceback (most recent call last):
+                ...
+            KeyError: 'unknown token \\'"\\''
+        '''#'''
+        if self.options.input_escape == self.options.quot_char:
+            return self.translate_doubled_quotes(text)
+        else: return self.translate_backslashed(text)
+    
+    def translate_doubled_quotes(self, text):
+        ''' Translates diplomacy message strings into Messages,
+            doubling quotation marks to escape them.
+            
+            >>> default_rep.options.input_escape = '"'
+            >>> default_rep.translate_doubled_quotes('NOT ( GOF KET')
+            Message([NOT, [GOF]])
+            >>> str(default_rep.translate_doubled_quotes('      REJ(NME ("Evil\\'Bot v0.3\\r"KET(""")\\n (\\\\"-3)\\r\\n'))
+            'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
+            >>> default_rep.translate_doubled_quotes('YES " NOT ')
+            Traceback (most recent call last):
+                ...
+            ValueError: unterminated string in Diplomacy message
+        '''#'''
+        # initialization
+        fragments = text.split(self.options.quot_char)
+        message = []
+        in_text = 0
+        
+        # aliases
+        quoted = self.tokenize_quote
+        normal = self.tokenize_normal
+        addmsg = message.extend
+        append = message.append
+        
+        # The first normal part might be empty (though it shouldn't),
+        # so we process it here instead of inside the loop.
+        addmsg(normal(fragments[0]))
+        
+        # Empty normal parts in the middle are really pairs of quotation marks
+        for piece in fragments[1:-1]:
+            in_text = not in_text
+            if in_text: addmsg(quoted(piece))
+            elif piece: addmsg(normal(piece))
+            else: append(StringToken(self.options.quot_char))
+        
+        # Again, the last normal part might be empty.
+        if len(fragments) > 1:
+            in_text = not in_text
+            if in_text: addmsg(quoted(fragments[-1]))
+            else:       addmsg(normal(fragments[-1]))
+        
+        # Complain if the message wasn't finished
+        if in_text: raise ValueError, 'unterminated string in Diplomacy message'
+        else: return Message(message)
+    
+    def translate_backslashed(self, text):
+        ''' Translates diplomacy message strings into Messages,
+            using backslashes to escape quotation marks.
+            
+            >>> default_rep.options.input_escape = '\\\\'
+            >>> default_rep.translate_backslashed('NOT ( GOF KET')
+            Message([NOT, [GOF]])
+            >>> str(default_rep.translate_backslashed('     REJ(NME ("Evil\\'Bot v0.3\\r"KET("\\\\")\\n (\\\\\\\\"-3)\\r\\n'))
+            'REJ ( NME ( "Evil\\'Bot v0.3\\r" ) ( """)\\n (\\\\" -3 )'
+            >>> default_rep.translate_backslashed('YES " NOT ')
+            Traceback (most recent call last):
+                ...
+            ValueError: unterminated string in Diplomacy message
+        '''#'''
+        
+        # initialization
+        fragments = text.split(self.options.quot_char)
+        message = []
+        in_text = False
+        saved = ''
+        slash = self.options.input_escape
+        
+        # aliases
+        quoted = self.tokenize_quote
+        normal = self.tokenize_normal
+        addmsg = message.extend
+        
+        # Empty normal parts in the middle are really pairs of quotation marks
+        for piece in fragments:
+            slashes = 0
+            while piece and (piece[-1] == slash):
+                piece = piece[:-1]
+                slashes += 1
+            piece += slash * int(slashes/2)
+            
+            if slashes % 2:
+                # Odd number: escape the quotation mark
+                saved += piece + self.options.quot_char
+            else:
+                if in_text: addmsg(quoted(saved + piece))
+                else:       addmsg(normal(saved + piece))
+                in_text = not in_text
+                saved = ''
+        
+        # Complain if the message wasn't finished
+        if saved or not in_text:
+            raise ValueError, 'unterminated string in Diplomacy message'
+        else: return Message(message)
+    
+    def tokenize_quote(self, text):
+        ''' Returns a list of tokens from a string within a quotation.
+            >>> default_rep.tokenize_quote('Not(Gof)')
+            [StringToken('N'), StringToken('o'), StringToken('t'), StringToken('('), StringToken('G'), StringToken('o'), StringToken('f'), StringToken(')')]
+            >>> default_rep.tokenize_quote('name')
+            [StringToken('n'), StringToken('a'), StringToken('m'), StringToken('e')]
+        '''#'''
+        return [StringToken(c) for c in text]
+    
+    def tokenize_normal(self, text):
+        ''' Returns a list of tokens from a string without quotations.
+            >>> default_rep.tokenize_normal('Not(Gof)')
+            [NOT, BRA, GOF, KET]
+            >>> default_rep.tokenize_normal('name')
+            Traceback (most recent call last):
+                ...
+            KeyError: "unknown token 'NAME'"
+        '''#'''
+        # Switch parentheses to three-character notation
+        text = text.replace('(', ' BRA ')
+        text = text.replace(')', ' KET ')
+        
+        # Pass items into Token, converting integers if necessary
+        return [self[maybe_int(word.upper())] for word in text.split()]
+
+
+class Protocol(VerboseObject):
+    ''' Collects various constants from the Client-Server Protocol file.
+        Rather dependent on precise formatting.
+        
+        >>> proto = Protocol('docs/protocol.html')
+        >>> proto.token_cats[0x42]
+        'Unit Types'
+        >>> proto.token_cats['Unit_Types']
+        66
+        >>> proto.error_strings[5]
+        'Version incompatibility'
+        >>> proto.default_rep[0x4101]
+        ENG
+        >>> proto.base_rep[0x481C]
+        YES
+        >>> proto.message_types['Diplomacy']
+        2
+    '''#'''
+    __section__ = 'syntax'
+    __options__ = (
+        # os.path.abspath(__file__) would be useful here.
+        ('dcsp_file', file, path.join('docs', 'protocol.html'), 'protocol file',
+            'Document specifying protocol information, including token names and numbers.'),
+    )
+    
+    def __init__(self):
+        ''' Initializes instance variables and calculates a few constants.
+            - base_rep       Representation of the language-level tokens
+            - default_rep    Representation of the tokens for the default map
+            - token_cats     Token category name <-> number(s) mappings
+            - error_strings  Mapping of Error Message code -> description
+            - message_types  Mapping of type word -> message code
+            - version        Version of the protocol document
+            - magic          Magic number for the Initial Message
+        '''#'''
+        self.__super.__init__()
+        self.base_rep = None
+        self.default_rep = None
+        self.token_cats = {}
+        self.error_strings = {}
+        self.message_types = {}
+        self.version = None
+        self.magic = None
+        
+        parse_file(self.options.dcsp_file, self.parse_dcsp)
+        
+        # Calculated constants needed by the above classes
+        self.quot_prefix = self.token_cats['Text'] << 8
+        self.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
+        self.max_neg_int = self.max_pos_int << 1
+    
+    def parse_dcsp(self, dcsp_file):
+        # Local variable initialization
+        msg_name = None
+        err_type = None
+        last_cat = None
+        rep_item = False
+        old_line = ''
+        token_names = {}
+        default_tokens = {}
+        
+        for line in dcsp_file:
+            if old_line: line = old_line + ' ' + line.strip()
+            pos = line.find('>0x')
+            if pos > 0:
+                # Given sepearately, because the error description
+                # might be on the same line as the type number.
+                pos2 = pos + line[pos:].find('<')
+                err_type = int(line[pos+1:pos2], 16)
+            
+            if err_type:
+                match = re.match('.*>(\w+ [\w ]+)<', line)
+                if match:
+                    self.error_strings[err_type] = match.group(1)
+                    err_type = None
+                    old_line = ''
+                else: old_line = line[line.rfind('>'):].strip()
+            elif msg_name:
+                if line.find('Message Type =') > 0:
+                    type_num = int(re.match('.*Type = (\d+)', line).group(1))
+                    self.message_types[msg_name] = type_num
+                    msg_name = ''
+            elif line.find(' (0x') > 0:
+                match = re.match('.*?[> ](\w[\w ]+) \((0x\w\w)', line)
+                descrip = match.group(1)
+                start_cat = int(match.group(2), 16)
+                match = re.match('.* (0x\w\w)\)', line)
+                if match:
+                    last_cat = int(match.group(1), 16)
+                    self.token_cats[descrip.replace(' ', '_')] = (start_cat, last_cat)
+                    for i in range(start_cat, last_cat + 1):
+                        self.token_cats[i] = descrip
+                else:
+                    rep_item = descrip == 'Powers'
+                    last_cat = start_cat << 8
+                    self.token_cats[descrip.replace(' ', '_')] = start_cat
+                    self.token_cats[start_cat] = descrip
+            elif last_cat:
+                if line.find('category =') > 0:
+                    # This must come before the ' 0x' search.
+                    match = re.match('.*>([\w -]+) category = (0x\w\w)<', line)
+                    if match:
+                        last_cat = int(match.group(2), 16)
+                        self.token_cats[last_cat] = descrip = match.group(1)
+                        self.token_cats[descrip.replace(' ', '_')] = last_cat
+                        rep_item = True
+                        last_cat <<= 8
+                    else:
+                        self.log_debug(1, 'Bad line in protocol file: ' + line)
+                elif line.find(' 0x') > 0:
+                    match = re.search('>(\w\w\w) (0x\w\w)', line)
+                    if match:
+                        name = match.group(1).upper()
+                        number = last_cat + int(match.group(2), 16)
+                        if rep_item: default_tokens[number] = name
+                        else: token_names[number] = name
+            elif line.find('M)') > 0:
+                match = re.match('.*The (\w+) Message', line)
+                if match: msg_name = match.group(1)
+            elif line.find('Version ') >= 0:
+                match = re.match('.*Version (\d+)', line)
+                if match: self.version = int(match.group(1))
+            elif line.find('Magic Number =') > 0:
+                match = re.search('Number = (0x\w+)', line)
+                if match: self.magic = int(match.group(1), 16)
+                else: self.log_debug(1, 'Invalid magic number: ' + line)
+        self.base_rep = Representation(token_names, None)
+        self.default_rep = Representation(default_tokens, self.base_rep)
+        
+        # Sanity checking
+        if not self.magic: self.log_debug(1, 'Missing magic number')
+        if not self.version: self.log_debug(1, 'Missing version number')
+
+protocol = Protocol()
+BRA = protocol.base_rep['BRA']
+KET = protocol.base_rep['KET']

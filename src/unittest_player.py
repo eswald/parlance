@@ -5,8 +5,9 @@
 
 import unittest, config
 from functions import relative_limit, version_string
+from language  import Token
 from player    import Player, HoldBot
-from language  import *
+from tokens    import *
 from validation import Validator
 
 __version__ = "$Revision$"

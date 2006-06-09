@@ -9,7 +9,7 @@ from player       import Player
 from functions    import version_string
 from gameboard    import Power, Province, Unit
 from orders       import *
-from language     import *
+from tokens       import AMY, FLT, SPR, SUM, WIN
 
 __version__ = "$Revision$"
 

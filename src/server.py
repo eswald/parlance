@@ -11,7 +11,8 @@ from time      import time
 from gameboard import Turn
 from functions import (absolute_limit, expand_list, instances, num2name,
         relative_limit, s, timestamp, defaultdict)
-from language  import *
+from language import protocol, Message
+from tokens import *
 from validation import Validator
 
 import player, evilbot, dumbbot, peacebot, blabberbot, project20m
@@ -407,7 +408,7 @@ class Historian(config.VerboseObject):
         sco = None
         turn = None
         result = None
-        rep = config.protocol.base_rep
+        rep = protocol.base_rep
         history = {}
         messages = {}
         for line in stream:
@@ -575,7 +576,7 @@ class Game(Historian):
             self.pname    = power_name
             self.robotic  = False
             self.assigned = False
-            self.passcode = randint(100, Token.opts.max_pos_int - 1)
+            self.passcode = randint(100, protocol.max_pos_int - 1)
         def new_client(self, client, assigned=False):
             self.client   = client
             self.ready    = False

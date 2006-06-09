@@ -10,7 +10,7 @@
 import unittest
 from unittest_datc import DiplomacyAdjudicatorTestCase
 from functions import fails
-from language import *
+from tokens import *
 from xtended import *
 
 class DATC_4_A(DiplomacyAdjudicatorTestCase):

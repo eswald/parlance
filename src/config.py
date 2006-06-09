@@ -11,7 +11,6 @@ import re, os
 import weakref
 import ConfigParser
 from functions import autosuper, settable_property
-from translation import Representation
 
 # Main program version; used for bot versions
 repository = '$URL$'
@@ -134,39 +133,6 @@ class Configuration(object):
         list: getlist,
     }
 
-class TokenOptions(Configuration):
-    ''' Options for token and message handling.
-        This class will also be outfitted with the following:
-        - max_token        The largest number legal for a token
-        - quot_prefix      The number to add to a character's ordinal value, to get its token number
-        - max_pos_int      One greater than the largest positive number representable by a token
-        - max_neg_int      One greater than the token number of the most negative number representable by a token
-    '''#'''
-    def character(self, option, section):
-        text = self.getstring(option, section)
-        if not text: result = None
-        elif len(text) > 1:
-            self.warn('Only one character expected', option, section)
-            result = text[0]
-        else: result = text
-        return result
-    
-    __section__ = 'tokens'
-    __options__ = (
-        ('squeeze_parens', bool, False, 'squeeze parentheses',
-            'Whether to omit the spaces just inside parentheses when printing messages.'),
-        ('ignore_unknown', bool, True, 'ignore unknown tokens',
-            'Whether to allow tokens not represented in the protocol document or RM.',
-            'If this is false, unknown tokens in a DM will result in an Error Message.'),
-        ('input_escape', character, '\\', 'input escape chararacter',
-            'The character which escapes quotation marks when translating messages.',
-            'This can be the same as the quotation mark character itself.'),
-        ('output_escape', character, '\\', 'output escape chararacter',
-            'The character with which to escape quotation marks when printing messages.',
-            'This can be the same as the quotation mark character itself.'),
-        ('quot_char', character, '"', 'quotation mark',
-            'The character to use for quoting strings when printing messages.'),
-    )
 class SyntaxOptions(Configuration):
     ''' Options needed by this configuration script.'''
     __section__ = 'syntax'
@@ -174,10 +140,6 @@ class SyntaxOptions(Configuration):
         # os.path.abspath(__file__) would be useful here.
         ('variant_file', file, os.path.join('docs', 'variants.html'), 'variants file',
             'Document listing the available map variants, with their names and files.'),
-        ('dcsp_file', file, os.path.join('docs', 'protocol.html'), 'protocol file',
-            'Document specifying protocol information, including token names and numbers.'),
-        ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
-            'Document specifying syntax rules and level names.'),
     )
 class GameOptions(Configuration):
     ''' Options sent in the HLO message.'''
@@ -249,7 +211,7 @@ class GameOptions(Configuration):
             self.PDA = False
     def get_params(self):
         from functions import relative_limit
-        from language import LVL, MTL, RTL, BTL, AOA, DSD, PDA, NPR, NPB, PTL
+        from tokens import LVL, MTL, RTL, BTL, AOA, DSD, PDA, NPR, NPB, PTL
         params = [(LVL, self.LVL)]
         if self.MTL: params.append((MTL, relative_limit(self.MTL)))
         if self.RTL: params.append((RTL, relative_limit(self.RTL)))
@@ -353,7 +315,7 @@ class MapVariant(VerboseObject):
             as distributed by David Norman's server.
             Throws exceptions if something is wrong.
         '''#'''
-        from language import SPR, SUM, FAL, AUT, WIN
+        from tokens import SPR, SUM, FAL, AUT, WIN
         self.__super.__init__()
         self.prefix      = '%s(%r)' % (self.__class__.__name__, variant_name)
         self.variant     = variant_name
@@ -367,6 +329,7 @@ class MapVariant(VerboseObject):
         from judge import Judge
         return Judge(self, game_options)
     def get_representation(self):
+        from language import protocol
         filename = self.files.get('rem')
         if filename: return parse_file(filename, read_representation_file)
         else: return protocol.default_rep
@@ -402,7 +365,7 @@ class MapVariant(VerboseObject):
         except (KeyError, IOError): return names
         else:
             try:
-                from language import UNO
+                from tokens import UNO
                 for line in name_file:
                     fields = line.strip().split(':')
                     if fields[0]:
@@ -451,125 +414,6 @@ def parse_variants(stream):
                 variants[name] = MapVariant(name, descrip, files)
                 descrip = name = None
 
-class Protocol(VerboseObject):
-    ''' Collects various constants from the Client-Server Protocol file.
-        Rather dependent on precise formatting.
-        
-        >>> proto = Protocol('docs/protocol.html')
-        >>> proto.token_cats[0x42]
-        'Unit Types'
-        >>> proto.token_cats['Unit_Types']
-        66
-        >>> proto.error_strings[5]
-        'Version incompatibility'
-        >>> proto.default_rep[0x4101]
-        ENG
-        >>> proto.base_rep[0x481C]
-        YES
-        >>> proto.message_types['Diplomacy']
-        2
-    '''#'''
-    def __init__(self, filename):
-        self.base_rep = None
-        self.default_rep = None
-        self.token_cats = {}
-        self.error_strings = {}
-        self.message_types = {}
-        self.version = None
-        self.magic = None
-        
-        parse_file(filename, self.parse_dcsp)
-        
-        # Calculated constants needed by the language module
-        # Todo: Move these to a more appropriate place
-        TokenOptions.max_token = (max([cat for cat in self.token_cats.keys()
-            if isinstance(cat, int)]) + 1) << 8
-        TokenOptions.quot_prefix = self.token_cats['Text'] << 8
-        TokenOptions.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
-        TokenOptions.max_neg_int = TokenOptions.max_pos_int << 1
-    
-    def parse_dcsp(self, dcsp_file):
-        # Local variable initialization
-        msg_name = None
-        err_type = None
-        last_cat = None
-        rep_item = False
-        old_line = ''
-        token_names = {}
-        default_tokens = {}
-        
-        for line in dcsp_file:
-            if old_line: line = old_line + ' ' + line.strip()
-            pos = line.find('>0x')
-            if pos > 0:
-                # Given sepearately, because the error description
-                # might be on the same line as the type number.
-                pos2 = pos + line[pos:].find('<')
-                err_type = int(line[pos+1:pos2], 16)
-            
-            if err_type:
-                match = re.match('.*>(\w+ [\w ]+)<', line)
-                if match:
-                    self.error_strings[err_type] = match.group(1)
-                    err_type = None
-                    old_line = ''
-                else: old_line = line[line.rfind('>'):].strip()
-            elif msg_name:
-                if line.find('Message Type =') > 0:
-                    type_num = int(re.match('.*Type = (\d+)', line).group(1))
-                    self.message_types[msg_name] = type_num
-                    msg_name = ''
-            elif line.find(' (0x') > 0:
-                match = re.match('.*?[> ](\w[\w ]+) \((0x\w\w)', line)
-                descrip = match.group(1)
-                start_cat = int(match.group(2), 16)
-                match = re.match('.* (0x\w\w)\)', line)
-                if match:
-                    last_cat = int(match.group(1), 16)
-                    self.token_cats[descrip.replace(' ', '_')] = (start_cat, last_cat)
-                    for i in range(start_cat, last_cat + 1):
-                        self.token_cats[i] = descrip
-                else:
-                    rep_item = descrip == 'Powers'
-                    last_cat = start_cat << 8
-                    self.token_cats[descrip.replace(' ', '_')] = start_cat
-                    self.token_cats[start_cat] = descrip
-            elif last_cat:
-                if line.find('category =') > 0:
-                    # This must come before the ' 0x' search.
-                    match = re.match('.*>([\w -]+) category = (0x\w\w)<', line)
-                    if match:
-                        last_cat = int(match.group(2), 16)
-                        self.token_cats[last_cat] = descrip = match.group(1)
-                        self.token_cats[descrip.replace(' ', '_')] = last_cat
-                        rep_item = True
-                        last_cat <<= 8
-                    else:
-                        self.log_debug(1, 'Bad line in protocol file: ' + line)
-                elif line.find(' 0x') > 0:
-                    match = re.search('>(\w\w\w) (0x\w\w)', line)
-                    if match:
-                        name = match.group(1).upper()
-                        number = last_cat + int(match.group(2), 16)
-                        if rep_item: default_tokens[number] = name
-                        else: token_names[number] = name
-            elif line.find('M)') > 0:
-                match = re.match('.*The (\w+) Message', line)
-                if match: msg_name = match.group(1)
-            elif line.find('Version ') >= 0:
-                match = re.match('.*Version (\d+)', line)
-                if match: self.version = int(match.group(1))
-            elif line.find('Magic Number =') > 0:
-                match = re.search('Number = (0x\w+)', line)
-                if match: self.magic = int(match.group(1), 16)
-                else: self.log_debug(1, 'Invalid magic number: ' + line)
-        self.base_rep = Representation(token_names, None)
-        self.default_rep = Representation(default_tokens, self.base_rep)
-        
-        # Sanity checking
-        if not self.magic: self.log_debug(1, 'Missing magic number')
-        if not self.version: self.log_debug(1, 'Missing version number')
-
 def read_representation_file(stream):
     ''' Parses a representation file.
         The first line contains a decimal integer, the number of tokens.
@@ -586,6 +430,7 @@ def read_representation_file(stream):
         >>> len(rep)
         64
     '''#'''
+    from language import protocol, Representation
     num_tokens = int(stream.readline().strip())
     if num_tokens > 0:
         rep = {}
@@ -603,31 +448,6 @@ def read_representation_file(stream):
 
 
 # Exporting variables
-def init_language():
-    ''' Initializes the various tables,
-        and exports the token names into the language module.
-        
-        >>> if not variants:
-        ...     init_language()
-        >>> import language
-        >>> language.YES is Token('YES', 0x481C)
-        1
-        >>> language.KET.text
-        ')'
-    '''#'''
-    opts = options
-    
-    # Export variables into the language globals
-    import language
-    language.Token.cats = protocol.token_cats
-    language.Token.opts = protocol.base_rep.opts
-    #print 'Attempting to add tokens to language...'
-    for name, token in protocol.base_rep.items():
-        #print 'Adding language.%s' % (name,)
-        setattr(language, name, token)
-    
-    parse_file(opts.variant_file, parse_variants)
-
 def extend_globals(globs):
     ''' Inserts into the given dictionary elements required by certain doctests.
         Namely,
@@ -639,6 +459,7 @@ def extend_globals(globs):
         This takes several seconds, so only do it if necessary.
     '''#'''
     import gameboard
+    from language import protocol
     opts = variants['standard']
     standard_map = gameboard.Map(opts)
     extension = {
@@ -654,8 +475,5 @@ def extend_globals(globs):
 
 # Global variables
 options = SyntaxOptions()
-protocol = Protocol(options.dcsp_file)
 variants = {}
-
-# Main initialization
-init_language()
+parse_file(options.variant_file, parse_variants)

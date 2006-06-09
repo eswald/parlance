@@ -6,7 +6,8 @@
 from orders       import OrderSet
 from functions    import version_string
 from dumbbot      import DumbBot
-from language     import *
+from language     import Message
+from tokens       import ERR, PCE, PRP, YES
 
 __version__ = "$Revision$"
 
