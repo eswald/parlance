@@ -7,7 +7,7 @@
 <body>
 
 <p>Author:             Andrew Rose, revised by David Norman</p>
-<p>Date:               07-Apr-2006</p>
+<p>Date:               09-Jun-2006</p>
 <p>Status:             Draft</p>
 
 <p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
@@ -335,22 +335,36 @@ it.  The error codes are defined in the following table.</p>
 
 <table>
 	<tr><td>Code</td><td>Meaning</td></tr>
-	<tr><td>0x01</td><td>IM timer popped</td></tr>
-	<tr><td>0x02</td><td>IM was not the first message sent by the
-			client</td></tr>
-	<tr><td>0x03</td><td>IM indicated the wrong endian</td></tr>
-	<tr><td>0x04</td><td>IM had an incorrect magic number</td></tr>
-	<tr><td>0x05</td><td>Version incompatibility</td></tr>
-	<tr><td>0x06</td><td>More than one IM sent</td></tr>
-	<tr><td>0x07</td><td>IM sent by server</td></tr>
-	<tr><td>0x08</td><td>Unknown message received</td></tr>
-	<tr><td>0x09</td><td>Message shorter than expected</td></tr>
-	<tr><td>0x0A</td><td>DM sent before RM</td></tr>
-	<tr><td>0x0B</td><td>RM was not the first message sent by the
-			server</td></tr>
-	<tr><td>0x0C</td><td>Unexpected RM sent</td></tr>
-	<tr><td>0x0D</td><td>RM sent by client</td></tr>
-	<tr><td>0x0E</td><td>Invalid token in DM</td></tr>
+	<!-- These code names are open to negotiation,
+		but Pydip uses them in their current form.  -->
+	<tr><td><a name="Timeout">0x01</a></td>
+		<td>IM timer popped</td></tr>
+	<tr><td><a name="NotIMError">0x02</a></td>
+		<td>IM was not the first message sent by the client</td></tr>
+	<tr><td><a name="EndianError">0x03</a></td>
+		<td>IM indicated the wrong endian</td></tr>
+	<tr><td><a name="MagicError">0x04</a></td>
+		<td>IM had an incorrect magic number</td></tr>
+	<tr><td><a name="VersionError">0x05</a></td>
+		<td>Version incompatibility</td></tr>
+	<tr><td><a name="DuplicateIMError">0x06</a></td>
+		<td>More than one IM sent</td></tr>
+	<tr><td><a name="ServerIMError">0x07</a></td>
+		<td>IM sent by server</td></tr>
+	<tr><td><a name="MessageTypeError">0x08</a></td>
+		<td>Unknown message received</td></tr>
+	<tr><td><a name="LengthError">0x09</a></td>
+		<td>Message shorter than expected</td></tr>
+	<tr><td><a name="EarlyDMError">0x0A</a></td>
+		<td>DM sent before RM</td></tr>
+	<tr><td><a name="NotRMError">0x0B</a></td>
+		<td>RM was not the first message sent by the server</td></tr>
+	<tr><td><a name="UnexpectedRM">0x0C</a></td>
+		<td>Unexpected RM sent</td></tr>
+	<tr><td><a name="ClientRMError">0x0D</a></td>
+		<td>RM sent by client</td></tr>
+	<tr><td><a name="IllegalToken">0x0E</a></td>
+		<td>Invalid token in DM</td></tr>
 </table>
 
 <p>Note that this message will not be sent due to a language error.

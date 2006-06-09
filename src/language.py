@@ -928,6 +928,9 @@ class Protocol(VerboseObject):
             - message_types  Mapping of type word -> message code
             - version        Version of the protocol document
             - magic          Magic number for the Initial Message
+            
+            Protocol instances may also have members with capitalized names,
+            as shorthand for the error codes in the protocol document.
         '''#'''
         self.__super.__init__()
         self.base_rep = None
@@ -965,6 +968,8 @@ class Protocol(VerboseObject):
                 err_type = int(line[pos+1:pos2], 16)
             
             if err_type:
+                match = re.search('<a name="([A-Z]\w+)">', line)
+                if match: setattr(self, match.group(1), err_type)
                 match = re.match('.*>(\w+ [\w ]+)<', line)
                 if match:
                     self.error_strings[err_type] = match.group(1)

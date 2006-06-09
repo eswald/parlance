@@ -49,37 +49,24 @@ class Connection(SocketWrapper):
             'Whether to send FM after receiving EM or FM.',
             'The extra FM may be useful to terminate input loops,',
             'particularly when using threads, but the protocol prohibits it.'),
-        
-        # Todo: Embed this information in the protocol document,
-        #       probably as anchor names
-        ('error_number', int, 1, 'first error number',
-            'The number of the first error in "error codes" as listed below.',
-            'Should generally be 1 or 0, depending on the protocol.'),
-        ('default_errors', list, ['Timeout', 'NotIM', 'Endian', 'BadMagic',
-            'Version', 'DupIM', 'ServerIM', 'MessType', 'Short', 'QuickDM',
-            'NotRM', 'UnexpectedRM', 'ClientRM', 'IllegalToken'],
-            'error codes',
-            'Short names for the error codes, separated by commas.',
-            'Several of these names are used by the code, so they should not be changed.'),
     )
     
     def __init__(self):
         self.__super.__init__()
         self.send_final = True
         self.proto = protocol
-        self.IM_check = None
+        self.timer = None
         self.rep = None
         
         # IM, DM, FM, etc.
         for name, value in self.proto.message_types.iteritems():
             setattr(Connection, name[0] + 'M', value)
         
-        # Shorthand for the various error codes
-        error_number = self.options.error_number
-        for code in self.options.default_errors:
-            setattr(self.options, code, error_number)
-            error_number += 1
+        if self.is_server:
+            self.first = self.IM
+        else: self.first = self.RM
     def close(self):
+        if self.timer: self.timer.close()
         if self.send_final: self.send_dcsp(self.FM, '')
         self.send_final = False
         self.__super.close()
@@ -95,7 +82,11 @@ class Connection(SocketWrapper):
                 msg_type, msg_len = unpack('!BxH', header)
                 if msg_len: message = self.sock.recv(msg_len)
                 else:       message = ''
-                return self.process_message(msg_type, message)
+                if len(message) < msg_len:
+                    if len(message) == unpack('<H', pack('>H', msg_len))[0]:
+                        self.send_error(self.proto.EndianError)
+                    else: self.send_error(self.proto.LengthError)
+                else: return self.process_message(msg_type, message)
             else:
                 self.log_debug(7, 'Received empty packet')
                 self.close()
@@ -113,40 +104,47 @@ class Connection(SocketWrapper):
         ''' Processes a single DCSP message from the server.'''
         self.log_debug(13, 'Message type %d received', type_code)
         message = None
-        if   type_code == self.IM:
-            if self.is_server:     self.process_IM(data)
-            else:                  self.send_error(self.options.ServerIM)
+        first = self.first
+        self.first = None
+        if self.timer: self.timer.close()
+        if first is not None and type_code not in (first, self.FM, self.EM):
+            if self.is_server:     self.send_error(self.proto.NotIMError)
+            else:                  self.send_error(self.proto.NotRMError)
+        elif type_code == self.IM:
+            if not self.is_server: self.send_error(self.proto.ServerIMError)
+            elif first is None:    self.send_error(self.proto.DuplicateIMError)
+            else:                  self.process_IM(data)
         elif type_code == self.RM:
-            if self.is_server:     self.send_error(self.options.ClientRM)
-            elif len(data) % 6:    self.send_error(self.options.Short)
-            #elif self.rep:         self.send_error(self.options.UnexpectedRM)
+            if self.is_server:     self.send_error(self.proto.ClientRMError)
+            elif len(data) % 6:    self.send_error(self.proto.LengthError)
+            #elif self.rep:         self.send_error(self.proto.UnexpectedRM)
             else:                  self.read_representation(data)
         elif type_code == self.DM:
-            if not data:           self.send_error(self.options.Short)
-            elif len(data) % 2:    self.send_error(self.options.Short)
+            if not data:           self.send_error(self.proto.LengthError)
+            elif len(data) % 2:    self.send_error(self.proto.LengthError)
             elif self.rep:         message = self.unpack_message(data)
-            else:                  self.send_error(self.options.QuickDM)
-        elif type_code == self.FM: self.send_final = self.options.echo_final; self.close()
+            else:                  self.send_error(self.proto.EarlyDMError)
+        elif type_code == self.FM:
+            self.send_final = self.options.echo_final
+            self.close()
         elif type_code == self.EM:
             if len(data) == 2:     self.send_error(unpack('!H', data)[0], True)
-            else:                  self.send_error(self.options.Short)
+            else:                  self.send_error(self.proto.LengthError)
         else:
             self.log_debug(7, 'Unknown message type %s received', type_code)
-            self.send_error(self.options.MessType)
+            self.send_error(self.proto.MessageTypeError)
         return message
     def process_IM(self, data):
         ''' Verifies the Initial Message from the client.'''
         if len(data) == 4:
             (version, magic) = unpack('!HH', data)
             if magic == self.proto.magic:
-                if version == self.proto.version:
-                    if self.IM_check: self.IM_check.close()
-                    self.send_RM()
-                else: self.send_error(self.options.Version)
-            elif unpack('>H', pack('<H', magic)) == self.proto.magic:
-                self.send_error(self.options.Endian)
-            else: self.send_error(self.options.BadMagic)
-        else: self.send_error(self.options.Short)
+                if version == self.proto.version: self.send_RM()
+                else: self.send_error(self.proto.VersionError)
+            elif unpack('<HH', data)[1] == self.proto.magic:
+                self.send_error(self.proto.EndianError)
+            else: self.send_error(self.proto.MagicError)
+        else: self.send_error(self.proto.LengthError)
     def read_representation(self, data):
         ''' Creates a representation dictionary from the RM.
             This dictionary maps names to numbers and vice-versa.
@@ -174,13 +172,13 @@ class Connection(SocketWrapper):
                 for x in unpack('!' + 'H'*(len(data)//2), data)])
         except ValueError:
             # Someone foolishly chose to disconnect over an unknown token.
-            self.send_error(self.options.IllegalToken)
+            self.send_error(self.proto.IllegalToken)
             result = None
         else:
             # Tokens in the "Reserved for AI use" category
             # must never be sent over the wire.
             if any('Reserved' in token.category_name() for token in result):
-                self.send_error(self.options.IllegalToken)
+                self.send_error(self.proto.IllegalToken)
                 result = None
         return result
     
@@ -257,7 +255,8 @@ class Client(Connection):
         
         # Send initial message
         self.log_debug(9, 'Sending Initial Message')
-        self.send_dcsp(self.IM, pack('!HH', self.proto.version, self.proto.magic));
+        self.send_dcsp(self.IM, pack('!HH',
+            self.proto.version, self.proto.magic))
         
         return True
     def run(self):
@@ -292,7 +291,7 @@ class Service(Connection):
             self.prefix = 'IM Check for ' + service.prefix
         def run(self):
             if not self.service.closed:
-                self.service.send_error(self.service.options.Timeout)
+                self.service.send_error(self.service.proto.Timeout)
         def close(self):
             self.closed = True
     
@@ -355,9 +354,9 @@ class Service(Connection):
             self.rep = representation
             self.send_RM()
         self.prefix = 'Service #%d (%s)' % (self.client_id, new_game.game_id)
-    def start_IM_check(self, manager):
-        self.IM_check = self.TimeoutMonitor(self)
-        manager.add_timed(self.IM_check, 30)
+    def start_timer(self, manager):
+        self.timer = self.TimeoutMonitor(self)
+        manager.add_timed(self.timer, 30)
     
     def send(self, message):
         if message[0] is MDF: text = 'MDF [...]'
@@ -389,11 +388,12 @@ class ServerSocket(SocketWrapper):
             try: sock.bind(addr)
             except socket.error, e:
                 if e.args[0] == 98:
-                    self.log_debug(6, 'Waiting for port %s:%d' % addr)
+                    self.log_debug(1, 'Waiting for port %s:%d' % addr)
                     sleep(wait_time)
                     wait_time *= 2
                 else: raise e
             else: break
+        self.log_debug(6, 'Listening on port %s:%d' % addr)
         sock.setblocking(False)
         sock.listen(7)
         self.sock = sock
@@ -417,7 +417,7 @@ class ServerSocket(SocketWrapper):
             except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
             conn.setblocking(False)
             service = Service(self.next_id, conn, addr[0], self.server)
-            service.start_IM_check(self.manager)
+            service.start_timer(self.manager)
             self.manager.add_polled(service)
             self.next_id += 1
 
