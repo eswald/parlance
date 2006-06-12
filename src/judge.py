@@ -581,7 +581,7 @@ class Judge(JudgeInterface):
             # Skip to the next phase that requires action
             while True:
                 # TODO: Store orders, SCO, and NOW in self.history
-                turn.advance()
+                turn = self.map.advance()
                 self.phase = turn.phase()
                 if self.phase == turn.build_phase:
                     growing = self.map.adjust_ownership()

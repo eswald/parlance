@@ -4,7 +4,7 @@
     so "from functions import *" is discouraged.
 '''#'''
 
-from itertools import ifilter, ifilterfalse
+from itertools import chain, ifilter, ifilterfalse
 from time      import localtime
 
 def any(sequence):
@@ -133,6 +133,36 @@ class Comparable(object):
     def __ge__(self, other): return not self.__lt__(other)
     def __le__(self, other): return not self.__gt__(other)
     def __cmp__(self, other): return NotImplemented
+
+class Immutable(object):
+    ''' Tries to make objects basically immutable.
+        This implementation even restricts new elements on the class itself.
+    '''#'''
+    class __metaclass__(type):
+        def __setattr__(cls, name, value):
+            if hasattr(cls, name):
+                #type.__setattr__(self, name, value)
+                raise AttributeError("'%s' class attribute '%s' is read-only" %
+                        (cls.__name__, name))
+            else:
+                raise AttributeError("'%s' class has no attribute '%s'" %
+                        (cls.__name__, name))
+    
+    def __setattr__(self, name, value):
+        def slots(klass):
+            result = getattr(klass, '__slots__', ())
+            if isinstance(result, str): result = (result,)
+            #else: result = tuple(result)
+            return result
+        cls = self.__class__
+        if hasattr(self, name):
+            raise AttributeError("'%s' object attribute '%s' is read-only" %
+                    (cls.__name__, name))
+        elif name in chain(*(slots(klass) for klass in cls.__mro__)):
+            super(Immutable, self).__setattr__(name, value)
+        else:
+            raise AttributeError("'%s' object has no attribute '%s'" %
+                    (cls.__name__, name))
 
 class Infinity(object):
     def __gt__(self, other): return True

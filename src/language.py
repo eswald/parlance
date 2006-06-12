@@ -365,7 +365,7 @@ class _integer_Token(int):
     def __setattr__(self, name, value):
         if hasattr(self, name):
             raise AttributeError("'%s' object attribute '%s' is read-only" %
-                    self.__class__.__name__, name)
+                    (self.__class__.__name__, name))
         else: super(_integer_Token, self).__setattr__(name, value)
 
 class Token(_integer_Token):

@@ -394,7 +394,7 @@ class Historian(VerboseObject):
         write(HLO)
         write(SCO)
         write(NOW)
-        for turn in sorted(self.history.keys(), key=self.turn_order):
+        for turn in sorted(self.history.keys()):
             for message in self.get_history(turn, False):
                 write_message(message)
         if self.judge.game_result: write_message(self.judge.game_result)
@@ -418,7 +418,7 @@ class Historian(VerboseObject):
             first = message[0]
             if first in (ORD, SET):
                 offset = first is ORD and 2 or 5
-                turn = (message[offset], message[offset + 1].value())
+                turn = Turn(message[offset], message[offset + 1]).key
                 history.setdefault(turn, {
                         SET: [],
                         ORD: [],
@@ -508,12 +508,12 @@ class Historian(VerboseObject):
     # History
     def handle_HST(self, client, message):
         if len(message) > 1:
-            turn = (message[2], message[3].value())
+            turn = Turn(message[2], message[3]).key
             result = self.get_history(turn, True)
             if result: client.send_list(result)
             else: client.reject(message)
         elif self.history:
-            for turn in sorted(self.history.keys(), key=self.turn_order):
+            for turn in sorted(self.history.keys()):
                 client.send_list(self.get_history(turn, False))
         else: client.reject(message)
     def get_history(self, key, always_sco):
@@ -526,8 +526,6 @@ class Historian(VerboseObject):
                 result.append(turn[SCO])
             result.append(turn[NOW])
         return result
-    @staticmethod
-    def turn_order(turn): return (turn[1] * 0x20) + (turn[0].number % 0x1F)
     
     commands = []
 

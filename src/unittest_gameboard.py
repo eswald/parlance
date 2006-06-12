@@ -279,32 +279,21 @@ class Gameboard_Doctests(unittest.TestCase):
         result = m.define(mdf)
         self.failIf(result, result)
     def test_turn_compare_lt(self):
-        spring = Turn()
-        spring.set(SPR, IntegerToken(1901))
-        fall = Turn()
-        fall.set(FAL, IntegerToken(1901))
+        spring = Turn(SPR, 1901)
+        fall = Turn(FAL, 1901)
         self.failUnlessEqual(cmp(spring, fall), -1)
     def test_turn_compare_gt(self):
-        spring = Turn()
-        spring.set(SPR, IntegerToken(1901))
-        fall = Turn()
-        fall.set(FAL, IntegerToken(1901))
+        spring = Turn(SPR, 1901)
+        fall = Turn(FAL, 1901)
         self.failUnlessEqual(cmp(fall, spring.key), 1)
     def test_turn_compare_eq(self):
-        spring = Turn()
-        spring.set(SPR, IntegerToken(1901))
-        fall = Turn()
-        fall.set(FAL, IntegerToken(1901))
+        fall = Turn(FAL, 1901)
         self.failUnlessEqual(cmp(fall, fall.key), 0)
-    def test_turn_compare_list(self):
-        self.failUnless(Turn() < [SPR, 1901])
     def test_turn_phase_hex(self):
-        t = Turn()
-        t.set(SUM, 1901)
+        t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), 0x40)
     def test_turn_phase_name(self):
-        t = Turn()
-        t.set(SUM, 1901)
+        t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
     
     # Tests from other modules

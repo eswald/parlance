@@ -8,9 +8,9 @@
 from itertools   import chain
 
 from config      import Configuration, VerboseObject
-from functions   import Comparable, Infinity, all, any, defaultdict
+from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
 from language    import Token, Message, protocol
-from tokens      import AMY, FLT, MRT, NOW, SCO, UNO
+from tokens      import AMY, AUT, FAL, FLT, MRT, NOW, SCO, SPR, SUM, UNO, WIN
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
@@ -35,7 +35,7 @@ class Map(VerboseObject):
         self.name    = options.map_name
         self.prefix  = options.variant + ' map'
         self.valid   = options.map_mdf and not self.define(options.map_mdf)
-        self.current_turn = Turn(options.seasons)
+        self.current_turn = Turn(options.seasons[0], 0, options.seasons, 0)
         self.restart()
     def __str__(self): return "Map(%r)" % self.name
     
@@ -354,7 +354,16 @@ class Map(VerboseObject):
         '''#'''
         folded = message.fold()
         if self.valid:
-            self.current_turn.set(*folded[1])
+            try: self.current_turn = self.current_turn.next(*folded[1])
+            except ValueError, err:
+                self.log_debug(7, 'Turn (%s) complained about %s: %s',
+                        self.current_turn, folded[1], err.args)
+                season, year = folded[1]
+                seasons = self.current_turn.seasons
+                if seasons and season in seasons:
+                    self.current_turn = Turn(season, year, seasons,
+                            list(seasons).index(season))
+                else: self.current_turn = Turn(season, year)
             for prov in self.spaces.itervalues(): prov.units = []
             for country in self.powers.itervalues(): country.units = []
             for unit_spec in folded[2:]:
@@ -365,6 +374,9 @@ class Map(VerboseObject):
                 unit = Unit(power, coast)
                 unit.build()
                 if len(unit_spec) > 3: unit.retreat(unit_spec[4])
+    def advance(self):
+        self.current_turn = self.current_turn.next()
+        return self.current_turn
     def adjust_ownership(self):
         ''' Lets units take over supply centers they occupy.
             Returns a list of countries that gained supply centers.
@@ -395,8 +407,13 @@ class Map(VerboseObject):
         return [token for token,net in net_growth.iteritems() if net > 0]
 
 
-class Turn(Comparable):
+class Turn(Comparable, Immutable):
     ''' Represents a single turn, consisting of season and year.
+        Turns are immutable and hashable, so they can be used as keys.
+        Caveat:  When using custom season lists, do not try to compare
+        or hash Turns made without a seasons parameter; results will
+        probably look fine, but may be subtly wrong.
+        
         The following are also available, and may be ANDed with an order token
         to see whether it is valid in the current phase:
             - Turn.move_phase
@@ -427,88 +444,140 @@ class Turn(Comparable):
             self.__super.__init__()
             
             # Masks to determine whether an order is valid during a given phase
-            self.phase_mask = mask = {None: (self.move_phase_bit |
-                    self.retreat_phase_bit | self.build_phase_bit)}
+            self.phase_mask = (self.move_phase_bit |
+                    self.retreat_phase_bit | self.build_phase_bit)
+            self.index_mask = 0xFF ^ self.phase_mask
+            
+            self.phases = {}
             for name in self.move_phases:
-                mask[protocol.base_rep[name]] = self.move_phase_bit
+                self.phases[protocol.base_rep[name]] = self.move_phase_bit
             for name in self.retreat_phases:
-                mask[protocol.base_rep[name]] = self.retreat_phase_bit
+                self.phases[protocol.base_rep[name]] = self.retreat_phase_bit
             for name in self.build_phases:
-                mask[protocol.base_rep[name]] = self.build_phase_bit
+                self.phases[protocol.base_rep[name]] = self.build_phase_bit
     
     options = TurnOptions()
     move_phase    = options.move_phase_bit
     retreat_phase = options.retreat_phase_bit
     build_phase   = options.build_phase_bit
     
-    def __init__(self, season_list=None):
-        self.season_list  = season_list
-        self.season_index = None
-        self.season = None
-        self.year = None
-    def set(self, season, year):
-        if self.season_list:
-            if self.season_index is None or self.year != year:
-                self.season_index = self.season_list.index(season)
-            else:
-                # Just in case a season list uses a season multiple times
-                # (Like the baseball variant)
-                self.season_index += 1
-                try: self.season_index += self.season_list[self.season_index:].index(season)
-                except ValueError: self.season_index = self.season_list.index(season)
+    # Required by the Immutable interface
+    __slots__ = ('season', 'year', 'seasons', 'index', 'key')
+    
+    def __init__(self, season, year, seasons=None, index=None):
         self.season = season
-        self.year   = year
-    def advance(self):
-        ''' Changes to the next turn, advancing the year if appropriate.'''
-        if self.season_list:
-            seasons = len(self.season_list)
-            self.season_index += 1
-            if self.season_index >= seasons:
-                self.season_index %= seasons
-                self.year += 1
-            self.season = self.season_list[self.season_index]
-        else: raise UserWarning, 'Turn.advance() can only be called on Turns created with a season list.'
-    def __str__(self): return '(%s %s)' % self.key
-    def tokenize(self): return list(self.key)
-    def phase(self):
-        ''' Returns the phase of the current turn
-            (that is, movement, retreat, or adjustment)
+        self.year = int(year)
+        
+        if seasons is None:
+            self.seasons = None
+            self.index = season.number & self.options.index_mask
+        else:
+            self.seasons = tuple(seasons)
+            if index is None:
+                l = list(self.seasons)
+                count = l.count(season)
+                if count == 1: self.index = l.index(season)
+                elif count:
+                    raise ValueError("Turn index required for ambiguous season")
+                else: raise ValueError("Turn season not in the list of seasons")
+            elif season is self.seasons[index]:
+                self.index = int(index)
+            else: raise ValueError("Turn season and index don't match")
+        self.key = (self.year, self.index)
+    
+    def next(self, season=None, year=None):
+        ''' Creates a Turn for the next phase, or the next specified phase.
+            Refuses to return this or past phases, if it can tell,
+            but tries to work correctly in the face of multiple identical
+            seasons per year (such as in the baseball variant).
+        '''#'''
+        if season:
+            if self.seasons:
+                index = self.index + 1
+                if year is None:
+                    cycle = self.seasons[index:] + self.seasons[:index]
+                    index += list(cycle).index(season)
+                    if index >= len(cycle):
+                        index %= len(cycle)
+                        year = self.year + 1
+                    else: year = self.year
+                elif year == self.year:
+                    try: index += list(self.seasons[index:]).index(season)
+                    except ValueError:
+                        if season in self.seasons:
+                            raise ValueError('Trying to go back in time')
+                        else: raise ValueError('Season not in season list')
+                elif year > self.year:
+                    index = list(self.seasons).index(season)
+                else: raise ValueError('Trying to go back in time')
+            elif year is not None:
+                # We could try to check for going back within the current year,
+                # but I'm not willing to make assumptions on this index.
+                index = season.number & self.options.index_mask
+                if year < self.year:
+                    raise ValueError('Trying to go back in time')
+            else:
+                # Hope the season tokens are at least numbered in order
+                index = season.number & self.options.index_mask
+                if index > self.index: year = self.year
+                else: year = self.year + 1
+        elif year is not None:
+            if year == self.year:
+                if self.seasons:
+                    index = self.index + 1
+                    season = self.seasons[index]
+                else: raise ValueError('Unknown next season')
+            elif year > self.year:
+                season = self.season
+                index = self.index
+            else: raise ValueError('Trying to go back in time')
+        elif self.seasons:
+            index = self.index + 1
+            if index == len(self.seasons):
+                index = 0
+                year = self.year + 1
+            else: year = self.year
+            season = self.seasons[index]
+        else: raise ValueError('Unknown next season')
+        return Turn(season, year, self.seasons, index)
+    
+    def __str__(self):
+        names = {
+            AUT: 'Autumn',
+            FAL: 'Fall',
+            SPR: 'Spring',
+            SUM: 'Summer',
+            WIN: 'Winter',
+        }
+        season = names.get(self.season, self.season.text)
+        return '%s %s' % (season, self.year)
+    def tokenize(self): return Message(self.season, self.year)
+    
+    def phase(self, season=None):
+        ''' Returns the phase bit of the season, or of the turn,
             as one of the values move_phase, retreat_phase, or build_phase.
             
-            >>> t = Turn(); t.set(SUM, 1901); print t, hex(t.phase())
-            (SUM 1901) 0x40
+            >>> t = Turn(SUM, 1901); print t, hex(t.phase())
+            Summer 1901 0x40
             >>> t.phase() == Turn.retreat_phase
             True
         '''#'''
-        default = self.season.value() & self.options.phase_mask[None]
-        return self.options.phase_mask.get(self.season, default)
+        if not season: season = self.season
+        default = season.number & self.options.phase_mask
+        return self.options.phases.get(season, default)
     def __cmp__(self, other):
         ''' Compares Turns with each other, or with their keys.
-            >>> ts = Turn(); ts.set(SPR, base_rep[1901])
-            >>> tf = Turn(); tf.set(FAL, base_rep[1901])
+            >>> ts = Turn(SPR, 1901)
+            >>> tf = Turn(FAL, 1901)
             >>> cmp(ts, tf)
             -1
             >>> cmp(tf, ts.key)
             1
             >>> cmp(tf, tf.key)
             0
-            >>> Turn() < [SPR, 1901]
-            True
         '''#'''
-        if not self.season: return -1
-        if isinstance(other, Turn):
-            season = other.season
-            year = other.year
-        else:
-            try: season, year = tuple(other)
-            except: return NotImplemented
-        if self.year == year and self.season != season:
-            if self.season_list:
-                return cmp(self.season_index, self.season_list.index(season))
-            else: return cmp(self.season.value(), season.value())
-        else: return cmp(self.year, year)
-    def key(self): return (self.season, self.year)
-    key = property(fget=key)
+        return cmp(self.key, other)
+    def __hash__(self): return hash(self.key)
 
 
 class Power(Comparable):
