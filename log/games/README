@@ -1,0 +1,9 @@
+This directory is intended for game logs.
+
+When the [server] option log_games is on, this is the default directory for
+saving game logs.  Each log will be an eight-character file with a '.dpp'
+extension, consisting of a list of messages, one message per line.  This
+format may change in the future, to include a time for each message, and
+perhaps the press logs.
+
+You may also store your own game logs here, if desired.

@@ -1,0 +1,6 @@
+This directory is intended for bot logs and statistics.
+
+DumbBot may create '.csv' files here with its calculated province values for
+the power and turn indicated in the file name.
+
+You may also store your own files here, if desired.
