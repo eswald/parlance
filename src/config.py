@@ -7,10 +7,10 @@
     and ~/.pydiprc in the user's home directory.
 '''#'''
 
-import os
 import re
-import weakref
-import ConfigParser
+from ConfigParser import RawConfigParser
+from os           import linesep, path
+from weakref      import WeakValueDictionary
 
 from functions import autosuper, settable_property
 
@@ -34,10 +34,10 @@ class Configuration(object):
         the class's module will be used.
     '''#'''
     __metaclass__ = autosuper
-    _user_config = ConfigParser.RawConfigParser()
-    _user_config.read(['pydip.cfg', os.path.expanduser('~/.pydiprc')])
+    _user_config = RawConfigParser()
+    _user_config.read(['pydip.cfg', path.expanduser('~/.pydiprc')])
     _local_opts = {}
-    _configurations = weakref.WeakValueDictionary()
+    _configurations = WeakValueDictionary()
     
     def __init__(self):
         self.parse_options(self.__class__)
@@ -135,8 +135,8 @@ class SyntaxOptions(Configuration):
     ''' Options needed by this configuration script.'''
     __section__ = 'syntax'
     __options__ = (
-        # os.path.abspath(__file__) would be useful here.
-        ('variant_file', file, os.path.join('docs', 'variants.html'), 'variants file',
+        # path.abspath(__file__) would be useful here.
+        ('variant_file', file, path.join('docs', 'variants.html'), 'variants file',
             'Document listing the available map variants, with their names and files.'),
     )
 class GameOptions(Configuration):
@@ -291,7 +291,7 @@ class VerboseObject(Configurable):
                 if not output:
                     output = file(filename, 'a')
                     self.__files[filename] = output
-                output.write(line + os.linesep)
+                output.write(line + linesep)
             else:
                 try: print line + '\n',
                 except IOError: self.verbosity = 0 # Ignore broken pipes
@@ -413,8 +413,8 @@ class VariantDict(dict):
                 match = file_pattern.search(line)
                 if match:
                     ref, ext = match.groups()
-                    files[ext.lower()] = os.path.normpath(os.path.join(
-                        os.path.dirname(self.options.variant_file), ref))
+                    files[ext.lower()] = path.normpath(path.join(
+                        path.dirname(self.options.variant_file), ref))
                 elif '</tr>' in line:
                     self[name] = MapVariant(name, descrip, files)
                     descrip = name = None
