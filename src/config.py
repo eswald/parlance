@@ -44,8 +44,8 @@ class Configuration(object):
         self._configurations[id(self)] = self
     def parse_options(self, klass):
         for cls in reversed(klass.__mro__):
-            section = getattr(cls, '__section__', cls.__module__)
-            opts = getattr(cls, '__options__', ())
+            section = cls.__dict__.get('__section__', cls.__module__)
+            opts = cls.__dict__.get('__options__', ())
             for item in opts: self.add_option(section, *item)
     def add_option(self, section, name, option_type, default, alt_names, *help):
         value = default
@@ -57,12 +57,12 @@ class Configuration(object):
             if conf_val is not None: value = conf_val
             elif isinstance(alt_names, str):
                 if len(alt_names) > 1:
-                    val = get(self, name, section)
+                    val = get(self, alt_names, section)
                     if val is not None: value = val
             elif alt_names:
                 for item in alt_names:
                     if len(item) > 1:
-                        val = get(self, name, section)
+                        val = get(self, item, section)
                         if val is not None:
                             value = val
                             break
