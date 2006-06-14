@@ -499,7 +499,8 @@ class AutoObserver(Observer):
                 if result: self.send_admin("Yes, I'm %s." % result.group(1))
                 elif re.match('[Rr]eally', s): self.send_admin("Yup.")
                 elif re.match('[Ww]ho', s): self.send_admin("Eric.")
-            elif re.match('[Nn]ot .*again'): self.send_admin("Fine, I'll shut up now.")
+            elif re.match('[Nn]ot .*again', s):
+                self.send_admin("Fine, I'll shut up now.")
 
 class Sizes(AutoObserver):
     ''' An observer that simply prints power sizes.'''
