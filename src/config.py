@@ -12,7 +12,7 @@ from ConfigParser import RawConfigParser
 from os           import linesep, path
 from weakref      import WeakValueDictionary
 
-from functions import autosuper, settable_property
+from functions import any, autosuper, defaultdict, settable_property
 
 # Various option classes.
 class Configuration(object):
@@ -470,3 +470,140 @@ def extend_globals(globs):
 
 # Global variables
 variants = VariantDict()
+
+
+class ConfigPrinter(Configuration):
+    ''' Collects options from all files in this package,
+        and prints them as a sample configuration file.
+    '''#'''
+    
+    class OrderedDict(dict):
+        def __init__(self): self.keylist = []
+        def __setitem__(self, key, value):
+            if key not in self.keylist: self.keylist.append(key)
+            dict.__setitem__(self, key, value)
+        def keys(self): return self.keylist
+    
+    def __init__(self):
+        # Yes, this deliberately skips Configuration.__init__()
+        
+        self.names = {
+            'str': 'string',
+            'int': 'integer',
+            'bool': 'boolean',
+            'float': 'number',
+            'intlist': 'list of integers',
+            'datc': 'character',
+        }
+        
+        self.intro = (
+            'Example configuration file for PyDip, the Python Diplomacy program',
+            '',
+            'This file may be saved as $HOME/.pydiprc, or as pydip.cfg in the',
+            'current working directory; settings in the latter will override',
+            'those in the former.',
+            '',
+            'Lines starting with hash marks (#) or semicolons (;) are ignored,',
+            'and may be used for comments.  In this sample file, semicolons are',
+            'used to show the default setting for each option.',
+            '',
+            'The sections are ordered in approximate likelihood of customization.',
+        )
+        
+        # I should probably find a better place to put this information.
+        # Perhaps I could simply collect it from pydip.cfg.sample?
+        self.headers = headers = self.OrderedDict()
+        headers['game'] = 'Parameters to be sent in the HLO message.'
+        headers['server'] = 'Options for server operation.'
+        headers['judge'] = 'Options for basic judge operation, including premature endings.'
+        headers['clients'] = 'Options applicable for all PyDip clients.'
+        headers['network'] = 'Settings for the network (DCSP) layer.'
+        headers['main'] = 'Options used by the core program functionality.'
+        headers['dumbbot'] = "Weights and probabilities for David's Dumbbot algorithm."
+        headers['datc'] = ("Options from Lucas B. Kruijswijk's Diplomacy Adjudicator Test Cases:",
+                'http://web.inter.nl.net/users/L.B.Kruijswijk/',
+                'Not all options are supported; some cannot be, within DAIDE.',
+                'Some options use letters not used by the DATC; in general,',
+                'the syntax disallows the option entirely in these cases.')
+        headers['tokens'] = 'Minor options for dealing with token conversion.'
+        headers['syntax'] = ('Syntax files and special tokens.',
+                'Note: File names are relative to the current working directory,',
+                '      *not* the directory of this file.')
+        
+        self.modules = defaultdict(self.OrderedDict)
+    
+    def value_string(self, name, value):
+        if isinstance(value, (list, tuple)):
+            result = str.join(', ', (str(item) for item in value))
+        elif value is False: result = 'no'
+        elif value is True: result = 'yes'
+        elif value is None: result = 'N/A'
+        elif name.endswith('_bit'): result = hex(value)
+        else: result = str(value)
+        return result
+    
+    def add_option(self, section, name, option_type, default, alt_names, *help):
+        #print '    %s.%s = %s' % (section, name, default)
+        if any(opts.has_key(name) for opts in self.modules.values()):
+            print '# Warning: Duplicate definition for option', name
+        self.__super.add_option(section, name, option_type, default, alt_names, *help)
+        
+        if isinstance(alt_names, str) and len(alt_names) > 1:
+            main_name = alt_names
+        else: main_name = name
+        
+        type_name = getattr(option_type, '__name__', option_type.__class__.__name__)
+        default_value = self.value_string(name, default)
+        text = ['# %s (%s)' % (main_name, self.names.get(type_name, type_name))]
+        text.extend('# ' + line for line in help)
+        text.append(';%s = %s' % (name, default_value))
+        
+        current_value = self.value_string(name, getattr(self, name))
+        if current_value != default_value:
+            text.append('%s = %s' % (name, current_value))
+        self.modules[section][name] = text
+    
+    def get_options(self, mname, container):
+        for name, item in container.__dict__.iteritems():
+            if isinstance(item, type) and item.__module__.split('.')[-1] == mname:
+                section = item.__dict__.get('__section__', mname)
+                opts = item.__dict__.get('__options__', ())
+                #if opts: print '  Options in %s:' % item.__name__
+                for option in opts: self.add_option(section, *option)
+                if hasattr(item, '__dict__'): self.get_options(mname, item)
+                #else: print '  Class %s has no __dict__?' % item.__name__
+    
+    def collect_modules(self, srcdir, dirname, fnames):
+        package = dirname.replace(srcdir, '').replace(path.sep, '.')
+        for name in fnames:
+            if name.endswith('.py'):
+                mname = name[:-3]
+                if package: module = __import__(package, {}, {}, mname)
+                else: module = __import__(mname, {}, {}, [])
+                #fname = path.join(dirname, name)
+                #print 'Processing %s as [%s]:' % (fname, module.__name__)
+                self.get_options(module.__name__, module)
+    
+    def print_section(self, section, comments):
+        print
+        print
+        print '[%s]' % section
+        for line in comments: print '#', line
+        for option in self.modules[section].keys():
+            print
+            for line in self.modules[section][option]:
+                print line
+    
+    def walk(self, directory):
+        path.walk(directory, self.collect_modules, directory)
+        for line in self.intro: print '#', line
+        for section in self.headers.keys():
+            header = self.headers[section]
+            if isinstance(header, str): header = (header,)
+            self.print_section(section, header)
+        for section in sorted(self.modules.keys()):
+            header = ('Options for the %s module.' % section,)
+            if section not in self.headers: self.print_section(section, header)
+
+if __name__ == "__main__":
+    ConfigPrinter().walk(path.split(__file__)[0])
