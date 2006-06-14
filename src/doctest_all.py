@@ -9,12 +9,12 @@ def _test():
     import doctest
     import sys
     
-    import config
     import functions
     import gameboard
     import language
     import orders
     import validation
+    import xtended
     
     # List of modules to test
     modules = [
@@ -25,7 +25,8 @@ def _test():
         validation,
     ]
     
-    extension = config.extend_globals(dict(language.protocol.base_rep))
+    extension = dict((name, getattr(xtended, name)) for name in xtended.__all__)
+    extension.update(language.protocol.base_rep)
     verbose = "-v" in sys.argv
     
     for mod in modules:

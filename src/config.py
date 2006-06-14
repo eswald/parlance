@@ -442,32 +442,6 @@ def read_representation_file(stream):
     else: return protocol.default_rep
 
 
-# Exporting variables
-def extend_globals(globs):
-    ''' Inserts into the given dictionary elements required by certain doctests.
-        Namely,
-        - standard_map
-        - standard_sco
-        - standard_now
-        - The default map tokens (ENG, NWY, etc.)
-        
-        This takes several seconds, so only do it if necessary.
-    '''#'''
-    from gameboard import Map
-    from language import protocol
-    opts = variants['standard']
-    standard_map = Map(opts)
-    extension = {
-        'standard_map': standard_map,
-        'standard_sco': opts.start_sco,
-        'standard_now': opts.start_now,
-        'default_rep': protocol.default_rep,
-        'base_rep': protocol.base_rep,
-    }
-    for name,token in opts.rep.items(): extension[name] = token
-    extension.update(globs)
-    return extension
-
 # Global variables
 variants = VariantDict()
 
