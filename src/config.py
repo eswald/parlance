@@ -278,7 +278,7 @@ class VerboseObject(Configurable):
     __options__ = (
         ('verbosity', int, 1, 'v',
             'How much debug or logging information to display.'),
-        ('log_file', file, None, None,
+        ('log_file', file, '', None,
             'File in which to log output lines, instead of printing them.'),
     )
     

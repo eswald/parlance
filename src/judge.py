@@ -48,12 +48,13 @@ class DatcOptions(Configuration):
     __section__ = 'datc'
     __options__ = (
         # Convoy issues
-        ('datc_4a1', datc('ab', 'ab'), 'b',
+        ('datc_4a1', datc('abc', 'ab'), 'b',
             'multi-route convoy disruption',
             '4.A.1.  MULTI-ROUTE CONVOY DISRUPTION',
             'a: A convoy is disrupted when any possible route is disrupted.',
             'b: A convoy is disrupted when all possible routes are disrupted.',
-            'DATC: b; DPTG: a; DAIDE: ?'),
+            'c: Multi-route convoys are not allowed.',
+            'DATC: b; DPTG: a; DAIDE: c'),
         ('datc_4a2', datc('abcdef', 'def'), 'd', # Todo: b
             'convoy disruption paradoxes',
             '4.A.2.  CONVOY DISRUPTION PARADOXES',
@@ -63,7 +64,7 @@ class DatcOptions(Configuration):
             "d: Convoyed armies in a paradoxical situation don't move.",
             'e: All moves in a paradoxical situation fail.',
             'f: All convoys fail if consistent; otherwise, all moves fail.',
-            'DATC: d; DPTG: f; DAIDE: ?'),
+            'DATC: d; DPTG: f; DAIDE: f'),
         ('datc_4a3', datc('abcdef', 'abcdef'), 'f',
             'convoying to adjacent place',
             '4.A.3.  CONVOYING TO ADJACENT PLACE',
@@ -79,13 +80,13 @@ class DatcOptions(Configuration):
             '4.A.4.  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY',
             'a: Support is not cut.',
             'b: Support is cut.',
-            'DATC: a; DPTG: b; DAIDE: ?'),
+            'DATC: a; DPTG: b; DAIDE: b'),
         ('datc_4a5', datc('ab', 'a'), 'b', # Todo: b
             'retreat when dislodged by convoy',
             '4.A.5.  RETREAT WHEN DISLODGED BY CONVOY',
             'a: Dislodged units may not retreat to the starting place of any attacker.',
             'b: Dislodged units may retreat to the starting place of a convoyed attacker.',
-            'DATC: b; DPTG: b; DAIDE: ?'),
+            'DATC: b; DPTG: b; DAIDE: a'),
         ('datc_4a6', datc('abc', 'b'), 'b', # Todo: ac
             'convoy path specification',
             '4.A.6.  CONVOY PATH SPECIFICATION',
@@ -98,7 +99,7 @@ class DatcOptions(Configuration):
             '4.A.7.  AVOIDING A HEAD TO HEAD BATTLE TO BOUNCE A UNIT',
             "a: Dislodged units never have effect on attacker's space.",
             "b: Dislodged units have no effect on attacker's space in head-to-head combat.",
-            'DATC: b; DPTG: b; DAIDE: ?'),
+            'DATC: b; DPTG: b; DAIDE: b'),
         
         # Coastal issues
         ('datc_4b1', datc('ab', 'a'), 'a',
@@ -200,12 +201,13 @@ class DatcOptions(Configuration):
             'c: Only the latest order set is considered, unless otherwise specified.',
             'd: Only the latest order set is considered.',
             'DATC: c; DPTG: ?; DAIDE: b'),
-        ('datc_4d2', datc('ab', ''), None,
+        ('datc_4d2', datc('abc', 'c'), 'c',
             'multiple order sets with undefined order',
             '4.D.2.  MULTIPLE ORDER SETS WITH UNDEFINED ORDER',
             'a: All units hold.',
             'b: All order sets are combined.',
-            'DATC: b; DPTG: ?; DAIDE: n/a'),
+            'c: Order sets must have a defined order.',
+            'DATC: b; DPTG: ?; DAIDE: c'),
         ('datc_4d3', datc('abc', 'b'), 'b',
             'multiple orders to the same unit',
             '4.D.3.  MULTIPLE ORDERS TO THE SAME UNIT',

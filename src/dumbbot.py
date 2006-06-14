@@ -117,15 +117,13 @@ class DumbBot_Values(Configuration):
             'if inferior move is nearly as good.',
             "Larger numbers mean less chance."),
         
+        # Formula for power size.
         ('size_square_coefficient', int, 1, 'square coefficient',
-            "Formula for power size. A in S = Ax^2 + Bx + C",
-            "where x is centre count and S is size of power"),
+            "A in S = Ax^2 + Bx + C, where x is centre count and S is size of power"),
         ('size_coefficient', int, 4, 'size coefficient',
-            "Formula for power size. B in S = Ax^2 + Bx + C",
-            "where x is centre count and S is size of power"),
+            "B in S = Ax^2 + Bx + C, where x is centre count and S is size of power"),
         ('size_constant', int, 16, 'size constant',
-            "Formula for power size. C in S = Ax^2 + Bx + C",
-            "where x is centre count and S is size of power"),
+            "C in S = Ax^2 + Bx + C, where x is centre count and S is size of power"),
         
         ('convoy_weight', int, 0, 'convoy weight',
             "Percentage value a convoy has compared to a comparable move.",
