@@ -88,7 +88,8 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
             but keep the MRT token.
         '''#'''
         self.results = self.judge.run()
-        map_units = [Message(unit).fold()[:4] for unit in self.judge.map.units]
+        map_units = [unit[:4] for msg in self.results
+                for unit in msg.fold()[2:] if msg[0] is NOW]
         for item in unit_list: self.assertContains(map_units, item)
         for item in map_units: self.assertContains(unit_list, item)
 

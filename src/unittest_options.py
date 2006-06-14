@@ -926,42 +926,37 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         ])
     def test_4B2_infer(self):
         '4.B.2.a  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE'
-        # Two tests are needed to distinguish this from case b (default coast).
+        # The pair of potentially bouncing fleets
+        # distinguish this from case b (default coast).
         self.judge.datc.datc_4b2 = 'a'
         steady_state = [
+            [FRA, FLT, MAR],
+            [ENG, FLT, GAS],
         ]
         self.init_state(SPR, 1901, steady_state + [
-            [FRA, FLT, MAR],
+            [TUR, FLT, RUM],
         ])
         self.legalOrder(FRA, [(FRA, FLT, MAR), MTO, SPA])
+        self.legalOrder(ENG, [(ENG, FLT, GAS), MTO, SPA])
+        self.legalOrder(TUR, [(TUR, FLT, RUM), MTO, BUL])
         self.assertMapState(steady_state + [
-            [FRA, FLT, [SPA, SCS]],
-        ])
-        self.init_state(SPR, 1901, steady_state + [
-            [FRA, FLT, GAS],
-        ])
-        self.legalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
-        self.assertMapState(steady_state + [
-            [FRA, FLT, [SPA, NCS]],
+            [TUR, FLT, [BUL, ECS]],
         ])
     def test_4B2_fail(self):
         '4.B.2.c  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE'
-        # Two tests are needed to distinguish this from case b (default coast).
+        # The pair of potentially bouncing fleets
+        # distinguish this from case b (default coast).
         self.judge.datc.datc_4b2 = 'c'
         steady_state = [
             [FRA, FLT, MAR],
+            [ENG, FLT, GAS],
+            [TUR, FLT, RUM],
         ]
         self.init_state(SPR, 1901, steady_state + [
         ])
         self.illegalOrder(FRA, [(FRA, FLT, MAR), MTO, SPA])
-        self.assertMapState(steady_state + [
-        ])
-        steady_state = [
-            [FRA, FLT, GAS],
-        ]
-        self.init_state(SPR, 1901, steady_state + [
-        ])
-        self.illegalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
+        self.illegalOrder(ENG, [(ENG, FLT, GAS), MTO, SPA])
+        self.illegalOrder(TUR, [(TUR, FLT, RUM), MTO, BUL])
         self.assertMapState(steady_state + [
         ])
     def test_4B3_infer(self):

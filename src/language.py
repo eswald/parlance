@@ -734,6 +734,13 @@ class Representation(Configurable):
     def __len__(self):
         return len(self.numbers)
     
+    def __str__(self):
+        ''' Reproduces the representation as a *.rem file.'''
+        result = "%d\n" % len(self)
+        for name, token in self.names.iteritems():
+            result += "%04X:%s\n" % (token.number, name)
+        return result
+    
     def items(self):
         ''' Creates a name -> token mapping.'''
         return self.names.items()
