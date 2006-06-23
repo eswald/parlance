@@ -203,7 +203,7 @@ class Connection(SocketWrapper):
             This implementation can be configured to always sends a full RM,
             or to rely on the default for the Standard map.
         '''#'''
-        if self.options.null_rm and self.rep is self.proto.default_rep:
+        if self.options.null_rm and self.rep == self.proto.default_rep:
             data = ''
         else:
             data = str.join('', (pack('!H3sx', token.number, name)
