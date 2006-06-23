@@ -379,6 +379,7 @@ def run_server(server_class, default_verbosity):
 class RawClient(object):
     ''' Simple client to translate DM to and from text.'''
     name = None
+    prefix = 'RawClient'
     def __init__(self, send_method, representation, manager):
         self.send_out  = send_method      # A function that accepts messages
         self.rep       = representation   # The representation message
