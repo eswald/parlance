@@ -49,6 +49,9 @@ class Connection(SocketWrapper):
             'Whether to send FM after receiving EM or FM.',
             'The extra FM may be useful to terminate input loops,',
             'particularly when using threads, but the protocol prohibits it.'),
+        ('null_rm', bool, False, 'send empty representation messages',
+            'Whether to send an empty RM for the standard map.',
+            'The standard says yes, but that may be changed soon.'),
     )
     
     def __init__(self):
@@ -197,12 +200,14 @@ class Connection(SocketWrapper):
         self.close()
     def send_RM(self):
         ''' Sends the representation message to the client.
-            This implementation always sends it,
-            instead of relying on default behavior.
+            This implementation can be configured to always sends a full RM,
+            or to rely on the default for the Standard map.
         '''#'''
-        data = ''
-        for name, token in self.rep.items():
-            data += pack('!H3sx', token.number, name)
+        if self.options.null_rm and self.rep is self.proto.default_rep:
+            data = ''
+        else:
+            data = str.join('', (pack('!H3sx', token.number, name)
+                        for name, token in self.rep.items()))
         self.send_dcsp(self.RM, data)
     def send_dcsp(self, msg_type, data):
         ''' Sends a DCSP message to the client.

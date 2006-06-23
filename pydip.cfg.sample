@@ -259,6 +259,11 @@
 # particularly when using threads, but the protocol prohibits it.
 ;echo_final = no
 
+# send empty representation messages (boolean)
+# Whether to send an empty RM for the standard map.
+# The standard says yes, but that may be changed soon.
+;null_rm = no
+
 
 [main]
 # Options used by the core program functionality.
