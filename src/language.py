@@ -657,15 +657,11 @@ def maybe_int(word):
     except: return word
     else:   return n
 
-def character(conf, option, section):
-    ''' Configuration getter for a single-character string.'''
-    text = conf.getstring(option, section)
-    if not text: result = None
-    elif len(text) > 1:
-        conf.warn('Only one character expected', option, section)
-        result = text[0]
-    else: result = text
-    return result
+def character(value):
+    ''' Configuration parser for a single-character string.'''
+    if len(value) != 1:
+        raise ValueError('Exactly one character expected')
+    return value
 
 class Representation(Configurable):
     ''' Holds and translates all tokens for a variant.

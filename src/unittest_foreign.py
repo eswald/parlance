@@ -88,7 +88,7 @@ def write_file(self, extension, contents):
 def setUp(self):
     ''' Initializes class variables for test cases.'''
     self.set_verbosity(0)
-    Configuration._local_opts.update(self.game_options)
+    Configuration._cache.update(self.game_options)
     variant = variants[self.variant_name]
     self.manager = ThreadManager()
     self.players = []

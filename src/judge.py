@@ -29,21 +29,19 @@ class DatcOptions(Configuration):
         A few options have additional possibilities, and some are unsupported.
     '''#'''
     class datc(object):
+        ''' Parser for a single DATC option.'''
+        __name__ = 'character'
         def __init__(self, possible, supported):
             self.possible = possible
             self.supported = supported
-        def __call__(self, conf, option, section):
-            result = None
-            if conf._user_config.has_option(section, option):
-                value = conf._user_config.get(section, option)
-                if len(text) > 1:
-                    conf.warn('Only one character expected', option, section)
-                    value = text[0]
-                if value in self.supported: result = value
-                elif value in self.possible:
-                    conf.warn('Unknown option', option, section)
-                else: conf.warn('Unsupported option', option, section)
-            return result
+        def __call__(self, value):
+            if len(value) != 1:
+                raise ValueError('Exactly one character expected')
+            elif value not in self.possible:
+                raise ValueError('Unknown selection')
+            elif value not in self.supported:
+                raise ValueError('Unsupported selection')
+            return value
     
     __section__ = 'datc'
     __options__ = (

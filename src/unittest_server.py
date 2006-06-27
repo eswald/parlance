@@ -140,7 +140,7 @@ class ServerTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        Configuration._local_opts.update(self.game_options)
+        Configuration._cache.update(self.game_options)
         self.manager = None
         self.server = None
     def tearDown(self):

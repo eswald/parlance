@@ -5,7 +5,7 @@
 
 import select
 from itertools import chain
-from sys       import argv
+from sys       import argv, exit
 from time      import sleep, time
 
 try: from threading import Thread
@@ -305,28 +305,10 @@ class ThreadManager(VerboseObject):
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
     name = player_class.name or player_class.__name__
-    num = 1
-    opts = {}
+    num = None
     countries = {}
-    try:
-        for arg in argv[1:]:
-            try: num = int(arg)
-            except ValueError:
-                if len(arg) > 3 and arg[3] == '=':
-                    if allow_country: countries[arg[:3].upper()] = int(arg[4:])
-                    else: raise ValueError
-                elif arg[:2] == '-v':
-                    Configuration.set_globally('verbosity', int(arg[2:]))
-                elif arg[0] == '-' or opts.has_key('host'): raise ValueError
-                else:
-                    index = arg.find(':')
-                    if index >= 0:
-                        opts['host'] = arg[:index]
-                        opts['port'] = int(arg[index+1:])
-                    else: opts['host'] = arg
-            else:
-                if not allow_multiple: raise ValueError
-    except:
+    
+    def usage(problem=None, *args):
         if allow_multiple:
             print 'Usage: %s [host][:port] [number]%s [-v<level>]' % (argv[0],
                     allow_country and ' [power=passcode] ...' or '')
@@ -335,46 +317,58 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
             print 'Usage: %s [host][:port]%s -v<level>' % (argv[0],
                     allow_country and ' [power=passcode]' or '')
             print 'Connects a copy of %s to <host>:<port>' % name
-    else:
-        Configuration._local_opts.update(opts)
-        manager = ThreadManager()
-        while num > 0 or countries:
-            num -= 1
-            if countries:
-                nation, pcode = countries.popitem()
-                result = manager.add_client(player_class,
-                        power=nation, passcode=pcode)
-            else: result = manager.add_client(player_class)
-            if not result: print 'Failed to start %s.  Sorry.' % name
-        manager.run()
+        if problem: print str(problem) % args
+        exit(1)
+    
+    remainder = Configuration.arguments
+    #try: remainder = Configuration.parse_argument_list(argv[1:])
+    #except Exception, err: usage(err)
+    host = Configuration._args.get('host')
+    for arg in remainder:
+        if arg.isdigit():
+            if not allow_multiple:
+                usage('%s does not support multiple copies.', name)
+            elif num is None: num = int(arg)
+            else: usage()       # Only one number specification allowed
+        elif len(arg) > 3 and arg[3] == '=':
+            if allow_country: countries[arg[:3].upper()] = int(arg[4:])
+            else: usage('%s does not accept country codes.', name)
+        elif host is None: Configuration.set_globally('host', arg)
+        else: usage()           # Only one host specification allowed
+    if num is None: num = 1
+    
+    manager = ThreadManager()
+    while num > 0 or countries:
+        num -= 1
+        if countries:
+            nation, pcode = countries.popitem()
+            result = manager.add_client(player_class,
+                    power=nation, passcode=pcode)
+        else: result = manager.add_client(player_class)
+        if not result: manager.log_debug(1, 'Failed to start %s.  Sorry.', name)
+    manager.run()
 
 def run_server(server_class, default_verbosity):
-    verbosity = default_verbosity
-    opts = {}
-    try:
-        for arg in argv[1:]:
-            if arg[:2] == '-v': verbosity = int(arg[2:])
-            elif arg[:2] == '-g':
-                games = int(arg[2:])
-                opts['games'] = games
-                opts['number of games'] = games
-            elif variants.has_key(arg):
-                opts['variant'] = arg
-                opts['default variant'] = arg
-    except:
+    def usage(problem=None, *args):
         print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % (argv[0],)
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
-    else:
-        Configuration._local_opts.update(opts)
-        Configuration.set_globally('verbosity', verbosity)
-        manager = ThreadManager()
-        server = ServerSocket(server_class, manager)
-        if server.open():
-            manager.add_polled(server)
-            manager.run()
-        else: server.log_debug(1, 'Failed to open the server.')
-
-# Todo: Use a full option-parsing system, instead of this ad-hoc stuff.
+        if problem: print str(problem) % args
+        exit(1)
+    Configuration._args.setdefault('verbosity', default_verbosity)
+    opts = {}
+    remainder = Configuration.arguments
+    #try: remainder = Configuration.parse_argument_list(argv[1:])
+    #except: usage()
+    if remainder:
+        if variants.has_key(remainder[0]):
+            Configuration.set_globally('variant', remainder[0])
+        else: usage('Unknown variant %r', remainder[0])
+    manager = ThreadManager()
+    server = ServerSocket(server_class, manager)
+    if server.open():
+        manager.add_polled(server)
+        manager.run()
+    else: server.log_debug(1, 'Failed to open the server.')
 
 class RawClient(object):
     ''' Simple client to translate DM to and from text.'''

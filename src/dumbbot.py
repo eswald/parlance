@@ -22,7 +22,7 @@ from copy         import copy
 from random       import randint, random, shuffle
 from time         import ctime
 
-from config       import Configuration
+from config       import Configuration, stringlist
 from functions    import defaultdict, expand_list, version_string
 from gameboard    import Unit
 from orders       import *
@@ -41,14 +41,12 @@ class DumbBot_Values(Configuration):
         A few of these values enable features not available to DumbBot;
         the default values for these disable them.
     '''#'''
-    def intlist(self, option, section):
-        strings = self.getlist(option, section)
-        if strings:
-            try: result = map(int, strings)
-            except ValueError:
-                self.warn('Invalid list of integers', option, section)
-                result = None
-        else: result = None
+    def intlist(self, value):
+        ''' Parser for a list of integers.'''
+        strings = stringlist(value)
+        try: result = map(int, strings)
+        except ValueError:
+            raise ValueError('Invalid list of integers')
         return result
     
     __options__ = (

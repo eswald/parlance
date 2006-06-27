@@ -10,10 +10,38 @@
 import re
 from ConfigParser import RawConfigParser
 from os           import linesep, path
+from sys          import argv
 from weakref      import WeakValueDictionary
 
-from functions import any, autosuper, defaultdict, settable_property
+from functions import any, autosuper, defaultdict, expand_list, \
+        s, settable_property
 
+# Parsers for standard option types
+def boolean(value):
+    if value.lower() in ('yes', 'true', 'on', True):
+        result = True
+    elif value.lower() in ('no', 'false', 'off', False):
+        result = False
+    else: raise ValueError('Unrecognized boolean value; try "yes" or "no"')
+    return result
+def number(value):
+    try: result = float(value)
+    except ValueError:
+        raise ValueError('Unrecognized numeric value')
+def integer(value):
+    # Todo: Recognize a leading zero as indicating an octal value.
+    try: result = int(value)
+    except ValueError:
+        try: result = int(value, 16)
+        except ValueError:
+            raise ValueError('Unrecognized integer value')
+    return result
+def string(value):
+    return value
+def stringlist(value):
+    result = [r for r in [s.strip() for s in value.split(',')] if r]
+    return result
+    
 # Various option classes.
 class Configuration(object):
     ''' Container for various configurable settings and constants.
@@ -36,7 +64,8 @@ class Configuration(object):
     __metaclass__ = autosuper
     _user_config = RawConfigParser()
     _user_config.read(['pydip.cfg', path.expanduser('~/.pydiprc')])
-    _local_opts = {}
+    _cache = {}
+    _args = {}
     _configurations = WeakValueDictionary()
     
     def __init__(self):
@@ -49,96 +78,149 @@ class Configuration(object):
             for item in opts: self.add_option(section, *item)
     def add_option(self, section, name, option_type, default, alt_names, *help):
         value = default
-        if self._local_opts.has_key(name):
-            value = self._local_opts[name]
+        if self._cache.has_key(name):
+            value = self._cache[name]
         else:
-            get = self.__getters.get(option_type, option_type)
-            conf_val = get(self, name, section)
-            if conf_val is not None: value = conf_val
-            elif isinstance(alt_names, str):
-                if len(alt_names) > 1:
-                    val = get(self, alt_names, section)
-                    if val is not None: value = val
+            parser = self._validators.get(option_type, option_type)
+            def attempt_arg(option):
+                result = None
+                if self._args.has_key(option):
+                    val = self._args[option]
+                    try: result = parser(val)
+                    except ValueError, err:
+                        print ('Warning: Illegal value for argument %s: '
+                                '%r (%s)' % (option, val, str(err)))
+                return result
+            def attempt_file(option):
+                result = None
+                if self._user_config.has_option(section, option):
+                    val = self._user_config.get(section, option)
+                    try: result = parser(val)
+                    except ValueError, err:
+                        print ('Warning: Illegal value for %s, in section '
+                                '%s of the configuration file: %r (%s)'
+                                % (option, section, val, str(err)))
+                return result
+            
+            if isinstance(alt_names, str):
+                canon = self.canonical_name(alt_names)
+                if canon and canon != alt_names:
+                    names = (name, alt_names, canon)
+                else: names = (name, alt_names)
             elif alt_names:
+                names = (name,)
                 for item in alt_names:
-                    if len(item) > 1:
-                        val = get(self, item, section)
-                        if val is not None:
-                            value = val
-                            break
-            self._local_opts[name] = value
+                    canon = self.canonical_name(item)
+                    if canon and canon != item:
+                        names += (item, canon)
+                    else: names += (item,)
+            else: names = (name,)
+            
+            # Check the config file(s) first, so an argument overrides it.
+            for item in names:
+                val = attempt_file(item)
+                if val is not None:
+                    value = val
+                    break
+            for item in names:
+                val = attempt_arg(item)
+                if val is not None:
+                    value = val
+                    break
+            
+            # Cache the result, so we don't have to go through this again.
+            self._cache[name] = value
         setattr(self, name, value)
+    
+    @staticmethod
+    def canonical_name(option_name):
+        while option_name and not option_name[0].isalpha():
+            option_name = option_name[1:]
+        if len(option_name) == 1:
+            # Case matters for single-char options
+            result = option_name
+        elif len(option_name) > 3:
+            # Lower-case most names
+            result = option_name.lower().replace('-', '_').replace(' ', '_')
+        elif option_name.isalpha():
+            # Upper-case TLAs
+            result = option_name.upper()
+        else: result = None
+        return result
+    @classmethod
+    def parse_argument(klass, arg):
+        if not arg: return False
+        result = False
+        if arg[0] == '-':
+            if arg[1] == '-':
+                if len(arg) > 2:
+                    index = arg.find('=')
+                    if index < 0:
+                        name = klass.canonical_name(arg[2:])
+                        if name:
+                            klass._args[name] = True
+                            result = True
+                    elif index > 2:
+                        name = klass.canonical_name(arg[2:index])
+                        if name:
+                            klass._args[name] = arg[index + 1:]
+                            result = True
+                elif len(arg) == 2: raise StopIteration
+            elif arg[1].isalpha():
+                if len(arg) == 2:
+                    klass._args[arg[1]] = False
+                    result = True
+                else:
+                    klass._args[arg[1]] = arg[2:]
+                    result = True
+        elif arg[0] == '+':
+            if len(arg) == 2 and arg[1].isalpha():
+                klass._args[arg[1]] = True
+                result = True
+        else:
+            index = arg.find(':')
+            port = arg[index+1:]
+            if index >= 0 and port.isdigit():
+                if index > 0: klass._args['host'] = arg[:index]
+                klass._args['port'] = int(port)
+                result = True
+            elif not port:
+                # Handle "example.tld:" as a host name, with default port.
+                # Do we really want this?
+                klass._args['host'] = arg[:index]
+                result = True
+        return result
+    @classmethod
+    def parse_argument_list(klass, args):
+        ''' Collects options from the given argument list,
+            returning any unparsable ones.
+        '''#'''
+        if klass._cache:
+            print ('Warning: Option%s %s set before command-line parsing'
+                    % (s(len(klass._cache)), expand_list(klass._cache.keys())))
+        result = [arg for arg in args if not klass.parse_argument(arg)]
+        return result
     
     @classmethod
     def set_globally(klass, name, value):
-        klass._local_opts[name] = value
+        klass._cache[name] = value
         for conf in klass._configurations.values():
             if hasattr(conf, name): setattr(conf, name, value)
     def update(self, option_dict):
         for key in option_dict:
             if hasattr(self, key):
                 setattr(self, key, option_dict[key])
-    def warn(self, line, option, section, suggestion=None):
-        line = 'Warning: %s for %s, in section %s of the configuration file.'
-        if suggestion: line += '  ' % suggestion
-        print line % (line, option, section)
     
-    # Getters for standard item types
-    def getboolean(self, option, section):
-        if self._user_config.has_option(section, option):
-            try: result = self._user_config.getboolean(section, option)
-            except ValueError:
-                self.warn('Unrecognized boolean value', option, section,
-                        'Try "yes" or "no".')
-                result = None
-        else: result = None
-        return result
-    def getfloat(self, option, section):
-        if self._user_config.has_option(section, option):
-            try: result = float(self.getstring(option, section))
-            except ValueError:
-                self.warn('Unrecognized numeric value', option, section)
-                result = None
-        else: result = None
-        return result
-    def getint(self, option, section):
-        if self._user_config.has_option(section, option):
-            try: result = self._user_config.getint(section, option)
-            except ValueError:
-                try: result = int(self.getstring(option, section), 16)
-                except ValueError:
-                    self.warn('Unrecognized integer value', option, section)
-                    result = None
-        else: result = None
-        return result
-    def getstring(self, option, section):
-        if self._user_config.has_option(section, option):
-            result = self._user_config.get(section, option)
-        else: result = None
-        return result
-    def getlist(self, option, section):
-        text = self.getstring(option, section)
-        if text is None: result = None
-        else: result = [r for r in [s.strip() for s in text.split(',')] if r]
-        return result
-    
-    __getters = {
-        bool: getboolean,
-        float: getfloat,
-        int: getint,
-        str: getstring,
-        file: getstring,  # Todo: Write something to verify this
-        list: getlist,
+    _validators = {
+        bool: boolean,
+        float: number,
+        int: integer,
+        str: string,
+        file: string,  # Todo: Write something to verify this
+        list: stringlist,
     }
+Configuration.arguments = Configuration.parse_argument_list(argv[1:])
 
-class SyntaxOptions(Configuration):
-    ''' Options needed by this configuration script.'''
-    __section__ = 'syntax'
-    __options__ = (
-        # path.abspath(__file__) would be useful here.
-        ('variant_file', file, path.join('docs', 'variants.html'), 'variants file',
-            'Document listing the available map variants, with their names and files.'),
-    )
 class GameOptions(Configuration):
     ''' Options sent in the HLO message.'''
     __section__ = 'game'
@@ -395,8 +477,16 @@ def parse_file(filename, parser):
 
 class VariantDict(dict):
     ''' Simple way to avoid parsing the variants file until we need to.'''
-    options = SyntaxOptions()
+    __section__ = 'syntax'
+    __options__ = (
+        # path.abspath(__file__) could be useful here.
+        ('variant_file', file, path.join('docs', 'variants.html'), 'variants file',
+            'Document listing the available map variants, with their names and files.'),
+    )
     
+    def __init__(self):
+        self.options = Configuration()
+        self.options.parse_options(self.__class__)
     def __getitem__(self, key):
         if not self: parse_file(self.options.variant_file, self.parse_variants)
         return dict.__getitem__(self, key)
@@ -418,6 +508,12 @@ class VariantDict(dict):
                 elif '</tr>' in line:
                     self[name] = MapVariant(name, descrip, files)
                     descrip = name = None
+    def has_key(self, key):
+        if not self: parse_file(self.options.variant_file, self.parse_variants)
+        return dict.has_key(self, key)
+    def get(self, key):
+        if not self: parse_file(self.options.variant_file, self.parse_variants)
+        return dict.get(self, key)
 
 def read_representation_file(stream):
     ''' Parses a representation file.
@@ -467,7 +563,6 @@ class ConfigPrinter(Configuration):
             'bool': 'boolean',
             'float': 'number',
             'intlist': 'list of integers',
-            'datc': 'character',
         }
         
         self.intro = (
@@ -526,7 +621,7 @@ class ConfigPrinter(Configuration):
             main_name = alt_names
         else: main_name = name
         
-        type_name = getattr(option_type, '__name__', option_type.__class__.__name__)
+        type_name = option_type.__name__
         default_value = self.value_string(name, default)
         text = ['# %s (%s)' % (main_name, self.names.get(type_name, type_name))]
         text.extend('# ' + line for line in help)

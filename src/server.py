@@ -60,7 +60,7 @@ class Server(VerboseObject):
         administering socket connections and game creation.
     '''#'''
     __options__ = (
-        ('games', int, 1, 'number of games',
+        ('games', int, 1, ('g', 'number of games'),
             'Minimum number of games to play before server stops.',
             'Use 0 to prevent the server from shutting down automatically.'),
         ('variant', str, 'standard', 'default variant',

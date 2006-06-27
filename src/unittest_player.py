@@ -40,7 +40,7 @@ class PlayerTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
-        Configuration._local_opts.update(self.game_options)
+        Configuration._cache.update(self.game_options)
         self.variant = variants['standard']
         opts = GameOptions()
         self.params = opts.get_params()
