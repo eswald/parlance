@@ -18,9 +18,9 @@ from functions import any, autosuper, defaultdict, expand_list, \
 
 # Parsers for standard option types
 def boolean(value):
-    if value.lower() in ('yes', 'true', 'on', True):
+    if str(value).lower() in ('yes', 'true', 'on'):
         result = True
-    elif value.lower() in ('no', 'false', 'off', False):
+    elif str(value).lower() in ('no', 'false', 'off'):
         result = False
     else: raise ValueError('Unrecognized boolean value; try "yes" or "no"')
     return result
