@@ -408,9 +408,7 @@ class Token(_integer_Token):
             >>> IntegerToken(-3).category_name()
             'Integers'
         '''#'''
-        cat = self.category
-        if protocol.token_cats.has_key(cat): return protocol.token_cats[cat]
-        else: return 'Unavailable'
+        return protocol.token_cats.get(self.category, 'Unknown')
     def value(self):
         ''' Returns a numerical value for the token.
             For integers, this is the value of the number;
