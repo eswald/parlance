@@ -118,9 +118,23 @@ They are:</p>
 	WAL, WAR, WES, YOR.</b> Alternative abbreviations must not be used.
 	These may be changed for variants other than Standard;
 	<a href="#MAP">see the <b>MAP</b> token</a> for details.</li>
-	<!-- Note: The BNF portion of this document could be stricter on
-	non-SC provinces, sea provinces, and bicoastal provinces, but
-	the order notes are a much friendlier way to catch mistakes. -->
+
+	<!-- Note: The following strict definitions are to be used in
+	checking press and MDF messages, but the order notes are a much
+	friendlier way to catch mistakes in a SUB order.
+
+	<h4>bicoastal_province = Bicoastal_non-SC</h4>
+	<h4>bicoastal_province = Bicoastal_SC</h4>
+	<h4>coastal_province = Coastal_non-SC</h4>
+	<h4>coastal_province = Coastal_SC</h4>
+	<h4>sea_province = Sea_non-SC</h4>
+	<h4>sea_province = Sea_SC</h4>
+
+	<h4>land_province = bicoastal_province</h4>
+	<h4>land_province = coastal_province</h4>
+	<h4>land_province = Inland_non-SC</h4>
+	<h4>land_province = Inland_SC</h4>
+	-->
 
 	<!-- <h4>coast = Coasts</h4> -->
 	<li>Coast &mdash; can be one of <b>NCS, NEC, ECS, SEC</b>;
@@ -332,7 +346,11 @@ for two or more powers, <b>power</b> may be of the form <b>(power power
 build new units, but are not necessarily the location where the units
 start the game.</p>
 
-<!-- <h4>non_supply_centres = province province ...</h4> -->
+<!-- <h4>non_supply_centres = non_supply_province non_supply_province ...</h4> -->
+<!-- <h4>non_supply_province = Inland_non-SC</h4> -->
+<!-- <h4>non_supply_province = Sea_non-SC</h4> -->
+<!-- <h4>non_supply_province = Coastal_non-SC</h4> -->
+<!-- <h4>non_supply_province = Bicoastal_non-SC</h4> -->
 <p><b>(non_supply_centres)</b> is the list of all non-supply-centre provinces.</p>
 
 <!-- <h4>adjacencies = (prov_adj) (prov_adj) ...</h4> -->
@@ -366,8 +384,8 @@ adj_prov ...) ...)</b>-->.</p>
 <p><b>adj_prov</b> is one of:</p>
 <ul>
 	<li><b>adj_prov = province</b> &mdash; a province that can be moved to</li>
-	<li><b>adj_prov = (province coast)</b> &mdash; a coast of a province
-	that can be moved to</li>
+	<li><b>adj_prov = (bicoastal_province coast)</b> &mdash; a coast of a
+	province that can be moved to</li>
 	<!--<li><b>adj_prov != (province border_type)</b> &mdash; a province
 	that can be moved to only through a special type of border</li>-->
 </ul>
@@ -548,7 +566,12 @@ started.</p>
 
 <h4><a name="NOW">server_message = NOW</a> (turn) (unit) (unit) ...</h4>
 <!-- <h4>turn = season number</h4> -->
-<!-- <h4>unit = power unit_type adj_prov</h4> -->
+<!-- <h4>unit = army</h4> -->
+<!-- <h4>unit = fleet</h4> -->
+<!-- <h4>army = power AMY land_province</h4> -->
+<!-- <h4>fleet = power FLT sea_province</h4> -->
+<!-- <h4>fleet = power FLT coastal_province</h4> -->
+<!-- <h4>fleet = power FLT (bicoastal_province coast)</h4> -->
 
 <p>This is sent from the server to the client at the start of the game,
 and after every turn. It indicates the current turn, and the current
@@ -609,7 +632,7 @@ recalculated.  If the server does not support this, it will send
 <h3>(iii) Submitting orders</h3>
 
 <h4><a name="SUB">player_request = SUB</a> (order) (order) ...</h4>
-<!-- <h4>player_request != SUB (loose_order) (loose_order) ...</h4> -->
+<!-- <h4>player_request = SUB (loose_order) (loose_order) ...</h4> -->
 
 <p>This is sent from the player to the server, to submit orders for the
 next turn. <b>order</b> can take the following form:</p>
@@ -617,22 +640,22 @@ next turn. <b>order</b> can take the following form:</p>
 	<li>Movement phase orders:<ul>
 		<!-- <h4>loose_order = ordered_unit HLD</h4> -->
 		<li><b>order = (unit) HLD</b> &mdash; Hold</li>
-		<!-- <h4>loose_order = ordered_unit MTO adj_prov</h4> -->
-		<!-- <h4>order = (unit) MTO adj_prov</h4> -->
+		<!-- <h4>loose_order = ordered_unit MTO loose_province</h4> -->
+		<!-- <h4>order = (fleet) MTO (bicoastal_province coast)</h4> -->
 		<li><b>order = (unit) MTO province</b> &mdash; Move</li>
 		<!-- <h4>loose_order = ordered_unit SUP ordered_unit</h4> -->
 		<li><b>order = (unit) SUP (unit)</b> &mdash; Support to hold</li>
-		<!-- <h4>loose_order = ordered_unit SUP ordered_unit MTO adj_prov</h4> -->
+		<!-- <h4>loose_order = ordered_unit SUP ordered_unit MTO loose_province</h4> -->
 		<li><b>order = (unit) SUP (unit) MTO prov_no_coast</b> &mdash; Support to move</li>
-		<!-- <h4>loose_order = ordered_unit CVY ordered_unit CTO adj_prov</h4> -->
+		<!-- <h4>loose_order = ordered_unit CVY ordered_unit CTO loose_province</h4> -->
 		<li><b>order = (unit) CVY (unit) CTO province</b> &mdash; Convoy</li>
-		<!-- <h4>loose_order = ordered_unit CTO adj_prov [VIA (province province ...)]</h4> -->
+		<!-- <h4>loose_order = ordered_unit CTO loose_province [VIA (province province ...)]</h4> -->
 		<li><b>order = (unit) CTO province VIA (sea_province sea_province ...)</b> &mdash; Move by convoy</li>
 	</ul></li>
 
 	<li>Retreat phase orders:<ul>
-		<!-- <h4>loose_order = ordered_unit RTO adj_prov</h4> -->
-		<!-- <h4>order = (unit) RTO adj_prov</h4> -->
+		<!-- <h4>loose_order = ordered_unit RTO loose_province</h4> -->
+		<!-- <h4>order = (fleet) RTO (bicoastal_province coast)</h4> -->
 		<li><b>order = (unit) RTO province</b> &mdash; Retreat to</li>
 		<!-- <h4>loose_order = ordered_unit DSB</h4> -->
 		<li><b>order = (unit) DSB</b> &mdash; Disband unit</li>
@@ -648,18 +671,20 @@ next turn. <b>order</b> can take the following form:</p>
 	</ul></li>
 </ul>
 
+<!-- <h4>loose_province = province</h4> -->
+<!-- <h4>loose_province = (province coast)</h4> -->
 <!-- <h4>ordered_unit = (unit)</h4> -->
+<!-- <h4>ordered_unit = (power unit_type loose_province)</h4> -->
 <!-- <h4>ordered_unit = province</h4> -->
-<!-- <h4>ordered_unit = (adj_prov)</h4> -->
-<!-- <h4>ordered_unit = (power adj_prov)</h4> -->
-<!-- <h4>ordered_unit = (unit_type adj_prov)</h4> -->
+<!-- <h4>ordered_unit = (loose_province)</h4> -->
+<!-- <h4>ordered_unit = (power loose_province)</h4> -->
+<!-- <h4>ordered_unit = (unit_type loose_province)</h4> -->
 <p><b>unit</b> is a unit, and must be in the form as given by <a href="#NOW">the <b>NOW</b> command</a> &mdash; that is, <b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
 <p><b>province</b> is any province. For a fleet moving to a province
 with multiple coasts (Spain, St. Petersburg, or Bulgaria on the Standard
 map), it must be of the form <b>(province coast)</b>.</p>
 <!-- <h4>prov_no_coast = province</h4> -->
 <p><b>prov_no_coast</b> is a province with no coast specification.</p>
-<!-- <h4>sea_province = province</h4> -->
 <p><b>sea_province</b> is a province where a fleet may be to convoy.</p>
 
 <p>Examples:</p>

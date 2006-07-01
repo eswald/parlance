@@ -41,6 +41,7 @@ class BlabberBot(DumbBot):
                 self.random_expression('press_message'))
         self.manager.add_timed(self, 5 + random() * 10)
     def random_expression(self, expression):
+        self.log_debug(11, 'random_expression(%r)', expression)
         try: items = self.syntax[expression]
         except KeyError:
             options = Validator.syntax.get(expression)
@@ -59,6 +60,7 @@ class BlabberBot(DumbBot):
             if result: break
         return result
     def random_option(self, option):
+        self.log_debug(11, 'random_option(%r)', option)
         in_sub = in_cat = False
         repeat = 1
         partial = None
@@ -103,6 +105,7 @@ class BlabberBot(DumbBot):
                 repeat = 1
         return msg
     def random_category(self, category):
+        self.log_debug(11, 'random_category(%r)', category)
         result = None
         if category == 'Powers':
             result = choice(self.map.powers.keys())
@@ -117,9 +120,11 @@ class BlabberBot(DumbBot):
         elif category == 'Text':
             result = StringToken(choice("'abcdefghijklmnopqrstuvwxyz "
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ +-*/0123456789.?'))
-        elif category[-2:] == 'SC':
-            result = choice([prov for prov in self.map.spaces.keys()
-                    if prov.is_supply()])
+        elif category.endswith('SC'):
+            cat = category.replace('_', ' ')
+            provs = [prov for prov in self.map.spaces.keys()
+                    if prov.category_name() == cat]
+            if provs: result = choice(provs)
         elif category == 'Token':
             result = self.random_category(choice(['Provinces',
                 'Powers', 'Phases', 'Integers', 'Coasts', 'Text']))
