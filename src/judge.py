@@ -556,6 +556,7 @@ class Judge(JudgeInterface):
         msg = self.check_draw()
         if msg:
             results = [msg]
+            self.game_result = msg
             self.phase = None
         else:
             # Report civil disorders
