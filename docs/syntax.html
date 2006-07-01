@@ -57,6 +57,7 @@ more consistent.</p>
 <!--
 <h4>message = server_message</h4>
 <h4>message = client_message</h4>
+<h4>message = player_message</h4>
 
 <p>Each <a href="protocol.html#DM">Diplomacy Message</a> must conform to the
 syntax of a <b>message</b>.  A <b>server_message</b> is anything that
@@ -86,6 +87,16 @@ is usually a request for information.  If the server cannot send the
 requested message for some reason, often because the game has not yet
 started, it should instead send <b>REJ (client_request)</b>.
 There are currently no <b>server_request</b> messages.</p>
+
+<h4>player_message = player_command</h4>
+<h4>player_message = player_request</h4>
+<h4>client_command = player_command</h4>
+<h4>client_request = player_request</h4>
+
+<p>A <b>player_message</b> is a message sent from the client to the server,
+but only after the server has assigned that client as a player in its current
+game.  Likewise, a <b>player_command</b> is a command sent only by a player,
+and a <b>player_request</b> is a request sent only by a player.</p>
 -->
 
 <p>There are a number of terms which are used by a lot of commands.
@@ -597,8 +608,8 @@ recalculated.  If the server does not support this, it will send
 
 <h3>(iii) Submitting orders</h3>
 
-<h4><a name="SUB">client_request = SUB</a> (order) (order) ...</h4>
-<!-- <h4>client_request != SUB (loose_order) (loose_order) ...</h4> -->
+<h4><a name="SUB">player_request = SUB</a> (order) (order) ...</h4>
+<!-- <h4>player_request != SUB (loose_order) (loose_order) ...</h4> -->
 
 <p>This is sent from the player to the server, to submit orders for the
 next turn. <b>order</b> can take the following form:</p>
@@ -703,8 +714,8 @@ if the game has not started.</p>
 rejected by the server, and a corrected order should be submitted in its
 place.</p>
 
-<!-- <h4>client_command = NOT (SUB (loose_order))</h4> -->
-<!-- <h4>client_command = NOT (SUB)</h4> -->
+<!-- <h4>player_command = NOT (SUB (loose_order))</h4> -->
+<!-- <h4>player_command = NOT (SUB)</h4> -->
 <p>Movement and retreat orders can be changed by giving a new order for
 a unit. Builds and retreats can be cancelled by ordering
 <b>NOT (SUB (order))</b>.  The server will reply to this with <b>YES
@@ -732,7 +743,7 @@ many more builds.</p>
 <p>The first two forms of the <b>MIS</b> command use exactly the same
 parameter format as <a href="#NOW">the <b>NOW</b> command</a>.</p>
 
-<!-- <h4>client_request = MIS</h4> -->
+<!-- <h4>player_request = MIS</h4> -->
 <!-- <h4>server_message = MIS</h4> -->
 <p>The player may request a copy of the current <b>MIS</b> command by
 sending <b>MIS</b> with no parameters.  The server will respond with
@@ -740,7 +751,7 @@ sending <b>MIS</b> with no parameters.  The server will respond with
 are no outstanding orders, then the server will reply with <b>MIS</b>
 with no parameters.</p>
 
-<h4><a name="GOF">client_command = NOT (GOF)</a></h4>
+<h4><a name="GOF">player_command = NOT (GOF)</a></h4>
 
 <p>This is sent by the player to the server. It tells the server not to
 process orders until the deadline. It is the equivalent of set wait on
@@ -748,7 +759,7 @@ the judges. The server will reply with <b>YES (NOT (GOF))</b>, or
 <b>REJ (NOT (GOF))</b> if the game has not started, the power has been
 eliminated, or the game has ended.</p>
 
-<h4>client_command = GOF</h4>
+<h4>player_command = GOF</h4>
 
 <p>Go ahead and process orders when everybody is in. The server will
 reply with <b>REJ (GOF)</b> if the game has not started or has ended, or
@@ -1023,7 +1034,7 @@ reply.  The recipient should reply with <b>YES (PNG
 that the game has ended due to a solo by the specified power.  It is
 sent after the <b>SCO</b> message and before the <b>NOW</b> message.</p>
 
-<h4><a name="DRW">client_command = DRW</a></h4>
+<h4><a name="DRW">player_command = DRW</a></h4>
 
 <p>This command is sent by the player to the server, to indicate that
 the player would accept a DIAS draw at this point. The server responds
@@ -1041,7 +1052,7 @@ accept a draw at that point.</p>
 server, then the command is ignored. The player must resend the command
 each turn if it continues to want a draw.</p>
 
-<!-- <h4>client_command = NOT (DRW)</h4> -->
+<!-- <h4>player_command = NOT (DRW)</h4> -->
 <p>If the player changes its mind, it can clear its request for a draw
 with <b>NOT (DRW)</b>. The server will respond with
 <b>YES (NOT (DRW))</b>, or <b>REJ (NOT (DRW))</b> if the game has not
@@ -1091,7 +1102,7 @@ also be given at the start of the game:</p>
 <p>In a <b>PDA</b> variant game, the player can send the <b>DRW</b>
 command with a parameter &mdash; the list of powers in the draw:</p>
 
-<h4>{PDA} client_command = DRW (power power power ...)</h4>
+<h4>{PDA} player_command = DRW (power power power ...)</h4>
 
 <p>If all surviving powers submit a <b>DRW</b> command with the same
 list of powers on the same turn, then a draw is immediately declared
@@ -1115,7 +1126,7 @@ draw.</p>
 <b>PDA</b> game &mdash; it is the same as sending a <b>DRW</b> command
 listing all surviving powers.</p>
 
-<!-- <h4>{PDA} client_command = NOT (DRW (power power power ...))</h4> -->
+<!-- <h4>{PDA} player_command = NOT (DRW (power power power ...))</h4> -->
 <p>The player can cancel a partial draw request with <b>NOT (DRW (power power power ...))</b>.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
