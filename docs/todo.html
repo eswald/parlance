@@ -9,6 +9,14 @@
     <p>These are items that I want to add to the PyDip package, in my
       <a name='http://catb.org/~esr/jargon/html/C/copious-free-time.html'>copious
         free time</a>, listed in no particular order.</p>
+    
+    <h2>Documentation</h2>
+    <p>The software needs some package-level documentation, beyond the page
+      specific to the public server.  Consider a readme, a change list, and
+      usage notes.</p>
+    <p>Potential bot writers in particular need a lot more help than I
+      currently give them.  Perhaps a template bot file, with all sorts of
+      extra information.</p>
 
     <h2>Scorekeeping</h2>
     <p>The server should probably keep and publish statistics on games played.
@@ -77,12 +85,11 @@
       Mac users to be able to run this out of the box (so to speak).</p>
     
     <h2>DATC Options</h2>
-    <p>I should test David's server for its response to the DATC options; for
-      that matter, I should verify that it passes the normal tests.  Again,
-      the <code>subprocess</code> module may be useful here.</p>
     <p>Various tests have yet to be written, and many options have yet to be
       supported.  The comments in the config file should also reflect the lack
       of support for various options.</p>
+    <p>Perhaps the syntax checking should reflect certain DATC options.  As it
+      is, some options can be rendered useless by the overly strict syntax.</p>
     
     <h2>Refactoring</h2>
     <p>The various bot modules should be in a subdirectory, as should the test
@@ -104,7 +111,6 @@
     <p>Some modules could give explanatory messages instead of doing nothing
       when run as a script.  Ideas:
       <table>
-        <tr><td>config</td><td>create a sample pydip.cfg file</td></tr>
         <tr><td>gameboard</td><td>?</td></tr>
         <tr><td>judge</td><td>?</td></tr>
         <tr><td>language</td><td>Show the base token values?</td></tr>
@@ -114,8 +120,6 @@
         <tr><td>xtended</td><td>Show the standard token values?</td></tr>
       </table>
     </p>
-    <p>The command-line interface could use some serious option parsing,
-      probably tying into the config options.</p>
     <p>Output might be better run through the <code>logger</code> package.</p>
     <p>Graphics would probably be a good idea.  Particularly a map.</p>
     <p>Bot developers are requesting a real-time display of all press in the
@@ -142,11 +146,6 @@
       hours.  This is not official.  Better would be to have an optional
       second parameter for the hours, so the time can still be accurate to the
       second.</p>
-    <p>The LST command could use a "status" field, with basically the
-      information returned by <a href='commands.html#status'>the status admin
-        command</a>.  A text field seems appropriate, because we don't have
-      good tokens for most possibilities, and it's more general; however, text
-      is harder for bots to rely on.</p>
     <p>The new syntax doesn't distinguish between client and player messages.
       That just might be possible after all.</p>
     
