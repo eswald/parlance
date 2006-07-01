@@ -48,8 +48,11 @@ class ThreadManager(VerboseObject):
         a separate thread.  The manager will wait for all threads started
         in this way, during its close() method.
     '''#'''
-    try: flags = select.POLLIN | select.POLLERR | select.POLLHUP | select.POLLNVAL
-    except AttributeError: flags = None
+    flags = (getattr(select, 'POLLIN', 0) |
+            getattr(select, 'POLLERR', 0) |
+            getattr(select, 'POLLHUP', 0) |
+            getattr(select, 'POLLNVAL', 0))
+    
     __options__ = (
         ('wait_time', int, 600, 'idle timeout for server loop',
             'Default time (in seconds) to wait for select() or poll() system calls.',
@@ -65,12 +68,12 @@ class ThreadManager(VerboseObject):
             'When on, the program is more robust, but harder to debug.'),
         ('autostart', list, [], None,
             'A list of internal clients to start each game.'),
-    #    ('external', list, [], None,
-    #        'A list of external programs to start each game.'),
-    #    ('countries', dict, {}, None,
-    #        'A mapping of country -> passcode as which to start clients.'),
-    #    ('fill', Player, HoldBot, None,
-    #        'An internal client used to fill empty slots each game'),
+        #('external', list, [], None,
+        #    'A list of external programs to start each game.'),
+        #('countries', dict, {}, None,
+        #    'A mapping of country -> passcode as which to start clients.'),
+        #('fill', Player, HoldBot, None,
+        #    'An internal client used to fill empty slots each game'),
     )
     
     def __init__(self):
@@ -182,7 +185,7 @@ class ThreadManager(VerboseObject):
             because select() can't handle non-socket file descriptors.
         '''#'''
         waiter = self.InputWaiter(input_handler, close_handler)
-        if self.flags: self.add_polled(waiter)
+        if self.polling: self.add_polled(waiter)
         else: self.add_looped(waiter)
     def select(self, timeout):
         self.clean_polled()
