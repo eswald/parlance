@@ -19,8 +19,6 @@ from network    import Client
 from player     import Player
 from tokens     import DRW, HUH, NOW, THX
 
-__version__ = "$Revision: 273 $"
-
 # Import all of the DATC test cases
 module = modules[__name__]
 for name in dir(unittest_datc):
@@ -36,9 +34,6 @@ functions.fails = fails
 
 # Rearrange the testing system to use a foreign server
 class FakePlayer(Player):
-    name = 'Test Player'
-    version = functions.version_string(__version__)
-    
     def __init__(self, *args, **kwargs):
         class FakeOrders(object):
             def add(self, order, nation=None): pass

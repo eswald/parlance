@@ -21,15 +21,21 @@ from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
 from tokens     import *
 from validation import Validator
 
-__version__ = "$Revision$"
-
 class Observer(VerboseObject):
-    ''' Just watches the game, declining invitations to join.'''
-    # Magic variables:
-    name = None        # Set this to a string in each instantiable subclass.
-    version = None     # Set this to a string to allow registration as a player.
-    description = None # Set this to a string to allow use as a bot.
-    
+    ''' Generic Diplomacy client.
+        This class contains methods useful for all clients,
+        but is designed to be subclassed.
+        
+        Handle messages from the server by defining a handle_XXX method,
+        where XXX is the name of the first token in the message;
+        for HUH, YES, REJ, and NOT messages, instead define handle_XXX_YYY,
+        where YYY is the first token in the submessage.
+        
+        This class defines handlers for HLO, MAP, MDF, OFF, DRW, SLO, SMR,
+        SVE, LOD, PNG, HUH_OBS, HUH_SEL, YES_SEL, and REJ_SEL;
+        most of them do everything you will need,
+        in combination with instance variables.
+    '''#'''
     __section__ = 'clients'
     __options__ = (
         ('response', str, 'HUH', 'invalid message response',
@@ -61,6 +67,10 @@ class Observer(VerboseObject):
         self.power    = None
         self.manager  = manager or ThreadManager()
         
+        # Default name and version, for the NME message
+        self.name = self.__class__.__name__
+        self.version = version_string()
+        
         if self.options.validate:
             self.validator = Validator()
         else: self.validator = None
@@ -73,6 +83,8 @@ class Observer(VerboseObject):
     def register(self):
         ''' Registers the client with the server.
             Should be called as soon as possible after connection.
+            If self.game_id is not None, sends a SEL (game_id) command;
+            otherwise, skips straight to the OBS, NME, or IAM message.
         '''#'''
         if self.game_id is None: self.send_identity()
         else: self.send(SEL(self.game_id))
@@ -152,12 +164,8 @@ class Observer(VerboseObject):
     
     # Starting the game
     def send_identity(self):
-        ''' Registers the observer with the server.
-            Uses name and version if it has them.
-        '''#'''
-        if self.name and self.version:
-            self.send(OBS(self.name)(self.version))
-        else: self.send(OBS)
+        ''' Registers the observer with the server.'''
+        self.send(OBS (self.name) (self.version))
     def handle_HUH_OBS(self, message):
         ''' The server didn't like our OBS ('name') ('version') message.'''
         self.send(OBS)
@@ -234,12 +242,12 @@ class Player(Observer):
     ''' Generic Diplomacy player.
         This class contains methods useful for all players,
         but is designed to be subclassed.
-        Handle messages from the server by defining a handle_XXX method,
-        where XXX is the name of the first token in the message.
-        This class defines handlers for the following:
-            MAP, MDF, HLO, DRW, SLO, OFF, SVE, LOD
-        Most of them do everything you will need,
-        in combination with instance variables.
+        Subclasses must override either handle_NOW() or generate_orders().
+        
+        This class defines handlers for NOW, MIS, THX, REJ_NME, YES_IAM,
+        and REJ_IAM, and overrides the Observer's handler for HLO.
+        Press messages from other players are sent to handle_press_XXX methods,
+        where XXX is the name of the first token in the press.
     '''#'''
     __section__ = 'clients'
     __options__ = (
@@ -277,17 +285,15 @@ class Player(Observer):
         self.__super.close()
         self.closed = True
     def prefix(self):
-        if self.power: return '%s (%s)' % (self.__class__.name, self.power)
-        else: return self.__class__.name
+        result = self.__class__.__name__
+        if self.power: result += ' (%s)' % (self.power,)
+        return result
     prefix = property(fget=prefix)
     
     # Starting the game
     def send_identity(self):
         ''' Registers the player with the server.
-            Should send OBS, NME, or IAM.
-            Unless overridden, sends IAM with a valid power and passcode,
-            NME with a valid name and version, OBS otherwise.
-            If game_id is not None, sends a SEL (game_id) message first.
+            Sends IAM with a valid power and passcode, NME otherwise.
         '''#'''
         if self.power and self.pcode is not None:
             self.log_debug(7, 'Using power=%r, passcode=%r',
@@ -303,10 +309,8 @@ class Player(Observer):
                 else: self.power = power
                 
                 # Send name first, to get it into the server's records
-                self.send(NME(self.name)(self.version))
-        elif self.name and self.version:
-            self.send(NME(self.name)(self.version))
-        else: self.send(OBS)
+                self.send(NME (self.name) (self.version))
+        else: self.send(NME (self.name) (self.version))
     def handle_REJ_NME(self, message):
         if self.power and self.pcode is not None:
             self.send(IAM(self.power)(self.pcode))
@@ -441,11 +445,7 @@ class Player(Observer):
 
 
 class HoldBot(Player):
-    ''' A simple bot to hold units in position.'''
-    
-    name = 'HoldBot'
-    version = version_string(__version__)
-    description = 'Just holds its position'
+    ''' A simple bot that justs holds units in place.'''
     
     def handle_NOW(self, message):
         ''' Sends the commands to hold all units in place.
@@ -514,7 +514,6 @@ class Clock(AutoObserver):
     ''' An observer that simply asks for the time.
         Useful to get timestamps into the server's log.
     '''#'''
-    name = 'Time Keeper'
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)
         max_time = max(self.game_opts.BTL, self.game_opts.MTL, self.game_opts.RTL)

@@ -6,25 +6,15 @@
 from random       import choice, random, randrange, shuffle
 
 from dumbbot      import DumbBot
-from functions    import version_string
 from language     import IntegerToken, Message, StringToken, Token, protocol
 from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, TRY, YES
 from validation   import Validator
 
-__version__ = "$Revision$"
-
 class BlabberBot(DumbBot):
-    ''' Based on the DumbBot algorithm, but sends random press messages.
+    ''' Senseless, ceaseless ramblings.
+        Based on the DumbBot algorithm, but sends random press messages.
         Repeatedly.  Without stop.  Especially if you try to talk to it.
     '''#'''
-    
-    # Items for the NME message
-    name    = 'BlabberBot'
-    version = version_string(__version__)
-    description = 'Senseless, ceaseless ramblings'
-    
-    # Static variables
-    print_csv = True
     
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)

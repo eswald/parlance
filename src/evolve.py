@@ -20,7 +20,7 @@ def evolve_logged(player_class, stream):
     ''' Runs a server and a bunch of bots, attempting to optimize them.'''
     global game_number
     
-    name = player_class.name or player_class.__name__
+    name = player_class.__name__
     next_values = None
     def output(line, *args):
         text = (str(line) % args) + "\n"

@@ -23,13 +23,11 @@ from random       import randint, random, shuffle
 from time         import ctime
 
 from config       import Configuration, stringlist
-from functions    import defaultdict, expand_list, version_string
+from functions    import defaultdict, expand_list
 from gameboard    import Unit
 from orders       import *
 from player       import Player
 from tokens       import AUT, FAL, SPR, SUM, UNO, WIN
-
-__version__ = "$Revision$"
 
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10
@@ -173,7 +171,7 @@ class Province_Values(object):
         self.adjacent_units    = defaultdict(lambda: defaultdict(list))
 
 class DumbBot(Player):
-    ''' The main DumbBot algorithm.
+    ''' A mimic of David Norman's DumbBot.
         From the original C file:
         /**
          * How it works.
@@ -222,11 +220,6 @@ class DumbBot(Player):
          **/
     '''#'''
     
-    # Items for the NME message
-    name    = 'DumberBot'
-    version = version_string(__version__)
-    description = "A mimic of David Norman's DumbBot"
-    
     __options__ = (
         ('print_csv', bool, False, None,
             'Whether to print a statistics file every turn, with province values.'),
@@ -235,7 +228,8 @@ class DumbBot(Player):
     def __init__(self, values=None, **kwargs):
         self.__super.__init__(**kwargs)
         self.vals = values or DumbBot_Values()
-        self.log_debug(9, '%s version %s; started at %s', self.name, self.version, ctime())
+        self.log_debug(9, '%s (%s); started at %s',
+                self.name, self.version, ctime())
         self.attitude = defaultdict(lambda: 1)
     def handle_SCO(self, message):
         ''' Stores the size of each power,

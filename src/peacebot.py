@@ -4,25 +4,15 @@
 '''#'''
 
 from dumbbot      import DumbBot
-from functions    import version_string
 from language     import Message
 from orders       import OrderSet
 from tokens       import ERR, PCE, PRP, YES
 
-__version__ = "$Revision$"
-
 class PeaceBot(DumbBot):
-    ''' Based on the DumbBot algorithm, but allies with other instances.
+    ''' An overly trusting bot that just wants peace.
+        Based on the DumbBot algorithm, but allies with other instances.
         Uses honest press messages to ally and coordinate moves.
     '''#'''
-    
-    # Items for the NME message
-    name    = 'PeaceBot'
-    version = version_string(__version__)
-    description = 'An overly trusting bot that just wants peace'
-    
-    # Static variables
-    print_csv = True
     
     def __init__(self, **kwargs):
         self.__super.__init__(**kwargs)

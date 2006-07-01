@@ -10,14 +10,14 @@ from time       import time
 
 from config     import GameOptions, VerboseObject, variants
 from functions  import absolute_limit, defaultdict, expand_list, \
-        instances, num2name, relative_limit, s, timestamp
+        instances, num2name, relative_limit, s, timestamp, version_string
 from gameboard  import Turn
 from language   import Message, protocol
 from tokens     import *
 from validation import Validator
 
 import blabberbot, dumbbot, evilbot, peacebot, player, project20m
-bots = dict([(klass.name.lower(), klass) for klass in
+bots = dict([(klass.__name__.lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
     evilbot.EvilBot,
@@ -280,7 +280,8 @@ class Server(VerboseObject):
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
         for bot_class in bots.itervalues():
-            client.admin('  %s - %s', bot_class.name, bot_class.description)
+            client.admin('  %s - %s', bot_class.__name__,
+                    bot_class.__doc__.split('\r')[0].split('\n')[0])
     def list_status(self, client, match):
         for game in self.games.itervalues():
             if game.closed: message = 'Closed'
@@ -1279,7 +1280,9 @@ class Game(Historian):
                         if self.started and struct.client and not struct.client.closed:
                             client.admin('%s is still in the game.', pname)
                             return
-                        else: struct.assigned = (bot_class.name, bot_class.version)
+                        else:
+                            struct.assigned = (bot_class.__name__,
+                                    version_string())
                         break
                 else:
                     client.admin('Unknown player: %s', country)
@@ -1290,7 +1293,7 @@ class Game(Historian):
                 except (TypeError, ValueError): num = default_num
                 if num < 1: num += self.players_needed()
             
-            name = bot_class.name
+            name = bot_class.__name__
             self.queue_action(client, self.start_bot_class, 'starting %s%s.' %
                     (instances(num, name), power and ' as %s' % pname or ''),
                     None, 'the %s%s.' % (name, s(num)),
@@ -1299,7 +1302,7 @@ class Game(Historian):
         else: client.admin('Unknown bot: %s', bot_name)
     def start_bot_class(self, bot_class, number, power, pcode):
         self.log_debug(11, 'Attempting to start %s %s%s',
-                num2name(number), bot_class.name, s(number))
+                num2name(number), bot_class.__name__, s(number))
         failure = 0
         for dummy in range(number):
             client = self.server.manager.add_client(bot_class,

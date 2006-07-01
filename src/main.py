@@ -281,7 +281,7 @@ class ThreadManager(VerboseObject):
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
     def add_client(self, player_class, **kwargs):
-        name = player_class.name or player_class.__name__
+        name = player_class.__name__
         client = Client(player_class, manager=self, **kwargs)
         result = client.open()
         if result:
@@ -304,7 +304,7 @@ class ThreadManager(VerboseObject):
         self.threaded = [item for item in self.threaded if item[0].isAlive()]
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
-    name = player_class.name or player_class.__name__
+    name = player_class.__name__
     num = None
     countries = {}
     
@@ -372,7 +372,6 @@ def run_server(server_class, default_verbosity):
 
 class RawClient(object):
     ''' Simple client to translate DM to and from text.'''
-    name = None
     prefix = 'RawClient'
     def __init__(self, send_method, representation, manager):
         self.send_out  = send_method      # A function that accepts messages

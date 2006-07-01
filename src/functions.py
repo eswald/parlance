@@ -7,6 +7,8 @@
 from itertools import chain, ifilter, ifilterfalse
 from time      import localtime
 
+__version__ = '1.3.1.x'
+
 def any(sequence):
     ''' Returns True any item in the sequence is true.
         Short-circuits, if possible.
@@ -226,18 +228,37 @@ class defaultdict(dict):
             self[key] = result
             return result
 
-def version_string(revision, extra=''):
-    ''' Converts a Subversion revision string into a NME version string.'''
-    repository = '$URL$'
-    branch = repository.split('/')[-3]
-    space = extra and ' '
-    rev = revision.replace(' $', '').replace('$Revision: ', 'r')
+def pydip_version(static=[]):
+    ''' Find the git commit id, if available, or the software version number.
+        Caches the result, to avoid excess system calls.
+    '''#'''
+    if static: return static[0]
     
-    if branch == 'trunk': version = rev
-    elif branch.startswith('release-'):
-        version = branch.replace('release-', 'v')
-    else: version = rev + ' ' + branch
-    return 'PyDip %s%s%s' % (extra, space, version)
+    def system(*args):
+        from subprocess import PIPE, Popen
+        try:
+            process = Popen(args, stdout=PIPE, stderr=PIPE)
+            result = process.communicate()[0].rstrip()
+        except OSError: result = None
+        return result
+    
+    result = version = 'v' + __version__
+    commit = system('git-rev-parse', 'HEAD')
+    if commit:
+        tagged = system('git-rev-parse', 'tags/%s^0' % version)
+        if tagged != commit: result = commit
+    
+    static.append(result)
+    return result
+
+def version_string(extra=None):
+    ''' Compute a version string for the NME message.
+        The version string starts with 'PyDip',
+        and ends with the PyDip version or commit id.
+        If extra is given, it is stuffed in between.
+    '''#'''
+    space = extra and ' ' or ''
+    return 'PyDip %s%s%s' % (extra or '', space, pydip_version())
 
 def num2name(number):
     ''' Converts an integer into an English phrase.

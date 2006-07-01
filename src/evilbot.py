@@ -6,24 +6,16 @@
 from thread       import allocate_lock
 
 from dumbbot      import DumbBot
-from functions    import version_string
 from orders       import OrderSet
 
-__version__ = "$Revision$"
-
 class EvilBot(DumbBot):
-    ''' Based on the DumbBot algorithm, but allies with other instances.
+    ''' A cheating scumball.
+        Based on the DumbBot algorithm, but allies with other instances.
         Only instances created in the same program are recognized.
     '''#'''
     
-    # Items for the NME message
-    name    = 'EvilBot'
-    version = version_string(__version__)
-    description = 'A cheating scumball'
-    
     # Static variables
     main_lock = allocate_lock()
-    print_csv = False
     games = {}
     
     class shared_info(object):

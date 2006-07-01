@@ -8,23 +8,17 @@ from operator     import mul
 from random       import random
 
 from dumbbot      import DumbBot
-from functions    import all, any, defaultdict, sublists, version_string
+from functions    import all, any, defaultdict, sublists
 from orders       import *
 
-__version__ = "$Revision$"
-
 class ComboBot(DumbBot):
-    ''' Based on the DumbBot, but with a different movement algorithm.
+    ''' A bot that considers unit combinations.
+        Based on the DumbBot, but with a different movement algorithm.
         ComboBot looks at combinations of related moves;
         for example, a supported attack with another unit trailing.
         (It ignores cycles of its own units, though.
         I do not consider this a loss.)
     '''#'''
-    
-    # Items for the NME message
-    name    = 'ComboBot'
-    version = version_string(__version__)
-    description = 'ComboBot - A bot that considers unit combinations'
     
     def generate_movement_orders(self, values):
         ''' Generate the actual orders for a movement turn.'''

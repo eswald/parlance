@@ -6,24 +6,17 @@
 from random       import random
 
 from config       import VerboseObject
-from functions    import version_string
 from gameboard    import Power, Province, Unit
 from orders       import *
 from player       import Player
 from tokens       import AMY, FLT, SPR, SUM, WIN
 
-__version__ = "$Revision$"
-
 class Project20M(Player):
-    ''' Approximately equivalent to Project20M's PrimeMinister class.
+    ''' A clone of Andrew Huff's bot.
+        This class is approximately equivalent to Project20M's PrimeMinister.
         Most of the functionality of the PrimeMinister and Project20M
         java classes are already included in Player or Client.
     '''#'''
-    
-    # Items for the NME message
-    name    = 'Project20M'
-    version = version_string(__version__)
-    description = "A clone of Andrew Huff's bot"
     
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)

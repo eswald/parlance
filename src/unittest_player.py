@@ -6,13 +6,10 @@
 import unittest
 
 from config     import Configuration, GameOptions, variants
-from functions  import version_string
 from language   import Token
 from player     import AutoObserver, Player, HoldBot
 from tokens     import *
 from validation import Validator
-
-__version__ = "$Revision$"
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -92,8 +89,6 @@ class PlayerTestCase(unittest.TestCase):
 
 class Player_Tests(PlayerTestCase):
     class Test_Player(Player):
-        name = 'Test Player'
-        version = version_string(__version__)
         def handle_REJ_YES(self, message): self.send(+HLO)
         def handle_press_THK(self, sender, press):
             self.send_press(sender, WHY(press))
@@ -133,12 +128,12 @@ class Player_Tests(PlayerTestCase):
         self.failUnless(self.player.closed)
     def test_known_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
+        self.seek_reply(NME (self.player.name) (self.player.version))
         self.send(MAP('fleet_rome'))
         self.seek_reply(YES(MAP('fleet_rome')))
     def test_unknown_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
+        self.seek_reply(NME (self.player.name) (self.player.version))
         self.send(MAP('unknown'))
         self.seek_reply(+MDF)
         self.send(variants['fleet_rome'].map_mdf)
@@ -170,10 +165,10 @@ class Player_Tests(PlayerTestCase):
             'Have 5 players and 1 observers. Need 2 to start'))
         player.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
         self.failUnlessEqual(result[-1],
-                ADM ( "Observer" ) ( "Sorry; I'm just a bot." ))
+                ADM ( "AutoObserver" ) ( "Sorry; I'm just a bot." ))
         player.handle_ADM(ADM('Geoff')('Are you sure about that?'))
         self.failUnlessEqual(result[-1],
-                ADM ( "Observer" ) ( "Yes, I'm sure." ))
+                ADM ( "AutoObserver" ) ( "Yes, I'm sure." ))
         player.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         self.failUnlessEqual(len(result), 2)
 
