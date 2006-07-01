@@ -915,8 +915,9 @@ class Server_Multigame(ServerTestCase):
         self.master.send(+LST)
         params = self.game.game_options.get_params()
         self.assertContains(
-                LST (self.game.game_id) (6) ('standard') (params),
+                LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
+        self.assertEqual(YES (LST), self.master.queue[-1])
     def test_multigame_LST_reply(self):
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
@@ -925,11 +926,21 @@ class Server_Multigame(ServerTestCase):
         self.master.send(+LST)
         sailho_params = game.game_options.get_params()
         self.assertContains(
-                LST (game_id) (6) ('standard') (std_params),
+                LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue)
         self.assertContains(
-                LST (game.game_id) (4) ('sailho') (sailho_params),
+                LST (game.game_id) (4, NME) ('sailho') (sailho_params),
                 self.master.queue)
+    def test_single_LST_reply(self):
+        std_params = self.game.game_options.get_params()
+        game_id = self.game.game_id
+        game = self.new_game('sailho')
+        self.master.queue = []
+        self.master.send(LST(game_id))
+        sailho_params = game.game_options.get_params()
+        self.assertEqual(
+                LST (game_id) (6, NME) ('standard') (std_params),
+                self.master.queue[-1])
 
 class Server_Bugfix(ServerTestCase):
     ''' Test cases to reproduce bugs found.'''

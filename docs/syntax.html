@@ -149,25 +149,39 @@ characters long, alphabetic only, and not case-sensitive.</p>
 <p>In this section, we just have the syntax required for getting a game
 up and running, ordering, retrieving results, and general game management.</p>
 
-<!--
 <h3>(o) Choosing a game.</h3>
 
-<h4><a name="LST">client_request = LST</a></h4>
-<h4>server_message = LST ('gamename') (players_needed) ('variant_name') (variant)</h4>
-<!- - <h4>players_needed = number</h4> - ->
+<h4><a name="LST">client_command = LST</a></h4>
+<h4>server_message = LST ('gamename') (players_needed status) ('variant_name') (variant)</h4>
+<!-- <h4>players_needed = number</h4> -->
 
 <p>The client can request a list of games on the server by sending
 <b>LST</b>.  The server will respond with a <b>LST</b> message for each
-game, listing:</p>
+game, followed by a <b>YES (LST)</b> message.  Each <b>LST</b> message
+will contain:</p>
 <ul>
 	<li><b>'gamename'</b> &mdash; a name to uniquely identify this game,
 	as detailed in <a href="#SVE">the <b>SVE</b> command</a></li>
 	<li><b>players_needed</b> &mdash; the number of unfilled
 	or disconnected powers</li>
+	<li><b>status</b> &mdash; a status code for the game,
+	as listed below</li>
 	<li><b>'variant_name'</b> &mdash; the name of the variant,
 	as listed on <a href="variants.html">the variants page</a></li>
 	<li><b>variant</b> &mdash; the game options, as listed in
 	<a href="#HLO">the <b>HLO</b> message</a>.</li>
+</ul>
+
+<p>Each <b>status</b> will be a single token from among the following:</p>
+<ul>
+	<li><b>status = NME</b> &mdash; Accepting new players</li>
+	<li><b>status = OBS</b> &mdash; Running, with a full set of players</li>
+	<li><b>status = IAM</b> &mdash; Running, with some positions available for takeover</li>
+	<li><b>status = TME</b> &mdash; Paused, with a full set of players</li>
+	<li><b>status = DSD</b> &mdash; Paused, with some positions disconnected</li>
+	<li><b>status = SLO</b> &mdash; Finished, with a solo result</li>
+	<li><b>status = DRW</b> &mdash; Finished, with a draw result</li>
+	<li><b>status = OFF</b> &mdash; Closed, without a result</li>
 </ul>
 
 <p>Alternatively, the server can respond with <b>REJ (LST)</b> if it
@@ -176,7 +190,9 @@ does not have multi-game capabilities.</p>
 <h4>client_request = LST ('gamename')</h4>
 
 <p>The client can send this command to request the <b>LST</b> message
-for a single game.</p>
+for a single game.  In this case, the <b>YES (LST)</b> message will
+<em>not</em> be sent.  If the specified game does not exist, the server
+will instead send <b>REJ (LST ('gamename'))</b></p>
 
 <h4>client_command = SEL ('gamename')</h4>
 
@@ -202,7 +218,6 @@ the name of the currently selected game.  The server will
 respond with <b>SEL ('gamename')</b>, or with <b>REJ (SEL)</b> if the
 current game has no name, such as in a server without
 multi-game capabilities.</p>
--->
 
 <h3>(i) Starting the game.</h3>
 

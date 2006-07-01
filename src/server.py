@@ -209,8 +209,14 @@ class Server(VerboseObject):
         else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
-        for game in self.games.itervalues():
+        if len(message) > 3:
+            game = self.games.get(message.fold()[1][0])
             if game: client.send(game.listing())
+            else: client.reject(message)
+        else:
+            for game in self.games.itervalues():
+                client.send(game.listing())
+            client.accept(message)
     
     def default_game(self):
         while self.default:
@@ -749,6 +755,7 @@ class Game(Historian):
                 summary = self.summarize()
                 if not self.saved: self.broadcast(summary)
                 self.messages[SMR] = summary
+                self.messages[LST] = self.listing()
                 self.server.archive(self)
     def reveal_passcodes(self, client):
         disconnected = {}
@@ -797,7 +804,7 @@ class Game(Historian):
             self.started = True
             self.log_debug(9, 'Starting the game')
             self.validator.syntax_level = self.game_options.LVL
-            self.messages[LST] = self.listing()
+            self.messages[LST] = self.listing(OFF)
             self.messages[HLO] = HLO(OBS)(0)(self.game_options)
             for user in self.clients: self.send_hello(user)
             for user, message in self.limbo.iteritems():
@@ -937,9 +944,32 @@ class Game(Historian):
         return result
     
     # Press and administration
-    def listing(self):
-        return (LST(self.game_id)(self.players_needed())
-            (self.variant.variant)(self.game_options))
+    def listing(self, result=None):
+        need = (not self.closed) and self.players_needed() or 0
+        return (LST(self.game_id)(need, result or self.status())
+                (self.variant.variant)(self.game_options))
+    def status(self):
+        disconnected = False
+        robotic = False
+        for country, player in self.players.iteritems():
+            if not self.judge.eliminated(country):
+                if not player.client: disconnected = True
+                elif player.robotic: robotic = True
+        
+        if self.closed:
+            if self.judge.game_result:
+                result = self.judge.game_result[0]
+            else: result = OFF
+        elif self.paused:
+            if disconnected and self.game_options.DSD:
+                result = DSD
+            else: result = TME
+        elif self.started:
+            if disconnected or (robotic and self.options.takeovers):
+                result = IAM
+            else: result = OBS
+        else: result = NME
+        return result
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
