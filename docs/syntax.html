@@ -1058,6 +1058,13 @@ the player at the end of the game.  If this is 0, then
 <b>year_of_elimination</b> is included, and is the year that the player
 dropped to 0 centres.</p>
 
+<!-- <h4>client_request = SMR</h4> -->
+<p>The client can send the command <b>SMR</b> to the server with no
+arguments at any time.  The server will reply by sending another copy of
+the <b>SLO</b> or <b>DRW</b> message, if any, followed by the the
+<b>SMR</b> message, or <b>REJ (SMR)</b> if the game hasn't already
+finished.</p>
+
 
 <h2><a name="level10">Level 10</a> : Peace and Allies</h2>
 

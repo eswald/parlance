@@ -323,6 +323,18 @@ class Server_Basics(ServerTestCase):
         self.server.check_close()
         self.failUnless(self.game.saved)
         self.failIf(self.server.games)
+    def test_summary_request(self):
+        self.connect_server()
+        self.set_option('bot_min', 0)
+        master = self.connect_player(self.Fake_Master)
+        master.admin('Server: start holdbots')
+        self.wait_for_actions()
+        master.send(+DRW)
+        self.game.run_judge()
+        master.queue = []
+        master.send(+SMR)
+        self.assertContains(+DRW, master.queue)
+        self.assertEqual(SMR, master.queue[-1][0])
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''

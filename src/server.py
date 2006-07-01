@@ -533,6 +533,11 @@ class Historian(VerboseObject):
                 result.append(turn[SCO])
             result.append(turn[NOW])
         return result
+    def handle_SMR(self, client, message):
+        if self.started and self.closed:
+            if self.judge.game_result: client.send(self.judge.game_result)
+            client.send(self.messages[SMR])
+        else: client.reject(message)
     
     commands = []
 
