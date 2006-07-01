@@ -5,14 +5,14 @@
 
 import select
 from itertools import chain
-from sys       import argv, exit
+from sys       import argv, exit, stdin
 from time      import sleep, time
 
 try: from threading import Thread
 except ImportError: Thread = None
 
 from config    import Configuration, VerboseObject, variants
-from network   import Client, InputWaiter, ServerSocket
+from network   import Client, ServerSocket
 
 __all__ = [
     'ThreadManager',
@@ -149,6 +149,22 @@ class ThreadManager(VerboseObject):
         self.wait_threads()
     
     # Polled client handling
+    class InputWaiter(VerboseObject):
+        ''' File descriptor for waiting on standard input.'''
+        def __init__(self, input_handler, close_handler):
+            self.__super.__init__()
+            self.handle_input = input_handler
+            self.handle_close = close_handler
+            self.closed = False
+        def fileno(self): return stdin.fileno()
+        def run(self):
+            line = ''
+            try: line = raw_input()
+            except EOFError: self.close()
+            if line: self.handle_input(line)
+        def close(self):
+            self.closed = True
+            self.handle_close()
     def add_polled(self, client):
         self.log_debug(11, 'New polled client: %s', client.prefix)
         fd = client.fileno()
@@ -160,6 +176,14 @@ class ThreadManager(VerboseObject):
         self.log_debug(11, 'Removing polled client: %s',
                 self.polled.pop(fd).prefix)
         if self.polling: self.polling.unregister(fd)
+    def add_input(self, input_handler, close_handler):
+        ''' Adds a polled client listening to standard input.
+            On Windows, adds it as a threaded client instead;
+            because select() can't handle non-socket file descriptors.
+        '''#'''
+        waiter = self.InputWaiter(input_handler, close_handler)
+        if self.flags: self.add_polled(waiter)
+        else: self.add_looped(waiter)
     def select(self, timeout):
         self.clean_polled()
         try: ready = select.select(self.polled.values(), [], [], timeout)[0]
@@ -253,6 +277,19 @@ class ThreadManager(VerboseObject):
         for client in removals: self.dynamic.remove(client)
     
     # Threaded client handling
+    class LoopClient(object):
+        def __init__(self, client):
+            self.client = client
+            self.closed = False
+        def run(self):
+            while not (self.closed or self.client.closed):
+                self.client.run()
+            self.close()
+        def close(self):
+            self.closed = True
+            if not self.client.close: self.client.close()
+        @property
+        def prefix(self): return self.client.prefix
     class ThreadClient(object):
         def __init__(self, target, *args, **kwargs):
             self.target = target
@@ -278,6 +315,8 @@ class ThreadManager(VerboseObject):
         else:
             self.log_debug(11, 'Emulating threaded client: %s', client.prefix)
             self.attempt(client)
+    def add_looped(self, client):
+        self.add_threaded(self.LoopClient(client))
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
     def add_client(self, player_class, **kwargs):
@@ -380,7 +419,7 @@ class RawClient(object):
         self.manager   = manager
     def register(self):
         print 'Connected.'
-        self.manager.add_polled(InputWaiter(self.handle_input, self.close))
+        self.manager.add_input(self.handle_input, self.close)
     def handle_message(self, message):
         ''' Process a new message from the server.'''
         print '>>', message

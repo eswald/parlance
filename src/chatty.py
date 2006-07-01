@@ -5,7 +5,6 @@
 
 from functions import expand_list, version_string
 from language  import Token
-from network   import InputWaiter
 from player    import Observer
 from tokens    import NOW, SCO
 
@@ -18,7 +17,7 @@ class Chatty(Observer):
         self.quit = False
     def register(self):
         self.__super.register()
-        self.manager.add_polled(InputWaiter(self.send_admin, self.close))
+        self.manager.add_input(self.send_admin, self.close)
     def output(self, line, *args): print str(line) % args
     def handle_CCD(self, message):
         self.output('* %s has been disconnected.', message[2])

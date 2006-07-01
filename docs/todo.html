@@ -124,6 +124,10 @@
     <p>Graphics would probably be a good idea.  Particularly a map.</p>
     <p>Bot developers are requesting a real-time display of all press in the
       game, which would have to be done server-side.</p>
+    <p>The standard input loop needs to be tested on Windows, where select()
+      throws a fit when fed a non-socket file descriptor.  It should work as a
+      thread, but not quite as well; consider running it through a socket pair
+      for the original behavior.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
