@@ -116,7 +116,7 @@ class BlabberBot(DumbBot):
         elif category == 'Phases':
             result = choice(self.map.opts.seasons)
         elif category == 'Coasts':
-            result = choice([NCS, NEC, ECS, SEC])
+            result = choice([NCS, ECS, SCS, WCS])
         elif category == 'Text':
             result = StringToken(choice("'abcdefghijklmnopqrstuvwxyz "
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ +-*/0123456789.?'))
