@@ -119,16 +119,16 @@ class Tactics(VerboseObject):
         bestOrder = None
         bestScore = -9999999
         for possibleOrder in filteredOrders:
-            thisScore = possibleOrder.evaluate(self.map)
-            if bestScore < thisScore < order.evaluate(self.map):
+            thisScore = evaluate(possibleOrder, self.map)
+            if bestScore < thisScore < evaluate(order, self.map):
                 # point best order so far to this one
                 bestOrder = possibleOrder
                 # set highest score so far to this one
                 bestScore = thisScore
         if not bestOrder:
             for possibleOrder in orders:
-                thisScore = possibleOrder.evaluate(self.map)
-                if bestScore < thisScore < order.evaluate(self.map):
+                thisScore = evaluate(possibleOrder, self.map)
+                if bestScore < thisScore < evaluate(order, self.map):
                     # point best order so far to this one
                     bestOrder = possibleOrder
                     # set highest score so far to this one
@@ -161,7 +161,7 @@ class Tactics(VerboseObject):
         retreatOrders.sort(self.compareTo)
         bestRetreat = retreatOrders[0]
         # assume there's a unit there now
-        bestRetreat.target.units.append(unit)
+        target(bestRetreat).units.append(unit)
         self.log_debug(7, "retreating with: %s", bestRetreat)
         return bestRetreat
     
@@ -229,7 +229,7 @@ class Tactics(VerboseObject):
         for theProvince in self.map.spaces.values():
             # for each province
             powers = self.map.powers.keys()
-            numbers = theProvince.getNumberOfAdjacentUnits(powers, self.map)
+            numbers = getNumberOfAdjacentUnits(theProvince, powers, self.map)
             for i in range(len(powers)):
                 if powers[i] == self.map.us:
                     theProvince.strength = numbers[i]
@@ -256,11 +256,11 @@ class Tactics(VerboseObject):
                     if theProvince.owner == self.map.us: # if it belongs to us
                         # set value to strongest adjacent power
                         theProvince.basicValue = (
-                                theProvince.strongestAdjacentOpponentStrength(
+                                strongestAdjacentOpponentStrength(theProvince,
                                     self.map) * defence_weight)
                     else:  # it belongs to an opponent
                         # set value to strength of owner
-                        ownerStrength = theProvince.owner.getStrength()
+                        ownerStrength = getStrength(theProvince.owner)
                         theProvince.basicValue = ownerStrength * attack_weight
                 if self.map.us in theProvince.homes:
                     # if it's a home/build centre for us, its worth more
@@ -277,17 +277,17 @@ class Tactics(VerboseObject):
     def getAveragePower(self):
         averagePower = 0
         for iterator in self.map.powers.values():
-            averagePower += iterator.getStrength()
+            averagePower += getStrength(iterator)
         averagePower /= len(self.map.powers)
         return averagePower
     
     def getWeakestPower(self):
         iterator = self.map.powers.itervalues()
         thisPower = iterator.next()
-        weakestPower = thisPower.getStrength()
+        weakestPower = getStrength(thisPower)
         for thisPower in iterator:
-            if thisPower.getStrength() < weakestPower:
-                weakestPower = thisPower.getStrength()
+            if getStrength(thisPower) < weakestPower:
+                weakestPower = getStrength(thisPower)
         return weakestPower
     
     def iterateValues(self, n):
@@ -360,7 +360,7 @@ class Tactics(VerboseObject):
         # it can move into or stay in valuable places
         filteredOrders = []
         for thisOrder in orders:
-            if thisOrder.target.isValuable(self.map):
+            if isValuable(target(thisOrder), self.map):
                 # if it's an enemy supply centre, or a threatened one of ours
                 filteredOrders.append(thisOrder)
         # If it's SPR it can also move into / stay in places within 1 move of
@@ -390,7 +390,7 @@ class Tactics(VerboseObject):
         bestOrder = filteredOrders[0]
         for order in orders:
             self.log_debug(12, "%s: %s %s %s", order,
-                    order.evaluate(self.map),
+                    evaluate(order, self.map),
                     order in filteredOrders,
                     order in self.lastTurnsOrders)
         if bestOrder in self.lastTurnsOrders:
@@ -404,23 +404,22 @@ class Tactics(VerboseObject):
         # a little hack... if the bestOrder is to hold on a province we own,
         # threatened by just 1 enemy, move into where he is
         if (isinstance(bestOrder, HoldOrder) and
-                bestOrder.target.owner == self.map.us):
+                target(bestOrder).owner == self.map.us):
             # if the order is to hold on a province we own
             
             # if there's a supply centre we don't own and it's within reach,
             # move there
-            canMoveTo = bestOrder.unit.canMoveTo()
-            for thisPlace in canMoveTo:
+            for thisPlace in canMoveTo(bestOrder.unit):
                 if (thisPlace.province.is_supply() and
                         thisPlace.province.owner != self.map.us):
                     bestOrder = MoveOrder(u, thisPlace)
                     return bestOrder
             
-            surroundingUnits = bestOrder.target.getSurroundingUnits(self.map)
+            surroundingUnits = getSurroundingUnits(target(bestOrder), self.map)
             if len(surroundingUnits) == 1:
                 # if there's just one enemy unit around us
                 location = surroundingUnits[0].coast
-                if location in u.canMoveTo():
+                if location in canMoveTo(u):
                     # if we can move into where he is
                     self.log_debug(7, "%s IS HOLDING ON A SUPPLY CENTRE "
                             "ONLY THREATENED BY %s", u, surroundingUnits[0])
@@ -434,7 +433,7 @@ class Tactics(VerboseObject):
         # returns true iff any of the places is a supply centre we don't own,
         # or a supply centre we own which is under threat
         for place in places:
-            if place.province.isValuable(self.map):
+            if isValuable(place.province, self.map):
                 return True
         return False
     
@@ -452,7 +451,7 @@ class Tactics(VerboseObject):
         for thisProvince in canBuild:
             for thisCoast in thisProvince.coasts:
                 newArmy = BuildOrder(Unit(self.map.us, thisCoast))
-                if newArmy.evaluate(self.map) > bestSoFar.evaluate(self.map):
+                if evaluate(newArmy, self.map) > evaluate(bestSoFar, self.map):
                     bestSoFar = newArmy
         return bestSoFar
     
@@ -478,7 +477,7 @@ class Tactics(VerboseObject):
         bestSoFar = RemoveOrder(ourUnits[0])
         for iterator in ourUnits:
             newRemove = RemoveOrder(iterator)
-            if newRemove.evaluate(self.map) > bestSoFar.evaluate(self.map):
+            if evaluate(newRemove, self.map) > evaluate(bestSoFar, self.map):
                 bestSoFar = newRemove
         return bestSoFar
     
@@ -534,15 +533,15 @@ class Tactics(VerboseObject):
             for canBuildAt in canBuildAts:
                 for thisCoast in canBuildAt.coasts:
                     possibleBuild = BuildOrder(Unit(self.map.us, thisCoast))
-                    if (possibleBuild.evaluate(self.map) >
-                            highestValuedBuild.evaluate(self.map)):
+                    if (evaluate(possibleBuild, self.map) >
+                            evaluate(highestValuedBuild, self.map)):
                         highestValuedBuild = possibleBuild
             highestValued = canBuildAts[0]
             for thisProvince in canBuildAts:
                 #if thisProvince.value > highestValued.value:
                 #    highestValued = thisProvince
                 pass
-            if highestValuedBuild.evaluate(self.map) >= retreatValue:
+            if evaluate(highestValuedBuild, self.map) >= retreatValue:
                 highestValuedBuild.unit.build()
                 decisions.append(DisbandOrder(u))
                 decisions.append(highestValuedBuild)
@@ -585,7 +584,7 @@ class Tactics(VerboseObject):
     # BUT we're actually doing this the other way round, so that when
     # we use the built-in list sorting function it sorts them from high to low
     def compareTo(self, this, o):
-        return int(o.evaluate(self.map) - this.evaluate(self.map))
+        return int(evaluate(o, self.map) - evaluate(this, self.map))
 
 class Coordinator(VerboseObject):
     #*************************** public functions ****************************#
@@ -639,8 +638,8 @@ class Coordinator(VerboseObject):
         while i < len(self.wantedOrders):
             order = self.wantedOrders[i]
             if (isinstance(order, SupportMoveOrder)
-                    and order.target.units
-                    and order.target.unit.nation ==
+                    and target(order).units
+                    and target(order).unit.nation ==
                         order.unit.nation):
                 # we're asking someone to support a move into where they have
                 # a unit, which is silly
@@ -667,7 +666,7 @@ class Coordinator(VerboseObject):
         # if there's somebody whose order's destination is the same as ours,
         # try to get them to go somewhere else
         for clash in orderList:
-            if (clash is not order and clash.target == order.target):
+            if (clash is not order and target(clash) == target(order)):
                 self.log_debug(12, "%s clashes with %s", order, clash)
                 outOfWay = self.getBestOutOfTheWayOrder(clash.unit, orderList)
                 if clash.unit in avaliables and outOfWay:
@@ -714,15 +713,15 @@ class Coordinator(VerboseObject):
                 orderList = self.coordinateUnit(orderList, i, theyDo)
                 return orderList
         
-        supportsNeeded = order.getSupportsNeeded(self.map)
+        supportsNeeded = getSupportsNeeded(order, self.map)
         self.log_debug(11, "%d supports needed", supportsNeeded)
-        if (isinstance(order, MoveOrder) and order.target.units
-                and order.target.unit.nation == self.map.us):
+        if (isinstance(order, MoveOrder) and target(order).units
+                and target(order).unit.nation == self.map.us):
             supportsNeeded = 0
             self.log_debug(11, "But we're not going to ask for any support "
                     "as we're following one of our units")
         
-        couldGiveSupport = order.couldBeSupportedBy(self.map)
+        couldGiveSupport = couldBeSupportedBy(order, self.map)
         for couldHelp in couldGiveSupport:
             if supportsNeeded <= 0: break
             self.log_debug(11, "%s could support us...", couldHelp)
@@ -751,11 +750,11 @@ class Coordinator(VerboseObject):
         # works out how good a set of orders are for us
         value = 0
         for order in orderList:
-            value += order.evaluate(self.map)
+            value += evaluate(order, self.map)
             if (isinstance(order, SupportOrder) and
                     order.supported.nation == self.map.us):
                 # constant alert!
-                value += 0.75 * order.orderToSupport.evaluate(self.map)
+                value += 0.75 * evaluate(order.orderToSupport, self.map)
         if value < 0:
             value *= -1; # bug: what the hell!??
         return value
@@ -772,8 +771,8 @@ class Coordinator(VerboseObject):
             for inList in orderList:  # now for each order we're doing
                 if (isinstance(validOrder, ConvoyedOrder)
                         or validOrder.destination == inList.destination
-                        or (validOrder.target.units
-                            and validOrder.target.unit.nation == self.map.us)):
+                        or (target(validOrder).units
+                            and target(validOrder).unit.nation == self.map.us)):
                     # the validOrder wasn't possible as an outOfTheWay order
                     possible = False
             if possible: # if it was possible add it to possibleOrders
@@ -931,10 +930,10 @@ class Constants(object):
     alternative_difference_modifier = 500
 
 
-# Export certain functions into the gameboard classes
+# Functions that Project20M expects to be in the gameboard classes
 Unit.order = None
 
-def getStrength(this):
+def getStrength(power):
     # strength is:
     # A * x^2 + B * x + C
     # where A, B and C are constants
@@ -944,50 +943,46 @@ def getStrength(this):
     A = 1.0
     B = 4.0
     C = 16.0
-    x = len(this.centers)
+    x = len(power.centers)
     return A * x * x + B * x + C
-Power.getStrength = getStrength
 
-def getNumberOfAdjacentUnits(this, powerList, board):
+def getNumberOfAdjacentUnits(province, powerList, board):
     # returns the number of units each power in the list has which could
     # invade this province next turn
     # +1 if that power already has a unit here
     
     # surrounding units, including your ones
-    surroundingUnits = this.getALLSurroundingUnits(board)
+    surroundingUnits = getALLSurroundingUnits(province, board)
     numbers = [0 for p in powerList]
     for surroundingUnit in surroundingUnits:
         for j, power in enumerate(powerList):
             if surroundingUnit.nation == power:
                 numbers[j] += 1
     return numbers
-Province.getNumberOfAdjacentUnits = getNumberOfAdjacentUnits
 
-def getALLSurroundingUnits(this, board):
+def getALLSurroundingUnits(province, board):
     # gets all the units (OURS AND ENEMIES) which could attack a unit here
     # next turn
     surroundingUnits = []
-    for prov in this.borders_in:
-        province = board.spaces[prov]
-        surroundingUnits.extend([u for u in province.units
-                if u.can_move_to(this)])
+    for prov in province.borders_in:
+        other = board.spaces[prov]
+        surroundingUnits.extend([u for u in other.units
+                if u.can_move_to(province)])
     return surroundingUnits
-Province.getALLSurroundingUnits = getALLSurroundingUnits
 
-def getSurroundingUnits(this, board):
+def getSurroundingUnits(province, board):
     # gets all the ENEMY units which could attack a unit here next turn
     surroundingUnits = []
-    for prov in this.borders_in:
-        province = board.spaces[prov]
-        surroundingUnits.extend([u for u in province.units
-                if u.can_move_to(this) and u.nation != board.us])
+    for prov in province.borders_in:
+        other = board.spaces[prov]
+        surroundingUnits.extend([u for u in other.units
+                if u.can_move_to(province) and u.nation != board.us])
     return surroundingUnits
-Province.getSurroundingUnits = getSurroundingUnits
 
-def getSurroundingPowers(this, board):
+def getSurroundingPowers(province, board):
     # returns a list of the units which could enter this place/province next
     # turn
-    surroundingUnits = this.getSurroundingUnits(board)
+    surroundingUnits = getSurroundingUnits(province, board)
     surroundingPowers = []
     for surroundingUnit in surroundingUnits:
         thisOwner = surroundingUnit.nation
@@ -995,172 +990,150 @@ def getSurroundingPowers(this, board):
             # if owner isn't already in surroundingPowers
             surroundingPowers.append(thisOwner)
     return surroundingPowers
-Province.getSurroundingPowers = getSurroundingPowers
 
-def isValuable(this, board):
+def isValuable(province, board):
     # returns true iff the province is an enemy supply centre,
     # or a threatened one of our supply centres
-    if (this.is_supply() and (this.owner != board.us
-            or len(this.getSurroundingUnits(board)) > 0)):
+    if (province.is_supply() and (province.owner != board.us
+            or len(getSurroundingUnits(province, board)) > 0)):
         return True;
     return False;
-Province.isValuable = isValuable
 
-def strongestAdjacentOpponentStrength(this, board):
+def strongestAdjacentOpponentStrength(province, board):
     # returns the strength of the strongest OPPONENT which has a unit which
     # could move into this province
-    surroundingPowers = this.getSurroundingPowers(board)
+    surroundingPowers = getSurroundingPowers(province, board)
     strongest = 0
     for surroundingPower in surroundingPowers:
         if surroundingPower != board.us:
-            thisStrength = surroundingPower.getStrength()
+            thisStrength = getStrength(surroundingPower)
             if thisStrength > strongest:
                 strongest = thisStrength
     return strongest
-Province.strongestAdjacentOpponentStrength = strongestAdjacentOpponentStrength
 
-def canMoveTo(this): return this.coast.connections
-Unit.canMoveTo = canMoveTo
+def canMoveTo(unit): return unit.coast.connections
 
-# Export certain functions into the orders classes
+# Functions that Project20M expects to be in the order classes
 UnitOrder.helping = None
 
-def couldBeSupportedBy(this, board):
-    # get the list of units surrounding this one
-    return this.unit.coast.province.getALLSurroundingUnits(board)
-UnitOrder.couldBeSupportedBy = couldBeSupportedBy
+def couldBeSupportedBy(order, board):
+    if isinstance(order, (MoveOrder, ConvoyedOrder)):
+        # Restrictions in the original, due to misunderstanding the syntax,
+        # have been removed by Eric Wald on the recommendation of Andrew Huff.
+        # The original project could not support convoyed armies,
+        # or fleets moving to a specific coast.
+        aroundTarget = getALLSurroundingUnits(target(order), board)
+        while order.unit in aroundTarget:
+            aroundTarget.remove(order.unit)
+        return aroundTarget
+    else:
+        # get the list of units surrounding this one
+        return getALLSurroundingUnits(order.unit.coast.province, board)
 
-def couldBeSupportedByMove(this, board):
-    # Restrictions in the original, due to misunderstanding the syntax,
-    # have been removed by Eric Wald on the recommendation of Andrew Huff.
-    # The original project could not support convoyed armies,
-    # or fleets moving to a specific coast.
-    aroundTarget = this.target.getALLSurroundingUnits(board)
-    while this.unit in aroundTarget:
-        aroundTarget.remove(this.unit)
-    return aroundTarget
-MoveOrder.couldBeSupportedBy = couldBeSupportedByMove
-ConvoyedOrder.couldBeSupportedBy = couldBeSupportedByMove
-
-def doStrengthCompetition(this, value, board):
+def doStrengthCompetition(order, value, board):
     # adjusts the value given, according to the strength (people who could
     # help) and competition (people who could stop us) of the order
-    if this.getSupportsNeeded(board) > 1:
-        value *= 2 ** this.target.strength; # strength weight = 2
+    if getSupportsNeeded(order, board) > 1:
+        value *= 2 ** target(order).strength; # strength weight = 2
     return value
-UnitOrder.doStrengthCompetition = doStrengthCompetition
 
-def evaluate(this, board):
-    if this.unit.nation == board.us:
-        value = 0.001 * this.unit.coast.Value
-        value = this.doStrengthCompetition(value, board)
-        return value
-    else: return 0
-UnitOrder.evaluate = evaluate
+def evaluate(order, board):
+    if isinstance(order, BuildOrder):
+        return order.unit.coast.Value
 
-def evaluateBuild(this, board): return this.unit.coast.Value
-BuildOrder.evaluate = evaluateBuild
+    elif isinstance(order, (DisbandOrder, RemoveOrder)):
+        return -(order.unit.coast.Value)
 
-def evaluateDisband(this, board):
-    return -(this.unit.coast.Value)
-DisbandOrder.evaluate = evaluateDisband
-RemoveOrder.evaluate = evaluateDisband
+    elif isinstance(order, MoveOrder):
+        # for working out possible resistance, add in all the possible resistance
+        # of the place we're moving into
+        if order.unit.nation == board.us:
+            if order.unit.coast == order.destination:
+                # this /should/ never happen - you're moving into a place you're
+                # already at
+                return 0
+            
+            value = order.destination.Value - order.unit.coast.Value
+            conflict = getResistance(order, 100, board) + 1
+            
+            if getSupportsNeeded(order, board) > 1:
+                value *= 2 ** target(order).strength # strength weight = 2
+            
+            if target(order).unit: conflict += 1
+            value /= conflict * conflict
+            
+            if target(order).unit and target(order).unit.nation == board.us:
+                # the move is worth less if we already have someone there
+                value /= 200
+            return value
+        else: return 0
 
-def evaluateMove(this, board):
-    # for working out possible resistance, add in all the possible resistance
-    # of the place we're moving into
-    if this.unit.nation == board.us:
-        if this.unit.coast == this.destination:
-            # this /should/ never happen - you're moving into a place you're
-            # already at
-            return UnitOrder.evaluate(this, board)
-        
-        value = this.destination.Value - this.unit.coast.Value
-        conflict = this.getResistance(100, board) + 1
-        
-        if this.getSupportsNeeded(board) > 1:
-            value *= 2 ** this.target.strength # strength weight = 2
-        
-        if this.target.unit: conflict += 1
-        value /= conflict * conflict
-        
-        if this.target.unit and this.target.unit.nation == board.us:
-            # the move is worth less if we already have someone there
-            value /= 200
-        return value
-    else: return 0
-MoveOrder.evaluate = evaluateMove
+    elif isinstance(order, RetreatOrder):
+        return order.destination.Value - order.unit.coast.Value
 
-def evaluateRetreat(this, board):
-    return this.destination.Value - this.unit.coast.Value
-RetreatOrder.evaluate = evaluateRetreat
+    elif isinstance(order, WaiveOrder):
+        return 0
+    
+    else:
+        if order.unit.nation == board.us:
+            value = 0.001 * order.unit.coast.Value
+            value = doStrengthCompetition(order, value, board)
+            return value
+        else: return 0
 
-def evaluateWaive(this, board): return 0
-WaiveOrder.evaluate = evaluateWaive
-
-def getResistance(this, hops, board):
+def getResistance(move_order, hops, board):
     # returns the supports this move needs + the supports the unit in front
     # needs, if we are moving
     # into a place where a unit we own already is
     # hops is the max distance ahead we look
     if hops == 0: return 0
-    resistance = this.getSupportsNeeded(board)
-    if (this.target.unit and this.target.unit.nation == this.unit.nation
-            and this.target.unit.order):
-        inWay = this.target.unit
+    resistance = getSupportsNeeded(move_order, board)
+    if (target(move_order).unit
+            and target(move_order).unit.nation == move_order.unit.nation
+            and target(move_order).unit.order):
+        inWay = target(move_order).unit
         if isinstance(inWay.order, MoveOrder):
-            resistance += inWay.order.getResistance(hops - 1, board)
-        else: resistance += inWay.order.getSupportsNeeded(board)
+            resistance += getResistance(inWay.order, hops - 1, board)
+        else: resistance += getSupportsNeeded(inWay.order, board)
     return resistance
-MoveOrder.getResistance = getResistance
 
-def getSupportsNeeded(this, board): return 0
-UnitOrder.getSupportsNeeded = getSupportsNeeded
+def getSupportsNeeded(order, board):
+    if isinstance(order, ConvoyedOrder):
+        # post: returns the number of uncuttable supports we need to be sure the
+        # order will succeed
+        
+        # gets all the enemy units which could enter target next turn
+        supportsNeeded = len(getSurroundingUnits(target(order), board))
+        if target(order).unit and target(order).unit.nation != board.us:
+            supportsNeeded += 1
+        return supportsNeeded
+    elif isinstance(order, (ConvoyingOrder, HoldOrder, SupportOrder)):
+        where = order.unit.coast.province
+        supportsNeeded = len(getSurroundingUnits(where, board))
+        if supportsNeeded > 0:
+            supportsNeeded -= 1
+        return supportsNeeded
+    elif isinstance(order, MoveOrder):
+        # post: returns the number of uncuttable supports we need to be sure the
+        # order will succeed
+        
+        # gets all the enemy units which could enter target next turn
+        supportsNeeded = len(getSurroundingUnits(target(order), board))
+        if target(order).unit and target(order).unit.nation != board.us:
+            supportsNeeded += 1
+        # but when it's our supply centre which is under threat
+        # and there isn't an enemy unit there
+        # then we don't really want to move into that place
+        # just make sure nobody else moves in there
+        elif target(order).owner == board.us and supportsNeeded > 0:
+            supportsNeeded -= 1
+        return supportsNeeded
+    else: return 0
 
-def getSupportsNeededConvoyed(this, board):
-    # post: returns the number of uncuttable supports we need to be sure the
-    # order will succeed
-    
-    # gets all the enemy units which could enter target next turn
-    supportsNeeded = len(this.target.getSurroundingUnits(board))
-    if this.target.unit and this.target.unit.nation != board.us:
-        supportsNeeded += 1
-    return supportsNeeded
-ConvoyedOrder.getSupportsNeeded = getSupportsNeededConvoyed
-
-def getSupportsNeededHolding(this, board):
-    target = this.unit.coast.province
-    supportsNeeded = len(target.getSurroundingUnits(board))
-    if supportsNeeded > 0:
-        supportsNeeded -= 1
-    return supportsNeeded
-ConvoyingOrder.getSupportsNeeded = getSupportsNeededHolding
-HoldOrder.getSupportsNeeded = getSupportsNeededHolding
-SupportOrder.getSupportsNeeded = getSupportsNeededHolding
-
-def getSupportsNeededMoving(this, board):
-    # post: returns the number of uncuttable supports we need to be sure the
-    # order will succeed
-    
-    # gets all the enemy units which could enter target next turn
-    supportsNeeded = len(this.target.getSurroundingUnits(board))
-    if this.target.unit and this.target.unit.nation != board.us:
-        supportsNeeded += 1
-    # but when it's our supply centre which is under threat
-    # and there isn't an enemy unit there
-    # then we don't really want to move into that place
-    # just make sure nobody else moves in there
-    elif this.target.owner == board.us and supportsNeeded > 0:
-        supportsNeeded -= 1
-    return supportsNeeded
-MoveOrder.getSupportsNeeded = getSupportsNeededMoving
-
-def target(this): return this.destination.province
-UnitOrder.target = property(target)
-
-def targetSupport(this): return this.supported.coast.province
-ConvoyingOrder.target = property(targetSupport)
-SupportOrder.target = property(targetSupport)
+def target(order):
+    if isinstance(order, (ConvoyingOrder, SupportOrder)):
+        return order.supported.coast.province
+    return order.destination.province
 
 
 if __name__ == "__main__":
