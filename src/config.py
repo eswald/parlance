@@ -506,7 +506,7 @@ class VariantDict(dict):
                     files[ext.lower()] = path.normpath(path.join(
                         path.dirname(self.options.variant_file), ref))
                 elif '</tr>' in line:
-                    self[name] = MapVariant(name, descrip, files)
+                    self[name.lower()] = MapVariant(name, descrip, files)
                     descrip = name = None
     def has_key(self, key):
         if not self: parse_file(self.options.variant_file, self.parse_variants)

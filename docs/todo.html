@@ -25,6 +25,9 @@
       register" command, or similar.  I don't really expect many bots to
       verify themselves, though.</p>
     <p>The server should make its move logs available for perusal.</p>
+    <p>Games should each have an open game log file, writing all broadcasts to
+      it with timestamps.  This should be more robust, particularly in the
+      face of crashes, than the current log-on-exit idea.</p>
     <p>A <code>playback</code> admin command could be in order, sending one
       turn per second.  That could also be done client-side, but the Mapper
       doesn't have such a function yet.</p>
@@ -106,6 +109,10 @@
       former, because the Message class calls them directly.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
+    <p>Messages could be immutable.  The constructor should also only take one
+      argument, a series.  For that matter, calling a token on a series should
+      be revised; try HLO(ENG)(1234)((LVL, 20)), for example.  Finally,
+      consider changing __repr__() to use token-calling conventions.</p>
     
     <h2>Robustness</h2>
     <p>The validator's greedy checking seems to cause problems with PRN
@@ -166,6 +173,10 @@
     <p>I allow players to cancel movement orders with NOT (SUB).  That is not
       technically allowed by the syntax document, but neither is it
       technically disallowed.</p>
+    <p>I want to stop sending redundant MAP commands.  That behavior would
+      differ from spec, but not in a bad way.  On the other hand, I really
+      should verify that my duplicate MAP handling doesn't create an entirely
+      new map.</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static

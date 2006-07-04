@@ -253,7 +253,7 @@ class Server(VerboseObject):
         if match and match.lastindex:
             var_name = match.group(2)
         else: var_name = self.options.variant
-        variant = variants.get(var_name)
+        variant = variants.get(var_name.lower())
         if variant:
             game_id = timestamp()
             self.started_games += 1
@@ -443,7 +443,7 @@ class Historian(VerboseObject):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
-                    self.variant = variants.get(variant_name)
+                    self.variant = variants.get(variant_name.lower())
                     if self.variant:
                         rep = self.variant.rep
                     else:

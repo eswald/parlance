@@ -171,6 +171,16 @@ class Player_Tests(PlayerTestCase):
                 ADM ( "AutoObserver" ) ( "Yes, I'm sure." ))
         player.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         self.failUnlessEqual(len(result), 2)
+    def test_uppercase_mapname(self):
+        ''' Clients should recognize map names in upper case.'''
+        self.connect_player(self.Test_Player)
+        while self.replies:
+            msg = self.replies.pop(0)
+            if msg[0] is NME: self.accept(msg); break
+        else: self.fail('No NME message')
+        msg = MAP(self.variant.map_name.upper())
+        self.send(msg)
+        self.seek_reply(YES(msg))
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):

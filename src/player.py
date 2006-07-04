@@ -183,10 +183,10 @@ class Observer(VerboseObject):
         '''#'''
         if self.use_map:
             mapname = message.fold()[1][0]
-            variant = variants.get(mapname)
+            variant = variants.get(mapname.lower())
             if not variant:
                 variant = MapVariant(mapname, mapname, {}, self.rep)
-                variants[mapname] = variant
+                variants[mapname.lower()] = variant
             self.map = Map(variant)
             if self.map.valid:
                 self.accept(message)
