@@ -742,10 +742,10 @@ place.</p>
 <!-- <h4>player_command = NOT (SUB (loose_order))</h4> -->
 <!-- <h4>player_command = NOT (SUB)</h4> -->
 <p>Movement and retreat orders can be changed by giving a new order for
-a unit. Builds and retreats can be cancelled by ordering
+a unit.  Builds and retreats can be canceled by ordering
 <b>NOT (SUB (order))</b>.  The server will reply to this with <b>YES
 (NOT (SUB (order)))</b>, or <b>REJ (NOT (SUB (order)))</b> if the order
-could not be cancelled.  Alternatively, an entire turn's orders can be
+could not be canceled.  Alternatively, an entire turn's orders can be
 cleared with <b>NOT (SUB)</b>, to which the server will reply with
 <b>YES (NOT (SUB))</b>.</p>
 
@@ -947,7 +947,7 @@ The server will then send <b>TME (seconds)</b> to the client,
 <p>The client can cancel such requests with <b>NOT (TME (seconds))</b>
 for a specific request, or <b>NOT (TME)</b> for all requests.  The
 server will respond with <b>YES (NOT (...))</b> if the request was
-cancelled, or <b>REJ (NOT (...))</b> if the specified request was not
+canceled, or <b>REJ (NOT (...))</b> if the specified request was not
 found or if the server cannot cancel time requests.</p>
 
 <!-- <h4>client_request = TME</h4> -->
