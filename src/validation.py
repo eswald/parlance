@@ -420,13 +420,15 @@ def count_valid(msg, func, repeat):
 def find_ket(msg):
     ''' Finds the index of a KET that matches the BRA starting the message.
         If the message is empty or does not start with BRA, returns 0.
-        May give an error if the parentheses are imbalanced.
+        Also returns 0 if the parentheses are imbalanced.
         Modified to accept strings as well as tokens.
         
         >>> find_ket([BRA, NOT, BRA, GOF, KET, KET, BRA, DRW, KET])
         5
         >>> find_ket([BRA, BRA, GOF, KET, BRA, DRW, KET, KET])
         7
+        >>> find_ket([BRA, BRA, GOF, KET])
+        0
     '''#'''
     if not msg: return 0
     start = msg[0]
@@ -439,6 +441,7 @@ def find_ket(msg):
     while level > 0:
         index += 1
         old_index = index
-        index += msg[index:].index(end)
+        try: index += msg[index:].index(end)
+        except ValueError: return 0
         level += msg[old_index:index].count(start) - 1
     return index

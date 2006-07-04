@@ -107,6 +107,15 @@
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
     
+    <h2>Robustness</h2>
+    <p>The validator's greedy checking seems to cause problems with PRN
+      messages.  The current workarounds seem to solve the problem, though.
+      Should I let it attempt less greedy matches, though?</p>
+    <p>Major problems can occur when a syntax item lists itself as the first
+      non-optional item.  I seem to have eliminated all such cases from the
+      syntax document, but perhaps I should create a check in the code for
+      this case.</p>
+    
     <h2>User Interface</h2>
     <p>Some modules could give explanatory messages instead of doing nothing
       when run as a script.  Ideas:
@@ -150,6 +159,13 @@
       hours.  This is not official.  Better would be to have an optional
       second parameter for the hours, so the time can still be accurate to the
       second.</p>
+    <p>My <a href="HST">HST</a> behavior may differ slightly from the
+      standard.  Double-check that sometime.  Note that there doesn't seem to
+      be an official way to get the starting NOW and SCO messages after the
+      game has started.</a>
+    <p>I allow players to cancel movement orders with NOT (SUB).  That is not
+      technically allowed by the syntax document, but neither is it
+      technically disallowed.</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static

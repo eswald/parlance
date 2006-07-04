@@ -410,8 +410,8 @@ entries for each coast.</p>
 <p>Note that for a land province surrounded by sea, there will be an
 <b>AMY</b> entrance with no provinces listed.</p>
 
-<p>So, the map for Standard would (with some provinces skipped, and
-carriage returns added for clarity):</p>
+<p>So, the map for Standard would be (with some provinces skipped,
+and line breaks added for clarity):</p>
 
 <pre><b>
 MDF (AUS ENG FRA GER ITA RUS TUR)
@@ -699,8 +699,8 @@ map), it must be of the form <b>(province coast)</b>.</p>
 
 <p>All unused builds must be waived, even if they are unusable.</p>
 
-<p>The server will reply to each order (not each message), in left to
-right order through the orders, with a <b>THX</b> message. This is of
+<p>The server will reply to each order (not each message), in left-to-right
+order through the orders, with a <b>THX</b> message.  This is of
 the format:</p>
 
 <h4><a name="THX">server_message = THX</a> (order) (note)</h4>
@@ -953,8 +953,8 @@ found or if the server cannot cancel time requests.</p>
 <!-- <h4>client_request = TME</h4> -->
 <p>Also, the client can send the message <b>TME</b> with no parameters.
 The server will respond with <b>TME (seconds)</b> where <b>seconds</b>
-is the time to the next deadline, or <b>REJ (TME)</b> if there are no
-deadlines.</p>
+is the time to the next deadline, or <b>REJ (TME)</b> if there is no
+current deadline.</p>
 
 <p>The client should not acknowledge the <b>TME</b> message from the server.</p>
 
@@ -962,16 +962,17 @@ deadlines.</p>
 
 <h4><a name="PRN">server_message = PRN</a> (message)</h4>
 <!-- <h4>server_message = PRN (bad_bracketed_sequence)</h4> -->
-<!-- <h4>bad_bracketed_sequence = any_token_sequence ( any_token_sequence</h4> -->
-<!-- <h4>bad_bracketed_sequence = any_token_sequence ( bad_bracketed_sequence ) any_token_sequence</h4> -->
-<!-- <h4>bad_bracketed_sequence = any_token_sequence ) any_token_sequence</h4> -->
-<!-- <h4>bad_bracketed_sequence = any_token_sequence ) bad_bracketed_sequence</h4> -->
-<!-- <h4>bad_bracketed_sequence = bad_bracketed_sequence ( any_token_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = open_sequence</h4> -->
+<!-- <h4>bad_bracketed_sequence = close_sequence [open_sequence]</h4> -->
+<!-- <h4>open_sequence = any_token_sequence ( any_token_sequence ( any_token_sequence ...</h4> -->
+<!-- <h4>open_sequence = any_token_sequence ( open_sequence ) any_token_sequence</h4> -->
+<!-- <h4>close_sequence = any_token_sequence ) any_token_sequence ) any_token_sequence ...</h4> -->
+<!-- <h4>close_sequence = any_token_sequence ( close_sequence ) any_token_sequence</h4> -->
 
 <p>This message is sent from the server to the client, and indicates
 that <b>message</b> was received from the client by the server, but does
 not have a correct set of parentheses. The <b>PRN</b> message will also
-not have matching parentheses. The client should cope with this. No
+not have matching parentheses; the client should cope with this. No
 reply should be sent to the server.</p>
 
 <h4><a name="HUH">server_message = HUH</a> (message)</h4>
@@ -995,15 +996,16 @@ the syntax level for the current game.</p>
 <p>The <b>PRN</b> and <b>HUH</b> messages may also be sent from the
 client to the server, if the client believes that a message from the
 server is incorrectly bracketed or contains illegal syntax.  However,
-the server and client must not send <b>PRN</b> and <b>HUH</b> in
-response to a <b>PRN</b> and <b>HUH</b> message.</p>
+the server and client must not send <b>HUH</b> or <b>PRN</b> in
+response to a <b>HUH</b> or <b>PRN</b> message.</p>
 
 <h4><a name="CCD">server_message = CCD</a> (power)</h4>
 <!-- <h4>server_message = NOT (CCD (power))</h4> -->
 
 <p>This message is sent from the server to the client, and indicates
 that the specified power has been declared to be in Civil Disorder,
-because the network connection to the power has been broken. If the
+because the network connection to the power has been broken, or
+because the power failed to load a saved game.  If the
 power reconnects, the server will send the
 message <b>NOT (CCD (power))</b>.</p>
 
@@ -1017,7 +1019,7 @@ have been issued for that turn.</p>
 
 <!-- <h4>server_message = NOT (TME (seconds))</h4> -->
 <p>If the game is of the <b>DSD</b> variant, then when a power
-disconnects which has not yet submitted orders, then server sends
+disconnects which has not yet submitted orders, then the server sends
 <b>NOT (TME (seconds))</b> immediately after the <b>CCD</b> message to
 indicate that the deadline timer has stopped, and sends
 <b>TME (seconds)</b> following the <b>NOT (CCD (power))</b> message
@@ -1035,7 +1037,7 @@ or I have to leave shortly). It can be sent by any client &mdash; player
 or observer &mdash; and can be sent before, during or after the game. It
 should not be used for negotiation. The server may interpret the message
 as a command, or it may forward the message to every client. The server
-may be configured to refuse Admin messages, in which case it will reply
+may be configured to refuse admin messages, in which case it will reply
 to the client with <b>REJ (ADM ('name') ('message'))</b>.</p>
 
 <!--
@@ -1098,8 +1100,7 @@ dropped to 0 centres.</p>
 <p>The client can send the command <b>SMR</b> to the server with no
 arguments at any time.  The server will reply by sending another copy of
 the <b>SLO</b> or <b>DRW</b> message, if any, followed by the the
-<b>SMR</b> message, or <b>REJ (SMR)</b> if the game hasn't already
-finished.</p>
+<b>SMR</b> message, or <b>REJ (SMR)</b> if the game has not yet ended.</p>
 
 
 <h2><a name="level10">Level 10</a> : Peace and Allies</h2>
@@ -1116,7 +1117,7 @@ also be given at the start of the game:</p>
 	allowed (that is, NoDIAS).</li>
 	<li><b>variant_option = NPR</b> &mdash; No press during retreat phases</li>
 	<li><b>variant_option = NPB</b> &mdash; No press during build phases</li>
-	<li><b>variant_option = PTL seconds</b> &mdash; number of
+	<li><b><a name="PTL">variant_option = PTL</a> seconds</b> &mdash; number of
 	seconds before a movement deadline that all press between powers
 	must stop. If not specified, then 0.</li>
 </ul>
@@ -1133,8 +1134,8 @@ command with a parameter &mdash; the list of powers in the draw:</p>
 list of powers on the same turn, then a draw is immediately declared
 including those powers.</p>
 
-<p>Multiple <b>DRW</b> commands may be submitted; each one does
-<em>not</em> supersede previous <b>DRW</b> messages.  Instead, it adds
+<p>Multiple <b>DRW</b> commands may be submitted.  Each one does
+<em>not</em> supersede previous <b>DRW</b> messages; instead, it adds
 an additional draw combination which the power will accept.</p>
 
 <p>The server will respond to each <b>DRW</b> message with
@@ -1204,6 +1205,7 @@ immediately before the first token to cause an error.
 
 <p>Either the game has not started, or it is a retreat phase in a
 <b>NPR</b> variant game, or a build phase in a <b>NPB</b> variant game,
+or the press deadline has already passed in a <b>PTL</b> variant game,
 or the sending power has been eliminated.</p>
 
 <h4>server_message = YES (SND (power power ...) (press_message))</h4>
@@ -1258,8 +1260,8 @@ Eliminated powers must not be included in the power list.</p>
 
 <h4><a name="SLO_press">offer = SLO (power)</a></h4>
 
-<p>Propose a Solo to the specified power.  Note that you can't actually
-order a solo &mdash; but you may be able to move your units in a way
+<p>Propose a Solo to the specified power.  Note that a player can't
+actually order a solo &mdash; but it may be able to move its units in a way
 that causes one to occur.</p>
 
 <h4><a name="NOT_press">offer = NOT (offer)</a></h4>
@@ -1326,7 +1328,7 @@ send a second message informing the other player as to what it
 
 <p>List all of the tokens which the player can process when received in the
 <b>press_message</b> part of a <b>FRM</b> message. <b>Tokens</b> should be a
-subset of <b>PRP PCE ALY VSS DRW SLO NOT YES REJ BWX.</b> In addition,
+subset of <b>PRP PCE ALY VSS DRW SLO NOT YES REJ BWX</b>. In addition,
 the following tokens from higher levels may also be included if they can
 be processed by the player: <b>XDO DMZ AND ORR SCD OCC CHO INS
 	QRY THK FCT IDK SUG WHT HOW EXP SRY FOR IFF THN ELS <!-- IOU UOM -->
@@ -1349,8 +1351,8 @@ the received message.</p>
 <p>All tokens which can be processed by the player may be included in
 games of any level (so that it can just have a fixed <b>TRY</b> message
 which it sends if it don't understand something). There is no
-requirement to remove higher level tokens from the <b>TRY</b> message in
-lower level games. The server will remove all higher level tokens from
+requirement to remove higher-level tokens from the <b>TRY</b> message in
+lower-level games.  The server will remove all higher-level tokens from
 the <b>TRY</b> message before passing it onto the receiving power, and
 may also reorder the tokens.</p>
 
@@ -1363,15 +1365,15 @@ may also reorder the tokens.</p>
 
 <h4><a name="XDO">offer = XDO</a> (order)</h4>
 
-<p>This is a proposal that the given order is ordered. The order should be
-for the sending power or the receiving power. <b>order</b> uses the
+<p>This is a proposal that the given order be ordered.  The order should be
+for either the sending power or a receiving power.  <b>order</b> uses the
 same format as in the <b>SUB</b> command.</p>
 
 <h4><a name="DMZ">offer = DMZ</a> (power power ...) (province province ...)</h4>
 
 <p>This is a proposal that the listed powers remove all units from,
 not build any units in, and not order any units to move, retreat, or
-support or convoy a move to any of the list of provinces. The powers
+support or convoy a move to any of the listed provinces.  The powers
 involved in the DMZ should all be recipients of the message.  Eliminated
 powers must not be included in the power list.  This offer is
 continuous.</p>
@@ -1389,14 +1391,14 @@ continuous.</p>
 
 <p>These offers are made as a group, and should be accepted or rejected
 as a group. This is usually used for offers such as &ldquo;I
-support you and you support me&rdquo;.</p>
+support you and you support me.&rdquo;</p>
 
 <h4><a name="ORR">multipart_offer = ORR</a> (offer) (offer) (offer) ...</h4>
 
 <p>These alternative offers are made. The player should accept or reject them as
 a group, and then use further press (if necessary) to decide which part
 of the offer is to actually occur. This is usually used for offers such
-as &ldquo;I will make one of the following moves&rdquo;.</p>
+as &ldquo;I will make one of the following moves.&rdquo;</p>
 
 <p>At level 30, <b>AND</b> and <b>ORR</b> must not be nested; that is,
 they must not both appear in the same message, and neither is allowed to
@@ -1417,7 +1419,7 @@ centres and provinces.</p>
 used when an alliance is sharing out the centres of the powers they
 are allied against. Any <b>centre</b>s not listed are not part of the
 proposed division. Eliminated powers must not be included in the
-distribution of centres.  This offer is a long term plan, and doesn't
+distribution of centres.  This offer is a long-term plan, and doesn't
 necessarily indicate that the centres will be taken this turn.</p>
 
 <h4><a name="OCC">offer = OCC</a> (unit) (unit) ...</h4>
@@ -1427,9 +1429,9 @@ necessarily indicate that the centres will be taken this turn.</p>
 
 <p>This is a suggestion that a power place a particular unit in a
 particular location. <b>unit</b> is in the same format as for
-<b>NOW</b>. For instance <b>PRP (OCC (ENG FLT BEL))</b>. Alternatively,
+<b>NOW</b>; for instance, <b>PRP (OCC (ENG FLT BEL))</b>.  Alternatively,
 the token <b>UNT</b> may be used to represent any unit type. For
-example, <b>PRP (OCC (ENG UNT BEL))</b>. This offer is a long term plan,
+example, <b>PRP (OCC (ENG UNT BEL))</b>.  This offer is a long-term plan,
 and doesn't necessarily indicate that the units will be placed there
 this turn.</p>
 
@@ -1478,18 +1480,18 @@ much more forceful, and implies that relations between the two powers
 will be worsened if the <b>offer</b> is not accepted. If <b>offer</b> is
 something that the sending power can enforce on the board (for
 example, an order for one of his own units), then the receiving power
-should expect it to happen whether he likes it or not.</p>
+should expect it to happen whether it likes it or not.</p>
 
 <h4><a name="QRY">press_message = QRY</a> (offer)</h4>
 
 <p>The syntax for <b>QRY</b> is the same as for <b>PRP</b> and
 <b>INS</b>, except that where a power list is included, there is no
 requirement for it to include the sending or receiving powers.
-<b>QRY</b> is asking a question &mdash; for example, is there an
-alliance, rather then proposing &mdash; for example, how about an
-alliance. <b>QRY</b> is responded to in exactly the same way as
-<b>PRP</b> and <b>INS</b>. However, the following extra responses are
-also available for <b>QRY</b>:</p>
+<b>QRY</b> is asking a question (for example, &ldquo;Is there an
+alliance?&rdquo;), rather then proposing &mdash; (for example,
+&ldquo;How about an alliance?&rdquo;).  <b>QRY</b> can be responded to
+in exactly the same way as <b>PRP</b> and <b>INS</b>; however, the
+following extra responses are also available for <b>QRY</b>:</p>
 
 <h4><a name="THK">reply = THK</a> (QRY (offer))</h4>
 
@@ -1519,17 +1521,16 @@ it is a request for information.</p>
 <p>The syntax for <b>SUG</b> is the same as for <b>QRY</b>, and once
 again, where a power list is included, there is no requirement for it
 to include the sending or receiving powers. <b>SUG</b> is suggesting
-that something is in the mutual interest of the party sending, and all
-parties receiving the message, but is not something they can directly
+that something is in the mutual interest of the sender and all
+recipients, but is not something they can directly
 influence. For instance, Italy may want to say to Austria that it is in
 their mutual interest for Russia to order to the Black Sea. Replies to
-<b>SUG</b> are the same as for <b>PRP</b>. However, the response is an
+<b>SUG</b> are the same as for <b>PRP</b>; however, the response is an
 indication of agreement or disagreement, rather than an indication as to
 whether <b>offer</b> will actually happen.</p>
 
 <p><b>THK</b> and <b>FCT</b> can also be used as a message in their own
-right, to pass information without first being queried for the
-information.</p>
+right, to pass information without first being queried for it.</p>
 
 <h4>press_message = THK (offer)</h4>
 
@@ -1543,7 +1544,7 @@ information.</p>
 
 <p>Note that <b>THK (QRY (offer))</b> and <b>THK (offer)</b> have
 exactly the same meaning, except that the former is the response to a
-query where as the latter is volunteered without being asked. The same
+query whereas the latter is volunteered without being asked.  The same
 applies to <b>FCT (QRY (offer))</b> and <b>FCT (offer)</b>.</p>
 
 
@@ -1556,13 +1557,13 @@ Requests for suggestions come in two forms:</p>
 
 <h4><a name="WHT">press_message = WHT</a> (unit)</h4>
 
-<p>What should <b>unit</b> be ordered to do? This can either be for the
-sending or a receiving powers unit. In the former case, it is a
+<p>What should <b>unit</b> be ordered to do?  This can either be for a
+unit of either the sender or a recipient.  In the former case, it is a
 request for a suggestion. In the latter case, it is a request for
 information.</p>
 
 <!-- <h4>reply = IDK (WHT (unit))</h4> -->
-<p><b>WHT</b> messages should be replied to using <b>PRP</b>, <b>INS</b>
+<p><b>WHT</b> messages should be replied to using <b>PRP</b> or <b>INS</b>
 to propose or insist on a move (as if it was an initial
 proposal/insistence, rather than a response to a <b>WHT</b>),
 <b>IDK (WHT (unit))</b> if the receiving power doesn't have a suggestion,
@@ -1574,9 +1575,9 @@ tell.</p>
 
 <p>How do you think we should attack <b>province</b>? This should be
 responded to with <b>PRP</b> or <b>INS</b> to propose or insist on
-moves, or with <b>REJ (HOW (province))</b> to indicate that the province
-should not be attacked, <b>IDK (HOW  (province))</b> if the receiving
-power doesn't have a suggestion, or with <b>BWX (HOW (province))</b> if
+moves, <b>REJ (HOW (province))</b> to indicate that the province
+should not be attacked, <b>IDK (HOW (province))</b> if the receiving
+power doesn't have a suggestion, or <b>BWX (HOW (province))</b> if
 the receiving power doesn't want to tell.</p>
 
 <h4>press_message = HOW (power)</h4>
@@ -1603,7 +1604,7 @@ eliminated power.</p>
 <h4>reply = YES (EXP (turn) (press_message))</h4>
 <h4>reply = YES (EXP (turn) (reply))</h4>
 
-<p>Yes I know (no explanation given).</p>
+<p>Yes, I know.  (No explanation given.)</p>
 
 <h4>reply = REJ (EXP (turn) (press_message))</h4>
 <h4>reply = REJ (EXP (turn) (reply))</h4>
@@ -1663,7 +1664,8 @@ otherwise, the <b>ELS</b> part (if any) applies.</p>
 <!-- <h4>condition = offer</h4> -->
 <p>A <b>condition</b> takes the same format as an <b>offer</b>.</p>
 
-<p><b>IFF</b> is often used in conjunction with <b>FOR</b>. For example:</p>
+<p><b>IFF</b> can often be used in conjunction with <b>FOR</b>.
+For example:</p>
 
 <p><b>IFF (NOT (XDO ((RUS FLT (STP NCS)) BLD)))
 THN (PRP (FOR (SPR 1902) (XDO ((ENG FLT NWY) SUP (RUS FLT GOB) MTO SWE))))
@@ -1701,13 +1703,13 @@ puppet of another power.</p>
 may ask for "You support me to X, and I owe you."  The amount it owes is
 the value of the support.  This is for when a player is asking for
 something now, and offering to return the favour later, not yet knowing
-how it will return it.</p>
+how it will reciprocate.</p>
 
 <h4><a name="YDO">offer = YDO</a> (power) (unit) (unit) ...</h4>
 
-<p>The control of the listed <b>unit</b>s is given to <b>power</b>. If
-the owner of the units is the sending power then it is allowing the
-named power to decide the orders for those units (which he should do
+<p>Control of the listed <b>unit</b>s is given to <b>power</b>.  If
+the owner of the units is the sending power, then it is allowing the
+named power to decide the orders for those units (which it should do
 using <b>PRP (XDO ...)</b> ). The orders for the units must still be
 entered by the owning power. The power must not be an eliminated
 power.</p>
@@ -1757,7 +1759,7 @@ another. This adds three extra commands to the message syntax:</p>
 <h4><a name="SND_press">offer = SND</a> (power) (power power ...) (press_message)</h4>
 <h4>offer = SND (power) (power power ...) (reply)</h4>
 
-<p>This is a request for the first <b>(power)</b> to send the message
+<p>This is a request for the first <b>power</b> to send the message
 given. The sending power (the first parameter) must be a recipient of
 the message, although there may be other recipients of the request too
 (who should not act on it or reply to it). Eliminated powers must not
@@ -1818,7 +1820,7 @@ Available replies are <b>BWX</b> if the player don't want to tell,
 <b>REJ</b> if it wants to deny knowledge of the <b>THK</b> or <b>FCT</b>
 message, or another <b>THK</b> or <b>FCT</b> message to give further
 information.  Additionally, the player can also give any other message
-which gives further information (most notably a <b>FRM</b> message if it
+which gives further information (most notably, a <b>FRM</b> message if it
 was heard from another player).  Finally, there is one new response
 available:</p>
 
@@ -1988,7 +1990,7 @@ various reasons.</p>
 <tr><td>KIE</td><td>0x5539</td><td>Province</td><td>Coastal Supply Centre</td><td>Kiel</td></tr>
 <tr><td>LOD</td><td>0x4808</td><td>Command</td><td>Server to Client</td><td>Load Game</td></tr>
 <tr><td>LON</td><td>0x553A</td><td>Province</td><td>Coastal Supply Centre</td><td>London</td></tr>
-<tr><td>LST</td><td>0x4820 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Game Listing (<em>Not yet accepted</em>)</td></tr>
+<tr><td>LST</td><td>0x4820 / 0x4E02 *</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Game Listing (<em>Not yet accepted</em>)</td></tr>
 <tr><td>LVL</td><td>0x4903</td><td>Parameter</td><td>HLO</td><td>Syntax Level</td></tr>
 <tr><td>LVN</td><td>0x5427</td><td>Province</td><td>Coastal</td><td>Livonia</td></tr>
 <tr><td>LVP</td><td>0x553B</td><td>Province</td><td>Coastal Supply Centre</td><td>Liverpool</td></tr>
@@ -2044,10 +2046,10 @@ various reasons.</p>
 <tr><td>PIE</td><td>0x542A</td><td>Province</td><td>Coastal</td><td>Piedmont</td></tr>
 <tr><td>POB</td><td>0x4A11</td><td>Press</td><td>Reply</td><td>Position on Board</td></tr>
 <tr><td>POR</td><td>0x553F</td><td>Province</td><td>Coastal Supply Centre</td><td>Portugal</td></tr>
-<!--<tr><td>PNG</td><td>0x4822 *</td><td>Command</td><td>Client &lt;- - -&gt; Server</td><td>Ping (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>PNG</td><td>0x4822 / 0x4E04 *</td><td>Command</td><td>Client &lt;- - -&gt; Server</td><td>Ping (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PPT</td><td>0x4A12</td><td>Press</td><td></td><td>Puppet (<em>REMOVED</em>)</td></tr>
-<!--<tr><td>PRB</td><td>0x4A24 / 0x4AFF</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
-<!--<tr><td>PRF</td><td>0x4823</td><td>Command</td><td>Client to Server</td><td>Preference list (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>PRB</td><td>0x4A24 / 0x4AFF / 0x4E05 *</td><td>Press</td><td>Message</td><td>Probability (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>PRF</td><td>0x4823 / 0x4E06 *</td><td>Command</td><td>Client to Server</td><td>Preference list (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>PRN</td><td>0x4813</td><td>Command</td><td>Server to Client</td><td>Parenthesis error</td></tr>
 <tr><td>PRP</td><td>0x4A13</td><td>Press</td><td>Message</td><td>Propose</td></tr>
 <tr><td>PRU</td><td>0x542B</td><td>Province</td><td>Coastal</td><td>Prussia</td></tr>
@@ -2066,9 +2068,9 @@ various reasons.</p>
 <tr><td>SCO</td><td>0x4815</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Supply Centre Ownership</td></tr>
 <tr><td>SCS</td><td>0x4608</td><td>Coast</td><td></td><td>South Coast</td></tr>
 <tr><td>SEC</td><td>0x4606</td><td>Coast</td><td></td><td>Southeast Coast</td></tr>
-<tr><td>SEL</td><td>0x4821 *</td><td>Command</td><td>Client to Server</td><td>Select Game (<em>Not yet accepted</em>)</td></tr>
+<tr><td>SEL</td><td>0x4821 / 0x4E03 *</td><td>Command</td><td>Client to Server</td><td>Select Game (<em>Not yet accepted</em>)</td></tr>
 <tr><td>SER</td><td>0x510B</td><td>Province</td><td>Inland Supply Centre</td><td>Serbia</td></tr>
-<!--<tr><td>SET</td><td>0x481F *</td><td>Command</td><td>Server to Client</td><td>Orders as Given (<em>Not yet accepted</em>)</td></tr>-->
+<!--<tr><td>SET</td><td>0x481F / 0x4E01 *</td><td>Command</td><td>Server to Client</td><td>Orders as Given (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>SEV</td><td>0x5542</td><td>Province</td><td>Coastal Supply Centre</td><td>Sevastopol</td></tr>
 <tr><td>SIL</td><td>0x5004</td><td>Province</td><td>Inland</td><td>Silesia</td></tr>
 <tr><td>SKA</td><td>0x521E</td><td>Province</td><td>Sea</td><td>Skagerrak</td></tr>
