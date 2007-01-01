@@ -181,6 +181,21 @@ class Player_Tests(PlayerTestCase):
         msg = MAP(self.variant.map_name.upper())
         self.send(msg)
         self.seek_reply(YES(msg))
+    def test_HUH_bounce(self):
+        ''' A client should deal with HUH response to its HUH message.'''
+        Configuration.set_globally('validate', True)
+        Configuration.set_globally('response', 'complain')
+        self.set_verbosity(7)
+        self.connect_player(self.Test_Player)
+        while self.replies:
+            msg = self.replies.pop(0)
+            if msg[0] is NME: self.accept(msg); break
+        else: self.fail('No NME message')
+        # Syntactically incorrect message, just to prompt HUH
+        self.send(MAP(0))
+        self.seek_reply(HUH(MAP(ERR, 0)))
+        self.send(HUH(ERR, HUH(MAP(ERR, 0))))
+        self.failUnlessEqual(self.replies, [])
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):
