@@ -46,15 +46,18 @@
       payola, and other variants, if there is any interest.</p>
     
     <h2>External clients</h2>
-    <p>I would like the ability to call external commands as bots, using an
-      <code>[external]</code> section of the config file.  Python 2.4's
-      <code>subprocess</code> module would probably be helpful here.</p>
+    <p>I would like the ability to call external commands as bots.  This could
+      use an <code>[external]</code> section of the config file, but even
+      better would be a new bot class catering specifically to each known bot.
+      Such a class could be smart about using the power, passcode, and game_id
+      arguments.  Python 2.4's <code>subprocess</code> module would probably
+      be helpful here.</p>
     
-    <h3>Internal clients</h3>
+    <h2>Internal clients</h2>
     <p>Bots started from the server could be optimized a bit.  This would
       probably start with the socket.socketpair() call, new in Python 2.4,
       but may extend to avoiding the network layer altogether.</p>
-
+    
     <h3>PeaceBot</h3>
     <p>PeaceBot is excessively limited at the moment.  Ideally, it should
       assign one ally to do all the tactical processing each turn, through XDO
