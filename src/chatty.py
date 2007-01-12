@@ -47,6 +47,7 @@ class Chatty(Observer):
             line = '%s: %s (%s); %s centers' % (power,name[0],version[0],score)
             if len(player) > 4: line += ' (eliminated in %s)' % (player[4],)
             self.output(line)
+player_class = Chatty
 
 try:
     import curses
@@ -72,7 +73,7 @@ else:
             self.editwin = win.subwin(1, curses.COLS - 1, curses.LINES - 1, 0)
             editpad = Textbox(self.editwin)
             while not self.closed:
-                line = editpad.edit()
+                line = editpad.edit(self.validate)
                 self.editwin.erase()
                 if line: self.send_admin(line)
         def setup_win(self, win):
@@ -95,6 +96,9 @@ else:
         def handle_OFF(self, message):
             self.output('The server has closed.')
             self.__super.handle_OFF(message)
+        def validate(self, ch):
+            ''' Filters characters for the edit window.'''
+            return ch
     class MapChat(Cursed):
         ''' An even better interface for the admin chat, displaying a map.'''
         def __init__(self, **kwargs):
@@ -231,8 +235,23 @@ else:
                 win.refresh()
             self.output('Supply Centres %s: %s',
                     self.map.current_turn, '; '.join(owners))
+    class Mouser(MapChat):
+        ''' A version of MapChat that should be able to take mouse input.'''
+        def setup_win(self, win):
+            mask = curses.ALL_MOUSE_EVENTS
+            self.output(curses.mousemask(mask))
+            self.__super.setup_win(win)
+        def validate(self, ch):
+            if ch == curses.KEY_MOUSE:
+                minfo = curses.getmouse()
+                self.output(minfo)
+                ch = None
+            else:
+                curses.ungetmouse(32, 1, 2, ch, 0)
+            return ch
+    player_class = Mouser
 
 
 if __name__ == "__main__":
     from main import run_player
-    run_player(MapChat, False, False)
+    run_player(player_class, False, False)
