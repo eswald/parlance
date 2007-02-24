@@ -237,5 +237,10 @@ class Player_Bots(PlayerTestCase):
     def test_blabberbot(self):
         from blabberbot import BlabberBot
         self.attempt_one_phase(BlabberBot)
+    def test_neurotic(self):
+        from neurotic import Neurotic
+        Configuration._cache['verbosity'] = 10
+        self.variant = variants['hundred3']
+        self.attempt_one_phase(Neurotic)
 
 if __name__ == '__main__': unittest.main()

@@ -189,8 +189,10 @@ class Observer(VerboseObject):
                 variants[mapname.lower()] = variant
             self.map = Map(variant)
             if self.map.valid:
-                self.accept(message)
-                if self.power: self.send_list([HLO, SCO, NOW])
+                if self.process_map():
+                    self.accept(message)
+                    if self.power: self.send_list([HLO, SCO, NOW])
+                else: self.reject(message)
             else: self.send(MDF)
         else: self.accept(message)
     def handle_MDF(self, message):
@@ -198,11 +200,17 @@ class Observer(VerboseObject):
             The map should have loaded itself, but might not be valid.
         '''#'''
         if self.map:
-            if self.map.valid:
+            if self.map.valid and self.process_map():
                 self.accept(MAP(self.map.name))
                 if self.power: self.send_list([HLO, SCO, NOW])
             else: self.reject(MAP(self.map.name))
         else: raise ValueError, 'MDF before MAP'
+    def process_map(self):
+        ''' Performs any supplemental processing on the map.
+            The map will be loaded and valid by this point.
+            Returns whether to accept the MAP message.
+        '''#'''
+        return True
     def phase(self): return self.map.current_turn.phase()
     
     # End of the game
