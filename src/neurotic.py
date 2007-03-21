@@ -3,6 +3,7 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
+from cPickle      import Pickler, Unpickler
 from math         import sqrt
 from time         import ctime
 
@@ -21,10 +22,11 @@ class Brain(VerboseObject):
     
     def __init__(self, board):
         self.__super.__init__()
-        # Inputs: Seasons, Coasts*Players, Centers*Players
-        # Outputs: Provinces*(Provinces+Self+Adjacents+Coastals)
-        # Consider: Player*(Player-1)
-        
+        self.filename = 'log/bots/neurotic_%s.pkl' % (board.name,)
+        self.sort_lists(board)
+        if not self.load_weights(): self.create_net(board)
+    def sort_lists(self, board):
+        # Originally only in create_net()
         # All this sorting is probably unnecessary, but maintains consistency.
         self.seasons = board.current_turn.seasons[:]
         self.powers = sorted(board.powers.iterkeys())
@@ -38,6 +40,10 @@ class Brain(VerboseObject):
                 for token, province in board.spaces.iteritems())
         self.borders = dict((token, sorted(province.borders_out))
                 for token, province in board.spaces.iteritems())
+    def create_net(self, board):
+        # Inputs: Seasons, Coasts*Players, Centers*Players
+        # Outputs: Provinces*(Provinces+Self+Adjacents+Coastals)
+        # Consider: Player*(Player-1)
         
         self.input_headers = map(str, self.seasons)
         for coast in self.coasts:
@@ -179,21 +185,65 @@ class Brain(VerboseObject):
             self.log_debug(15, "%s: %s", value, order)
         return order_values
     
-    def load_weights(self, map_name):
-        pass
-    def store_weights(self, map_name):
-        ''' Stores the weights used for the map.'''
-        filename = 'log/bots/neurotic_%s.csv' % (map_name,)
-        try: fp = open(filename, 'w')
-        except IOError: self.log_debug(1, "Couldn't open csv file " + filename)
+    def load_weights(self):
+        ''' Loads the stored data from previous sessions, if possible.'''
+        valid = False
+        try: fp = open(self.filename, 'r')
+        except IOError:
+            self.log_debug(11, "Couldn't read stats file '%s'", self.filename)
         else:
+            self.log_debug(11, "Loading stats file '%s'", self.filename)
             try:
-                fp.write(self.input_headers)
-                fp.write(self.self.net.wi)
-                fp.write(self.output_headers)
-                fp.write(self.self.net.wo)
+                pickler = Unpickler(fp)
+                self.input_headers = pickler.load()
+                wi = pickler.load()
+                self.output_headers = pickler.load()
+                wo = pickler.load()
+                #self.seasons = pickler.load()
+                #self.powers = pickler.load()
+                #self.coasts = pickler.load()
+                #self.provinces = pickler.load()
+                #self.centers = pickler.load()
+                #self.coastals = pickler.load()
+                #self.coastlines = pickler.load()
+                #self.borders = pickler.load()
             finally:
                 fp.close()
+            
+            ni = len(self.input_headers)
+            no = len(self.output_headers)
+            nh = len(wo)
+            self.log_debug(7, "%d inputs => %d hidden => %d outputs",
+                    ni, nh, no)
+            self.net = NN(ni, nh, no, wi, wo)
+            valid = True
+        return valid
+    def store_weights(self):
+        ''' Stores the weights used for the map.'''
+        try: fp = open(self.filename, 'w')
+        except IOError:
+            self.log_debug(1, "Couldn't write stats file '%s'", self.filename)
+        else:
+            self.log_debug(11, "Writing stats file '%s'", self.filename)
+            try:
+                pickler = Pickler(fp, -1)
+                pickler.dump(self.input_headers)
+                pickler.dump(self.net.wi)
+                pickler.dump(self.output_headers)
+                pickler.dump(self.net.wo)
+                #pickler.dump(self.seasons)
+                #pickler.dump(self.powers)
+                #pickler.dump(self.coasts)
+                #pickler.dump(self.provinces)
+                #pickler.dump(self.centers)
+                #pickler.dump(self.coastals)
+                #pickler.dump(self.coastlines)
+                #pickler.dump(self.borders)
+            finally:
+                fp.close()
+    def close(self):
+        ''' Called whenever a Neurotic closes.'''
+        self.store_weights()
 
 class Neurotic(Player):
     ''' A bot that tries to mimic its opponents.
@@ -201,6 +251,7 @@ class Neurotic(Player):
     '''#'''
     
     def __init__(self, **kwargs):
+        self.brain = None
         self.__super.__init__(**kwargs)
         self.log_debug(9, '%s (%s); started at %s',
                 self.name, self.version, ctime())
@@ -245,6 +296,9 @@ class Neurotic(Player):
             self.log_debug(1, 'Error while handling NOW %s message', turn)
             self.close()
             raise
+    def close(self):
+        if self.brain: self.brain.close()
+        self.__super.close()
 
 
 if __name__ == "__main__":
