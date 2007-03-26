@@ -16,7 +16,7 @@ from tokens       import MBV
 
 class Brain(VerboseObject):
     ''' Stores the neural networks for Neurotic bots.
-        Designed to only require one Brain instance per map,
+        Designed to potentially require only one Brain instance per map,
         without letting bots step on each others' toes.
     '''#'''
     
@@ -89,7 +89,8 @@ class Brain(VerboseObject):
         self.log_debug(11, 'Inputs: %s', inputs)
         outputs = self.net.update(inputs)
         self.log_debug(11, 'Outputs: %s', outputs)
-        return self.parse_outputs(board, outputs)
+        orders = self.parse_outputs(board, outputs)
+        return inputs, orders
     def collect_inputs(self, board):
         ''' Converts a board state into a list of inputs for the neural net.'''
         inputs = [0] * len(self.input_headers)
@@ -255,6 +256,8 @@ class Neurotic(Player):
         self.__super.__init__(**kwargs)
         self.log_debug(9, '%s (%s); started at %s',
                 self.name, self.version, ctime())
+        self.inputs = {}
+        self.learned = {}
     def process_map(self):
         self.brain = Brain(self.map)
         return True
@@ -265,20 +268,22 @@ class Neurotic(Player):
             but it might get called again before completing.
         '''#'''
         try:
-            phase = self.phase()
-            self.log_debug(10, 'Starting NOW %s message', self.map.current_turn)
+            turn = self.map.current_turn
+            phase = turn.phase()
+            self.log_debug(10, 'Starting NOW %s message', turn)
             orders = self.orders
             missing = orders.missing_orders(phase)
-            values = self.brain.collect_values(self.map)
+            inputs, values = self.brain.collect_values(self.map)
+            self.inputs[turn.key] = inputs
             values.sort()
             
             while missing and values:
                 value, order = values.pop()
                 self.log_debug(11, 'Considering %s, worth %s', order, value)
                 note = order.order_note(self.power, phase, orders)
-                province = order.unit.coast.province
-                if order.unit and orders.has_order(province):
-                    self.log_debug(11, 'Already has an order for %s', province)
+                if order.unit and orders.has_order(order.unit.coast.province):
+                    self.log_debug(11, 'Already has an order for %s',
+                            order.unit.coast.province)
                     continue
                 elif note != MBV:
                     self.log_debug(11, 'Bad order: %s', note)
@@ -299,6 +304,9 @@ class Neurotic(Player):
     def close(self):
         if self.brain: self.brain.close()
         self.__super.close()
+    
+    def handle_ORD(self, message):
+        self.log_debug(1, '%r', message.fold())
 
 
 if __name__ == "__main__":

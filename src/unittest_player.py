@@ -239,12 +239,10 @@ class Player_Bots(PlayerTestCase):
         self.attempt_one_phase(BlabberBot)
     def test_neurotic(self):
         from neurotic import Neurotic
-        Configuration._cache['verbosity'] = 10
         self.variant = variants['hundred3']
         self.attempt_one_phase(Neurotic)
     def test_neurotic_duplication(self):
         from neurotic import Neurotic
-        Configuration._cache['verbosity'] = 10
         self.variant = variants['hundred3']
         self.connect_player(Neurotic)
         self.start_game()

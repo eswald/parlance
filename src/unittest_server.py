@@ -117,28 +117,29 @@ class ServerTestCase(unittest.TestCase):
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     
-    game_options = {
-        'LVL': 20,
-        'variant' : 'standard',
-        'quit' : True,
-        'snd_admin' : True,
-        'admin_cmd' : True,
-        'fwd_admin' : True,
-        'host' : '',
-        'port' : 16720,
-        'wait_time' : 5,
-        'send_SET': False,
-        'send_ORD': False,
-        'draw': 3,
-        'response': 'croak',
-        'bot_min': 2,
-        'veto_time': 3,
-        'MTL': 60,
-        'confirm': False,
-        'log_games': False,
-    }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
+        self.game_options = {
+            'LVL': 20,
+            'variant' : 'standard',
+            'quit' : True,
+            'snd_admin' : True,
+            'admin_cmd' : True,
+            'fwd_admin' : True,
+            'host' : '',
+            'port' : 16720,
+            'wait_time' : 5,
+            'send_SET': False,
+            'send_ORD': False,
+            'draw': 3,
+            'response': 'croak',
+            'bot_min': 2,
+            'veto_time': 3,
+            'MTL': 60,
+            'confirm': False,
+            'log_games': False,
+        }
+        
         self.set_verbosity(0)
         Configuration._cache.update(self.game_options)
         self.manager = None
@@ -147,8 +148,9 @@ class ServerTestCase(unittest.TestCase):
         if self.server and not self.server.closed: self.server.close()
         if self.manager and not self.manager.closed: self.manager.close()
     def set_verbosity(self, verbosity):
-        Configuration.set_globally('verbosity', verbosity)
+        self.set_option('verbosity', verbosity)
     def set_option(self, option, value):
+        self.game_options[option] = value
         Configuration.set_globally(option, value)
     def connect_server(self):
         self.set_option('games', 1)
@@ -425,12 +427,9 @@ class Server_Press(ServerTestCase):
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
-    game_options = {}
-    game_options.update(ServerTestCase.game_options)
-    game_options['quit'] = False
-    
     def setUp(self):
         ServerTestCase.setUp(self)
+        self.set_option('quit', False)
         self.connect_server()
         self.master = self.connect_player(self.Fake_Master)
         self.backup = self.connect_player(self.Fake_Master)

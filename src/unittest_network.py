@@ -8,9 +8,10 @@ import unittest
 from struct          import pack
 from time            import sleep
 
-from config          import Configuration, VerboseObject
+from config          import VerboseObject
 from dumbbot         import DumbBot
 from evilbot         import EvilBot
+from neurotic        import Neurotic
 from functions       import any
 from language        import Representation, Token, protocol
 from main            import ThreadManager
@@ -57,6 +58,8 @@ class NetworkTestCase(ServerTestCase):
             if from_them: self.error_code = code
             self.__super.send_error(code, from_them)
     
+    next_port = None
+    
     def setUp(self):
         ServerTestCase.setUp(self)
         self.manager = ThreadManager()
@@ -64,9 +67,12 @@ class NetworkTestCase(ServerTestCase):
         self.manager.pass_exceptions = True
         self.set_verbosity(1)
     def connect_server(self, clients, games=1, poll=True, **kwargs):
-        Configuration._cache.update(self.game_options)
-        Configuration._cache['games'] = games
-        self.game_options['port'] += 1
+        self.set_option('games', games)
+        if NetworkTestCase.next_port:
+            self.set_option('port', NetworkTestCase.next_port)
+            NetworkTestCase.next_port += 1
+        else: NetworkTestCase.next_port = self.game_options['port'] + 1
+        
         manager = self.manager
         sock = ServerSocket(Server, manager)
         if not poll: sock.polling = None
@@ -319,7 +325,15 @@ class Network_Full_Games(NetworkTestCase):
         #self.set_option('MTL', 10)
         #self.set_option('validate', False)
         #self.set_option('send_ORD', True)
+        EvilBot.games.clear()
         self.connect_server([HoldBot, EvilBot, EvilBot,
                 EvilBot, EvilBot, EvilBot, EvilBot])
+    def test_neurotic(self):
+        ''' One Neurotic against two EvilBots.'''
+        self.set_verbosity(4)
+        self.set_option('send_ORD', True)
+        self.set_option('variant', 'hundred3')
+        EvilBot.games.clear()
+        self.connect_server([Neurotic, EvilBot, EvilBot])
 
 if __name__ == '__main__': unittest.main()
