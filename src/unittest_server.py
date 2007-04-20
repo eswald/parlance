@@ -138,6 +138,7 @@ class ServerTestCase(unittest.TestCase):
             'MTL': 60,
             'confirm': False,
             'log_games': False,
+            'block_exceptions': False,
         }
         
         self.set_verbosity(0)

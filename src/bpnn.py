@@ -155,7 +155,17 @@ class NN(VerboseObject):
                 self.update(inputs)
                 error += self.backPropagate(targets, N, M)
             if i % 100 == 0:
-                self.output(11, 'error %-14f', error)
+                self.log_debug(11, 'error %-14f', error)
+    
+    def learn(self, inputs, targets, iterations=1000, N=0.5, M=0.1):
+        ''' Trains the network with a single pattern.
+            Slightly more efficient than train().
+        '''#'''
+        self.update(inputs)
+        for i in xrange(iterations):
+            error = self.backPropagate(targets, N, M)
+            if i % 100 == 0:
+                self.log_debug(11, 'Training... epsilon %-14f', error)
 
 
 def demo():
@@ -175,7 +185,6 @@ def demo():
     n.test(pat)
     # show the weights
     n.weights()
-
 
 
 if __name__ == '__main__':

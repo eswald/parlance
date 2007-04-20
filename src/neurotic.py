@@ -9,7 +9,9 @@ from time         import ctime
 
 from bpnn         import NN
 from config       import VerboseObject
-from gameboard    import Unit
+from functions    import defaultdict
+from gameboard    import Turn, Unit
+from judge        import DatcOptions
 from orders       import *
 from player       import Player
 from tokens       import MBV
@@ -158,7 +160,7 @@ class Brain(VerboseObject):
                             mover = board.spaces[start].unit
                             if mover.can_be_convoyed():
                                 value = start_value + outputs[index]
-                                order = SupportMoveOrder(unit, mover, dest)
+                                order = ConvoyingOrder(unit, mover, dest)
                                 order_values.append((value, order))
                     index += 1
             else:
@@ -185,6 +187,62 @@ class Brain(VerboseObject):
         for value, order in order_values:
             self.log_debug(15, "%s: %s", value, order)
         return order_values
+    
+    def learn(self, inputs, orders, board):
+        ''' Trains the neural net to produce the given orders.'''
+        outputs = self.parse_orders(orders, board)
+        ins = [x for i, x in enumerate(self.input_headers) if inputs[i]]
+        outs = [x for i, x in enumerate(self.output_headers) if outputs[i]]
+        self.log_debug(1, 'Training %s to produce %s.', ins, outs)
+        self.net.learn(inputs, outputs)
+    def parse_orders(self, orders, board):
+        ''' Converts an order set into a neural net output list.'''
+        outputs = [0] * len(self.output_headers)
+        index = 0
+        prov_orders = {}
+        for order in orders:
+            if order.unit:
+                prov_orders[order.unit.coast.province.key] = order
+        for token in self.provinces:
+            if prov_orders.has_key(token):
+                order = prov_orders[token]
+                for prov in self.provinces:
+                    if prov == token:
+                        if isinstance(order, (DisbandOrder, RemoveOrder,
+                                    HoldOrder, RetreatOrder, MoveOrder)):
+                            outputs[index] = 1
+                    elif board.spaces[prov].unit:
+                        if (isinstance(order, (SupportOrder, ConvoyingOrder))
+                                and order.supported.coast.province == token):
+                            outputs[index] = 1
+                    index += 1
+                
+                for coast in self.coastlines[token]:
+                    if (isinstance(order, HoldOrder)
+                            and coast == order.unit.coast.key):
+                        outputs[index] = 1
+                    index += 1
+                
+                for prov in self.borders[token]:
+                    for key in self.coastlines[prov]:
+                        if (isinstance(order, (RetreatOrder,
+                                        MoveOrder, SupportMoveOrder))
+                                and order.destination.key == key):
+                            outputs[index] = 1
+                        index += 1
+                
+                for key in self.coastals:
+                    if (isinstance(order, (ConvoyedOrder, ConvoyingOrder))
+                            and order.destination.key == key):
+                        outputs[index] = 1
+                    index += 1
+            else:
+                index += len(self.provinces)
+                index += len(self.coastlines[token])
+                index += sum(len(self.coastlines[prov])
+                        for prov in self.borders[token])
+                index += len(self.coastals)
+        return outputs
     
     def load_weights(self):
         ''' Loads the stored data from previous sessions, if possible.'''
@@ -257,7 +315,9 @@ class Neurotic(Player):
         self.log_debug(9, '%s (%s); started at %s',
                 self.name, self.version, ctime())
         self.inputs = {}
-        self.learned = {}
+        self.learned = defaultdict(OrderSet)
+        self.last_turn = None
+        self.datc = DatcOptions()
     def process_map(self):
         self.brain = Brain(self.map)
         return True
@@ -306,7 +366,22 @@ class Neurotic(Player):
         self.__super.close()
     
     def handle_ORD(self, message):
-        self.log_debug(1, '%r', message.fold())
+        msg = message.fold()
+        turn = Turn(*msg[1])
+        if turn != self.map.current_turn:
+            self.log_debug(1, 'Order for %s in %s',
+                    turn, self.map.current_turn)
+        order = createUnitOrder(msg[2], None, self.map, self.datc)
+        nation = (order.unit or order).nation
+        self.log_debug(11, '(%s) %s %s', turn, nation, order)
+        self.learned[turn.key].add(order)
+        self.last_turn = turn.key
+    def handle_NOW(self, message):
+        if self.last_turn:
+            self.brain.learn(self.inputs[self.last_turn],
+                    self.learned[self.last_turn], self.map)
+            self.last_turn = None
+        self.__super.handle_NOW(message)
 
 
 if __name__ == "__main__":

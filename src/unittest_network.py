@@ -330,9 +330,10 @@ class Network_Full_Games(NetworkTestCase):
                 EvilBot, EvilBot, EvilBot, EvilBot])
     def test_neurotic(self):
         ''' One Neurotic against two EvilBots.'''
-        self.set_verbosity(4)
+        self.set_verbosity(14)
         self.set_option('send_ORD', True)
         self.set_option('variant', 'hundred3')
+        self.set_option('quit', True)
         EvilBot.games.clear()
         self.connect_server([Neurotic, EvilBot, EvilBot])
 
