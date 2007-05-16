@@ -703,9 +703,13 @@ class OrderSet(defaultdict):
         '''#'''
         phase = board.current_turn.phase()
         if phase == Turn.move_phase:
-            self.default_orders(HoldOrder, board)
+            for unit in board.units:
+                if not self.get_order(unit):
+                    self.add(HoldOrder(unit), unit.nation)
         elif phase == Turn.retreat_phase:
-            self.default_orders(DisbandOrder, board)
+            for unit in board.units:
+                if unit.dislodged and not self.get_order(unit):
+                    self.add(DisbandOrder(unit), unit.nation)
         elif phase == Turn.build_phase:
             for power in board.powers.itervalues():
                 builds = self.builds_remaining(power)
@@ -719,7 +723,3 @@ class OrderSet(defaultdict):
             if not self.has_key(unit.coast.key):
                 self.add(RemoveOrder(unit), power)
                 surplus -= 1
-    def default_orders(self, order_class, board):
-        for unit in board.units:
-            if not self.get_order(unit):
-                self.add(order_class(unit), unit.nation)
