@@ -85,14 +85,13 @@ class Brain(VerboseObject):
         self.log_debug(7, "%d inputs => %d hidden => %d outputs", ni, nh, no)
         self.net = NN(ni, nh, no)
     
-    def collect_values(self, board):
+    def collect_values(self, inputs, board):
         turn = board.current_turn
-        inputs = self.collect_inputs(board)
         self.log_debug(11, 'Inputs: %s', inputs)
         outputs = self.net.update(inputs)
         self.log_debug(11, 'Outputs: %s', outputs)
         orders = self.parse_outputs(board, outputs)
-        return inputs, orders
+        return orders
     def collect_inputs(self, board):
         ''' Converts a board state into a list of inputs for the neural net.'''
         inputs = [0] * len(self.input_headers)
@@ -194,7 +193,7 @@ class Brain(VerboseObject):
         ins = [x for i, x in enumerate(self.input_headers) if inputs[i]]
         outs = [x for i, x in enumerate(self.output_headers) if outputs[i]]
         self.log_debug(1, 'Training %s to produce %s.', ins, outs)
-        self.net.learn(inputs, outputs)
+        self.net.learn(inputs, outputs, iterations=1)
     def parse_orders(self, orders, board):
         ''' Converts an order set into a neural net output list.'''
         outputs = [0] * len(self.output_headers)
@@ -333,8 +332,7 @@ class Neurotic(Player):
             self.log_debug(10, 'Starting NOW %s message', turn)
             orders = self.orders
             missing = orders.missing_orders(phase)
-            inputs, values = self.brain.collect_values(self.map)
-            self.inputs[turn.key] = inputs
+            values = self.brain.collect_values(self.inputs[turn.key], self.map)
             values.sort()
             
             while missing and values:
@@ -377,11 +375,21 @@ class Neurotic(Player):
         self.learned[turn.key].add(order)
         self.last_turn = turn.key
     def handle_NOW(self, message):
-        if self.last_turn:
-            self.brain.learn(self.inputs[self.last_turn],
-                    self.learned[self.last_turn], self.map)
-            self.last_turn = None
+        ''' Overrides Player.handle_NOW to ensure that inputs are calculated,
+            and to train the brain with any moves recently learned.
+        '''#'''
+        last_turn = self.last_turn
+        self.last_turn = None
+        
+        turn = self.map.current_turn
+        self.inputs[turn.key] = self.brain.collect_inputs(self.map)
         self.__super.handle_NOW(message)
+        
+        if last_turn:
+            self.brain.learn(self.inputs[last_turn],
+                    self.learned[last_turn], self.map)
+            del self.inputs[last_turn]
+            del self.learned[last_turn]
 
 
 if __name__ == "__main__":
