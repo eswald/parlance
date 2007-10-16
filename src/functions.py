@@ -178,25 +178,6 @@ class settable_property(object):
     def __init__(self, fget): self.fget = fget
     def __get__(self, obj, type): return self.fget(obj)
 
-def absolute_limit(time_limit):
-    ''' Converts a TME message number into a number of seconds.
-        Negative message numbers indicate hours; positive, seconds.
-    '''#'''
-    if time_limit < 0: result = -time_limit * 3600
-    else: result = time_limit
-    return result
-def relative_limit(seconds):
-    ''' Converts a number of seconds into a TME message number.
-        Negative message numbers indicate hours; positive, seconds.
-        Negative times are cropped to zero.
-    '''#'''
-    from language import protocol
-    max_int = protocol.max_pos_int
-    if seconds > max_int: result = -seconds // 3600
-    else: result = max(0, seconds)
-    if -result > max_int: result = -max_int
-    return result
-
 class defaultdict(dict):
     ''' Shortcut for a self-initializing dictionary;
         for example, to keep counts of something.

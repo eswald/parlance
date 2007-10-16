@@ -15,7 +15,7 @@ from time       import ctime
 from config     import GameOptions, MapVariant, VerboseObject, variants
 from functions  import s, version_string
 from gameboard  import Map, Turn
-from language   import Message, Token
+from language   import Message, Time, Token
 from main       import ThreadManager, run_player
 from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
 from tokens     import *
@@ -526,10 +526,10 @@ class Clock(AutoObserver):
         self.__super.handle_HLO(message)
         max_time = max(self.game_opts.BTL, self.game_opts.MTL, self.game_opts.RTL)
         if max_time > 0:
-            for seconds in range(5, max_time, 5): self.send(TME(seconds))
+            for seconds in range(5, max_time, 5): self.send(TME(Time(seconds)))
         else: self.close()
     def handle_TME(self, message):
-        seconds = message[2].value()
+        seconds = int(Time(*message.fold()[1]))
         self.log_debug(1, '%d seconds left at %s', seconds, ctime())
 
 

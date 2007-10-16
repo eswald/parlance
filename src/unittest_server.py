@@ -6,12 +6,13 @@
 import unittest
 from time       import sleep, time
 
-from config     import Configuration, VerboseObject
-from functions  import absolute_limit, num2name
+from config     import Configuration, GameOptions, VerboseObject
+from functions  import num2name
 from gameboard  import Turn
+from language   import Time
 from main       import ThreadManager
 from network    import Service
-from player     import HoldBot
+from player     import Clock, HoldBot
 from server     import Server
 from tokens     import *
 from xtended    import ITA, LON, PAR
@@ -98,6 +99,8 @@ class ServerTestCase(unittest.TestCase):
             if message[0] is HLO:
                 self.power = message[2]
                 self.pcode = message[5].value()
+                self.game_opts = GameOptions()
+                self.game_opts.parse_message(message)
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             elif message[0] is OFF: self.close()
         def admin(self, line, *args):
@@ -107,9 +110,9 @@ class ServerTestCase(unittest.TestCase):
         def get_time(self):
             self.queue = []
             self.send(+TME)
-            times = [absolute_limit(msg[2].value())
+            times = [Time(*msg.fold()[1])
                     for msg in self.queue if msg[0] is TME]
-            return times and times[0] or None
+            return times and int(times[0]) or None
         def hold_all(self):
             self.send(+MIS)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
@@ -120,6 +123,7 @@ class ServerTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         self.game_options = {
+            'DSD': False,
             'LVL': 20,
             'variant' : 'standard',
             'quit' : True,
@@ -338,6 +342,28 @@ class Server_Basics(ServerTestCase):
         master.send(+SMR)
         self.assertContains(+DRW, master.queue)
         self.assertEqual(SMR, master.queue[-1][0])
+    def test_long_limits(self):
+        limit = 5*60*60 + 30
+        self.set_option('MTL', limit)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        self.failUnlessEqual(player.game_opts.MTL, limit)
+    def test_clock(self):
+        limit = 5*60*60 + 30
+        self.set_option('MTL', limit)
+        times = []
+        def catch_times(message):
+            seconds = int(Time(*message.fold()[1]))
+            times.append(seconds)
+        
+        self.connect_server()
+        player = self.connect_player(Clock)
+        player.handle_TME = catch_times
+        game = self.start_game()
+        sleep(12)
+        game.run()
+        self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
