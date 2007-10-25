@@ -364,6 +364,14 @@ class Server_Basics(ServerTestCase):
         sleep(12)
         game.run()
         self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
+    def test_variant_map_name(self):
+        ''' Variants should use the name of the map in MAP messages.
+            For example, Fleet Rome should use MAP ("standard").
+        '''#'''
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.assertContains(MAP ("standard"), player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''

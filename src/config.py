@@ -400,13 +400,14 @@ class MapVariant(VerboseObject):
         '''#'''
         from tokens import SPR, SUM, FAL, AUT, WIN
         self.__super.__init__()
-        self.prefix      = '%s(%r)' % (self.__class__.__name__, variant_name)
-        self.variant     = variant_name
-        self.map_name    = variant_name.lower()
+        self.prefix = '%s(%r)' % (self.__class__.__name__, variant_name)
+        self.variant = variant_name
+        fname = files.get('mdf', variant_name.lower())
+        self.map_name = path.splitext(path.basename(fname))[0]
         self.description = description
-        self.files       = files
-        self.rep         = rep or self.get_representation()
-        self.seasons     = [SPR, SUM, FAL, AUT, WIN]
+        self.files = files
+        self.rep = rep or self.get_representation()
+        self.seasons = [SPR, SUM, FAL, AUT, WIN]
         self.msg_cache  = {}
     def new_judge(self, game_options):
         from judge import Judge
