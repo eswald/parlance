@@ -351,6 +351,8 @@ class Historian(VerboseObject):
         
         def handle_MAP(self, client, message):
             client.send(self.history.messages[MAP])
+        def handle_VAR(self, client, message):
+            client.send(self.history.messages[VAR])
         def handle_MDF(self, client, message):
             client.send(self.history.messages[MDF])
         def handle_NOW(self, client, message):
@@ -397,6 +399,7 @@ class Historian(VerboseObject):
         def write(token): write_message(self.messages[token])
         write(LST)
         write(MAP)
+        write(VAR)
         write(MDF)
         write(HLO)
         write(SCO)
@@ -439,7 +442,7 @@ class Historian(VerboseObject):
                 when = history.get(turn, messages)
                 when[SCO] = sco = message
                 when['new_SCO'] = True
-            elif first in (LST, MAP, MDF, HLO, SMR):
+            elif first in (LST, MAP, VAR, MDF, HLO, SMR):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
@@ -633,6 +636,7 @@ class Game(Historian):
         self.variant        = variant
         self.judge          = variant.new_judge(self.game_options)
         self.messages[MAP]  = MAP(self.judge.map_name)
+        self.messages[VAR]  = VAR(self.judge.variant_name)
         self.messages[MDF]  = variant.map_mdf
         
         # Press- and time-related variables

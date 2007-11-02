@@ -125,6 +125,8 @@ class ServerTestCase(unittest.TestCase):
         self.game_options = {
             'DSD': False,
             'LVL': 20,
+            'RTL': 0,
+            'BTL': 0,
             'variant' : 'standard',
             'quit' : True,
             'snd_admin' : True,
@@ -310,9 +312,25 @@ class Server_Basics(ServerTestCase):
         player = self.connect_player(self.Fake_Player,
                 game_id=game.game_id, observe=True)
         player.queue = []
-        power = game.judge.map.powers.values()[0]
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    def test_historian_var(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        player.send(+VAR)
+        self.assertContains(VAR ("fleet_rome"), player.queue)
     def test_historian_sub(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -344,6 +362,7 @@ class Server_Basics(ServerTestCase):
         expected = [
             self.game.listing(),
             MAP (self.game.judge.map_name),
+            VAR (self.game.judge.variant_name),
             self.game.variant.map_mdf,
             HLO (OBS) (0) (self.game.game_options),
             self.game.variant.start_sco,
@@ -407,6 +426,13 @@ class Server_Basics(ServerTestCase):
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP ("standard"), player.queue)
+    def test_variant_name(self):
+        ''' The server should answer a VAR command with the variant name.'''
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        player.send(+VAR)
+        self.assertContains(VAR ("fleet_rome"), player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
