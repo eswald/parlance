@@ -204,7 +204,7 @@
     <p>Something is failing to close the port properly in the test_timeout
       unit test.</p>
     <p>Everything that interacts with files should be wrapped in try...finally
-      blocks to close the file properly.</p>
+      blocks (or 2.5 with blocks) to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
       currently, game logging simply fails and the game stays in memory.</p>
     
