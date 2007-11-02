@@ -360,7 +360,7 @@ class Historian(VerboseObject):
         def handle_ORD(self, client, message):
             client.send_list(self.history.history[self.turn][ORD])
         
-        def handle_MAP(self, client, message): client.reject(message)
+        def handle_SUB(self, client, message): client.reject(message)
         def handle_DRW(self, client, message): client.reject(message)
         def handle_MIS(self, client, message): client.reject(message)
         def handle_NOT_SUB(self, client, message): client.reject(message)

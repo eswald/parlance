@@ -296,6 +296,41 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers[player.power]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
+    def test_historian_map(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        power = game.judge.map.powers.values()[0]
+        player.send(+MAP)
+        self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    def test_historian_sub(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        power = game.judge.map.powers.values()[0]
+        message = SUB ([power.units[0]], HLD)
+        player.send(message)
+        self.assertContains(REJ (message), player.queue)
     def test_save_game(self):
         self.set_option('send_ORD', True)
         self.connect_server()
