@@ -6,13 +6,10 @@
 import unittest
 
 from config     import Configuration, GameOptions, variants
-from functions  import version_string
 from language   import Token
 from player     import AutoObserver, Player, HoldBot
 from tokens     import *
 from validation import Validator
-
-__version__ = "$Revision$"
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -59,7 +56,7 @@ class PlayerTestCase(unittest.TestCase):
         Configuration.set_globally('verbosity', verbosity)
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
-    def rejept(self, message): self.send(REJ(message))
+    def reject(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
         self.player = player_class(send_method=self.handle_message,
                 representation=self.variant.rep, **kwargs)
@@ -92,8 +89,6 @@ class PlayerTestCase(unittest.TestCase):
 
 class Player_Tests(PlayerTestCase):
     class Test_Player(Player):
-        name = 'Test Player'
-        version = version_string(__version__)
         def handle_REJ_YES(self, message): self.send(+HLO)
         def handle_press_THK(self, sender, press):
             self.send_press(sender, WHY(press))
@@ -133,12 +128,12 @@ class Player_Tests(PlayerTestCase):
         self.failUnless(self.player.closed)
     def test_known_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
+        self.seek_reply(NME (self.player.name) (self.player.version))
         self.send(MAP('fleet_rome'))
         self.seek_reply(YES(MAP('fleet_rome')))
     def test_unknown_map(self):
         self.connect_player(self.Test_Player)
-        self.seek_reply(NME(self.Test_Player.name)(self.Test_Player.version))
+        self.seek_reply(NME (self.player.name) (self.player.version))
         self.send(MAP('unknown'))
         self.seek_reply(+MDF)
         self.send(variants['fleet_rome'].map_mdf)
@@ -170,12 +165,37 @@ class Player_Tests(PlayerTestCase):
             'Have 5 players and 1 observers. Need 2 to start'))
         player.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
         self.failUnlessEqual(result[-1],
-                ADM ( "Observer" ) ( "Sorry; I'm just a bot." ))
+                ADM ( "AutoObserver" ) ( "Sorry; I'm just a bot." ))
         player.handle_ADM(ADM('Geoff')('Are you sure about that?'))
         self.failUnlessEqual(result[-1],
-                ADM ( "Observer" ) ( "Yes, I'm sure." ))
+                ADM ( "AutoObserver" ) ( "Yes, I'm sure." ))
         player.handle_ADM(ADM('DanM')('Do any other observers care to jump in?'))
         self.failUnlessEqual(len(result), 2)
+    def test_uppercase_mapname(self):
+        ''' Clients should recognize map names in upper case.'''
+        self.connect_player(self.Test_Player)
+        while self.replies:
+            msg = self.replies.pop(0)
+            if msg[0] is NME: self.accept(msg); break
+        else: self.fail('No NME message')
+        msg = MAP(self.variant.map_name.upper())
+        self.send(msg)
+        self.seek_reply(YES(msg))
+    def test_HUH_bounce(self):
+        ''' A client should deal with HUH response to its HUH message.'''
+        Configuration.set_globally('validate', True)
+        Configuration.set_globally('response', 'complain')
+        self.set_verbosity(7)
+        self.connect_player(self.Test_Player)
+        while self.replies:
+            msg = self.replies.pop(0)
+            if msg[0] is NME: self.accept(msg); break
+        else: self.fail('No NME message')
+        # Syntactically incorrect message, just to prompt HUH
+        self.send(MAP(0))
+        self.seek_reply(HUH(MAP(ERR, 0)))
+        self.send(HUH(ERR, HUH(MAP(ERR, 0))))
+        self.failUnlessEqual(self.replies, [])
 
 class Player_HoldBot(PlayerTestCase):
     def setUp(self):
@@ -217,5 +237,22 @@ class Player_Bots(PlayerTestCase):
     def test_blabberbot(self):
         from blabberbot import BlabberBot
         self.attempt_one_phase(BlabberBot)
+    def test_neurotic(self):
+        from neurotic import Neurotic
+        self.variant = variants['hundred3']
+        self.attempt_one_phase(Neurotic)
+    def test_neurotic_duplication(self):
+        from neurotic import Neurotic
+        self.variant = variants['hundred3']
+        self.connect_player(Neurotic)
+        self.start_game()
+        first_result = [message
+                for message in self.replies if message[0] == SUB]
+        
+        self.replies = []
+        self.send(self.variant.start_now)
+        second_result = [message
+                for message in self.replies if message[0] == SUB]
+        self.failUnlessEqual(first_result, second_result)
 
 if __name__ == '__main__': unittest.main()

@@ -481,7 +481,8 @@ def createUnitOrder(order, nation, board, datc):
         nation is the country making the order;
         board is a Map object.
     '''#'''
-    return _class_types[order[1]].create(order, nation, board, datc)
+    key = len(order) > 1 and 1 or 0
+    return _class_types[order[key]].create(order, nation, board, datc)
 
 class OrderSet(defaultdict):
     ''' A mapping of Coast key -> UnitOrder, with special provisions for Waives.

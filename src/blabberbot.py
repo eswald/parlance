@@ -6,25 +6,15 @@
 from random       import choice, random, randrange, shuffle
 
 from dumbbot      import DumbBot
-from functions    import version_string
 from language     import IntegerToken, Message, StringToken, Token, protocol
-from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, TRY, YES
+from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, SCS, TRY, WCS, YES
 from validation   import Validator
 
-__version__ = "$Revision$"
-
 class BlabberBot(DumbBot):
-    ''' Based on the DumbBot algorithm, but sends random press messages.
+    ''' Senseless, ceaseless ramblings.
+        Based on the DumbBot algorithm, but sends random press messages.
         Repeatedly.  Without stop.  Especially if you try to talk to it.
     '''#'''
-    
-    # Items for the NME message
-    name    = 'BlabberBot'
-    version = version_string(__version__)
-    description = 'Senseless, ceaseless ramblings'
-    
-    # Static variables
-    print_csv = True
     
     def handle_HLO(self, message):
         self.__super.handle_HLO(message)
@@ -51,6 +41,7 @@ class BlabberBot(DumbBot):
                 self.random_expression('press_message'))
         self.manager.add_timed(self, 5 + random() * 10)
     def random_expression(self, expression):
+        self.log_debug(11, 'random_expression(%r)', expression)
         try: items = self.syntax[expression]
         except KeyError:
             options = Validator.syntax.get(expression)
@@ -69,6 +60,7 @@ class BlabberBot(DumbBot):
             if result: break
         return result
     def random_option(self, option):
+        self.log_debug(11, 'random_option(%r)', option)
         in_sub = in_cat = False
         repeat = 1
         partial = None
@@ -113,6 +105,7 @@ class BlabberBot(DumbBot):
                 repeat = 1
         return msg
     def random_category(self, category):
+        self.log_debug(11, 'random_category(%r)', category)
         result = None
         if category == 'Powers':
             result = choice(self.map.powers.keys())
@@ -123,13 +116,15 @@ class BlabberBot(DumbBot):
         elif category == 'Phases':
             result = choice(self.map.opts.seasons)
         elif category == 'Coasts':
-            result = choice([NCS, NEC, ECS, SEC])
+            result = choice([NCS, ECS, SCS, WCS])
         elif category == 'Text':
             result = StringToken(choice("'abcdefghijklmnopqrstuvwxyz "
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ +-*/0123456789.?'))
-        elif category[-2:] == 'SC':
-            result = choice([prov for prov in self.map.spaces.keys()
-                    if prov.is_supply()])
+        elif category.endswith('SC'):
+            cat = category.replace('_', ' ')
+            provs = [prov for prov in self.map.spaces.keys()
+                    if prov.category_name() == cat]
+            if provs: result = choice(provs)
         elif category == 'Token':
             result = self.random_category(choice(['Provinces',
                 'Powers', 'Phases', 'Integers', 'Coasts', 'Text']))

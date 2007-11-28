@@ -3,21 +3,21 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from functions import expand_list
+from functions import expand_list, version_string
 from language  import Token
-from network   import InputWaiter
 from player    import Observer
 from tokens    import NOW, SCO
 
 class Chatty(Observer):
     ''' An observer that simply lets a human chat with Admin messages.'''
     def __init__(self, **kwargs):
-        self.name = raw_input('Name: ')
         self.__super.__init__(**kwargs)
+        self.version = version_string(self.name)
+        self.name = raw_input('Name: ')
         self.quit = False
     def register(self):
         self.__super.register()
-        self.manager.add_polled(InputWaiter(self.send_admin, self.close))
+        self.manager.add_input(self.send_admin, self.close)
     def output(self, line, *args): print str(line) % args
     def handle_CCD(self, message):
         self.output('* %s has been disconnected.', message[2])

@@ -9,6 +9,14 @@
     <p>These are items that I want to add to the PyDip package, in my
       <a name='http://catb.org/~esr/jargon/html/C/copious-free-time.html'>copious
         free time</a>, listed in no particular order.</p>
+    
+    <h2>Documentation</h2>
+    <p>The software needs some package-level documentation, beyond the page
+      specific to the public server.  Consider a readme, a change list, and
+      usage notes.</p>
+    <p>Potential bot writers in particular need a lot more help than I
+      currently give them.  Perhaps a template bot file, with all sorts of
+      extra information.</p>
 
     <h2>Scorekeeping</h2>
     <p>The server should probably keep and publish statistics on games played.
@@ -17,6 +25,9 @@
       register" command, or similar.  I don't really expect many bots to
       verify themselves, though.</p>
     <p>The server should make its move logs available for perusal.</p>
+    <p>Games should each have an open game log file, writing all broadcasts to
+      it with timestamps.  This should be more robust, particularly in the
+      face of crashes, than the current log-on-exit idea.</p>
     <p>A <code>playback</code> admin command could be in order, sending one
       turn per second.  That could also be done client-side, but the Mapper
       doesn't have such a function yet.</p>
@@ -33,18 +44,31 @@
       coding in the Judge, and because the syntax doesn't support them at all.
       However, I would like to support the Loeb9 map, wing units, crystal ball,
       payola, and other variants, if there is any interest.</p>
-
-    <h2>PeaceBot</h2>
+    
+    <h2>External clients</h2>
+    <p>I would like the ability to call external commands as bots.  This could
+      use an <code>[external]</code> section of the config file, but even
+      better would be a new bot class catering specifically to each known bot.
+      Such a class could be smart about using the power, passcode, and game_id
+      arguments.  Python 2.4's <code>subprocess</code> module would probably
+      be helpful here.</p>
+    
+    <h2>Internal clients</h2>
+    <p>Bots started from the server could be optimized a bit.  This would
+      probably start with the socket.socketpair() call, new in Python 2.4,
+      but may extend to avoiding the network layer altogether.</p>
+    
+    <h3>PeaceBot</h3>
     <p>PeaceBot is excessively limited at the moment.  Ideally, it should
       assign one ally to do all the tactical processing each turn, through XDO
       and YDO.  It should also detect stabs.</p>
     
-    <h2>ComboBot</h2>
+    <h3>ComboBot</h3>
     <p>The first tactical engine of my own design has failed due to speed
       issues.  Perhaps it would help if I started by looking at the most
       valuable provinces that could be influenced.</p>
     
-    <h2>MapChatty</h2>
+    <h3>MapChatty</h3>
     <p>This needs a way to display orders and redraw the screen.  That would
       probably be best as a set of panels that could be toggled through
       irc-style /commands.  A summary panel would be good, too; disconnection
@@ -54,16 +78,6 @@
       the admin line display.  Do these conflict?</p>
     <p>Eventually, this thing should allow me to play a game, not just
       watch.</p>
-    
-    <h2>External clients</h2>
-    <p>I would like the ability to call external commands as bots, using an
-      <code>[external]</code> section of the config file.  Python 2.4's
-      <code>subprocess</code> module would probably be helpful here.</p>
-    
-    <h2>Internal clients</h2>
-    <p>Bots started from the server could be optimized a bit.  This would
-      probably start with the socket.socketpair() call, new in Python 2.4,
-      but may extend to avoiding the network layer altogether.</p>
     
     <h2>Comments and code style</h2>
     <p>I need to go through the code and verify each comment and docstring.
@@ -77,12 +91,11 @@
       Mac users to be able to run this out of the box (so to speak).</p>
     
     <h2>DATC Options</h2>
-    <p>I should test David's server for its response to the DATC options; for
-      that matter, I should verify that it passes the normal tests.  Again,
-      the <code>subprocess</code> module may be useful here.</p>
     <p>Various tests have yet to be written, and many options have yet to be
       supported.  The comments in the config file should also reflect the lack
       of support for various options.</p>
+    <p>Perhaps the syntax checking should reflect certain DATC options.  As it
+      is, some options can be rendered useless by the overly strict syntax.</p>
     
     <h2>Refactoring</h2>
     <p>The various bot modules should be in a subdirectory, as should the test
@@ -99,12 +112,24 @@
       former, because the Message class calls them directly.</p>
     <p>Game and Historian should be restructured into a weak reference
       wrapper, particularly if other clients start using LST and SEL.</p>
+    <p>Messages could be immutable.  The constructor should also only take one
+      argument, a series.  For that matter, calling a token on a series should
+      be revised; try HLO(ENG)(1234)((LVL, 20)), for example.  Finally,
+      consider changing __repr__() to use token-calling conventions.</p>
+    
+    <h2>Robustness</h2>
+    <p>The validator's greedy checking seems to cause problems with PRN
+      messages.  The current workarounds seem to solve the problem, though.
+      Should I let it attempt less greedy matches, though?</p>
+    <p>Major problems can occur when a syntax item lists itself as the first
+      non-optional item.  I seem to have eliminated all such cases from the
+      syntax document, but perhaps I should create a check in the code for
+      this case.</p>
     
     <h2>User Interface</h2>
     <p>Some modules could give explanatory messages instead of doing nothing
       when run as a script.  Ideas:
       <table>
-        <tr><td>config</td><td>create a sample pydip.cfg file</td></tr>
         <tr><td>gameboard</td><td>?</td></tr>
         <tr><td>judge</td><td>?</td></tr>
         <tr><td>language</td><td>Show the base token values?</td></tr>
@@ -114,12 +139,13 @@
         <tr><td>xtended</td><td>Show the standard token values?</td></tr>
       </table>
     </p>
-    <p>The command-line interface could use some serious option parsing,
-      probably tying into the config options.</p>
     <p>Output might be better run through the <code>logger</code> package.</p>
-    <p>Graphics would probably be a good idea.  Particularly a map.</p>
     <p>Bot developers are requesting a real-time display of all press in the
       game, which would have to be done server-side.</p>
+    <p>The standard input loop needs to be tested on Windows, where select()
+      throws a fit when fed a non-socket file descriptor.  It should work as a
+      thread, but not quite as well; consider running it through a socket pair
+      for the original behavior.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
@@ -127,6 +153,17 @@
     <p>Disconnecting a client when its network buffer clogs up is probably not
       the best way to go about it.  Then again, it might have received a
       chopped message anyway, and should be processing messages faster.</p>
+    
+    <h2>Human-oriented Options</h2>
+    <p>Players would like the ability to connect and disconnect throughout the
+      day, with the server collecting press for them and delivering it in a
+      bundle on connect.  Perhaps even emailing it, as well.</p>
+    <p>In such games, players would like the ability to specify a backup bot
+      for them, which would play one turn (without press) if they miss a
+      deadline.</p>
+    <p>Consider other systems of calculating the next deadline, such as the
+      next of a set of times that is at least a certain amount of time
+      away.</p>
     
     <h2>Standards Compliance</h2>
     <p>My <a href="syntax.html#DSD">DSD</a> behavior differs slightly
@@ -142,13 +179,21 @@
       hours.  This is not official.  Better would be to have an optional
       second parameter for the hours, so the time can still be accurate to the
       second.</p>
-    <p>The LST command could use a "status" field, with basically the
-      information returned by <a href='commands.html#status'>the status admin
-        command</a>.  A text field seems appropriate, because we don't have
-      good tokens for most possibilities, and it's more general; however, text
-      is harder for bots to rely on.</p>
-    <p>The new syntax doesn't distinguish between client and player messages.
-      That just might be possible after all.</p>
+    <p>My <a href="HST">HST</a> behavior may differ slightly from the
+      standard.  Double-check that sometime.  Note that there doesn't seem to
+      be an official way to get the starting NOW and SCO messages after the
+      game has started.</a>
+    <p>I allow players to cancel movement orders with NOT (SUB).  That is not
+      technically allowed by the syntax document, but neither is it
+      technically disallowed.</p>
+    <p>I want to stop sending redundant MAP commands.  That behavior would
+      differ from spec, but not in a bad way.  On the other hand, I really
+      should verify that my duplicate MAP handling doesn't create an entirely
+      new map.</p>
+    <p>Allow a configuration setting to select negative integers for time
+      limits, instead of always using the two-token system.</p>
+    <p>Allow the configuration file to use natural-language times for time
+      limits, such as "3 minutes" or "1:20:00" (hours:minutes:seconds).</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static
@@ -159,7 +204,7 @@
     <p>Something is failing to close the port properly in the test_timeout
       unit test.</p>
     <p>Everything that interacts with files should be wrapped in try...finally
-      blocks to close the file properly.</p>
+      blocks (or 2.5 with blocks) to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
       currently, game logging simply fails and the game stays in memory.</p>
     

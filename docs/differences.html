@@ -1,0 +1,142 @@
+<html>
+  <head>
+    <title>PyDip Syntax Document Differences</title>
+    <meta name="description" content="Differences between the PyDip syntax and
+      the official DAIDE syntax document.">
+  </head>
+  <body>
+    <p>Differences between <a href="syntax.html">my HTML syntax document</a> and
+      <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">David's
+        official RTF syntax document</a>:
+    <ul>
+      <li>I have changed all instances of "AI", except those occurring in the
+        phrase "Diplomacy AI Development Environment", to either "client" or
+        "player", as appropriate.  After all, the most often-used client is
+        not, in fact, an AI.  I have also reduced the occurrences of the
+        second-person pronouns, in favor of "the client" or "the player".</li>
+
+      <li>I have made several minor grammar changes.  These don't affect the
+        semantics, but make it sound nicer.  In particular, I have changed
+        the oft-misunderstood Latin abbreviations "e.g." and "i.e." to their
+        English equivalents, even though David
+        <a href="syntax.html#IFF">almost always</a> uses them correctly.</li>
+
+      <li>I mention the four <a href="protocol.html#Coasts">alternate
+          coasts</a> defined in the protocol.
+        David has mentioned these, at separate times, as both allowed and
+        disallowed; in either case, they need to be in the document to avoid
+        having future map writers use their TLAs.</li>
+
+      <li>I have included a section (o) under
+        <a href="syntax.html#level0">Level 0</a>, listing the multi-game
+        commands as implemented by my server.  It has been in the document for
+        quite some time, but formerly commented out.  I have uncommented it
+        because we have recently hashed out the details on the list, and
+        David has repeatedly expressed a desire for such a system.
+        <br><br>
+        I formally request that this section be made official.  (It may be
+        moved and/or renumbered, if you wish.)</li>
+
+      <li>I have added an optional name and version section to
+        <a href="syntax.html#OBS">the OBS command</a>.
+        This was David's response to a somewhat ridiculous idea of mine.
+        Currently, only my software is known to send or use that information;
+        David's server currently sends HUH when the name or version are
+        included, upon which my server will send the OBS without arguments.
+        <br><br>
+        I formally request that this modification be made official.</li>
+
+      <li>I have noted that the map name does not imply a given starting
+        position.  That question has come up at least twice on the list,
+        with conflicting answers.  I have chosen this answer to avoid
+        problems with recovered games after a crash.</li>
+
+      <li>I have not added the new phrase under the
+        <a href="syntax.html#AOA">AOA</a> specification, "and are for a
+        unit owned by the AI sending the order," because my server accepts
+        absolutely any order when AOA is specified, even those for
+        non-existent or foreign units.  (That's why it needs the SET
+        command.)</li>
+
+      <li>I have specified that a client, not just a player, may send
+        <a href="syntax.html#HLO">HLO</a> without arguments to request a new
+        copy of the HLO message.  David's appendix B has conflicting answers
+        for that.  When I first commented on the conflict, he replied that HLO
+        was for finding out your power and passcode after IAM, so only players
+        would need it; I disagree, because it also contains the variant rule
+        information.</li>
+
+      <li>I disagree with the phrases, <a href="syntax.html#SCO">"or <b>REJ
+            (SCO)</b> if the game hasn't started,"</a> and
+        <a href="syntax.html#SCO">"or <b>REJ (NOW)</b> if the game hasn't
+          started,"</a> but I have not yet removed them from my document even
+        though my server doesn't obey them.  Instead, it obeys an
+        <a href="syntax.html#MDF">earlier statement</a>, "The AI can send the
+        <b>NOW</b> and <b>SCO</b> commands to the Server to determine the
+        supply centre ownership and starting positions for the variant."
+        <br><br>
+        I formally request that these phrases "<b>REJ (SCO)</b>" and "<b>REJ
+          (NOW)</b>" be changed to "the starting <b>SCO</b> message" and "the
+        starting <b>NOW</b> message", respectively.  Unfortunately, that still
+        leaves us with no official way to get the starting position
+        <em>after</em> the game has started.</li>
+      
+      <li>I have divided <a href="syntax.html#CCD">the CCD message</a> into
+        three distinct message types:  One for a disconnected power, one for a
+        power that failed to get orders in on time, and one for responding to
+        <a href="syntax.html#SND">a SND command</a>.  The latter two cases
+        merely add a second parameter to the CCD message.  I have not yet
+        encountered a problem when sending these extended commands to current
+        clients; the Mapper in particular works fine, if a little confusing.
+        <br><br>
+        I formally propose that these CCD extensions be made official.</li>
+      
+      <li>I have noted that the server may interpret
+        <a href="syntax.html#ADM">an admin message</a> as a command, instead
+        of forwarding it to other players.  This is not really official, but
+        is the best way to deal with commands not in the syntax, within the
+        constraints of the Mapper.</li>
+      
+      <li>I have added a way for the client to request
+        <a href="syntax.html#SMR">the SMR command</a>, along with the game
+        result.  This could be useful for a client that joins after the game
+        finishes.  I also have considered adding behavior for dealing with
+        clients taking over positions from clients of a different name and/or
+        version.  Code for this is implemented in my server, but disabled by
+        default; it is not yet documented in the syntax, though.
+        <br><br>
+        I formally propose that the client-to-server SMR command be made
+        official.</li>
+      
+      <li>As with the CCD response to an attempt to send press, I have added
+        a second parameter to <a href="syntax.html#OUT">the OUT message</a>,
+        listing the failed press command.
+        <br><br>
+        I formally propose that this extension be made official.</li>
+      
+      <li>I have added a note about the <a href="syntax.html#PTL">PTL
+          variant</a> as a reason for rejecting a SND command.</li>
+      
+      <li>I disagree with the inability to concede the game to a single
+        player, but I accept it for now.  I would prefer that a single-player
+        draw again be allowed, as a concession to that player.</li>
+      
+      <li>My <a href="syntax.html#appA">appendix A</a> is much more complete,
+        including obsolete tokens and token numbers.</li>
+      
+      <li>My <a href="syntax.html#appB">appendix B</a> describes how the
+        syntax has been integrated into the document as a whole, instead of
+        listing the syntax itself.  As part of this, many more syntax items
+        in the main text are prefixed with "label = ".</li>
+      
+      <li>I don't have the latest set of changes marked in underlines and
+        strikeouts.  That's just me being lazy.</li>
+
+      <li>The new document also includes a few of other wild ideas, commented
+        out.  These are not meant to be official, but are included for future
+        extensions.  (We <em>will</em> want most of them some day.)  Most of
+        them have already been discussed on the list, and at least one is left
+        over from a previous version of the document.</li>
+    </ul>
+  </body>
+</html>

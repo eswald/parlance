@@ -6,12 +6,13 @@
 import unittest
 from time       import sleep, time
 
-from config     import Configuration, VerboseObject
-from functions  import absolute_limit, num2name
+from config     import Configuration, GameOptions, VerboseObject
+from functions  import num2name
 from gameboard  import Turn
+from language   import Time
 from main       import ThreadManager
 from network    import Service
-from player     import HoldBot
+from player     import Clock, HoldBot
 from server     import Server
 from tokens     import *
 from xtended    import ITA, LON, PAR
@@ -98,6 +99,8 @@ class ServerTestCase(unittest.TestCase):
             if message[0] is HLO:
                 self.power = message[2]
                 self.pcode = message[5].value()
+                self.game_opts = GameOptions()
+                self.game_opts.parse_message(message)
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             elif message[0] is OFF: self.close()
         def admin(self, line, *args):
@@ -107,9 +110,9 @@ class ServerTestCase(unittest.TestCase):
         def get_time(self):
             self.queue = []
             self.send(+TME)
-            times = [absolute_limit(msg[2].value())
+            times = [Time(*msg.fold()[1])
                     for msg in self.queue if msg[0] is TME]
-            return times and times[0] or None
+            return times and int(times[0]) or None
         def hold_all(self):
             self.send(+MIS)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
@@ -117,28 +120,33 @@ class ServerTestCase(unittest.TestCase):
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     
-    game_options = {
-        'LVL': 20,
-        'variant' : 'standard',
-        'quit' : True,
-        'snd_admin' : True,
-        'admin_cmd' : True,
-        'fwd_admin' : True,
-        'host' : '',
-        'port' : 16720,
-        'wait_time' : 5,
-        'send_SET': False,
-        'send_ORD': False,
-        'draw': 3,
-        'response': 'croak',
-        'bot_min': 2,
-        'veto_time': 3,
-        'MTL': 60,
-        'confirm': False,
-        'log_games': False,
-    }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
+        self.game_options = {
+            'DSD': False,
+            'LVL': 20,
+            'RTL': 0,
+            'BTL': 0,
+            'variant' : 'standard',
+            'quit' : True,
+            'snd_admin' : True,
+            'admin_cmd' : True,
+            'fwd_admin' : True,
+            'host' : '',
+            'port' : 16720,
+            'wait_time' : 5,
+            'send_SET': False,
+            'send_ORD': False,
+            'draw': 3,
+            'response': 'croak',
+            'bot_min': 2,
+            'veto_time': 3,
+            'MTL': 60,
+            'confirm': False,
+            'log_games': False,
+            'block_exceptions': False,
+        }
+        
         self.set_verbosity(0)
         Configuration._cache.update(self.game_options)
         self.manager = None
@@ -147,8 +155,9 @@ class ServerTestCase(unittest.TestCase):
         if self.server and not self.server.closed: self.server.close()
         if self.manager and not self.manager.closed: self.manager.close()
     def set_verbosity(self, verbosity):
-        Configuration.set_globally('verbosity', verbosity)
+        self.set_option('verbosity', verbosity)
     def set_option(self, option, value):
+        self.game_options[option] = value
         Configuration.set_globally(option, value)
     def connect_server(self):
         self.set_option('games', 1)
@@ -289,6 +298,57 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers[player.power]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
+    def test_historian_map(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        player.send(+MAP)
+        self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    def test_historian_var(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        player.send(+VAR)
+        self.assertContains(VAR ("fleet_rome"), player.queue)
+    def test_historian_sub(self):
+        self.set_option('MTL', 5)
+        self.set_option('send_ORD', True)
+        self.connect_server()
+        self.server.options.log_games = True
+        game = self.start_game()
+        game.run_judge()
+        game.close()
+        self.server.check_close()
+        self.failIf(self.server.games.has_key(game.game_id))
+        
+        player = self.connect_player(self.Fake_Player,
+                game_id=game.game_id, observe=True)
+        player.queue = []
+        power = game.judge.map.powers.values()[0]
+        message = SUB ([power.units[0]], HLD)
+        player.send(message)
+        self.assertContains(REJ (message), player.queue)
     def test_save_game(self):
         self.set_option('send_ORD', True)
         self.connect_server()
@@ -302,6 +362,7 @@ class Server_Basics(ServerTestCase):
         expected = [
             self.game.listing(),
             MAP (self.game.judge.map_name),
+            VAR (self.game.judge.variant_name),
             self.game.variant.map_mdf,
             HLO (OBS) (0) (self.game.game_options),
             self.game.variant.start_sco,
@@ -323,6 +384,55 @@ class Server_Basics(ServerTestCase):
         self.server.check_close()
         self.failUnless(self.game.saved)
         self.failIf(self.server.games)
+    def test_summary_request(self):
+        self.connect_server()
+        self.set_option('bot_min', 0)
+        master = self.connect_player(self.Fake_Master)
+        master.admin('Server: start holdbots')
+        self.wait_for_actions()
+        master.send(+DRW)
+        self.game.run_judge()
+        master.queue = []
+        master.send(+SMR)
+        self.assertContains(+DRW, master.queue)
+        self.assertEqual(SMR, master.queue[-1][0])
+    def test_long_limits(self):
+        limit = 5*60*60 + 30
+        self.set_option('MTL', limit)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.start_game()
+        self.failUnlessEqual(player.game_opts.MTL, limit)
+    def test_clock(self):
+        limit = 5*60*60 + 30
+        self.set_option('MTL', limit)
+        times = []
+        def catch_times(message):
+            seconds = int(Time(*message.fold()[1]))
+            times.append(seconds)
+        
+        self.connect_server()
+        player = self.connect_player(Clock)
+        player.handle_TME = catch_times
+        game = self.start_game()
+        sleep(12)
+        game.run()
+        self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
+    def test_variant_map_name(self):
+        ''' Variants should use the name of the map in MAP messages.
+            For example, Fleet Rome should use MAP ("standard").
+        '''#'''
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        self.assertContains(MAP ("standard"), player.queue)
+    def test_variant_name(self):
+        ''' The server should answer a VAR command with the variant name.'''
+        self.set_option('variant', 'fleet_rome')
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        player.send(+VAR)
+        self.assertContains(VAR ("fleet_rome"), player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
@@ -413,12 +523,9 @@ class Server_Press(ServerTestCase):
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''
-    game_options = {}
-    game_options.update(ServerTestCase.game_options)
-    game_options['quit'] = False
-    
     def setUp(self):
         ServerTestCase.setUp(self)
+        self.set_option('quit', False)
         self.connect_server()
         self.master = self.connect_player(self.Fake_Master)
         self.backup = self.connect_player(self.Fake_Master)
@@ -915,8 +1022,9 @@ class Server_Multigame(ServerTestCase):
         self.master.send(+LST)
         params = self.game.game_options.get_params()
         self.assertContains(
-                LST (self.game.game_id) (6) ('standard') (params),
+                LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
+        self.assertEqual(YES (LST), self.master.queue[-1])
     def test_multigame_LST_reply(self):
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
@@ -925,11 +1033,21 @@ class Server_Multigame(ServerTestCase):
         self.master.send(+LST)
         sailho_params = game.game_options.get_params()
         self.assertContains(
-                LST (game_id) (6) ('standard') (std_params),
+                LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue)
         self.assertContains(
-                LST (game.game_id) (4) ('sailho') (sailho_params),
+                LST (game.game_id) (4, NME) ('sailho') (sailho_params),
                 self.master.queue)
+    def test_single_LST_reply(self):
+        std_params = self.game.game_options.get_params()
+        game_id = self.game.game_id
+        game = self.new_game('sailho')
+        self.master.queue = []
+        self.master.send(LST(game_id))
+        sailho_params = game.game_options.get_params()
+        self.assertEqual(
+                LST (game_id) (6, NME) ('standard') (std_params),
+                self.master.queue[-1])
 
 class Server_Bugfix(ServerTestCase):
     ''' Test cases to reproduce bugs found.'''

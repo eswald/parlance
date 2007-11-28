@@ -322,6 +322,7 @@ class JudgeInterface(VerboseObject):
         assert self.map.valid
         self.mdf = variant_opts.map_mdf
         self.map_name = variant_opts.map_name
+        self.variant_name = variant_opts.variant
         self.game_opts = game_opts
         self.game_result = None
         self.unready = True
@@ -344,6 +345,7 @@ class JudgeInterface(VerboseObject):
     
     # Interaction with players
     def handle_MAP(self, client, message): client.send(MAP(self.map_name))
+    def handle_VAR(self, client, message): client.send(VAR(self.variant_name))
     def handle_MDF(self, client, message): client.send(self.mdf)
     def handle_NOW(self, client, message): raise NotImplementedError
     def handle_SCO(self, client, message): raise NotImplementedError
@@ -556,6 +558,7 @@ class Judge(JudgeInterface):
         msg = self.check_draw()
         if msg:
             results = [msg]
+            self.game_result = msg
             self.phase = None
         else:
             # Report civil disorders

@@ -7,7 +7,7 @@ import re
 from os        import path
 from struct    import pack
 
-from functions import rindex
+from functions import Comparable, rindex
 from config    import Configurable, VerboseObject, parse_file
 
 __all__ = [
@@ -644,6 +644,34 @@ class IntegerToken(Token):
             IntegerToken.cache[key] = result
         return result
 
+
+class Time(Comparable):
+    ''' A time limit, in seconds and hours.
+        Can also handle negative seconds as hours on incoming messages.
+    '''#'''
+    def __init__(self, seconds, hours=0):
+        if isinstance(seconds, Token): seconds = seconds.value()
+        if isinstance(hours, Token): hours = hours.value()
+        self.seconds = self.hours = 0
+        if hours >= 0 <= seconds:
+            self.seconds = seconds % 3600
+            self.hours = hours + (seconds // 3600)
+        elif seconds < 0 and not hours:
+            self.seconds = 0
+            self.hours = -seconds
+        else: raise ValueError("Invalid Time(%r, %r)" % (seconds, hours))
+    
+    # Representations
+    def tokenize(self):
+        seconds = int(self)
+        if seconds > protocol.max_pos_int:
+            result = Message((self.seconds, self.hours))
+        else: result = Message(seconds)
+        return result
+    def __int__(self): return int(self.seconds + 3600*self.hours)
+    def __str__(self): return str(Message(self))
+    def __repr__(self): return 'Time(%s, %s)' % (self.seconds, self.hours)
+    def __cmp__(self, other): return cmp(int(self), other)
 
 def maybe_int(word):
     ''' Converts a string to an int if possible.

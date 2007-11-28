@@ -9,15 +9,15 @@ from random     import randint, shuffle
 from time       import time
 
 from config     import GameOptions, VerboseObject, variants
-from functions  import absolute_limit, defaultdict, expand_list, \
-        instances, num2name, relative_limit, s, timestamp
+from functions  import defaultdict, expand_list, \
+        instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
-from language   import Message, protocol
+from language   import Message, Time, protocol
 from tokens     import *
 from validation import Validator
 
 import blabberbot, dumbbot, evilbot, peacebot, player, project20m
-bots = dict([(klass.name.lower(), klass) for klass in
+bots = dict([(klass.__name__.lower(), klass) for klass in
     player.HoldBot,
     dumbbot.DumbBot,
     evilbot.EvilBot,
@@ -209,8 +209,14 @@ class Server(VerboseObject):
         else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
     def handle_LST(self, client, message):
-        for game in self.games.itervalues():
+        if len(message) > 3:
+            game = self.games.get(message.fold()[1][0])
             if game: client.send(game.listing())
+            else: client.reject(message)
+        else:
+            for game in self.games.itervalues():
+                client.send(game.listing())
+            client.accept(message)
     
     def default_game(self):
         while self.default:
@@ -247,7 +253,7 @@ class Server(VerboseObject):
         if match and match.lastindex:
             var_name = match.group(2)
         else: var_name = self.options.variant
-        variant = variants.get(var_name)
+        variant = variants.get(var_name.lower())
         if variant:
             game_id = timestamp()
             self.started_games += 1
@@ -280,7 +286,8 @@ class Server(VerboseObject):
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
         for bot_class in bots.itervalues():
-            client.admin('  %s - %s', bot_class.name, bot_class.description)
+            client.admin('  %s - %s', bot_class.__name__,
+                    bot_class.__doc__.split('\r')[0].split('\n')[0])
     def list_status(self, client, match):
         for game in self.games.itervalues():
             if game.closed: message = 'Closed'
@@ -344,6 +351,8 @@ class Historian(VerboseObject):
         
         def handle_MAP(self, client, message):
             client.send(self.history.messages[MAP])
+        def handle_VAR(self, client, message):
+            client.send(self.history.messages[VAR])
         def handle_MDF(self, client, message):
             client.send(self.history.messages[MDF])
         def handle_NOW(self, client, message):
@@ -353,7 +362,7 @@ class Historian(VerboseObject):
         def handle_ORD(self, client, message):
             client.send_list(self.history.history[self.turn][ORD])
         
-        def handle_MAP(self, client, message): client.reject(message)
+        def handle_SUB(self, client, message): client.reject(message)
         def handle_DRW(self, client, message): client.reject(message)
         def handle_MIS(self, client, message): client.reject(message)
         def handle_NOT_SUB(self, client, message): client.reject(message)
@@ -390,6 +399,7 @@ class Historian(VerboseObject):
         def write(token): write_message(self.messages[token])
         write(LST)
         write(MAP)
+        write(VAR)
         write(MDF)
         write(HLO)
         write(SCO)
@@ -432,11 +442,11 @@ class Historian(VerboseObject):
                 when = history.get(turn, messages)
                 when[SCO] = sco = message
                 when['new_SCO'] = True
-            elif first in (LST, MAP, MDF, HLO, SMR):
+            elif first in (LST, MAP, VAR, MDF, HLO, SMR):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
-                    self.variant = variants.get(variant_name)
+                    self.variant = variants.get(variant_name.lower())
                     if self.variant:
                         rep = self.variant.rep
                     else:
@@ -526,6 +536,11 @@ class Historian(VerboseObject):
                 result.append(turn[SCO])
             result.append(turn[NOW])
         return result
+    def handle_SMR(self, client, message):
+        if self.started and self.closed:
+            if self.judge.game_result: client.send(self.judge.game_result)
+            client.send(self.messages[SMR])
+        else: client.reject(message)
     
     commands = []
 
@@ -621,6 +636,7 @@ class Game(Historian):
         self.variant        = variant
         self.judge          = variant.new_judge(self.game_options)
         self.messages[MAP]  = MAP(self.judge.map_name)
+        self.messages[VAR]  = VAR(self.judge.variant_name)
         self.messages[MDF]  = variant.map_mdf
         
         # Press- and time-related variables
@@ -650,10 +666,10 @@ class Game(Historian):
     def set_limits(self):
         game = self.game_options
         
-        move_limit = absolute_limit(game.MTL)
-        press_limit = absolute_limit(game.PTL)
-        build_limit = absolute_limit(game.BTL)
-        retreat_limit = absolute_limit(game.RTL)
+        move_limit = int(game.MTL)
+        press_limit = int(game.PTL)
+        build_limit = int(game.BTL)
+        retreat_limit = int(game.RTL)
         self.press_in = {
             Turn.move_phase    : press_limit < move_limit or not move_limit,
             Turn.retreat_phase : not game.NPR,
@@ -748,6 +764,7 @@ class Game(Historian):
                 summary = self.summarize()
                 if not self.saved: self.broadcast(summary)
                 self.messages[SMR] = summary
+                self.messages[LST] = self.listing()
                 self.server.archive(self)
     def reveal_passcodes(self, client):
         disconnected = {}
@@ -796,7 +813,7 @@ class Game(Historian):
             self.started = True
             self.log_debug(9, 'Starting the game')
             self.validator.syntax_level = self.game_options.LVL
-            self.messages[LST] = self.listing()
+            self.messages[LST] = self.listing(OFF)
             self.messages[HLO] = HLO(OBS)(0)(self.game_options)
             for user in self.clients: self.send_hello(user)
             for user, message in self.limbo.iteritems():
@@ -816,7 +833,7 @@ class Game(Historian):
     def pause(self):
         if self.deadline and not self.paused:
             self.time_stopped = self.deadline - time()
-            self.broadcast(NOT(TME(relative_limit(self.time_stopped))))
+            self.broadcast(NOT(TME(Time(self.time_stopped))))
         self.paused = True
     def unpause(self):
         self.paused = False
@@ -833,7 +850,7 @@ class Game(Historian):
         self.deadline = self.time_stopped = None
         self.press_deadline = 0
         if seconds and not self.closed:
-            message = TME(relative_limit(seconds))
+            message = TME(Time(seconds))
             if self.paused:
                 self.time_stopped = seconds
                 self.broadcast(NOT(message))
@@ -871,10 +888,12 @@ class Game(Historian):
         if self.ready(): self.run_judge()
         elif self.deadline and not self.paused:
             remain = self.deadline - now
-            for second in [sec for sec in self.timers if remain < sec < self.time_checked]:
+            times = reversed(sorted(sec for sec in self.timers
+                        if remain < sec < self.time_checked))
+            for second in times:
                 self.time_checked = second
                 for client in self.timers[second]:
-                    client.send(TME(relative_limit(second)))
+                    client.send(TME(Time(second)))
             if now > self.deadline: self.run_judge()
             elif remain < self.press_deadline:
                 self.press_allowed  = False
@@ -936,9 +955,32 @@ class Game(Historian):
         return result
     
     # Press and administration
-    def listing(self):
-        return (LST(self.game_id)(self.players_needed())
-            (self.variant.variant)(self.game_options))
+    def listing(self, result=None):
+        need = (not self.closed) and self.players_needed() or 0
+        return (LST(self.game_id)(need, result or self.status())
+                (self.variant.variant)(self.game_options))
+    def status(self):
+        disconnected = False
+        robotic = False
+        for country, player in self.players.iteritems():
+            if not self.judge.eliminated(country):
+                if not player.client: disconnected = True
+                elif player.robotic: robotic = True
+        
+        if self.closed:
+            if self.judge.game_result:
+                result = self.judge.game_result[0]
+            else: result = OFF
+        elif self.paused:
+            if disconnected and self.game_options.DSD:
+                result = DSD
+            else: result = TME
+        elif self.started:
+            if disconnected or (robotic and self.options.takeovers):
+                result = IAM
+            else: result = OBS
+        else: result = NME
+        return result
     def handle_GOF(self, client, message):
         country = client.country
         if country and self.judge.phase:
@@ -992,10 +1034,11 @@ class Game(Historian):
         
         if len(message) == 1:
             # Request for amount of time left in the turn
-            if remain: client.send(TME(relative_limit(remain)))
+            if remain: client.send(TME(Time(remain)))
             else:      client.reject(message)
-        elif len(message) == 4 and message[2].is_integer():
-            request = absolute_limit(message[2].value())
+        elif len(message) >= 4:
+            try: request = int(Time(*message.fold()[1]))
+            except (ValueError, KeyError): client.reject(message)
             if request > max(self.limits.values()):
                 # Ignore requests greater than the longest time limit
                 client.reject(message)
@@ -1012,9 +1055,11 @@ class Game(Historian):
         '''#'''
         reply = YES
         if len(message) == 4: self.cancel_time_requests(client)
-        elif message[4].is_integer():
+        elif len(message) >= 4:
             # Remove the request from the list, if it's there.
-            try: self.timers[absolute_limit(message[4].value())].remove(client)
+            try:
+                request = int(Time(*message.fold()[1]))
+                self.timers[request].remove(client)
             except (ValueError, KeyError): reply = REJ
         else: reply = REJ
         client.send(reply(message))
@@ -1279,7 +1324,9 @@ class Game(Historian):
                         if self.started and struct.client and not struct.client.closed:
                             client.admin('%s is still in the game.', pname)
                             return
-                        else: struct.assigned = (bot_class.name, bot_class.version)
+                        else:
+                            struct.assigned = (bot_class.__name__,
+                                    version_string())
                         break
                 else:
                     client.admin('Unknown player: %s', country)
@@ -1290,7 +1337,7 @@ class Game(Historian):
                 except (TypeError, ValueError): num = default_num
                 if num < 1: num += self.players_needed()
             
-            name = bot_class.name
+            name = bot_class.__name__
             self.queue_action(client, self.start_bot_class, 'starting %s%s.' %
                     (instances(num, name), power and ' as %s' % pname or ''),
                     None, 'the %s%s.' % (name, s(num)),
@@ -1299,7 +1346,7 @@ class Game(Historian):
         else: client.admin('Unknown bot: %s', bot_name)
     def start_bot_class(self, bot_class, number, power, pcode):
         self.log_debug(11, 'Attempting to start %s %s%s',
-                num2name(number), bot_class.name, s(number))
+                num2name(number), bot_class.__name__, s(number))
         failure = 0
         for dummy in range(number):
             client = self.server.manager.add_client(bot_class,

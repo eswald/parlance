@@ -227,6 +227,18 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
+    def test_powerless_waives(self):
+        ''' Builds can be waived without specifying your power'''
+        steady_state = [
+            [FRA, AMY, PAR],
+        ]
+        self.init_state(WIN, 1901, steady_state)
+        self.legalOrder(FRA, [WVE])
+        self.legalOrder(FRA, [(FRA, AMY, MAR), BLD])
+        self.illegalOrder(FRA, [(FRA, AMY, BRE), BLD])
+        self.assertMapState(steady_state + [
+            [FRA, AMY, MAR],
+        ])
     def test_retreat_into_mover(self):
         ''' A unit cannot retreat into a province someone else moved into.'''
         steady_state = [

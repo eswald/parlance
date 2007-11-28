@@ -7,7 +7,6 @@
 
 import socket
 from struct    import pack, unpack
-from sys       import stdin
 from time      import sleep
 
 from config    import VerboseObject
@@ -420,23 +419,6 @@ class ServerSocket(SocketWrapper):
             self.manager.add_polled(service)
             self.next_id += 1
 
-class InputWaiter(VerboseObject):
-    ''' File descriptor for waiting on standard input.'''
-    def __init__(self, input_handler, close_handler):
-        self.__super.__init__()
-        self.handle_input = input_handler
-        self.handle_close = close_handler
-        self.closed = False
-    def fileno(self): return stdin.fileno()
-    def run(self):
-        line = ''
-        try: line = raw_input()
-        except EOFError: self.close()
-        if line: self.handle_input(line)
-    def close(self):
-        self.closed = True
-        self.handle_close()
-
 class RawServer(object):
     ''' Simple server to translate DM to and from text.'''
     class FakeGame(object):
@@ -451,7 +433,7 @@ class RawServer(object):
         self.clients = {}
         self.rep = protocol.default_rep
         self.game = self.FakeGame(self)
-        thread_manager.add_polled(InputWaiter(self.handle_input, self.close))
+        thread_manager.add_input(self.handle_input, self.close)
         print 'Waiting for connections...'
     def handle_message(self, client, message):
         ''' Process a new message from the client.'''
