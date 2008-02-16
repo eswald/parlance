@@ -115,64 +115,68 @@ class Brain(VerboseObject):
         order_values = []
         index = 0
         for token in self.provinces:
-            unit = board.spaces[token].unit
-            if unit:
+            units = board.spaces[token].units
+            if units:
                 starting = dict()
                 for prov in self.provinces:
                     if prov == token:
                         unit_value = outputs[index]
-                        oclass = unit.dislodged and DisbandOrder or RemoveOrder
-                        order_values.append((unit_value, oclass(unit)))
-                    elif board.spaces[prov].unit:
+                        order_values.extend((unit_value, (unit.dislodged
+                                    and DisbandOrder or RemoveOrder)(unit))
+                            for unit in units)
+                    elif board.spaces[prov].units:
                         starting[prov] = outputs[index]
                     index += 1
                 
                 for coast in self.coastlines[token]:
-                    if coast == unit.coast.key:
-                        hold_value = unit_value + outputs[index]
-                        order_values.append((hold_value, HoldOrder(unit)))
+                    hold_value = unit_value + outputs[index]
+                    order_values.extend((hold_value, HoldOrder(unit))
+                        for unit in units if coast == unit.coast.key)
                     index += 1
                 
                 for prov in self.borders[token]:
                     for key in self.coastlines[prov]:
                         dest = board.coasts[key]
-                        if unit.can_move_to(dest):
-                            value = unit_value + outputs[index]
-                            oclass = unit.dislodged and RetreatOrder or MoveOrder
-                            order_values.append((value, oclass(unit, dest)))
+                        value = unit_value + outputs[index]
+                        order_values.extend((value, (unit.dislodged
+                                    and RetreatOrder or MoveOrder)(unit, dest))
+                            for unit in units if unit.can_move_to(dest))
                         for start, start_value in starting.iteritems():
-                            mover = board.spaces[start].unit
-                            if mover.can_move_to(dest):
-                                value = start_value + outputs[index]
-                                order = SupportMoveOrder(unit, mover, dest)
-                                order_values.append((value, order))
+                            for mover in board.spaces[start].units:
+                                if mover.can_move_to(dest):
+                                    value = start_value + outputs[index]
+                                    order_values.extend((value,
+                                                SupportMoveOrder(unit,
+                                                    mover, dest))
+                                            for unit in units)
                         index += 1
                 
                 for key in self.coastals:
                     dest = board.coasts[key]
-                    if unit.can_be_convoyed():
-                        value = unit_value + outputs[index]
-                        order = ConvoyedOrder(unit, dest)
-                        order_values.append((value, order))
-                    elif unit.can_convoy():
-                        for start, start_value in starting.iteritems():
-                            mover = board.spaces[start].unit
-                            if mover.can_be_convoyed():
-                                value = start_value + outputs[index]
-                                order = ConvoyingOrder(unit, mover, dest)
-                                order_values.append((value, order))
+                    for unit in units:
+                        if unit.can_be_convoyed():
+                            order_values.append((unit_value + outputs[index],
+                                        ConvoyedOrder(unit, dest)))
+                        elif unit.can_convoy():
+                            for start, start_value in starting.iteritems():
+                                for mover in board.spaces[start].units:
+                                    if mover.can_be_convoyed():
+                                        value = start_value + outputs[index]
+                                        order_values.append((value,
+                                                    ConvoyingOrder(unit,
+                                                        mover, dest)))
                     index += 1
             else:
                 index += len(self.provinces)
                 space = board.spaces[token]
-                for key in self.coastlines[token]:
-                    if space.homes:
+                if space.owner:
+                    for key in self.coastlines[token]:
                         coast = board.coasts[key]
                         value = outputs[index]
-                        order_values.extend((value,
-                                    BuildOrder(Unit(nation, coast)))
-                                for nation in space.homes)
+                        order_values.append((value,
+                                    BuildOrder(Unit(space.owner, coast))))
                     index += 1
+                else: index += len(self.coastlines[token])
                 index += sum(len(self.coastlines[prov])
                         for prov in self.borders[token])
                 index += len(self.coastals)
