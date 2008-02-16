@@ -56,7 +56,7 @@ class PlayerTestCase(unittest.TestCase):
         Configuration.set_globally('verbosity', verbosity)
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
-    def rejept(self, message): self.send(REJ(message))
+    def reject(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
         self.player = player_class(send_method=self.handle_message,
                 representation=self.variant.rep, **kwargs)
@@ -237,5 +237,22 @@ class Player_Bots(PlayerTestCase):
     def test_blabberbot(self):
         from blabberbot import BlabberBot
         self.attempt_one_phase(BlabberBot)
+    def test_neurotic(self):
+        from neurotic import Neurotic
+        self.variant = variants['hundred3']
+        self.attempt_one_phase(Neurotic)
+    def test_neurotic_duplication(self):
+        from neurotic import Neurotic
+        self.variant = variants['hundred3']
+        self.connect_player(Neurotic)
+        self.start_game()
+        first_result = [message
+                for message in self.replies if message[0] == SUB]
+        
+        self.replies = []
+        self.send(self.variant.start_now)
+        second_result = [message
+                for message in self.replies if message[0] == SUB]
+        self.failUnlessEqual(first_result, second_result)
 
 if __name__ == '__main__': unittest.main()

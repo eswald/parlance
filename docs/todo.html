@@ -198,8 +198,10 @@
       differ from spec, but not in a bad way.  On the other hand, I really
       should verify that my duplicate MAP handling doesn't create an entirely
       new map.</p>
-    <p>Write (or perhaps re-write) the code allowing a pair of integers for
-      hours and seconds, instead of negative integers for hours.</p>
+    <p>Allow a configuration setting to select negative integers for time
+      limits, instead of always using the two-token system.</p>
+    <p>Allow the configuration file to use natural-language times for time
+      limits, such as "3 minutes" or "1:20:00" (hours:minutes:seconds).</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static
@@ -210,7 +212,7 @@
     <p>Something is failing to close the port properly in the test_timeout
       unit test.</p>
     <p>Everything that interacts with files should be wrapped in try...finally
-      blocks to close the file properly.</p>
+      blocks (or 2.5 with blocks) to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
       currently, game logging simply fails and the game stays in memory.</p>
     

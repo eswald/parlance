@@ -8,8 +8,10 @@ from itertools import chain
 from sys       import argv, exit, stdin
 from time      import sleep, time
 
-try: from threading import Thread
-except ImportError: Thread = None
+try: from threading import Thread, Lock
+except ImportError:
+    Thread = None
+    from dummy_threading import Lock
 
 from config    import Configuration, VerboseObject, variants
 from network   import Client, ServerSocket
@@ -21,7 +23,9 @@ __all__ = [
 ]
 
 class ThreadManager(VerboseObject):
-    ''' Manages four types of clients: polled, timed, threaded, and dynamic.
+    ''' Manages five types of clients: polled, timed, threaded, dynamic,
+        and queued.
+        
         Each type of client must have a close() method and corresponding
         closed property.  A client will be removed if it closes itself;
         otherwise, it will be closed when the ThreadManager closes.
@@ -88,10 +92,13 @@ class ThreadManager(VerboseObject):
         self.timed = []         # (time, client)
         self.threaded = []      # (thread, client)
         self.dynamic = []       # client
+        self.queue = []         # client
+        self.queue_lock = Lock()
+        self.queueing = False
         self.closed = False
     def clients(self):
         return [item[1] for item in chain(self.polled.iteritems(),
-                self.timed, self.threaded)] + self.dynamic
+                self.timed, self.threaded)] + self.dynamic + self.queue
     
     def run(self):
         ''' The main loop; never returns until the manager closes.'''
@@ -100,7 +107,9 @@ class ThreadManager(VerboseObject):
             while not self.closed:
                 if self.clients():
                     self.process(self.options.wait_time)
-                    if not (self.polled or self.closed):
+                    if self.polled or self.timed or self.closed:
+                        pass
+                    else:
                         # Avoid turning this into a busy loop
                         self.log_debug(7, 'sleep()ing for %.3f seconds',
                                 self.options.sleep_time)
@@ -143,13 +152,14 @@ class ThreadManager(VerboseObject):
             self.log_debug(1, 'Exception running %s: %s %s',
                     client.prefix, e.__class__.__name__, e.args)
             if not client.closed: client.close()
-            if self.options.block_exceptions: raise
+            if not self.options.block_exceptions: raise
     def close(self):
         self.closed = True
         if self.threaded: self.clean_threaded()
         for client in self.clients():
             if not client.closed: client.close()
         self.wait_threads()
+        self.run_queue()
     
     # Polled client handling
     class InputWaiter(VerboseObject):
@@ -170,6 +180,7 @@ class ThreadManager(VerboseObject):
             self.handle_close()
     def add_polled(self, client):
         self.log_debug(11, 'New polled client: %s', client.prefix)
+        assert not self.closed
         fd = client.fileno()
         self.polled[fd] = client
         if self.polling: self.polling.register(fd, self.flags)
@@ -241,11 +252,13 @@ class ThreadManager(VerboseObject):
     # Timed client handling
     def add_timed(self, client, delay):
         self.log_debug(11, 'New timed client: %s', client.prefix)
+        assert not self.closed
         deadline = time() + delay
         self.timed.append((deadline, client))
         return deadline
     def add_dynamic(self, client):
         self.log_debug(11, 'New dynamic client: %s', client.prefix)
+        assert not self.closed
         self.dynamic.append(client)
     def get_timeout(self):
         now = time()
@@ -312,6 +325,7 @@ class ThreadManager(VerboseObject):
     def add_threaded(self, client):
         if Thread:
             self.log_debug(11, 'New threaded client: %s', client.prefix)
+            assert not self.closed
             thread = Thread(target=self.attempt, args=(client,))
             thread.start()
             self.threaded.append((thread, client))
@@ -344,6 +358,39 @@ class ThreadManager(VerboseObject):
     def clean_threaded(self):
         self.log_debug(14, 'Checking threaded clients')
         self.threaded = [item for item in self.threaded if item[0].isAlive()]
+    
+    # Queue management
+    def enqueue(self, target, *args, **kwargs):
+        self.add_queued(ThreadClient(target, args, kwargs))
+    def add_queued(self, client):
+        assert not self.closed
+        self.queue_lock.acquire()
+        self.queue.append(client)
+        run_queue = not self.queueing
+        if run_queue: self.queueing = True
+        self.queue_lock.release()
+        if run_queue: self.new_thread(self.check_queue)
+    def check_queue(self):
+        while True:
+            try:
+                self.queue_lock.acquire()
+                if self.queue:
+                    client = self.queue.pop(0)
+                else:
+                    self.queueing = False
+                    break
+            finally: self.queue_lock.release()
+            if client.closed:
+                self.log_debug(11, 'Removing queued client: %s', client.prefix)
+            else: self.attempt(client)
+    def run_queue(self):
+        # Called after all threads are done,
+        # so we shouldn't have to worry about the lock.
+        if self.queue: self.log_debug(11, 'Checking all queued clients')
+        for client in self.queue:
+            if client.closed:
+                self.log_debug(11, 'Removing queued client: %s', client.prefix)
+            else: self.attempt(client)
 
 def run_player(player_class, allow_multiple=True, allow_country=True):
     name = player_class.__name__

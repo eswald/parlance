@@ -272,9 +272,12 @@ class GameOptions(Configuration):
         self.sanitize()
     def parse_message(self, message):
         ''' Collects the information from a HLO or LST message.'''
+        from language import Time
         for var_opt in message.fold()[-1]:
-            if   len(var_opt) == 1: setattr(self, var_opt[0].text, True)
-            elif len(var_opt) == 2: setattr(self, var_opt[0].text, var_opt[1])
+            text = var_opt[0].text
+            if len(var_opt) == 1: setattr(self, text, True)
+            elif text[1:3] == 'TL': setattr(self, text, int(Time(*var_opt[1:])))
+            elif len(var_opt) == 2: setattr(self, text, var_opt[1])
             else:
                 raise ValueError('Unknown variant option in %s message' %
                         message[0].text)
@@ -290,12 +293,12 @@ class GameOptions(Configuration):
             self.PTL = 0
             self.PDA = False
     def get_params(self):
-        from functions import relative_limit
+        from language import Time
         from tokens import LVL, MTL, RTL, BTL, AOA, DSD, PDA, NPR, NPB, PTL
         params = [(LVL, self.LVL)]
-        if self.MTL: params.append((MTL, relative_limit(self.MTL)))
-        if self.RTL: params.append((RTL, relative_limit(self.RTL)))
-        if self.BTL: params.append((BTL, relative_limit(self.BTL)))
+        if self.MTL: params.append((MTL, Time(self.MTL)))
+        if self.RTL: params.append((RTL, Time(self.RTL)))
+        if self.BTL: params.append((BTL, Time(self.BTL)))
         if self.AOA: params.append((AOA,))
         if self.DSD: params.append((DSD,))
         
@@ -303,7 +306,7 @@ class GameOptions(Configuration):
             if self.PDA: params.append((PDA,))
             if self.NPR: params.append((NPR,))
             if self.NPB: params.append((NPB,))
-            if self.PTL: params.append((PTL, relative_limit(self.PTL)))
+            if self.PTL: params.append((PTL, Time(self.PTL)))
         return params
     def tokenize(self):
         from language import Message
@@ -397,13 +400,14 @@ class MapVariant(VerboseObject):
         '''#'''
         from tokens import SPR, SUM, FAL, AUT, WIN
         self.__super.__init__()
-        self.prefix      = '%s(%r)' % (self.__class__.__name__, variant_name)
-        self.variant     = variant_name
-        self.map_name    = variant_name.lower()
+        self.prefix = '%s(%r)' % (self.__class__.__name__, variant_name)
+        self.variant = variant_name
+        fname = files.get('mdf', variant_name.lower())
+        self.map_name = path.splitext(path.basename(fname))[0]
         self.description = description
-        self.files       = files
-        self.rep         = rep or self.get_representation()
-        self.seasons     = [SPR, SUM, FAL, AUT, WIN]
+        self.files = files
+        self.rep = rep or self.get_representation()
+        self.seasons = [SPR, SUM, FAL, AUT, WIN]
         self.msg_cache  = {}
     def new_judge(self, game_options):
         from judge import Judge

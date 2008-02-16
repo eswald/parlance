@@ -489,6 +489,18 @@ or if powers have already been assigned.</p>
 command completely replaces any previous such command send by the
 client.  If a client does not send at least one of these commands, the
 server may assign a power to that client in any manner it chooses.</p>
+
+
+<h4><a name="VAR">client_message = VAR</a></h4>
+
+<p>At any time, the client may request the variant name, by sending
+<b>VAR</b> with no parameters.</p>
+
+<!- - <h4>server_message = VAR ('variant_name')</h4> - ->
+	<li></li>
+<p>The server will respond with <b>VAR ('variant_name')</b>, where
+<b>'variant_name'</b> is the name of the variant, as listed on
+<a href="variants.html">the variants page</a>.</p>
 -->
 
 <h4><a name="HLO">server_message = HLO</a> (power) (passcode) (variant)</h4>
@@ -511,7 +523,7 @@ any options for the game. For example:</p>
 	<!-- <h4>n = number</h4> -->
 	<li><b>variant_option = LVL n</b> &mdash; game is of syntax
 	level n. This variant option will always be specified.</li>
-	<!-- <h4>seconds = number</h4> -->
+	<!-- <h4>seconds = number [number]</h4> -->
 	<li><b>variant_option = MTL seconds</b> &mdash; maximum number
 	of seconds available for movement turns. If not specified, there
 	is no time limit.</li>
@@ -2107,6 +2119,7 @@ various reasons.</p>
 <tr><td>UNO</td><td>0x490B</td><td>Parameter</td><td>SCO</td><td>Unowned</td></tr>
 <tr><td>UNT</td><td>0x4202 / 0x4A24</td><td>Press</td><td>OCC</td><td>Unit</td></tr>
 <tr><td>UOM</td><td>0x4A1B</td><td>Press</td><td>Offer</td><td>You Owe Me (<em>REMOVED</em>)</td></tr>
+<tr><td>VAR</td><td>0x4E07</td><td>Command</td><td>Client &lt;---&gt; Server</td><td>Variant Name (<em>Not yet accepted</em>)</td></tr>
 <tr><td>VEN</td><td>0x5547</td><td>Province</td><td>Coastal Supply Centre</td><td>Venice</td></tr>
 <tr><td>VIA</td><td>0x4325</td><td>Order</td><td>Movement Phase</td><td>Move via</td></tr>
 <tr><td>VIE</td><td>0x510C</td><td>Province</td><td>Inland Supply Centre</td><td>Vienna</td></tr>

@@ -1,6 +1,7 @@
 ''' Project20M - A Python version of Project20M, by Andrew Huff,
     Vincent Chan, Laurence Tondelier, Damian Bundred, and Colm Egan.
-    Rewritten for PyDip by Eric Wald, and included with permision.
+    Rewritten for PyDip by Eric Wald, and included with permission.
+    Project20M has since been placed into the Public Domain.
 '''#'''
 
 from random       import random

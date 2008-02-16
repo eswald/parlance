@@ -9,10 +9,10 @@ from random     import randint, shuffle
 from time       import time
 
 from config     import GameOptions, VerboseObject, variants
-from functions  import absolute_limit, defaultdict, expand_list, \
-        instances, num2name, relative_limit, s, timestamp, version_string
+from functions  import defaultdict, expand_list, \
+        instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
-from language   import Message, protocol
+from language   import Message, Time, protocol
 from tokens     import *
 from validation import Validator
 
@@ -351,6 +351,8 @@ class Historian(VerboseObject):
         
         def handle_MAP(self, client, message):
             client.send(self.history.messages[MAP])
+        def handle_VAR(self, client, message):
+            client.send(self.history.messages[VAR])
         def handle_MDF(self, client, message):
             client.send(self.history.messages[MDF])
         def handle_NOW(self, client, message):
@@ -360,7 +362,7 @@ class Historian(VerboseObject):
         def handle_ORD(self, client, message):
             client.send_list(self.history.history[self.turn][ORD])
         
-        def handle_MAP(self, client, message): client.reject(message)
+        def handle_SUB(self, client, message): client.reject(message)
         def handle_DRW(self, client, message): client.reject(message)
         def handle_MIS(self, client, message): client.reject(message)
         def handle_NOT_SUB(self, client, message): client.reject(message)
@@ -397,6 +399,7 @@ class Historian(VerboseObject):
         def write(token): write_message(self.messages[token])
         write(LST)
         write(MAP)
+        write(VAR)
         write(MDF)
         write(HLO)
         write(SCO)
@@ -439,7 +442,7 @@ class Historian(VerboseObject):
                 when = history.get(turn, messages)
                 when[SCO] = sco = message
                 when['new_SCO'] = True
-            elif first in (LST, MAP, MDF, HLO, SMR):
+            elif first in (LST, MAP, VAR, MDF, HLO, SMR):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
@@ -633,6 +636,7 @@ class Game(Historian):
         self.variant        = variant
         self.judge          = variant.new_judge(self.game_options)
         self.messages[MAP]  = MAP(self.judge.map_name)
+        self.messages[VAR]  = VAR(self.judge.variant_name)
         self.messages[MDF]  = variant.map_mdf
         
         # Press- and time-related variables
@@ -662,10 +666,10 @@ class Game(Historian):
     def set_limits(self):
         game = self.game_options
         
-        move_limit = absolute_limit(game.MTL)
-        press_limit = absolute_limit(game.PTL)
-        build_limit = absolute_limit(game.BTL)
-        retreat_limit = absolute_limit(game.RTL)
+        move_limit = int(game.MTL)
+        press_limit = int(game.PTL)
+        build_limit = int(game.BTL)
+        retreat_limit = int(game.RTL)
         self.press_in = {
             Turn.move_phase    : press_limit < move_limit or not move_limit,
             Turn.retreat_phase : not game.NPR,
@@ -829,7 +833,7 @@ class Game(Historian):
     def pause(self):
         if self.deadline and not self.paused:
             self.time_stopped = self.deadline - time()
-            self.broadcast(NOT(TME(relative_limit(self.time_stopped))))
+            self.broadcast(NOT(TME(Time(self.time_stopped))))
         self.paused = True
     def unpause(self):
         self.paused = False
@@ -846,7 +850,7 @@ class Game(Historian):
         self.deadline = self.time_stopped = None
         self.press_deadline = 0
         if seconds and not self.closed:
-            message = TME(relative_limit(seconds))
+            message = TME(Time(seconds))
             if self.paused:
                 self.time_stopped = seconds
                 self.broadcast(NOT(message))
@@ -884,10 +888,12 @@ class Game(Historian):
         if self.ready(): self.run_judge()
         elif self.deadline and not self.paused:
             remain = self.deadline - now
-            for second in [sec for sec in self.timers if remain < sec < self.time_checked]:
+            times = reversed(sorted(sec for sec in self.timers
+                        if remain < sec < self.time_checked))
+            for second in times:
                 self.time_checked = second
                 for client in self.timers[second]:
-                    client.send(TME(relative_limit(second)))
+                    client.send(TME(Time(second)))
             if now > self.deadline: self.run_judge()
             elif remain < self.press_deadline:
                 self.press_allowed  = False
@@ -1028,10 +1034,11 @@ class Game(Historian):
         
         if len(message) == 1:
             # Request for amount of time left in the turn
-            if remain: client.send(TME(relative_limit(remain)))
+            if remain: client.send(TME(Time(remain)))
             else:      client.reject(message)
-        elif len(message) == 4 and message[2].is_integer():
-            request = absolute_limit(message[2].value())
+        elif len(message) >= 4:
+            try: request = int(Time(*message.fold()[1]))
+            except (ValueError, KeyError): client.reject(message)
             if request > max(self.limits.values()):
                 # Ignore requests greater than the longest time limit
                 client.reject(message)
@@ -1048,9 +1055,11 @@ class Game(Historian):
         '''#'''
         reply = YES
         if len(message) == 4: self.cancel_time_requests(client)
-        elif message[4].is_integer():
+        elif len(message) >= 4:
             # Remove the request from the list, if it's there.
-            try: self.timers[absolute_limit(message[4].value())].remove(client)
+            try:
+                request = int(Time(*message.fold()[1]))
+                self.timers[request].remove(client)
             except (ValueError, KeyError): reply = REJ
         else: reply = REJ
         client.send(reply(message))

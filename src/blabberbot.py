@@ -7,7 +7,7 @@ from random       import choice, random, randrange, shuffle
 
 from dumbbot      import DumbBot
 from language     import IntegerToken, Message, StringToken, Token, protocol
-from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, TRY, YES
+from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, SCS, TRY, WCS, YES
 from validation   import Validator
 
 class BlabberBot(DumbBot):

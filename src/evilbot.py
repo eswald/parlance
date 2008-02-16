@@ -30,7 +30,7 @@ class EvilBot(DumbBot):
         self.__super.__init__(**kwargs)
         game = self.game_id
         try:
-            self.log_debug(11, 'Acquiring init lock')
+            self.log_debug(1, 'Acquiring init lock, for game "%s"', game)
             self.main_lock.acquire()
             if self.games.has_key(game): shared = self.games[game]
             else: self.games[game] = shared = self.shared_info()
@@ -40,7 +40,8 @@ class EvilBot(DumbBot):
         self.shared = shared
         if self.power: shared.friends.add(self.power.key)
     def handle_HLO(self, message):
-        print 'EvilBot takes over %s, passcode %d!' % (message[2], message[5].value())
+        self.log_debug(1, 'EvilBot takes over %s, passcode %d!',
+                message[2], message[5].value())
         self.shared.friends.add(message[2])
         super(EvilBot, self).handle_HLO(message)
     
