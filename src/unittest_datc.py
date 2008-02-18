@@ -624,21 +624,20 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, armies cannot accept a coast specification.
             This is the preferred solution for DAIDE.
         '''#'''
-        self.judge.datc.ignore_coast = False
+        self.judge.datc.datc_4b6 = 'a'
         start_state = [
             [FRA, AMY, GAS]
         ]
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, AMY, GAS), MTO, (SPA, NCS)])
         self.assertMapState(start_state)
-    @fails
     def test_6B12_ignore(self):
         ''' 6.B.12.b  ARMY MOVEMENT WITH COASTAL SPECIFICATION
             Subject to issue 4.B.6 (ignore_coast).
             In this case, coast specification is ignored for armies.
             This is the preferred solution for DATC.
         '''#'''
-        self.judge.datc.ignore_coast = True
+        self.judge.datc.datc_4b6 = 'b'
         start_state = [
             [FRA, AMY, GAS]
         ]

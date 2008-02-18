@@ -298,12 +298,15 @@ class SupportOrder(MovementPhaseOrder):
             legal_dest = True
             if supported.can_move_to(dest):
                 if datc.datc_4b4 in 'abc' and not dest.exists():
-                    # Coastline specifications are required
-                    # Todo: Implement 'b' and 'c' fully.
+                    # Coastline specifications are required due to ambiguity
                     legal_dest = False
-                elif datc.datc_4b4 == 'e' and dest.coastline:
-                    # Coastline specifications are ignored
-                    dest = Coast(dest.unit_type, dest.province, None, [])
+                elif dest.coastline:
+                    if dest.coastline not in Message(order[4]):
+                        # Coastline specifications might be required anyway
+                        legal_dest = datc.datc_4b4 != 'a'
+                    elif datc.datc_4b4 == 'e':
+                        # Coastline specifications are ignored
+                        dest = Coast(dest.unit_type, dest.province, None, [])
                 routes = []
             else: routes = supported.coast.convoy_routes(dest.province, board)
             result = SupportMoveOrder(unit, supported, dest, legal_dest)

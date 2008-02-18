@@ -274,6 +274,11 @@ class Map(VerboseObject):
                 if unit_type and item.unit_type != unit_type: continue
                 if coastline and item.coastline != coastline: continue
                 possible.append(item)
+            if unit_type and datc.datc_4b6 == 'b' and not possible:
+                possible = [place for place in province.coasts
+                    if place.unit_type == unit_type]
+            self.log_debug(20, 'Possible coasts for %s: %r of %r',
+                unit_type, possible, province.coasts)
             if len(possible) == 1: coast = possible[0]
             elif possible:
                 # Multiple coasts; see whether our location disambiguates.
@@ -283,8 +288,9 @@ class Map(VerboseObject):
                 elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
             if not coast:
                 coast = Coast(None, province, coastline, [])
-        self.log_debug(20, 'ordered_coast(%s, %s) -> %s (%s, %s, %s)', unit,
-            coast_spec, coast, datc.datc_4b1, datc.datc_4b2, datc.datc_4b3)
+        self.log_debug(20, 'ordered_coast(%s, %s) -> %s (%s, %s, %s, %s)',
+            unit, coast_spec, coast, datc.datc_4b1,
+            datc.datc_4b2, datc.datc_4b3, datc.datc_4b6)
         return coast
     #@Memoize  # Cache results; doesn't work for list args
     def distance(self, coast, provs):

@@ -404,7 +404,7 @@ class Judge_Loose(DiplomacyAdjudicatorTestCase):
     # (unit) CTO (province coast)
     def test_convoy_coast(self):
         ''' An army can be convoyed to a specific coast.'''
-        self.set_verbosity(20)
+        self.judge.datc.datc_4b6 = 'b'
         self.init_state(FAL, 1901, [
             [RUS, AMY, SWE],
             [RUS, FLT, GOB],
@@ -417,11 +417,12 @@ class Judge_Loose(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, GOB],
         ])
         self.assertOrdered(ORD (FAL, 1901)
-            ([RUS, AMY, SWE], MTO, STP) (SUC))
+            ([RUS, AMY, SWE], CTO, STP, VIA, [GOB]) (SUC))
         self.assertOrdered(ORD (FAL, 1901)
             ([RUS, FLT, GOB], CVY, [RUS, AMY, SWE], CTO, STP) (SUC))
     def test_convoyed_coast(self):
         ''' An army can attempt to be convoyed to a specific coast.'''
+        self.judge.datc.datc_4b6 = 'b'
         self.init_state(FAL, 1901, [
             [RUS, AMY, SWE],
             [RUS, FLT, GOB],
@@ -433,9 +434,10 @@ class Judge_Loose(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, GOB],
         ])
         self.assertOrdered(ORD (FAL, 1901)
-            ([RUS, AMY, SWE], MTO, STP) (SUC))
+            ([RUS, AMY, SWE], CTO, STP, VIA, [GOB]) (SUC))
     def test_convoying_coast(self):
         ''' A fleet can attempt to convoy an army to a specific coast.'''
+        self.judge.datc.datc_4b6 = 'b'
         self.init_state(FAL, 1901, [
             [RUS, AMY, SWE],
             [RUS, FLT, GOB],

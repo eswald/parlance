@@ -63,7 +63,7 @@ class DatcOptions(Configuration):
             'e: All moves in a paradoxical situation fail.',
             'f: All convoys fail if consistent; otherwise, all moves fail.',
             'DATC: d; DPTG: f; DAIDE: f'),
-        ('datc_4a3', datc('abcdef', 'abcdef'), 'f',
+        ('datc_4a3', datc('abcdef', 'abcdef'), 'd',
             'convoying to adjacent place',
             '4.A.3.  CONVOYING TO ADJACENT PLACE',
             'a: Always choose the convoy route.',
@@ -119,7 +119,7 @@ class DatcOptions(Configuration):
             'a: A move is attempted to the only possible coast.',
             'b: The move fails.',
             'DATC: b; DPTG: ?; DAIDE: b'),
-        ('datc_4b4', datc('abcde', 'ade'), 'd', # Todo: c
+        ('datc_4b4', datc('abcde', 'acde'), 'd',
             'coast specification in support order',
             '4.B.4.  COAST SPECIFICATION IN SUPPORT ORDER',
             'a: Missing coast in a support order fails.',
@@ -134,7 +134,7 @@ class DatcOptions(Configuration):
             'a: The move fails.',
             'b: Coast specification is ignored.',
             'DATC: b; DPTG: ?; DAIDE: a'),
-        ('datc_4b6', datc('ab', 'a'), 'a', # Todo: b
+        ('datc_4b6', datc('ab', 'ab'), 'b',
             'unknown coasts or irrelevant coasts',
             '4.B.6.  UNKNOWN COASTS OR IRRELEVANT COASTS',
             'a: The move fails.',
@@ -294,10 +294,11 @@ class DatcOptions(Configuration):
             'b: Proxy orders are allowed as part of the normal order set.',
             'c: Proxy orders are not allowed.',
             'DATC: c; DPTG: ?; DAIDE: c'),
-        ('datc_4e6', datc('a', 'a'), 'a',
+        ('datc_4e6', datc('ab', 'b'), 'b',
             'flying dutchman',
             '4.E.6.  FLYING DUTCHMAN',
             'a: Allowed, as long as it is a deception.',
+            'b: Checked only on build phases.',
             'DATC: a; DPTG: ?; DAIDE: ?'),
     )
 

@@ -1018,7 +1018,6 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [ENG, FLT, [STP, NCS]],
         ])
-    @fails
     def test_4B4_infer(self):
         '4.B.4.c  COAST SPECIFICATION IN SUPPORT ORDER'
         # If either Portugal or Mid-Atlantic Ocean move,
@@ -1045,11 +1044,11 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ENG, [(ENG, FLT, BAR), MTO, (STP, NCS)])
         self.legalOrder(ENG, [(ENG, FLT, NWY), SUP, (ENG, FLT, BAR), MTO, (STP, NCS)])
         self.legalOrder(FRA, [(FRA, FLT, POR), MTO, (SPA, SCS)])
-        self.legalOrder(FRA, [(FRA, FLT, GAS), SUP, (FRA, FLT, POR), MTO, SPA])
+        self.illegalOrder(FRA, [(FRA, FLT, GAS), SUP, (FRA, FLT, POR), MTO, SPA])
         self.legalOrder(ITA, [(ITA, FLT, MAO), MTO, (SPA, NCS)])
-        self.legalOrder(ITA, [(ITA, FLT, MAR), SUP, (ITA, FLT, MAO), MTO, SPA])
+        self.illegalOrder(ITA, [(ITA, FLT, MAR), SUP, (ITA, FLT, MAO), MTO, SPA])
         self.legalOrder(ITA, [(ITA, FLT, CON), MTO, (BUL, SCS)])
-        self.legalOrder(AUS, [(AUS, AMY, SER), SUP, (ITA, FLT, CON), MTO, BUL])
+        self.illegalOrder(AUS, [(AUS, AMY, SER), SUP, (ITA, FLT, CON), MTO, BUL])
         self.legalOrder(TUR, [(TUR, FLT, BLA), MTO, (BUL, ECS)])
         self.legalOrder(TUR, [(TUR, FLT, RUM), SUP, (TUR, FLT, BLA), MTO, BUL])
         self.assertMapState(steady_state + [
@@ -1157,7 +1156,6 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, AMY, GAS), MTO, (SPA, NCS)])
         self.assertMapState(start_state)
-    @fails
     def test_4B6_ignore(self):
         '4.B.6.b  UNKNOWN COASTS OR IRRELEVANT COASTS'
         # Test 6.B.12
