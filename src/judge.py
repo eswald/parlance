@@ -106,7 +106,7 @@ class DatcOptions(Configuration):
             'a: Such a move fails.',
             'b: A move is attempted to a default coast.',
             'DATC: a; DPTG: a; DAIDE: a'),
-        ('datc_4b2', datc('abc', 'ac'), 'c',
+        ('datc_4b2', datc('abc', 'ac'), 'a',
             'omitted coast specification in move order when one coast is possible',
             '4.B.2.  OMITTED COAST SPECIFICATION IN MOVE ORDER WHEN ONE COAST IS POSSIBLE',
             'a: A move is attempted to the only possible coast.',
@@ -793,8 +793,8 @@ class Judge(JudgeInterface):
         
         # 5) Move units around
         turn = self.map.current_turn
-        orders = [ORD(turn)(unit.current_order)(self.process_results(unit))
-                for unit in self.map.units]
+        orders = [ORD (turn) (unit.current_order.strict)
+            (self.process_results(unit)) for unit in self.map.units]
         
         # 6) Clean up all of the circular references
         for choice in decisions: del choice.depends

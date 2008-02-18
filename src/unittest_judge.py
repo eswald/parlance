@@ -10,6 +10,7 @@ import unittest
 from time          import time
 
 from config        import variants, Configuration, GameOptions
+from functions     import fails
 from language      import Token
 from main          import Thread
 from unittest_datc import DiplomacyAdjudicatorTestCase
@@ -301,6 +302,168 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
                 [GER, AMY, RUH],
         ])
 
+class Judge_Loose(DiplomacyAdjudicatorTestCase):
+    ''' Judge output for loose orders'''
+    game_options = {
+        'send_ORD': True,
+        'AOA': False,
+    }
+    
+    def assertOrdered(self, order):
+        orders = [msg for msg in self.results if msg[0] is ORD]
+        self.assertContains(orders, order)
+    
+    # (power unit_type province) MTO province
+    def test_ordered_power_type_province(self):
+        ''' An omitted coast in the unit specification will be filled in.'''
+        self.init_state(FAL, 1901, [
+            [FRA, FLT, [SPA, NCS]],
+        ])
+        self.legalOrder(FRA, [(FRA, FLT, SPA), MTO, MAO])
+        self.assertMapState([
+            [FRA, FLT, MAO],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([FRA, FLT, (SPA, NCS)], MTO, MAO) (SUC))
+    
+    # (power unit_type (province coast)) MTO province
+    def test_ordered_power_type_province_coast(self):
+        ''' A coast can be specified in the unit specification of an order.'''
+        self.init_state(FAL, 1901, [
+            [FRA, FLT, [SPA, NCS]],
+        ])
+        self.legalOrder(FRA, [(FRA, FLT, [SPA, NCS]), MTO, MAO])
+        self.assertMapState([
+            [FRA, FLT, MAO],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([FRA, FLT, (SPA, NCS)], MTO, MAO) (SUC))
+    
+    # province MTO province
+    def test_ordered_province(self):
+        ''' An ordered unit can be specified by only its province.'''
+        self.init_state(FAL, 1901, [
+            [FRA, FLT, [SPA, NCS]],
+        ])
+        self.legalOrder(FRA, [SPA, MTO, MAO])
+        self.assertMapState([
+            [FRA, FLT, MAO],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([FRA, FLT, (SPA, NCS)], MTO, MAO) (SUC))
+    
+    # (province) MTO province
+    def test_ordered_province_bracketed(self):
+        ''' An ordered unit can be specified by only a province in brackets.'''
+        self.init_state(FAL, 1901, [
+            [FRA, FLT, [SPA, NCS]],
+        ])
+        self.legalOrder(FRA, [[SPA], MTO, MAO])
+        self.assertMapState([
+            [FRA, FLT, MAO],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([FRA, FLT, (SPA, NCS)], MTO, MAO) (SUC))
+    
+    # ((province coast)) MTO province
+    # (power province) MTO province
+    # (power (province coast)) MTO province
+    # (unit_type province) MTO province
+    # (unit_type (province coast)) MTO province
+    
+    # (unit) SUP (power unit_type province)
+    # (unit) SUP (power unit_type (province coast))
+    # (unit) SUP province
+    # (unit) SUP (province)
+    # (unit) SUP ((province coast))
+    # (unit) SUP (power province)
+    # (unit) SUP (power (province coast))
+    # (unit) SUP (unit_type province)
+    # (unit) SUP (unit_type (province coast))
+    
+    # (unit) MTO province --> MTO (province coast)
+    def test_destination_coastless(self):
+        ''' An omitted destination coast will be filled in.'''
+        self.judge.datc.datc_4b2 = 'a'
+        self.init_state(FAL, 1901, [
+            [FRA, FLT, GAS],
+        ])
+        self.legalOrder(FRA, [(FRA, FLT, GAS), MTO, SPA])
+        self.assertMapState([
+            [FRA, FLT, [SPA, NCS]],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([FRA, FLT, GAS], MTO, [SPA, NCS]) (SUC))
+    
+    # (unit) SUP (unit) MTO province
+    # (unit) SUP (unit) MTO (province coast)
+    # (unit) SUP (unit) CTO province
+    # (unit) SUP (unit) CTO province VIA (province province ...)
+    # (unit) CVY (unit) CTO province VIA (province province ...)
+    
+    # (unit) CTO (province coast)
+    def test_convoy_coast(self):
+        ''' An army can be convoyed to a specific coast.'''
+        self.set_verbosity(20)
+        self.init_state(FAL, 1901, [
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), CTO, (STP, SCS), VIA, [GOB]])
+        self.legalOrder(RUS,
+            [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, (STP, SCS)])
+        self.assertMapState([
+            [RUS, AMY, STP],
+            [RUS, FLT, GOB],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([RUS, AMY, SWE], MTO, STP) (SUC))
+        self.assertOrdered(ORD (FAL, 1901)
+            ([RUS, FLT, GOB], CVY, [RUS, AMY, SWE], CTO, STP) (SUC))
+    def test_convoyed_coast(self):
+        ''' An army can attempt to be convoyed to a specific coast.'''
+        self.init_state(FAL, 1901, [
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), CTO, (STP, SCS), VIA, [GOB]])
+        self.legalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, STP])
+        self.assertMapState([
+            [RUS, AMY, STP],
+            [RUS, FLT, GOB],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([RUS, AMY, SWE], MTO, STP) (SUC))
+    def test_convoying_coast(self):
+        ''' A fleet can attempt to convoy an army to a specific coast.'''
+        self.init_state(FAL, 1901, [
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), CTO, STP, VIA, [GOB]])
+        self.legalOrder(RUS,
+            [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, (STP, SCS)])
+        self.assertMapState([
+            [RUS, AMY, STP],
+            [RUS, FLT, GOB],
+        ])
+        self.assertOrdered(ORD (FAL, 1901)
+            ([RUS, FLT, GOB], CVY, [RUS, AMY, SWE], CTO, STP) (SUC))
+    
+    # VIA when both undisrupted
+    # VIA when one disrupted
+    # VIA when the other undisrupted
+    # VIA when both disrupted
+    # VIA when no route available
+    
+    # Retreat phase orders:
+    # (unit) RTO province --> RTO (province coast)
+    
+    # Build phase orders:
+    # province BLD --> (power AMY province) BLD
+    # (FLT province) BLD --> (power FLT province) BLD
+    # WVE --> power WVE
+
 class Judge_Doctests(unittest.TestCase):
     ''' Tests that were once in doctest format.'''
     def setUp(self):
@@ -574,7 +737,7 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
             end = time()
             self.failUnless(end - begin < 10)
 
-class Judge_Errors(DiplomacyAdjudicatorTestCase):
+class Judge_Notes(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
         - MBV: Order is OK
         - FAR: Not adjacent
@@ -628,7 +791,9 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
         ''' FAR for an army convoyed with no possible convoy route'''
         self.assertOrderNote(GER, [(GER, AMY, BER), CTO, HOL], FAR)
     def test_far_fleetless_convoy(self):
-        ''' FAR for an army convoyed with a missing convoy fleet'''
+        ''' FAR for an army convoyed with a missing convoy fleet.
+            Todo: This should probably be changed to NSF.
+        '''#'''
         self.init_state(SPR, 1901, [
             [ENG, AMY, NWY],
             [ENG, FLT, NTH],
@@ -645,6 +810,24 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
         ])
         self.assertOrderNote(ENG, [(ENG, AMY, DEN), CTO, HOL, VIA, [NTH, NWG, NAO, IRI, ECH, NTH]], FAR)
+    def test_far_inland_convoy(self):
+        ''' FAR for convoying an army through a land province.
+            This might want to be changed to NSF, maybe.
+        '''#'''
+        self.init_state(SPR, 1901, [
+            [AUS, AMY, GRE],
+            [AUS, AMY, SER],
+        ])
+        self.assertOrderNote(AUS, [(AUS, AMY, GRE), CTO, TRI, VIA, [SER]], FAR)
+    def test_cst_convoyed_coast(self):
+        ''' CST for attempting to be convoyed to a specific coast.'''
+        self.judge.datc.datc_4b6 = 'a'
+        self.init_state(FAL, 1901, [
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ])
+        self.assertOrderNote(RUS,
+            [(RUS, AMY, SWE), CTO, (STP, SCS), VIA, [GOB]], CST)
     
     # SupportOrder notes
     def test_far_support_hold(self):
@@ -704,6 +887,15 @@ class Judge_Errors(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
         ])
         self.assertOrderNote(ENG, [(ENG, FLT, NWG), CVY, (ENG, AMY, DEN), CTO, HOL], FAR)
+    def test_cst_convoying_coast(self):
+        ''' CST for attempting to convoy an army to a specific coast.'''
+        self.judge.datc.datc_4b6 = 'a'
+        self.init_state(FAL, 1901, [
+            [RUS, AMY, SWE],
+            [RUS, FLT, GOB],
+        ])
+        self.assertOrderNote(RUS,
+            [(RUS, FLT, GOB), CVY, (RUS, AMY, SWE), CTO, (STP, SCS)], CST)
     
     def test_nsp_move(self):
         ''' NSP for movement to a province not on the map'''

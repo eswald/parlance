@@ -95,8 +95,10 @@ class UnitOrder(Comparable):
         elif not self.unit.exists():                note = NSU
         elif self.destination:
             if not self.destination.province.exists(): note = NSP
-            elif not self.unit.exists():                note = NSU
+            elif not self.unit.exists(): note = NSU
         return note
+    @property
+    def strict(self): return Message(self.key)
 
 class MovementPhaseOrder(UnitOrder):
     routes = []
@@ -104,6 +106,7 @@ class MovementPhaseOrder(UnitOrder):
     def convoy_note(convoyed, destination, routes, route_valid=bool):
         result = FAR
         if not (convoyed.exists() and convoyed.can_be_convoyed()): result = NSA
+        elif not destination.exists(): result = CST
         elif destination.province.is_coastal():
             if any(route_valid(route) for route in routes): result = MBV
         #print 'convoy_note(%s, %s) => %s' % (convoyed, destination, result)
@@ -253,7 +256,7 @@ class ConvoyedOrder(MovementPhaseOrder):
             note = self.convoy_note(self.unit, self.destination, self.routes)
             if note == MBV and self.path:
                 def real_prov(fleet): return fleet.coast.province.exists()
-                def at_sea(fleet):    return fleet.coast.province.can_convoy()
+                def at_sea(fleet): return fleet.coast.province.can_convoy()
                 def check(f): return not all(f(unit) for unit in self.path)
                 if   check(real_prov):                 note = NSP
                 elif check(Unit.exists):               note = NSF

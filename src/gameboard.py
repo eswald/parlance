@@ -239,7 +239,8 @@ class Map(VerboseObject):
                     coast = item
                 if not coast: coast = Coast(unit_type, province, coastline, [])
             unit = Unit(country or nation, coast)
-        #print '\tordered_unit(%s, %s) -> %s' % (nation, unit_spec, unit)
+        self.log_debug(20, 'ordered_unit(%s, %s) -> %s',
+            nation, unit_spec, unit)
         return unit
     def ordered_coast(self, unit, coast_spec, datc):
         ''' Finds a coast from its maybe_coast representation.
@@ -255,7 +256,8 @@ class Map(VerboseObject):
                 province = self.spaces.get(token) or Province(token, [], None)
             elif token.is_coastline(): coastline = token
         if not province:
-            raise ValueError, 'Missing province in coast spec: %s' % Message(coast_spec)
+            raise ValueError('Missing province in coast spec: %s'
+                % Message(coast_spec))
         
         # Try to match all specs, but without ambiguity
         coast = self.coasts.get((unit_type, province.key, coastline))
@@ -281,7 +283,8 @@ class Map(VerboseObject):
                 elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
             if not coast:
                 coast = Coast(None, province, coastline, [])
-        #print '\tordered_coast(%s, %s) -> %s (%s, %s, %s)' % (unit, coast_spec, coast, datc.datc_4b1, datc.datc_4b2, datc.datc_4b3)
+        self.log_debug(20, 'ordered_coast(%s, %s) -> %s (%s, %s, %s)', unit,
+            coast_spec, coast, datc.datc_4b1, datc.datc_4b2, datc.datc_4b3)
         return coast
     #@Memoize  # Cache results; doesn't work for list args
     def distance(self, coast, provs):
@@ -734,12 +737,12 @@ class Coast(Comparable, VerboseObject):
         self.borders_out = [location_key(unit_type, adj) for adj in adjacencies]
         if coastline:
             self.maybe_coast = (province.key, coastline)
-            self.text        = '(%s (%s %s))' % (unit_type, province.key, coastline)
-            self.name        = province.name + self.coast_suffix()
+            self.text = '(%s (%s %s))' % (unit_type, province.key, coastline)
+            self.name = province.name + self.coast_suffix()
         else:
             self.maybe_coast = province.key
-            self.text        = '(%s %s)' % (unit_type, province.key)
-            self.name        = province.name
+            self.text = '(%s %s)' % (unit_type, province.key)
+            self.name = province.name
         self.prefix = '%s %s' % (self.type_name(), self.name)
     
     def tokenize(self):
@@ -814,7 +817,7 @@ class Coast(Comparable, VerboseObject):
         self.log_debug(11, 'Routes found: %s', path_list)
         return path_list
     def matches(self, key):
-        #print '\tmatches(%s, %s)' % (self.key, key)
+        self.log_debug(20, 'matches(%s, %s)', self.key, key)
         return (self.key == key) or (self.unit_type is None
                 and self.key[1] == key[1])
 
