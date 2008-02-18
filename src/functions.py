@@ -224,10 +224,8 @@ def pydip_version(static=[]):
         return result
     
     result = version = 'v' + __version__
-    commit = system('git-rev-parse', 'HEAD')
-    if commit:
-        tagged = system('git-rev-parse', 'tags/%s^0' % version)
-        if tagged != commit: result = commit
+    commit = system('git-describe')
+    if commit: result = commit
     
     static.append(result)
     return result
