@@ -371,6 +371,14 @@ def timestamp(static=[None, 0]):
     static[0] = result
     return '%s%02d' % (result, static[1])
 
+def todo(test):
+    '''Makes a test always fail, with an appropriate note.'''
+    from functools import wraps
+    @wraps(test)
+    def wrapper(self):
+        self.fail("Unwritten test")
+    return wrapper
+
 def _test():
     from doctest import testmod
     return testmod()

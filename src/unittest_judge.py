@@ -10,7 +10,7 @@ import unittest
 from time          import time
 
 from config        import variants, Configuration, GameOptions
-from functions     import fails
+from functions     import fails, todo
 from language      import Token
 from main          import Thread
 from unittest_datc import DiplomacyAdjudicatorTestCase
@@ -122,6 +122,26 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, GAS), MTO, SPA])
         self.legalOrder(ITA, [(ITA, FLT, POR), MTO, (SPA, NCS)])
         self.assertMapState(steady_state)
+
+class Judge_Convoys(DiplomacyAdjudicatorTestCase):
+    ''' Minute details of convoy adjudication'''
+    
+    @todo
+    def test_pathless_convoy(self):
+        ''' Convoy orders can be sent without a path'''
+    @todo
+    def test_successful_convoy_path(self):
+        ''' Successful pathless convoys have a good path in the ORD message'''
+    @todo
+    def test_disrupted_convoy_path(self):
+        ''' Disrupted pathless convoys have a valid path in the ORD message'''
+    @todo
+    def test_ignored_convoy_path(self):
+        ''' A convoy with a specified path ignores other possible paths'''
+        # Lon - Nth - Bel ignores Ech c Lon - Bel
+    @todo
+    def test_convoy_path_repeated(self):
+        ''' A convoy with a specified path uses that path in the ORD message'''
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
     ''' Basic Judge Functionality'''
