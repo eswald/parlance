@@ -217,7 +217,7 @@ class defaultdict(dict):
             self[key] = result
             return result
 
-def pydip_version(static=[]):
+def version_number(static=[]):
     ''' Find the git commit id, if available, or the software version number.
         Caches the result, to avoid excess system calls.
     '''#'''
@@ -240,12 +240,12 @@ def pydip_version(static=[]):
 
 def version_string(extra=None):
     ''' Compute a version string for the NME message.
-        The version string starts with 'PyDip',
-        and ends with the PyDip version or commit id.
+        The version string starts with 'Parlance',
+        and ends with the Parlance version or commit id.
         If extra is given, it is stuffed in between.
     '''#'''
-    space = extra and ' ' or ''
-    return 'PyDip %s%s%s' % (extra or '', space, pydip_version())
+    items = ['Parlance', extra, version_number()]
+    return str.join(' ', filter(None, items))
 
 def num2name(number):
     ''' Converts an integer into an English phrase.

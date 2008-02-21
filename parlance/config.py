@@ -2,8 +2,8 @@ r'''Parlance configuration management
     Copyright (C) 2004-2008  Eric Wald
     
     This module harfs files for constants and other information.
-    The main configuration files are pydip.cfg in the current working
-    directory, and .pydiprc in the user's home directory.
+    The main configuration files are parlance.cfg in the current working
+    directory, and ~/.config/parlance.cfg in the user's home directory.
     
     When run directly as a script, this module prints out a template for such
     a configuration file, using the currently selected options.
@@ -68,7 +68,8 @@ class Configuration(object):
     '''#'''
     __metaclass__ = autosuper
     _user_config = RawConfigParser()
-    _user_config.read(['pydip.cfg', path.expanduser('~/.pydiprc')])
+    _user_config.read(['parlance.cfg',
+            path.expanduser('~/.config/parlance.cfg')])
     _cache = {}
     _args = {}
     _configurations = WeakValueDictionary()
@@ -346,7 +347,7 @@ class GameOptions(Configuration):
 
 
 class Configurable(object):
-    ''' Generic class for anything that can be configured by pydip.cfg files.
+    ''' Generic class for anything that can be configured by preference files.
         __options__ and __section__ will be used to build a Configuration
         instance for each Configurable instance, which will be available
         as self.options.
@@ -575,10 +576,10 @@ class ConfigPrinter(Configuration):
         }
         
         self.intro = (
-            'Example configuration file for PyDip, the Python Diplomacy program',
+            'Example configuration file for Parlance, a Diplomacy framework',
             '',
-            'This file may be saved as $HOME/.pydiprc, or as pydip.cfg in the',
-            'current working directory; settings in the latter will override',
+            'This file may be saved as parlance.cfg in either $HOME/.config or',
+            'the program working directory; settings in the latter will override',
             'those in the former.',
             '',
             'Lines starting with hash marks (#) or semicolons (;) are ignored,',
@@ -589,15 +590,14 @@ class ConfigPrinter(Configuration):
         )
         
         # I should probably find a better place to put this information.
-        # Perhaps I could simply collect it from pydip.cfg.sample?
+        # Perhaps I could simply collect it from parlance.cfg.sample?
         self.headers = headers = self.OrderedDict()
         headers['game'] = 'Parameters to be sent in the HLO message.'
         headers['server'] = 'Options for server operation.'
         headers['judge'] = 'Options for basic judge operation, including premature endings.'
-        headers['clients'] = 'Options applicable for all PyDip clients.'
+        headers['clients'] = 'Options applicable for all Parlance clients.'
         headers['network'] = 'Settings for the network (DCSP) layer.'
         headers['main'] = 'Options used by the core program functionality.'
-        headers['dumbbot'] = "Weights and probabilities for David's Dumbbot algorithm."
         headers['datc'] = ("Options from Lucas B. Kruijswijk's Diplomacy Adjudicator Test Cases:",
                 'http://web.inter.nl.net/users/L.B.Kruijswijk/',
                 'Not all options are supported; some cannot be, within DAIDE.',

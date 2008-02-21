@@ -261,7 +261,7 @@ class Validator(VerboseObject):
             (15, False)
             
             # Check for infinite recursion in HUH expressions
-            >>> m = HUH(ERR, YES(NME("DumberBot")("PyDip 1.0.166")))
+            >>> m = HUH(ERR, YES(NME("HoldBot")("Parlance 1.0.166")))
             >>> validate_expression(m, 'message', 0)
             (34, True)
             
