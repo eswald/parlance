@@ -1,6 +1,15 @@
-''' PyDip user interface (such as it is)
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance command-line interface
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module includes functions to run players or the server based on
+    command-line arguments.  It also includes the threading engine used by the
+    back ends of each.
+    
+    When run directly as a script, this module runs a client that translates
+    network messages from and to token syntax on standard input and output.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import select

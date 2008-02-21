@@ -1,30 +1,21 @@
-#!/usr/bin/env python
-''' PyDip - A Python framework for DAIDE
-    (Diplomacy Artificial Intelligence Development Environment)
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance Diplomacy framework
+    Copyright (C) 2004-2008  Eric Wald
     
-    Contains modules for Diplomacy client and server programs:
-        config      -- Loads constants from various configuration files.
-        dumbbot     -- A client ported from David Norman's DumbBot code
-        gameboard   -- Classes for game elements: Map, Unit, Province, Power.
-        judge       -- Move parser and adjudicator.
-        language    -- Classes to parse and use the modified DPP language.
-        main        -- The program core.  Instantiates and controls components.
-        network     -- Classes to exchange information between client and server.
-        player      -- Basic clients.
-        server      -- The main server classes.
-        tokens      -- Tokens of the core DPP language.
-        validation  -- The function to validate incoming Messages.
+    This package is a framework for playing the Diplomacy board game over
+    a network, using the client-server protocol and message syntax of the
+    Diplomacy Artificial-Intelligence Development Environment (DAIDE)
+    community.
     
     When run directly as a script, this module starts the server.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 # List of available modules
 __all__ = [
+    'chatty',
     'config',
-    'dumbbot',
-    'evilbot',
     'functions',
     'gameboard',
     'judge',

@@ -1,11 +1,13 @@
-''' PyDip core language tokens
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance core language tokens
+    Copyright (C) 2004-2008  Eric Wald
     
     This module is designed to be used as "from tokens import *".
-    Doing so will import all DCSP tokens, with upper-case names,
-    including BRA ('(') and KET (')'),
-    but not including standard provinces and powers.
+    It includes all of the token from the core protocol, with upper-case
+    names, including BRA ('(') and KET (')'), but not including provinces
+    or powers from the standard map.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from sys import modules

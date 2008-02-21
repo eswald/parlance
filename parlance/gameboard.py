@@ -1,8 +1,12 @@
-''' PyDip gameboard classes
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance gameboard classes
+    Copyright (C) 2004-2008  Eric Wald
     
-    Defines classes to represent parts of the Diplomacy game.
+    This module defines classes to represent parts of the Diplomacy game.
+    These are intended to be general-purpose; in particular, they should not
+    be tied to any one particular bot or server algorithm.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from itertools   import chain

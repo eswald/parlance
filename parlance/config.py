@@ -1,10 +1,15 @@
-''' PyDip configuration management
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance configuration management
+    Copyright (C) 2004-2008  Eric Wald
     
-    Harfs files for constants and other information.
-    The main configuration files are pydip.cfg in the current working directory,
-    and ~/.pydiprc in the user's home directory.
+    This module harfs files for constants and other information.
+    The main configuration files are pydip.cfg in the current working
+    directory, and .pydiprc in the user's home directory.
+    
+    When run directly as a script, this module prints out a template for such
+    a configuration file, using the currently selected options.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import re

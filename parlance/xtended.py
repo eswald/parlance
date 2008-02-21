@@ -1,10 +1,12 @@
-''' PyDip standard name environment
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance standard map environment
+    Copyright (C) 2004-2008  Eric Wald
     
-    The standard map, default map tokens, and starting position messages.
-    This module can take a few seconds to load, and might not work properly,
-    but offers a convenient way to import all those names.
+    This module includes the standard map, default map tokens, and starting
+    position messages. It can take a few seconds to load, and might not work
+    properly, but offers a convenient way to import all those names.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from sys       import modules

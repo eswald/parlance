@@ -1,6 +1,11 @@
-''' PyDip language classes
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance language classes
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module contains classes to convert messages between a Pythonic
+    representation, the DAIDE message syntax, and the network protocol.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import re

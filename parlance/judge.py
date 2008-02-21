@@ -1,9 +1,13 @@
-''' PyDip Judge for the standard map
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance adjudication system
+    Copyright (C) 2004-2008  Eric Wald
     
-    This should work for most maps, but variants may want to re-implement it.
-    Rule variants, in particular, will need a new Judge class.
+    This module implements a decision-making judge for the standard Diplomacy
+    rules.  Several of the disputable rules ambiguities are configurable.
+    This Judge should work for most map variants, but rule variants may need
+    to re-implement it.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from itertools import chain

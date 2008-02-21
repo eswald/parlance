@@ -1,6 +1,17 @@
-''' Chatty - PyDip chat-only observer clients
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance chat-only observer clients
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module includes clients for human interaction with a network
+    Diplomacy game, using a console interface.  These clients are simple
+    observers, with no ability to actually play the game, but allow chatting
+    with players and other observers using admin messages.
+    
+    When run directly as a script, this module runs one of these clients;
+    where possible, it will run the client that displays a map in the top half
+    of the screen, using the curses library.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from functions import expand_list, version_string

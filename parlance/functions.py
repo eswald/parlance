@@ -1,7 +1,15 @@
-''' Functions of general applicability
+r'''Parlance general utility functions
+    Copyright (C) 2004-2008  Eric Wald
     
-    New functions may be added at any time,
-    so "from functions import *" is discouraged.
+    This module includes small functions and classes not specific to the
+    Parlance package.  Several of them were adapted from previous works.
+    New items may be added at any time, so "from functions import *" is
+    discouraged.
+    
+    When run directly as a script, this module tests some of its utilities.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from itertools import chain, ifilter, ifilterfalse

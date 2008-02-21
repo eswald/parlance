@@ -1,6 +1,13 @@
-''' PyDip game server
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance game server
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module contains the main server, which serves any number of games
+    over the network.
+    
+    When run directly as a script, this module runs the game server.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import re

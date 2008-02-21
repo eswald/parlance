@@ -1,6 +1,12 @@
-''' PyDip Diplomacy Message validation
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance message validation
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module includes a syntax checker for messages in Pythonic form.
+    When used between a network layer and the message interpreter, it provides
+    some measure of protection against evil input.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import os

@@ -1,8 +1,16 @@
-''' PyDip client <-> server communications
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance client/server communications
+    Copyright (C) 2004-2008  Eric Wald
     
-    This should be the only module that cares about the client-server protocol.
+    This module includes classes to send and receive network messages, using
+    the Pythonic messages for the interface to other parts of the program.
+    This should be the only module that cares about details of the
+    client-server protocol.
+    
+    When run directly as a script, this module runs a server that translates
+    network messages from and to token syntax on standard input and output.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import socket

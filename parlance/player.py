@@ -1,6 +1,15 @@
-''' PyDip client framework and simple clients
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance client framework and simple clients
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module includes base classes for players and observers, including
+    most of the functionality they need for connecting to a server.  Also
+    included are several very simple observers that each do one thing based on
+    messages from the server, and a HoldBot player to fill out games.
+    
+    When run directly as a script, this module runs a HoldBot.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from __future__ import division

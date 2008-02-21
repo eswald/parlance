@@ -1,9 +1,12 @@
-''' PyDip unit orders
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Parlance unit orders
+    Copyright (C) 2004-2008  Eric Wald
     
-    Note that these classes actually contain quite a bit of the functionality
-    that you might expect to find in the Judge.
+    This module contains representations of the types of orders that can be
+    sent by a player.  Note that these classes actually contain quite a bit of
+    the functionality that you might expect to find in the Judge.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 from itertools   import chain
