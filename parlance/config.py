@@ -595,8 +595,7 @@ class ConfigPrinter(Configuration):
         headers['clients'] = 'Options applicable for all Parlance clients.'
         headers['network'] = 'Settings for the network (DCSP) layer.'
         headers['main'] = 'Options used by the core program functionality.'
-        headers['datc'] = ("Options from Lucas B. Kruijswijk's Diplomacy Adjudicator Test Cases:",
-                'http://web.inter.nl.net/users/L.B.Kruijswijk/',
+        headers['datc'] = ("Options from Lucas B. Kruijswijk's Diplomacy Adjudicator Test Cases.",
                 'Not all options are supported; some cannot be, within DAIDE.',
                 'Some options use letters not used by the DATC; in general,',
                 'the syntax disallows the option entirely in these cases.')
