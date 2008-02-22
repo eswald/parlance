@@ -9,7 +9,6 @@ r'''Parlance message validation
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-import os
 import re
 
 from config   import VerboseObject, parse_file
@@ -30,7 +29,7 @@ class Validator(VerboseObject):
     trimmed = {}
     __section__ = 'syntax'
     __options__ = (
-        ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
+        ('syntax_file', file, 'parlance://data/syntax.html', 'syntax file',
             'Document specifying syntax rules and level names.'),
     )
     

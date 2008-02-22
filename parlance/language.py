@@ -9,7 +9,6 @@ r'''Parlance language classes
 '''#'''
 
 import re
-from os        import path
 from struct    import pack
 
 from functions import Comparable, rindex
@@ -948,7 +947,7 @@ class Protocol(VerboseObject):
     '''#'''
     __section__ = 'syntax'
     __options__ = (
-        ('dcsp_file', file, path.join('docs', 'protocol.html'), 'protocol file',
+        ('dcsp_file', file, 'parlance://data/protocol.html', 'protocol file',
             'Document specifying protocol information, including token names and numbers.'),
     )
     

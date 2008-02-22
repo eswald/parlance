@@ -42,4 +42,8 @@ setup(
         "gui_scripts": [
         ],
     },
+    
+    package_data = {
+        "parlance": ["data/*.html"],
+    },
 )

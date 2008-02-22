@@ -12,6 +12,7 @@ r'''Parlance configuration management
 import re
 from ConfigParser import RawConfigParser
 from os           import linesep, path
+from pkg_resources import resource_stream
 from sys          import argv
 from weakref      import WeakValueDictionary
 
@@ -474,10 +475,15 @@ class MapVariant(VerboseObject):
 # File parsing
 def parse_file(filename, parser):
     result = None
-    try: stream = open(filename, 'rU', 1)
+    try:
+        if filename.startswith("parlance://"):
+            stream = resource_stream(__name__, filename.split("://")[1])
+        else:
+            stream = open(filename, 'rU', 1)
     except IOError, err:
         raise IOError("Failed to open configuration file %r %s" %
                 (filename, err.args))
+    
     try: result = parser(stream)
     finally: stream.close()
     return result
