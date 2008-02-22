@@ -1,4 +1,14 @@
 #!/bin/env python
+r'''Parlance setup script
+    Copyright (C) 2008  Eric Wald
+    
+    This distribution script uses setuptools, by Phillip J. Eby.
+    To use it, enter "python setup.py install" at a command line.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
+'''#'''
+
 from ez_setup import use_setuptools
 use_setuptools()
 
