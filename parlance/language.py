@@ -948,7 +948,6 @@ class Protocol(VerboseObject):
     '''#'''
     __section__ = 'syntax'
     __options__ = (
-        # os.path.abspath(__file__) would be useful here.
         ('dcsp_file', file, path.join('docs', 'protocol.html'), 'protocol file',
             'Document specifying protocol information, including token names and numbers.'),
     )

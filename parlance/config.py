@@ -647,16 +647,17 @@ class ConfigPrinter(Configuration):
                 if hasattr(item, '__dict__'): self.get_options(mname, item)
                 #else: print '  Class %s has no __dict__?' % item.__name__
     
-    def collect_modules(self, srcdir, dirname, fnames):
-        package = dirname.replace(srcdir, '').replace(path.sep, '.')
-        for name in fnames:
-            if name.endswith('.py'):
-                mname = name[:-3]
-                if package: module = __import__(package, {}, {}, mname)
-                else: module = __import__(mname, {}, {}, [])
-                #fname = path.join(dirname, name)
-                #print 'Processing %s as [%s]:' % (fname, module.__name__)
-                self.get_options(module.__name__, module)
+    def collect_modules(self, package):
+        pack = __import__(package, {}, {}, [])
+        for name in pack.__all__:
+            try:
+                module = getattr(pack, name)
+            except AttributeError:
+                __import__(str.join(".", (package, name)))
+                module = getattr(pack, name)
+            
+            #print 'Processing %s as [%s]:' % (module.__name__, name)
+            self.get_options(name, module)
     
     def print_section(self, section, comments):
         print
@@ -668,8 +669,8 @@ class ConfigPrinter(Configuration):
             for line in self.modules[section][option]:
                 print line
     
-    def walk(self, directory):
-        path.walk(directory, self.collect_modules, directory)
+    def walk(self, package):
+        self.collect_modules(package)
         for line in self.intro: print '#', line
         for section in self.headers.keys():
             header = self.headers[section]
@@ -683,4 +684,4 @@ def run():
     r'''Print out a configuration file template.
         Includes lines to reproduce the currently selected options.
     '''#'''
-    ConfigPrinter().walk(path.split(__file__)[0])
+    ConfigPrinter().walk(__name__.rsplit(".", 1)[0])

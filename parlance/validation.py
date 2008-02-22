@@ -30,7 +30,6 @@ class Validator(VerboseObject):
     trimmed = {}
     __section__ = 'syntax'
     __options__ = (
-        # os.path.abspath(__file__) would be useful here.
         ('syntax_file', file, os.path.join('docs', 'syntax.html'), 'syntax file',
             'Document specifying syntax rules and level names.'),
     )
