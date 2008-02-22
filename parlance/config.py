@@ -254,7 +254,7 @@ class GameOptions(Configuration):
             'Whether press is blocked during retreat phases.'),
         ('NPB', bool, False, 'No Press during Builds',
             'Whether press is blocked during build phases.'),
-        ('DSD', bool, False, 'Deadline Stops on Disconnection',
+        ('DSD', bool, True, 'Deadline Stops on Disconnection',
             'Whether time limits pause when a non-eliminated player disconnects.',
             'The standard "real-time" setting is yes.'),
         ('AOA', bool, False, 'Any Orders Allowed',

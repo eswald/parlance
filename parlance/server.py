@@ -60,7 +60,7 @@ class Server(VerboseObject):
         administering socket connections and game creation.
     '''#'''
     __options__ = (
-        ('games', int, 1, ('g', 'number of games'),
+        ('games', int, 0, ('g', 'number of games'),
             'Minimum number of games to play before server stops.',
             'Use 0 to prevent the server from shutting down automatically.'),
         ('variant', str, 'standard', 'default variant',
@@ -75,13 +75,13 @@ class Server(VerboseObject):
             'The directory in which to save game logs.'),
         
         # Admin messages
-        ('snd_admin', bool, False, 'send admin messages',
+        ('snd_admin', bool, True, 'send admin messages',
             'Whether the server should broadcast admin messages.',
             'This includes server-generated and forwarded messages,',
             'but not individual responses to admin commands.'),
-        ('fwd_admin', bool, False, 'forward admin messages',
+        ('fwd_admin', bool, True, 'forward admin messages',
             'Whether non-command admin messages from clients should be re-broadcast.'),
-        ('admin_cmd', bool, False, 'accept admin commands',
+        ('admin_cmd', bool, True, 'accept admin commands',
             'Whether the server should accept admin commands.',
             'These allow players to do things outside the scope of DAIDE syntax,',
             'such as pausing the game, starting bots, or booting each other.'),
