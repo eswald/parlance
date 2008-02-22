@@ -18,18 +18,13 @@ from functions  import defaultdict, expand_list, \
         instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
 from language   import Message, Time, protocol
+from player     import HoldBot
 from tokens     import *
 from validation import Validator
 
-import blabberbot, dumbbot, evilbot, peacebot, player, project20m
-bots = dict([(klass.__name__.lower(), klass) for klass in
-    player.HoldBot,
-    dumbbot.DumbBot,
-    evilbot.EvilBot,
-    peacebot.PeaceBot,
-    blabberbot.BlabberBot,
-    project20m.Project20M,
-])
+bots = {
+    "holdbot": HoldBot,
+}
 
 class Command(object):
     def __init__(self, pattern, callback, help):
