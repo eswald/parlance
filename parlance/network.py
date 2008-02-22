@@ -6,9 +6,6 @@ r'''Parlance client/server communications
     This should be the only module that cares about details of the
     client-server protocol.
     
-    When run directly as a script, this module runs a server that translates
-    network messages from and to token syntax on standard input and output.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -463,6 +460,12 @@ class RawServer(object):
     def broadcast_admin(self, text): pass
     def default_game(self): return self.game
 
-if __name__ == '__main__':
+def run():
+    r'''Run a raw token server.
+        The server will take messages in token syntax from standard input and
+        send them to each connected client, printing any received messages to
+        standard output in the same syntax.  The server will close when the
+        last client disconnects.
+    '''#'''
     from main import run_server
     run_server(RawServer, 0)

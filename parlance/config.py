@@ -5,9 +5,6 @@ r'''Parlance configuration management
     The main configuration files are parlance.cfg in the current working
     directory, and ~/.config/parlance.cfg in the user's home directory.
     
-    When run directly as a script, this module prints out a template for such
-    a configuration file, using the currently selected options.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -683,5 +680,8 @@ class ConfigPrinter(Configuration):
             header = ('Options for the %s module.' % section,)
             if section not in self.headers: self.print_section(section, header)
 
-if __name__ == "__main__":
+def run():
+    r'''Print out a configuration file template.
+        Includes lines to reproduce the currently selected options.
+    '''#'''
     ConfigPrinter().walk(path.split(__file__)[0])

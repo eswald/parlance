@@ -6,8 +6,6 @@ r'''Parlance Diplomacy framework
     Diplomacy Artificial-Intelligence Development Environment (DAIDE)
     community.
     
-    When run directly as a script, this module starts the server.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -29,7 +27,3 @@ __all__ = [
     'validation',
     'xtended',
 ]
-
-if __name__ == "__main__":
-    import server
-    server.run()

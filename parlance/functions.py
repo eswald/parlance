@@ -6,8 +6,6 @@ r'''Parlance general utility functions
     New items may be added at any time, so "from functions import *" is
     discouraged.
     
-    When run directly as a script, this module tests some of its utilities.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -386,8 +384,3 @@ def todo(test):
     def wrapper(self):
         self.fail("Unwritten test")
     return wrapper
-
-def _test():
-    from doctest import testmod
-    return testmod()
-if __name__ == "__main__": _test()

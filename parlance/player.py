@@ -6,8 +6,6 @@ r'''Parlance client framework and simple clients
     included are several very simple observers that each do one thing based on
     messages from the server, and a HoldBot player to fill out games.
     
-    When run directly as a script, this module runs a HoldBot.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -622,4 +620,9 @@ class Echo(AutoObserver):
         self.__super.handle_message(message)
 
 
-if __name__ == "__main__": run_player(HoldBot, True, True)
+def run():
+    r'''Run one or more HoldBots.
+        Takes options from the command line, including special syntax for
+        host, port, number of bots, and passcodes.
+    '''#'''
+    run_player(HoldBot, True, True)

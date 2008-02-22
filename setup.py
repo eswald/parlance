@@ -32,7 +32,12 @@ setup(
     test_suite = "test",
     entry_points = {
         "console_scripts": [
-            "parlance-server = parlance.main:run_server",
+            "parlance-server = parlance.server:run",
+            "parlance-holdbot = parlance.player:run",
+            "parlance-chatty = parlance.chatty:run",
+            "parlance-config = parlance.config:run",
+            "parlance-raw-client = parlance.main:run",
+            "parlance-raw-server = parlance.network:run",
         ],
         "gui_scripts": [
         ],

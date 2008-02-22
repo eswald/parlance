@@ -4,8 +4,6 @@ r'''Parlance game server
     This module contains the main server, which serves any number of games
     over the network.
     
-    When run directly as a script, this module runs the game server.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -1425,6 +1423,9 @@ class Game(Historian):
 
 
 def run():
+    r'''Run a game server.
+        Takes options from the command line, including number of games and the
+        default map.
+    '''#'''
     from main import run_server
     run_server(Server, 7)
-if __name__ == '__main__': run()

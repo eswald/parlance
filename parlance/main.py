@@ -5,9 +5,6 @@ r'''Parlance command-line interface
     command-line arguments.  It also includes the threading engine used by the
     back ends of each.
     
-    When run directly as a script, this module runs a client that translates
-    network messages from and to token syntax on standard input and output.
-    
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
@@ -494,5 +491,10 @@ class RawClient(object):
     def send(self, message):
         if not self.closed: self.send_out(message)
 
-if __name__ == '__main__':
+def run():
+    r'''Run a raw token client.
+        The client will take messages in token syntax from standard input and
+        send them to the server, printing any received messages to standard
+        output in the same syntax.
+    '''#'''
     run_player(RawClient, False, False)

@@ -1,14 +1,10 @@
-r'''Parlance chat-only observer clients
+r'''Parlance chat-only console clients
     Copyright (C) 2004-2008  Eric Wald
     
     This module includes clients for human interaction with a network
     Diplomacy game, using a console interface.  These clients are simple
     observers, with no ability to actually play the game, but allow chatting
     with players and other observers using admin messages.
-    
-    When run directly as a script, this module runs one of these clients;
-    where possible, it will run the client that displays a map in the top half
-    of the screen, using the curses library.
     
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
@@ -244,6 +240,11 @@ else:
                     self.map.current_turn, '; '.join(owners))
 
 
-if __name__ == "__main__":
+def run():
+    r'''Run a console client.
+        If possible, run the client that displays a map in the top half of the
+        screen, using the curses library; otherwise, run a purely line-based
+        console client.
+    '''#'''
     from main import run_player
     run_player(MapChat, False, False)
