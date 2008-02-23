@@ -355,7 +355,7 @@ def timestamp(static=[None, 0]):
         This implementation can handle up to fifty games per second;
         beyond that, it starts creating nine-character names.
         The names will sort chronologically in ASCII-based systems,
-        but wrap every twenty years.
+        but wrap every forty years.
         
         Vowels have been removed to prevent production of real words.
         This also reduces the chance of conflict with human-given names.
@@ -364,12 +364,12 @@ def timestamp(static=[None, 0]):
     '''#'''
     chars = "0123456789BCDFGHJKLMNPQRSTVWXYZ"
     now = gmtime()
-    year = (now[0] % 20) + 10   # 10 - 29
-    month = now[1]              #  1 - 12
-    day = now[2] - 1            #  0 - 30
-    hour = now[3]               #  0 - 23
-    minute = now[4] // 2        #  0 - 29
-    second = now[5] // 2        #  0 - 29 (or perhaps 30)
+    year = ((now[0] // 2) % 20) + 10    # 10 - 29
+    month = now[1] + (now[0] % 2) * 12  #  1 - 24
+    day = now[2] - 1                    #  0 - 30
+    hour = now[3]                       #  0 - 23
+    minute = now[4] // 2                #  0 - 29
+    second = now[5] // 2                #  0 - 29 (or perhaps 30)
     result = (chars[year] + chars[month] + chars[day] +
             chars[hour] + chars[minute] + chars[second])
     if result == static[0]: static[1] += 1
