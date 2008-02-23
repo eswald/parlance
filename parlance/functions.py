@@ -350,7 +350,7 @@ def fails(test_function):
         else: test_case.fail('Test unexpectedly passed')
     return test_wrapper
 
-def timestamp(static=[None, 0]):
+def timestamp(seconds=None, static=[None, 0]):
     ''' Creates a game name from the current time.
         This implementation can handle up to fifty games per second;
         beyond that, it starts creating nine-character names.
@@ -361,9 +361,40 @@ def timestamp(static=[None, 0]):
         This also reduces the chance of conflict with human-given names.
         All names will start with a letter and end in two numbers;
         the other five characters can be letters or numbers.
+        
+        >>> from time import mktime, timezone, altzone
+        >>> def mkgmtime(when):
+        ...     seconds = mktime(when)
+        ...     seconds -= [timezone, altzone][when[8]]
+        ...     return seconds
+        ... 
+        >>> when = [2008, 2, 23, 20, 23, 7, 5, 54, 0]
+        >>> seconds = mkgmtime(when)
+        >>> print timestamp(seconds)
+        G2QNC300
+        >>> print timestamp(seconds)
+        G2QNC301
+        >>> when[0] -= 40
+        >>> print timestamp(mkgmtime(when))
+        G2QNC302
+        >>> when[0] += 20
+        >>> print timestamp(mkgmtime(when))
+        S2QNC300
+        >>> when[0] += 1
+        >>> print timestamp(mkgmtime(when))
+        SGQNC300
+        >>> when[0] += 10
+        >>> print timestamp(mkgmtime(when))
+        YGQNC300
+        >>> when[5] += 1
+        >>> print timestamp(mkgmtime(when))
+        YGQNC400
+        >>> when[5] += 1
+        >>> print timestamp(mkgmtime(when))
+        YGQNC401
     '''#'''
     chars = "0123456789BCDFGHJKLMNPQRSTVWXYZ"
-    now = gmtime()
+    now = gmtime(seconds)
     year = ((now[0] // 2) % 20) + 10    # 10 - 29
     month = now[1] + (now[0] % 2) * 12  #  1 - 24
     day = now[2] - 1                    #  0 - 30
