@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name = "Parlance",
-    version = "1.4.0.dev",
+    version = "1.4.0",
     packages = ["parlance"],
     
     # Project metadata
