@@ -11,7 +11,7 @@ r'''Parlance general utility functions
 '''#'''
 
 from itertools import chain, ifilter, ifilterfalse
-from time      import localtime
+from time import gmtime
 
 __version__ = '1.3.1.x'
 
@@ -363,7 +363,7 @@ def timestamp(static=[None, 0]):
         the other five characters can be letters or numbers.
     '''#'''
     chars = "0123456789BCDFGHJKLMNPQRSTVWXYZ"
-    now = localtime()
+    now = gmtime()
     year = (now[0] % 20) + 10   # 10 - 29
     month = now[1]              #  1 - 12
     day = now[2] - 1            #  0 - 30
