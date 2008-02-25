@@ -10,11 +10,11 @@ r'''DATC test cases for the Parlance judge
 
 import unittest
 
-from config    import Configuration, GameOptions, variants
-from functions import fails
-from language  import Message
-from tokens    import *
-from xtended   import *
+from parlance.config    import Configuration, GameOptions, variants
+from parlance.functions import fails
+from parlance.language  import Message
+from parlance.tokens    import *
+from parlance.xtended   import *
 
 class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     ''' Unit Test base class for testing Diplomacy adjudication.
@@ -3995,8 +3995,10 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
     # Most of these depend on or relate to 4.A.3
     # This batch always uses MTO for the possibly convoyed units;
     # unfortunately, the judge never considers convoys then.
+    # Todo: Implement tests for option d.
     def test_6G1(self):
         "6.G.1.m  TWO UNITS CAN SWAP PLACES BY CONVOY"
+        self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, SKA],
             [ENG, AMY, NWY],
@@ -4070,6 +4072,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G5(self):
         "6.G.5.m  SWAPPING WITH INTENT"
+        self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ITA, FLT, TYS],
             [ITA, AMY, ROM],
@@ -4086,6 +4089,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G6(self):
         "6.G.6.m  SWAPPING WITH UNINTENDED INTENT"
+        self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, ECH],
             [ENG, AMY, LVP],
@@ -4108,6 +4112,7 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G9(self):
         "6.G.9.m  SWAPPED OR DISLODGED?"
+        self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, SKA],
             [ENG, FLT, FIN],
@@ -4309,6 +4314,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         # 4.A.2 (paradox)
         # This situation becomes paradoxical if we must choose
         # between the land and convoy routes (4.A.3 a or d).
+        self.judge.datc.datc_4a3 = 'f'
         self.judge.datc.paradox = 'Szykman'
         steady_state = [
             [ENG, FLT, NTH],
