@@ -1,6 +1,12 @@
-''' Unit tests for the PyDip player module
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Test cases for Parlance clients
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module tests the basic client classes of the framework, as well as
+    the HoldBot player based on them.  Other bots should have their own test
+    scripts, but may use the tests in here as a base.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

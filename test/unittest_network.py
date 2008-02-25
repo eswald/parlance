@@ -1,6 +1,12 @@
-''' Unit tests for the PyDip network module
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Test cases for Parlance network activity
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module includes functional (end-to-end) test cases to verify that the
+    whole system works together; unfortunately, many of them can take quite
+    a while to run, and a few need bots that can actually finish a game.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import socket

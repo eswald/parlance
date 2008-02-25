@@ -1,10 +1,12 @@
-''' DATC Version 2.4, Sections 7-12 Test Cases
-    The DATC is copyright Lucas B. Kruijswijk
-    http://web.inter.nl.net/users/L.B.Kruijswijk/
-    PyDip implementation by Eric Wald, 2004-2006
+r'''DATC rule variant test cases for Parlance
+    Copyright (C) 2001-2008  Lucas B. Kruijswijk and Eric Wald
     
-    Unfortunately, none of these test cases actually work yet,
-    nor have the tested maps been implemented at all.
+    This module contains placeholders for tests to be implemented when rule
+    variants rise a bit higher in the priority queue.  Some of these variants
+    may require message syntax modification and/or a new judge class.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

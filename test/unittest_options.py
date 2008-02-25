@@ -1,10 +1,12 @@
-''' DATC Version 2.4, Section 4 Test Cases
-    The DATC is copyright Lucas B. Kruijswijk
-    http://web.inter.nl.net/users/L.B.Kruijswijk/
-    PyDip implementation by Eric Wald, 2004-2006
-
-    This file tests each DATC option separately.
-    Most tests are based on section 6 test cases.
+r'''DATC option compliance test cases for the Parlance judge
+    Copyright (C) 2001-2008  Lucas B. Kruijswijk and Eric Wald
+    
+    This module tests each option of each disputable item listed in the
+    DATC document, using collections of test cases from that document.
+    Unfortunately, some of the options have not yet been implemented.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

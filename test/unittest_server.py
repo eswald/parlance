@@ -1,6 +1,11 @@
-''' Unit tests for the PyDip server module
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Test cases for the Parlance server
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module tests the server's response to client activity, and other
+    functionality not specifically related to adjudication or the judge.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

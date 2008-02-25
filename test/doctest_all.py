@@ -1,8 +1,11 @@
-''' PyDip docstring testing
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Docstring test cases for Parlance modules
+    Copyright (C) 2004-2008  Eric Wald
     
-    When run, this module runs docstring tests in other modules.
+    This module runs docstring tests in selected Parlance modules.
+    It should import them into the unittest framework for setuptools.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 def _test():

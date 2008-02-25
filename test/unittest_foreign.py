@@ -1,6 +1,12 @@
-''' DATC compliance testing for David's server
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''DAIDE compatibility testing for Parlance
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This module runs Parlance test cases on David's server, to check whether
+    and under what conditions the two servers act the same.  Many of these
+    tests will fail, particularly those that require specific option settings.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

@@ -1,9 +1,11 @@
-''' Non-DATC unit tests for the PyDip judge module
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Non-DATC test cases for the Parlance judge
+    Copyright (C) 2004-2008  Eric Wald
     
-    These are usually simpler than DATC,
-    and may test implementation-specific stuff.
+    This module tests basic judge functionality, including DAIDE requirements
+    and implementation-specific details, beyond the adjudication.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

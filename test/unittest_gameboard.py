@@ -1,6 +1,11 @@
-''' Unit tests for the PyDip gameboard and orders modules
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+r'''Test cases for the Parlance gameboard and unit orders
+    Copyright (C) 2004-2008  Eric Wald
+    
+    A few of these tests currently fail, because the features they test are
+    only allowed under AOA or certain rule variants.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest

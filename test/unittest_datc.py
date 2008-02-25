@@ -1,8 +1,11 @@
-''' DATC Version 2.4, Section 6 Test Cases
-    The DATC is copyright Lucas B. Kruijswijk
-    http://web.inter.nl.net/users/L.B.Kruijswijk/
-    PyDip implementation by Eric Wald, 2004-2006
-    Certain cases inspired by a jDip test suite
+r'''DATC test cases for the Parlance judge
+    Copyright (C) 2001-2008  Lucas B. Kruijswijk and Eric Wald
+    
+    Some of these cases test DATC options that have not yet been implemented.
+    However, enough pass to certify this adjudicator as correct.
+    
+    Parlance may be used, modified, and/or redistributed under the terms of
+    the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
 import unittest
