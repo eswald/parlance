@@ -11,13 +11,19 @@ r'''Non-DATC test cases for the Parlance judge
 import unittest
 from time          import time
 
-from config        import variants, Configuration, GameOptions
-from functions     import fails, todo
-from language      import Token
-from main          import Thread
+from parlance.config        import variants, Configuration, GameOptions
+from parlance.functions     import fails, todo
+from parlance.judge         import Attack_Decision, Hold_Decision, \
+        Move_Decision, Path_Decision, Prevent_Decision
+from parlance.language      import Token
+from parlance.main          import Thread
+from parlance.orders        import MoveOrder
+from parlance.tokens        import *
+from parlance.xtended       import *
+        
+        
+
 from unittest_datc import DiplomacyAdjudicatorTestCase
-from tokens        import *
-from xtended       import *
 
 SWI = Token('SWI', 0x504B)
 
@@ -500,9 +506,6 @@ class Judge_Doctests(unittest.TestCase):
         self.failUnlessEqual([msg[0] for msg in messages], [SCO, NOW])
         self.failUnlessEqual(judge.phase, 0x20)
     def test_attack_calculation(self):
-        from orders import MoveOrder
-        from judge import Move_Decision, Path_Decision, Attack_Decision
-        
         Rome = standard_map.coasts[(AMY, ROM, None)]
         Venice = standard_map.coasts[(AMY, VEN, None)]
         Trieste = standard_map.coasts[(AMY, TRI, None)]
@@ -528,9 +531,6 @@ class Judge_Doctests(unittest.TestCase):
         self.failUnlessEqual(choice.min_value, 1)
         self.failUnlessEqual(choice.max_value, 1)
     def test_move_calculation(self):
-        from orders import MoveOrder
-        from judge import Move_Decision, Attack_Decision, Prevent_Decision, Hold_Decision
-        
         Vienna = standard_map.coasts[(AMY, VIE, None)]
         Galicia = standard_map.coasts[(AMY, GAL, None)]
         Warsaw = standard_map.coasts[(AMY, WAR, None)]

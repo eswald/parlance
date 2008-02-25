@@ -11,11 +11,12 @@ r'''Test cases for Parlance clients
 
 import unittest
 
-from config     import Configuration, GameOptions, variants
-from language   import Token
-from player     import AutoObserver, Player, HoldBot
-from tokens     import *
-from validation import Validator
+from parlance.config     import Configuration, GameOptions, variants
+from parlance.language   import Token
+from parlance.player     import AutoObserver, Player, HoldBot
+from parlance.tokens     import *
+from parlance.validation import Validator
+from parlance.xtended    import ENG, FRA, GER
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -69,7 +70,6 @@ class PlayerTestCase(unittest.TestCase):
         self.player.register()
         self.player.threaded = []
     def send_hello(self, country=None):
-        from xtended import ENG
         self.send(HLO(country or ENG)(self.level)(self.params))
     def seek_reply(self, message, error=None):
         while self.replies:
@@ -102,7 +102,6 @@ class Player_Tests(PlayerTestCase):
             raise NotImplementedError, 'Intentionally raising an error.'
         def generate_orders(self): pass
     def test_press_response(self):
-        from xtended import ENG, FRA
         self.connect_player(self.Test_Player)
         self.start_game()
         self.replies = []
@@ -113,7 +112,6 @@ class Player_Tests(PlayerTestCase):
     def test_press_response_legacy(self):
         # Same as above, but with WRT syntax
         # Note that this only works with validation off.
-        from xtended import ENG, FRA, GER
         self.connect_player(self.Test_Player)
         self.start_game()
         self.replies = []
@@ -152,7 +150,6 @@ class Player_Tests(PlayerTestCase):
         self.failIf(self.player.closed)
     def test_press_error(self):
         ''' Errors in handle_press methods should send HUH(message ERR) press.'''
-        from xtended import ENG, GER
         self.connect_player(self.Test_Player)
         self.start_game()
         offer = SUG(DRW)
@@ -191,7 +188,7 @@ class Player_Tests(PlayerTestCase):
         ''' A client should deal with HUH response to its HUH message.'''
         Configuration.set_globally('validate', True)
         Configuration.set_globally('response', 'complain')
-        self.set_verbosity(7)
+        #self.set_verbosity(7)
         self.connect_player(self.Test_Player)
         while self.replies:
             msg = self.replies.pop(0)
@@ -208,7 +205,6 @@ class Player_HoldBot(PlayerTestCase):
         PlayerTestCase.setUp(self)
         self.connect_player(HoldBot)
     def test_press_response(self):
-        from xtended import ENG, FRA
         self.start_game()
         self.replies = []
         offer = PRP(PCE(ENG, FRA))
@@ -237,28 +233,7 @@ class Player_Bots(PlayerTestCase):
         self.assertContains(SUB, result)
         self.failIf(HUH in result)
     
-    def test_project20m(self):
-        from project20m import Project20M
-        self.attempt_one_phase(Project20M)
-    def test_blabberbot(self):
-        from blabberbot import BlabberBot
-        self.attempt_one_phase(BlabberBot)
-    def test_neurotic(self):
-        from neurotic import Neurotic
-        self.variant = variants['hundred3']
-        self.attempt_one_phase(Neurotic)
-    def test_neurotic_duplication(self):
-        from neurotic import Neurotic
-        self.variant = variants['hundred3']
-        self.connect_player(Neurotic)
-        self.start_game()
-        first_result = [message
-                for message in self.replies if message[0] == SUB]
-        
-        self.replies = []
-        self.send(self.variant.start_now)
-        second_result = [message
-                for message in self.replies if message[0] == SUB]
-        self.failUnlessEqual(first_result, second_result)
+    def test_holdbot(self):
+        self.attempt_one_phase(HoldBot)
 
 if __name__ == '__main__': unittest.main()

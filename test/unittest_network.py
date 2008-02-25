@@ -14,17 +14,15 @@ import unittest
 from struct          import pack
 from time            import sleep
 
-from config          import VerboseObject
-from dumbbot         import DumbBot
-from evilbot         import EvilBot
-from neurotic        import Neurotic
-from functions       import any
-from language        import Representation, Token, protocol
-from main            import ThreadManager
-from network         import Client, Connection, ServerSocket
-from player          import Clock, HoldBot
-from server          import Server
-from tokens          import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
+from parlance.config    import VerboseObject
+from parlance.functions import any
+from parlance.language  import Representation, Token, protocol
+from parlance.main      import ThreadManager
+from parlance.network   import Client, Connection, ServerSocket
+from parlance.player    import Clock, HoldBot
+from parlance.server    import Server
+from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
+
 from unittest_server import ServerTestCase
 
 class NetworkTestCase(ServerTestCase):
@@ -232,11 +230,11 @@ class Network_Errors(NetworkTestCase):
 class Network_Basics(NetworkTestCase):
     def test_full_connection(self):
         ''' Seven fake players, polling if possible'''
-        self.set_verbosity(15)
+        #self.set_verbosity(15)
         self.connect_server([self.Disconnector] * 7)
     def test_without_poll(self):
         ''' Seven fake players, selecting'''
-        self.set_verbosity(15)
+        #self.set_verbosity(15)
         self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         ''' Seven fake players and an observer'''
@@ -280,7 +278,7 @@ class Network_Basics(NetworkTestCase):
                     passcode=self.pcode)
                 self.log_debug(9, 'Closed')
                 self.closed = True
-        self.set_verbosity(15)
+        #self.set_verbosity(15)
         self.set_option('takeovers', True)
         self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
     def test_start_bot_blocking(self):
@@ -311,36 +309,10 @@ class Network_Full_Games(NetworkTestCase):
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
         self.connect_server([HoldBot] * 7)
-    def test_one_dumbbot(self):
-        ''' Six drawing holdbots and a dumbbot'''
-        self.set_verbosity(1)
-        self.connect_server([DumbBot, HoldBot, HoldBot,
-                HoldBot, HoldBot, HoldBot, HoldBot])
-    def test_dumbbots(self):
-        ''' seven dumbbots, quick game'''
-        self.set_verbosity(1)
-        self.connect_server([DumbBot] * 7)
     def test_two_games(self):
         ''' seven holdbots; two games'''
-        self.set_verbosity(4)
+        #self.set_verbosity(4)
         self.connect_server([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
-    def test_evilbots(self):
-        ''' Six drawing evilbots and a holdbot'''
-        self.set_verbosity(4)
-        #self.set_option('MTL', 10)
-        #self.set_option('validate', False)
-        #self.set_option('send_ORD', True)
-        EvilBot.games.clear()
-        self.connect_server([HoldBot, EvilBot, EvilBot,
-                EvilBot, EvilBot, EvilBot, EvilBot])
-    def test_neurotic(self):
-        ''' One Neurotic against two EvilBots.'''
-        self.set_verbosity(14)
-        self.set_option('send_ORD', True)
-        self.set_option('variant', 'hundred3')
-        self.set_option('quit', True)
-        EvilBot.games.clear()
-        self.connect_server([Neurotic, EvilBot, EvilBot])
 
 if __name__ == '__main__': unittest.main()

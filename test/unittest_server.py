@@ -11,16 +11,16 @@ r'''Test cases for the Parlance server
 import unittest
 from time       import sleep, time
 
-from config     import Configuration, GameOptions, VerboseObject
-from functions  import num2name
-from gameboard  import Turn
-from language   import Time
-from main       import ThreadManager
-from network    import Service
-from player     import Clock, HoldBot
-from server     import Server
-from tokens     import *
-from xtended    import ITA, LON, PAR
+from parlance.config     import Configuration, GameOptions, VerboseObject
+from parlance.functions  import num2name
+from parlance.gameboard  import Turn
+from parlance.language   import Time
+from parlance.main       import ThreadManager
+from parlance.network    import Service
+from parlance.player     import Clock, HoldBot
+from parlance.server     import Server, bots
+from parlance.tokens     import *
+from parlance.xtended    import ITA, LON, PAR
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
@@ -573,10 +573,12 @@ class Server_Admin_Bots(Server_Admin):
         self.failIf(game.clients[-1].closed)
     def test_start_bot_an(self):
         ''' Players can start a bot using the article "an".'''
+        class AlterBot(HoldBot): pass
         game = self.game
         count = len(game.clients)
-        self.assertAdminVetoable(self.master, 'start an evilbot',
-                'Fake Human Player (Fake_Master) is starting an EvilBot.')
+        bots["alterbot"] = AlterBot
+        self.assertAdminVetoable(self.master, 'start an alterbot',
+                'Fake Human Player (Fake_Master) is starting an AlterBot.')
         self.wait_for_actions()
         self.failUnless(len(game.clients) > count)
         self.failIf(game.clients[-1].closed)

@@ -10,16 +10,16 @@ r'''Test cases for the Parlance gameboard and unit orders
 
 import unittest
 
-from config     import parse_file, read_representation_file
-from config     import MapVariant, variants
-from functions  import fails
-from gameboard  import Map, Province, Turn
-from judge      import DatcOptions
-from language   import IntegerToken, protocol
-from orders     import createUnitOrder
-from tokens     import *
-from validation import Validator
-from xtended    import *
+from parlance.config     import parse_file, read_representation_file
+from parlance.config     import MapVariant, variants
+from parlance.functions  import fails
+from parlance.gameboard  import Map, Province, Turn
+from parlance.judge      import DatcOptions
+from parlance.language   import IntegerToken, protocol
+from parlance.orders     import createUnitOrder
+from parlance.tokens     import *
+from parlance.validation import Validator
+from parlance.xtended    import *
 
 class Map_Variants(unittest.TestCase):
     ''' Validity checks for each of the known variants'''
