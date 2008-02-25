@@ -249,7 +249,11 @@ class Client(Connection):
     def open(self):
         # Open the socket
         self.sock = sock = socket.socket()
-        sock.connect((self.options.host or 'localhost', self.options.port))
+        
+        # Todo: Check for error 111 (Connection refused)
+        port = (self.options.host or 'localhost', self.options.port)
+        self.log_debug(17, 'Connecting to %s:%d...', *port)
+        sock.connect(port)
         sock.settimeout(None)
         
         # Required by the DCSP document

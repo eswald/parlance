@@ -69,7 +69,6 @@ class NetworkTestCase(ServerTestCase):
         self.manager = ThreadManager()
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True
-        self.set_verbosity(1)
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         self.set_option('games', games)
         if NetworkTestCase.next_port:
@@ -93,6 +92,7 @@ class NetworkTestCase(ServerTestCase):
                 if not player:
                     raise UserWarning('Manager failed to start a client')
                 players.append(player)
+                manager.process()
             while any(not p.closed for p in players):
                 manager.process(23)
     def fake_client(self, player_class):
@@ -230,11 +230,9 @@ class Network_Errors(NetworkTestCase):
 class Network_Basics(NetworkTestCase):
     def test_full_connection(self):
         ''' Seven fake players, polling if possible'''
-        #self.set_verbosity(15)
         self.connect_server([self.Disconnector] * 7)
     def test_without_poll(self):
         ''' Seven fake players, selecting'''
-        #self.set_verbosity(15)
         self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         ''' Seven fake players and an observer'''
@@ -278,7 +276,6 @@ class Network_Basics(NetworkTestCase):
                     passcode=self.pcode)
                 self.log_debug(9, 'Closed')
                 self.closed = True
-        #self.set_verbosity(15)
         self.set_option('takeovers', True)
         self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
     def test_start_bot_blocking(self):
@@ -311,7 +308,6 @@ class Network_Full_Games(NetworkTestCase):
         self.connect_server([HoldBot] * 7)
     def test_two_games(self):
         ''' seven holdbots; two games'''
-        #self.set_verbosity(4)
         self.connect_server([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
 
