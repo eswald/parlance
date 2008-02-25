@@ -1,12 +1,18 @@
-<HTML>
-<HEAD>
-	<META name="author" content="David Norman and Eric Wald"/>
-	<META name="description" content="Defines the syntax for messages between DAIDE clients and servers."/>
-	<META name="keywords" content="Diplomacy artificial intelligence DAIDE PyDip DPP message syntax">
-	<TITLE>PyDip Message Syntax</TITLE>
-</HEAD>
-<BODY>
-<h1>PyDip Message Syntax</h1>
+<html>
+<head>
+	<meta name="author" content="David Norman and Eric Wald"/>
+	<meta name="description" content="Defines the syntax for messages between DAIDE clients and servers."/>
+	<meta name="keywords" content="Diplomacy artificial intelligence DAIDE Parlance DPP message syntax">
+	<title>Parlance Message Syntax</title>
+	<!--
+	Copyright (C) 2003-2008  David Norman and Eric Wald
+	
+	Parlance may be used, modified, and/or redistributed under the terms of
+	the Artistic License 2.0, as published by the Perl Foundation.
+	-->
+</head>
+<body>
+<h1>Parlance Message Syntax</h1>
 
 <p><a href="differences.html">Modified</a> from version 0.14 of the
 <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">Diplomacy
@@ -461,7 +467,7 @@ assignments.  It should be sent after the client receives the <b>MAP</b>
 message (and, if requested, the <b>MDF</b> message), but before it sends
 the <b>YES (MAP ('name'))</b>.</p>
 
-<p>The powers in each list are considered equally as desirabile as
+<p>The powers in each list are considered equally as desirable as
 other powers in the same list, and more desirable than powers appearing
 in later lists or not listed at all.  Each power must not appear more
 than once in the message.  For example:</p>
@@ -1902,8 +1908,8 @@ the Diplomacy AI Development Environment Syntax.  Token numbers refer to
 Version 1, Revision 14 of the
 <a href="http://www.ellought.demon.co.uk/dipai/daide_protocol.html">Client-Server Protocol Document</a>,
 except for those indicated with an asterisk, which are listed as used by
-<a href="http://www.brainshell.org/diplomacy/">the PyDip framework</a>.
-Where multiple token numbers are given, PyDip currently uses only the
+<a href="http://sourceforge.net/projects/parlance/">the Parlance framework</a>.
+Where multiple token numbers are given, Parlance currently uses only the
 last one listed; the others have been used in previous versions or other
 sources, and might be found in obsolete software.</p>
 
@@ -2166,6 +2172,6 @@ option is in effect.  Currently, this only includes
 <a href="#AOA"><b>AOA</b></a> (any orders allowed).</p>
 
 
-<!-- vim: set tw=72 noet ts=8 sw=8 sts=0 noai inde= indk= fo=q : -->
-</BODY>
-</HTML>
+<!-- vim: set tw=72 noet ts=4 sw=4 sts=0 noai inde= indk= fo=q : -->
+</body>
+</html>
