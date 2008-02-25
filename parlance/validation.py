@@ -261,7 +261,7 @@ class Validator(VerboseObject):
             # Check for infinite recursion in HUH expressions
             >>> m = HUH(ERR, YES(NME("HoldBot")("Parlance 1.0.166")))
             >>> validate_expression(m, 'message', 0)
-            (34, True)
+            (35, True)
             
             # Check for optional unwrapped subexpressions
             >>> m = SMR (SPR, 1901) (TUR, ["Fake Player"], ["Fake_Player"], 3) (AUS, ["Fake Human Player"], ["Fake_Master"], 3)

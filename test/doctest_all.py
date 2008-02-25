@@ -12,12 +12,12 @@ def _test():
     import doctest
     import sys
     
-    import functions
-    import gameboard
-    import language
-    import orders
-    import validation
-    import xtended
+    from parlance import functions
+    from parlance import gameboard
+    from parlance import language
+    from parlance import orders
+    from parlance import validation
+    from parlance import xtended
     
     # List of modules to test
     modules = [
