@@ -11,6 +11,7 @@ r'''Test cases for Parlance network activity
 
 import socket
 import unittest
+from itertools       import count
 from struct          import pack
 from time            import sleep
 
@@ -62,7 +63,7 @@ class NetworkTestCase(ServerTestCase):
             if from_them: self.error_code = code
             self.__super.send_error(code, from_them)
     
-    next_port = None
+    port = count(16714)
     
     def setUp(self):
         ServerTestCase.setUp(self)
@@ -71,10 +72,7 @@ class NetworkTestCase(ServerTestCase):
         self.manager.pass_exceptions = True
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         self.set_option('games', games)
-        if NetworkTestCase.next_port:
-            self.set_option('port', NetworkTestCase.next_port)
-            NetworkTestCase.next_port += 1
-        else: NetworkTestCase.next_port = self.game_options['port'] + 1
+        self.set_option('port', self.port.next())
         
         manager = self.manager
         sock = ServerSocket(Server, manager)
