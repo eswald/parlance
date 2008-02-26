@@ -229,9 +229,9 @@ will instead send <b>REJ (LST ('gamename'))</b></p>
 <h4>client_command = SEL ('gamename')</h4>
 
 <p>This command is sent by the client to the server at any time,
-including before any NME, OBS, or IAM message.  It chooses a game to
-participate in by its <b>'gamename'</b>, as included in the <b>LST</b>
-message.</p>
+including before any <b>NME</b>, <b>OBS</b>, or <b>IAM</b> message.
+It chooses a game to participate in by its <b>'gamename'</b>, as
+included in the <b>LST</b> message.</p>
 
 <p><em>Warning:</em> After sending this command, the client must be
 prepared to receive a new <a href="protocol.html#RM">Representation Message</a>,
@@ -476,8 +476,8 @@ than once in the message.  For example:</p>
 <br>I would prefer France the most, then either England or Turkey, then
 Germany, and any other power the least.</p>
 
-<p>The server will respond with YES (PRF (power power ...) (power power
-...) ...)</b> if the preference list will be honored, or with REJ (PRF
+<p>The server will respond with <b>YES (PRF (power power ...) (power power
+...) ...)</b> if the preference list will be honored, or with <b>REJ (PRF
 (power power ...) (power power ...) ...)</b> if it is ignoring
 preference lists (for example, because a tournament director is choosing
 who gets what power), or if powers have already been assigned.</p>
@@ -514,8 +514,8 @@ server may assign a power to that client in any manner it chooses.</p>
 <!-- <h4>variant = (variant_option) (variant_option) ...</h4> -->
 
 <p>The server sends this to each client when the game starts.
-<b>power</b> is the power to be played by this client, or UNO for an
-observer. <b>passcode</b> is an integer value which is required to
+<b>power</b> is the power to be played by this client, or <b>UNO</b> for
+an observer. <b>passcode</b> is an integer value which is required to
 rejoin the game. <b>variant</b> is of the form
 <b>(variant_option) (variant_option) ...</b>, and contains the details of
 any options for the game. For example:</p>
@@ -698,7 +698,9 @@ next turn. <b>order</b> can take the following form:</p>
 <!-- <h4>ordered_unit = (loose_province)</h4> -->
 <!-- <h4>ordered_unit = (power loose_province)</h4> -->
 <!-- <h4>ordered_unit = (unit_type loose_province)</h4> -->
-<p><b>unit</b> is a unit, and must be in the form as given by <a href="#NOW">the <b>NOW</b> command</a> &mdash; that is, <b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
+<p><b>unit</b> is a unit, and must be in the form as given by
+<a href="#NOW">the <b>NOW</b> command</a> &mdash; that is,
+<b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
 <p><b>province</b> is any province. For a fleet moving to a province
 with multiple coasts (Spain, St. Petersburg, or Bulgaria on the Standard
 map), it must be of the form <b>(province coast)</b>.</p>
@@ -873,11 +875,14 @@ orders will use a more rigorous format-->.</p>
 <p>In the case of a unit which was convoying or holding, <b>RET</b> may
 be the only token.</p>
 
-<p>Retreat orders will always have a <b>result</b> of <b>SUC</b> or <b>BNC</b>. <b>BNC</b> indicates the unit was destroyed by a bounced retreat.</p>
+<p>Retreat orders will always have a <b>result</b> of <b>SUC</b> or
+<b>BNC</b>.  <b>BNC</b> indicates the unit was destroyed by a bounced
+retreat.</p>
 
 <p>Build orders will always have a <b>result</b> of <b>SUC</b>.</p>
 
-<p>Waived builds are reported as <b>(power WVE)</b> for the order. For example:</p>
+<p>Waived builds are reported as <b>(power WVE)</b> for the order.
+For example:</p>
 
 <p><b>ORD (WIN 1901) (RUS WVE) (SUC)</b></p>
 
@@ -1172,7 +1177,8 @@ draw.</p>
 listing all surviving powers.</p>
 
 <!-- <h4>{PDA} player_command = NOT (DRW (power power power ...))</h4> -->
-<p>The player can cancel a partial draw request with <b>NOT (DRW (power power power ...))</b>.</p>
+<p>The player can cancel a partial draw request with
+<b>NOT (DRW (power power power ...))</b>.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
@@ -1393,8 +1399,8 @@ same format as in the <b>SUB</b> command.</p>
 <p>This is a proposal that the listed powers remove all units from,
 not build any units in, and not order any units to move, retreat, or
 support or convoy a move to any of the listed provinces.  The powers
-involved in the DMZ should all be recipients of the message.  Eliminated
-powers must not be included in the power list.  This offer is
+involved in the <b>DMZ</b> should all be recipients of the message.
+Eliminated powers must not be included in the power list.  This offer is
 continuous.</p>
 
 <p>Both of these are responded to using the responses in level 10.</p>
@@ -1462,7 +1468,8 @@ this turn.</p>
 <p>Level 50 allows <b>AND</b> and <b>ORR</b> to be
 nested. For example:</p>
 
-<p><b>PRP (ORR ((FRA AMY PAR) MTO PIC) (AND ((FRA AMY PAR) MTO BUR) ((GER AMY MUN) MTO BUR)))</b></p>
+<p><b>PRP (ORR ((FRA AMY PAR) MTO PIC) (AND ((FRA AMY PAR) MTO BUR)
+((GER AMY MUN) MTO BUR)))</b></p>
 
 <p>It also adds a new multi-part offer.</p>
 
@@ -1749,16 +1756,18 @@ power.</p>
 	all press to the master (Level 120 required).</li>
 </ul>
 
-<p>Conditions on the puppetship may be placed in FOR or IFF offers.  For example:</p>
-<p><b>IFF (SCD (AUS VIE BUD TRI)) THN (FOR ((SPR 1904) (WIN 1908)) (PPT (AUS TUR) (XDO FRM SND)))</b><p>
+<p>Conditions on the puppetship may be placed in <b>FOR</b> or
+<b>IFF</b> offers.  For example:</p>
+<p><b>IFF (SCD (AUS VIE BUD TRI)) THN (FOR ((SPR 1904) (WIN 1908)) (PPT
+(AUS TUR) (XDO FRM SND)))</b><p>
 
 <p>By convention, the following behavior is expected in a puppet relationship:</p>
 <ul>
-	<li>The puppet may ask WHT for missing orders.</li>
-	<li>The master supplies orders using XDO, and press with SND.</li>
-	<li>The puppet obediently submits orders with SUB, and press with SND.</li>
+	<li>The puppet may ask <b>WHT</b> for missing orders.</li>
+	<li>The master supplies orders using <b>XDO</b>, and press with <b>SND</b>.</li>
+	<li>The puppet obediently submits orders with <b>SUB</b>, and press with <b>SND</b>.</li>
 	<li>Any resulting error messages are reported to the master (but how?),
-	possibly followed by another WHT message.</li>
+	possibly followed by another <b>WHT</b> message.</li>
 	<li>If time is about to expire and no orders have been received, or
 	if the master is eliminated or goes into Civil Dispute, then the
 	puppet chooses orders as well as possible.</li>
@@ -1790,14 +1799,14 @@ be included in any part of the message.</p>
 any of the powers in the first parameter to the power in the second
 parameter to be forwarded to the power in the third parameter.
 Eliminated powers must not be included in any part of the message. Powers
-should not appear more than once in the message. For PRP and INS messages, the
-second and third parameters should be the sending and receiving
-powers of the <b>FWD</b> message. If the second parameter is the
-sending power, then this is an offer to forward. If the third parameter
-is the sending power, then it is a request to forward. The <b>FWD</b>
-message may be sent to several powers, in which case only the power
-which appears in the second or third parameters should act on the
-message.  This offer is continuous.</p>
+should not appear more than once in the message.  For <b>PRP</b> and
+<b>INS</b> messages, the second and third parameters should be the
+sending and receiving powers of the <b>FWD</b> message. If the second
+parameter is the sending power, then this is an offer to forward. If the
+third parameter is the sending power, then it is a request to forward.
+The <b>FWD</b> message may be sent to several powers, in which case only
+the power which appears in the second or third parameters should act on
+the message.  This offer is continuous.</p>
 
 <h4><a name="BCC">offer = BCC</a> (power) (power power ...) (power)</h4>
 
