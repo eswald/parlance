@@ -34,6 +34,8 @@ class NetworkTestCase(ServerTestCase):
             self.__super.handle_message(message)
             if message[0] is HLO:
                 self.manager.add_timed(self, self.sleep_time)
+            elif message[0] is REJ:
+                raise UserWarning("Rejected command: " + str(message))
         def run(self):
             self.send(ADM(str(self.power))('Passcode: %d' % self.pcode))
             self.close()
