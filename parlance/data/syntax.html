@@ -14,7 +14,7 @@
 <body>
 <h1>Parlance Message Syntax</h1>
 
-<p><a href="differences.html">Modified</a> from version 0.14 of the
+<p><a href="#appC">Modified</a> from version 0.14 of the
 <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">Diplomacy
 AI Development Environment Message Syntax</a>, which was last updated on
 2 April 2006.</p>
@@ -22,8 +22,8 @@ AI Development Environment Message Syntax</a>, which was last updated on
 <p>The following document defines the language which will be used for
 communications between a client and server, and for negotiation between
 two clients, in the Diplomacy AI Development Environment project.
-Statements which use "will", "shall", or "must" are mandatory, and must
-be observed. Statements which use "may" or "can be" are recommended,
+Statements which use "will", or "must" are mandatory, and must be
+observed.  Statements which use "should" or "may only" are recommended,
 but cannot or will not be enforced.</p>
 
 <p>The syntax is split into a number of levels. Each level completely
@@ -229,9 +229,9 @@ will instead send <b>REJ (LST ('gamename'))</b></p>
 <h4>client_command = SEL ('gamename')</h4>
 
 <p>This command is sent by the client to the server at any time,
-including before any NME, OBS, or IAM message.  It chooses a game to
-participate in by its <b>'gamename'</b>, as included in the <b>LST</b>
-message.</p>
+including before any <b>NME</b>, <b>OBS</b>, or <b>IAM</b> message.
+It chooses a game to participate in by its <b>'gamename'</b>, as
+included in the <b>LST</b> message.</p>
 
 <p><em>Warning:</em> After sending this command, the client must be
 prepared to receive a new <a href="protocol.html#RM">Representation Message</a>,
@@ -476,8 +476,8 @@ than once in the message.  For example:</p>
 <br>I would prefer France the most, then either England or Turkey, then
 Germany, and any other power the least.</p>
 
-<p>The server will respond with YES (PRF (power power ...) (power power
-...) ...)</b> if the preference list will be honored, or with REJ (PRF
+<p>The server will respond with <b>YES (PRF (power power ...) (power power
+...) ...)</b> if the preference list will be honored, or with <b>REJ (PRF
 (power power ...) (power power ...) ...)</b> if it is ignoring
 preference lists (for example, because a tournament director is choosing
 who gets what power), or if powers have already been assigned.</p>
@@ -514,8 +514,8 @@ server may assign a power to that client in any manner it chooses.</p>
 <!-- <h4>variant = (variant_option) (variant_option) ...</h4> -->
 
 <p>The server sends this to each client when the game starts.
-<b>power</b> is the power to be played by this client, or UNO for an
-observer. <b>passcode</b> is an integer value which is required to
+<b>power</b> is the power to be played by this client, or <b>UNO</b> for
+an observer. <b>passcode</b> is an integer value which is required to
 rejoin the game. <b>variant</b> is of the form
 <b>(variant_option) (variant_option) ...</b>, and contains the details of
 any options for the game. For example:</p>
@@ -580,8 +580,8 @@ the start of the game:</p>
 <!-- <h4>client_request = SCO</h4> -->
 <p>The client can send the command <b>SCO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
-the latest <b>SCO</b> message, or <b>REJ (SCO)</b> if the game hasn't
-started.</p>
+the latest <b>SCO</b> message, or the starting <b>SCO</b> message if the
+game hasn't started.</p>
 
 <h4><a name="NOW">server_message = NOW</a> (turn) (unit) (unit) ...</h4>
 <!-- <h4>turn = season number</h4> -->
@@ -625,8 +625,8 @@ multi-coastal province. For example,</p>
 <!-- <h4>client_request = NOW</h4> -->
 <p>The client can send the command <b>NOW</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
-the latest <b>NOW</b> message, or <b>REJ (NOW)</b> if the game hasn't
-started.</p>
+the latest <b>NOW</b> message, or the starting <b>NOW</b> message if the
+game hasn't started.</p>
 
 <h4><a name="HST">client_request = HST</a> (turn)</h4>
 
@@ -698,7 +698,9 @@ next turn. <b>order</b> can take the following form:</p>
 <!-- <h4>ordered_unit = (loose_province)</h4> -->
 <!-- <h4>ordered_unit = (power loose_province)</h4> -->
 <!-- <h4>ordered_unit = (unit_type loose_province)</h4> -->
-<p><b>unit</b> is a unit, and must be in the form as given by <a href="#NOW">the <b>NOW</b> command</a> &mdash; that is, <b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
+<p><b>unit</b> is a unit, and must be in the form as given by
+<a href="#NOW">the <b>NOW</b> command</a> &mdash; that is,
+<b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
 <p><b>province</b> is any province. For a fleet moving to a province
 with multiple coasts (Spain, St. Petersburg, or Bulgaria on the Standard
 map), it must be of the form <b>(province coast)</b>.</p>
@@ -873,11 +875,14 @@ orders will use a more rigorous format-->.</p>
 <p>In the case of a unit which was convoying or holding, <b>RET</b> may
 be the only token.</p>
 
-<p>Retreat orders will always have a <b>result</b> of <b>SUC</b> or <b>BNC</b>. <b>BNC</b> indicates the unit was destroyed by a bounced retreat.</p>
+<p>Retreat orders will always have a <b>result</b> of <b>SUC</b> or
+<b>BNC</b>.  <b>BNC</b> indicates the unit was destroyed by a bounced
+retreat.</p>
 
 <p>Build orders will always have a <b>result</b> of <b>SUC</b>.</p>
 
-<p>Waived builds are reported as <b>(power WVE)</b> for the order. For example:</p>
+<p>Waived builds are reported as <b>(power WVE)</b> for the order.
+For example:</p>
 
 <p><b>ORD (WIN 1901) (RUS WVE) (SUC)</b></p>
 
@@ -1172,7 +1177,8 @@ draw.</p>
 listing all surviving powers.</p>
 
 <!-- <h4>{PDA} player_command = NOT (DRW (power power power ...))</h4> -->
-<p>The player can cancel a partial draw request with <b>NOT (DRW (power power power ...))</b>.</p>
+<p>The player can cancel a partial draw request with
+<b>NOT (DRW (power power power ...))</b>.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
@@ -1393,8 +1399,8 @@ same format as in the <b>SUB</b> command.</p>
 <p>This is a proposal that the listed powers remove all units from,
 not build any units in, and not order any units to move, retreat, or
 support or convoy a move to any of the listed provinces.  The powers
-involved in the DMZ should all be recipients of the message.  Eliminated
-powers must not be included in the power list.  This offer is
+involved in the <b>DMZ</b> should all be recipients of the message.
+Eliminated powers must not be included in the power list.  This offer is
 continuous.</p>
 
 <p>Both of these are responded to using the responses in level 10.</p>
@@ -1462,7 +1468,8 @@ this turn.</p>
 <p>Level 50 allows <b>AND</b> and <b>ORR</b> to be
 nested. For example:</p>
 
-<p><b>PRP (ORR ((FRA AMY PAR) MTO PIC) (AND ((FRA AMY PAR) MTO BUR) ((GER AMY MUN) MTO BUR)))</b></p>
+<p><b>PRP (ORR ((FRA AMY PAR) MTO PIC) (AND ((FRA AMY PAR) MTO BUR)
+((GER AMY MUN) MTO BUR)))</b></p>
 
 <p>It also adds a new multi-part offer.</p>
 
@@ -1749,16 +1756,18 @@ power.</p>
 	all press to the master (Level 120 required).</li>
 </ul>
 
-<p>Conditions on the puppetship may be placed in FOR or IFF offers.  For example:</p>
-<p><b>IFF (SCD (AUS VIE BUD TRI)) THN (FOR ((SPR 1904) (WIN 1908)) (PPT (AUS TUR) (XDO FRM SND)))</b><p>
+<p>Conditions on the puppetship may be placed in <b>FOR</b> or
+<b>IFF</b> offers.  For example:</p>
+<p><b>IFF (SCD (AUS VIE BUD TRI)) THN (FOR ((SPR 1904) (WIN 1908)) (PPT
+(AUS TUR) (XDO FRM SND)))</b><p>
 
 <p>By convention, the following behavior is expected in a puppet relationship:</p>
 <ul>
-	<li>The puppet may ask WHT for missing orders.</li>
-	<li>The master supplies orders using XDO, and press with SND.</li>
-	<li>The puppet obediently submits orders with SUB, and press with SND.</li>
+	<li>The puppet may ask <b>WHT</b> for missing orders.</li>
+	<li>The master supplies orders using <b>XDO</b>, and press with <b>SND</b>.</li>
+	<li>The puppet obediently submits orders with <b>SUB</b>, and press with <b>SND</b>.</li>
 	<li>Any resulting error messages are reported to the master (but how?),
-	possibly followed by another WHT message.</li>
+	possibly followed by another <b>WHT</b> message.</li>
 	<li>If time is about to expire and no orders have been received, or
 	if the master is eliminated or goes into Civil Dispute, then the
 	puppet chooses orders as well as possible.</li>
@@ -1790,14 +1799,14 @@ be included in any part of the message.</p>
 any of the powers in the first parameter to the power in the second
 parameter to be forwarded to the power in the third parameter.
 Eliminated powers must not be included in any part of the message. Powers
-should not appear more than once in the message. For PRP and INS messages, the
-second and third parameters should be the sending and receiving
-powers of the <b>FWD</b> message. If the second parameter is the
-sending power, then this is an offer to forward. If the third parameter
-is the sending power, then it is a request to forward. The <b>FWD</b>
-message may be sent to several powers, in which case only the power
-which appears in the second or third parameters should act on the
-message.  This offer is continuous.</p>
+should not appear more than once in the message.  For <b>PRP</b> and
+<b>INS</b> messages, the second and third parameters should be the
+sending and receiving powers of the <b>FWD</b> message. If the second
+parameter is the sending power, then this is an offer to forward. If the
+third parameter is the sending power, then it is a request to forward.
+The <b>FWD</b> message may be sent to several powers, in which case only
+the power which appears in the second or third parameters should act on
+the message.  This offer is continuous.</p>
 
 <h4><a name="BCC">offer = BCC</a> (power) (power power ...) (power)</h4>
 
@@ -2171,6 +2180,120 @@ option is in effect.  Currently, this only includes
 <a href="#PDA"><b>PDA</b></a> (partial draws allowed) and
 <a href="#AOA"><b>AOA</b></a> (any orders allowed).</p>
 
+
+<h2><a name="appC">Appendix C</a> : Changes from the official document</h2>
+
+<p>The following is a list of differences between this Parlance syntax
+document and <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">the
+official DAIDE syntax document</a>:
+
+<ul>
+	<li><a name="AI">All instances of "AI"</a>, except those occurring
+	in the phrase "Diplomacy AI Development Environment", have been
+	changed to either "client" or "player", as appropriate.  After all,
+	the most frequently-used client is not, in fact, an AI.  Many of the
+	second-person pronouns have also been changed, in favor of phrases
+	like "the client" or "the player".</li>
+
+	<li><a name="grammar">Several minor grammar changes</a> have been
+	made.  These don't affect the semantics, but make it sound nicer.
+	In particular, the oft-misunderstood Latin abbreviations "e.g." and
+	"i.e." have been changed to their English equivalents, even though
+	David almost always uses them correctly.</li>
+
+	<li>The four <a href="protocol.html#Coasts" name="coasts">alternate
+	coasts</a> defined in the protocol are listed with the four cardinal
+	ones.  Other software may or may not actually accept them; in either
+	case, they need to be in the document to avoid having future map
+	writers use their TLAs.</li>
+
+	<li><a name="multigame">Section (o)</a> under
+	<a href="#level0">Level 0</a> has been added, listing the multi-game
+	commands as implemented by the Parlance server.  These commands are
+	not guaranteed to be accepted by other servers, particularly with
+	the exact syntax specified here.</li>
+
+	<li><a name="observers">Optional name and version</a> parameters
+	have been added to <a href="#OBS">the <b>OBS</b> command</a>.  This
+	was David's response to a somewhat ridiculous idea for allowing
+	observers to send <a href="#NME"><b>NME</b> messages</a>.
+	Currently, only Parlance is known to send or use those parameters;
+	other servers currently send <b>HUH</b> when the name or version are
+	included, upon which Parlance clients will send the <b>OBS</b>
+	without parameters.</li>
+
+	<li>The <a name="mapname">map name</a> has been specified as not
+	implying a given starting position.  That question has come up at
+	least twice within the DAIDE community, with conflicting answers;
+	this answer avoids problems with recovered games after a crash.</li>
+
+	<li>A recent addition to <a href="#AOA" name="foreign">the
+	<b>AOA</b> specification</a>, "and are for a unit owned by the AI
+	sending the order," has been omitted, because the Parlance server
+	accepts absolutely any order when <b>AOA</b> is specified, even
+	those for non-existent or foreign units.</li>
+
+	<li>This document specifies that a client, not just a player, may send
+	<a href="#HLO" name="hello"><b>HLO</b></a> without arguments to
+	request a new copy of the <b>HLO</b> message.  Appendix B of the
+	official document contradicts itself on that point.  Given that the
+	<b>HLO</b> message contains variant rule information, as well as
+	power and passcode assignments, observers might desire an extra
+	copy.</li>
+
+	<li><a href="#SCO" name="starting"><b>SCO</b></a> and <a
+	href="#NOW"><b>NOW</b></a> commands sent by clients before the game
+	starts are specified to return copies of the starting messages, in
+	accordance with a statement under the <a href="#MDF"><b>MDF</b>
+	specification</a>.  The official document also allows the server to
+	send <b>REJ (SCO)</b> or <b>REJ (NOW)</b> in this case.</li>
+
+	<li><a href="#CCD" name="disorder">The <b>CCD</b> message</a> has
+	been divided into three distinct message types:  One for a
+	disconnected power, one for a power that failed to get orders in on
+	time, and one for responding to <a href="#SND">a <b>SND</b>
+	command</a>.  The second and third cases merely add a second
+	parameter to the <b>CCD</b> message.  Other clients have not yet
+	exhibited problems upon receiving these extended commands; the
+	Mapper in particular works fine, if a little confused.</li>
+
+	<li>As with the <b>CCD</b> response to an attempt to send press, a
+	second parameter has been added to <a href="#OUT"
+	name="eliminated">the <b>OUT</b> message</a>, listing the failed
+	press command.</li>
+
+	<li>This document specifies that the server may interpret <a
+	href="#ADM" name="admin">an admin message</a> as a command, instead
+	of forwarding it to other players.  This allows Mapper users to send
+	commands beyond the limits of this syntax document.</li>
+
+	<li>A client command to request <a href="#SMR" name="summary">the
+	<b>SMR</b> message</a>, along with the game result, has been added.
+	This could be useful for a client that joins after the game
+	finishes.  Note the Parlance server also has behavior, disabled by
+	default, for listing clients that have taken over positions from
+	clients of a different name and/or version; however, that behavior
+	has not yet been included in this syntax document.</li>
+
+	<li>The <a href="#PTL" name="limitation"><b>PTL</b> variant</a> has
+	been listed as a reason for rejecting a <b>SND</b> command.</li>
+
+	<li><a href="#appA" name="numbers">Appendix A</a> is much more
+	complete, including obsolete tokens and token numbers.</li>
+
+	<li><a href="#appB" name="integration">Appendix B</a> describes how
+	the syntax has been integrated into the document as a whole, instead
+	of listing the syntax itself.  As part of this, many more syntax
+	items in the main text are prefixed with "label = ".</li>
+
+	<li>This document fails to mark <a name="changes">the latest set of
+	changes</a> in underlines and strikeouts.</li>
+
+	<li>This document includes a few other <a name="ideas">wild
+	ideas</a>, commented out.  Some of them have been implemented, and
+	at least one is left over from a previous version of the
+	document.</li>
+</ul>
 
 <!-- vim: set tw=72 noet ts=4 sw=4 sts=0 noai inde= indk= fo=q : -->
 </body>
