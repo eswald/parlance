@@ -11,11 +11,11 @@ r'''DATC option compliance test cases for the Parlance judge
 
 import unittest
 
-from parlance.functions     import fails
-from parlance.tokens        import *
-from parlance.xtended       import *
+from parlance.functions import fails
+from parlance.tokens    import *
+from parlance.xtended   import *
 
-from unittest_datc import DiplomacyAdjudicatorTestCase
+from parlance.test.datc import DiplomacyAdjudicatorTestCase
 
 class DATC_4_A(DiplomacyAdjudicatorTestCase):
     ''' 4.A.  CONVOY ISSUES

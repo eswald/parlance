@@ -213,16 +213,19 @@ class Player_HoldBot(PlayerTestCase):
         self.seek_reply(SND(FRA)(TRY()))
 
 class Player_Bots(PlayerTestCase):
-    def setUp(self):
+    def connect_player(self, bot_class):
+        PlayerTestCase.connect_player(self, bot_class)
         def handle_THX(player, message):
             ''' Fail on bad order submission.'''
-            self.fail('Invalid order submitted: ' + str(message))
+            folded = message.fold()
+            result = folded[2][0]
+            if result != MBV:
+                self.fail('Invalid order submitted: ' + str(message))
         def handle_MIS(player, message):
             ''' Fail on incomplete order submission.'''
             self.fail('Missing orders: ' + str(message))
-        PlayerTestCase.setUp(self)
-        Player.handle_THX = handle_THX
-        Player.handle_MIS = handle_MIS
+        self.player.handle_THX = handle_THX
+        self.player.handle_MIS = handle_MIS
     def attempt_one_phase(self, bot_class):
         ''' Demonstrates that the given bot can at least start up
             and submit a complete set of orders for the first season.

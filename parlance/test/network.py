@@ -24,7 +24,7 @@ from parlance.player    import Clock, HoldBot
 from parlance.server    import Server
 from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
 
-from unittest_server import ServerTestCase
+from parlance.test.server import ServerTestCase
 
 class NetworkTestCase(ServerTestCase):
     class Disconnector(ServerTestCase.Fake_Player):
@@ -69,6 +69,7 @@ class NetworkTestCase(ServerTestCase):
     
     def setUp(self):
         ServerTestCase.setUp(self)
+        self.set_verbosity(0)
         self.manager = ThreadManager()
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True

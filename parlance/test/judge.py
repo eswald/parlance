@@ -9,21 +9,19 @@ r'''Non-DATC test cases for the Parlance judge
 '''#'''
 
 import unittest
-from time          import time
+from time import time
 
-from parlance.config        import variants, Configuration, GameOptions
-from parlance.functions     import fails, todo
-from parlance.judge         import Attack_Decision, Hold_Decision, \
+from parlance.config    import variants, Configuration, GameOptions
+from parlance.functions import fails, todo
+from parlance.judge     import Attack_Decision, Hold_Decision, \
         Move_Decision, Path_Decision, Prevent_Decision
-from parlance.language      import Token
-from parlance.main          import Thread
-from parlance.orders        import MoveOrder
-from parlance.tokens        import *
-from parlance.xtended       import *
+from parlance.language  import Token
+from parlance.main      import Thread
+from parlance.orders    import MoveOrder
+from parlance.tokens    import *
+from parlance.xtended   import *
         
-        
-
-from unittest_datc import DiplomacyAdjudicatorTestCase
+from parlance.test.datc import DiplomacyAdjudicatorTestCase
 
 SWI = Token('SWI', 0x504B)
 

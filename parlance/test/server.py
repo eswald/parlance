@@ -132,6 +132,7 @@ class ServerTestCase(unittest.TestCase):
             'LVL': 20,
             'RTL': 0,
             'BTL': 0,
+            'PDA': False,
             'variant' : 'standard',
             'quit' : True,
             'snd_admin' : True,

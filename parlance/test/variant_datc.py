@@ -11,7 +11,7 @@ r'''DATC rule variant test cases for Parlance
 
 import unittest
 
-from unittest_datc import DiplomacyAdjudicatorTestCase
+from parlance.test.datc import DiplomacyAdjudicatorTestCase
 
 # 7.  COLONIAL VARIANT
 class DATC_7_A(DiplomacyAdjudicatorTestCase):
