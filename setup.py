@@ -29,7 +29,7 @@ setup(
     
     # Installation options
     zip_safe = True,
-    test_suite = "test",
+    test_suite = "parlance.test",
     entry_points = {
         "console_scripts": [
             "parlance-server = parlance.server:run",

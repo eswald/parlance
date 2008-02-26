@@ -144,7 +144,9 @@ class Map_Bugfix(unittest.TestCase):
              (yor(AMY edi lon lvp wal)(FLT edi nth lon))
             )
         '''#'''
-        options = variants['standard']
+        standard = variants['standard']
+        options = MapVariant(standard.variant,
+            standard.description, standard.files)
         options.map_mdf = options.rep.translate(mdf)
         options.map_name = 'standard_empty_UNO'
         game_map = Map(options)
