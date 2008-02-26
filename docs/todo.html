@@ -1,12 +1,12 @@
 <html>
   <head>
-    <title>PyDip Todo List</title>
-    <meta name="description" content="Features yet to be added to the PyDip
+    <title>Parlance Todo List</title>
+    <meta name="description" content="Features yet to be added to the Parlance
       Diplomacy software package.">
   </head>
   <body>
-    <h1>PyDip Todo List</h1>
-    <p>These are items that I want to add to the PyDip package, in my
+    <h1>Parlance Todo List</h1>
+    <p>These are items that I want to add to the Parlance package, in my
       <a name='http://catb.org/~esr/jargon/html/C/copious-free-time.html'>copious
         free time</a>, listed in no particular order.</p>
     
@@ -91,12 +91,9 @@
       Mac users to be able to run this out of the box (so to speak).</p>
     
     <h2>Packaging</h2>
-    <p>Rename to "Parlance" ("parlay" is to increase in value by betting,
-      and "parley" is already taken)</p>
-    <p>Eggify</p>
     <p>Submit to PyPI</p>
-    <p>Switch everthing to an Artistic License.</p>
-    <p>Move away from the files taken from David's server.</p>
+    <p>Switch to "pkg_resources.iter_entry_points('parlance.bots')" for
+      deciding what bots the server can start.</p>
     
     <h2>DATC Options</h2>
     <p>Various tests have yet to be written, and many options have yet to be
@@ -222,6 +219,8 @@
     <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
     <p>The network tests could use better assertions for some tests.</p>
     <p>THX order notes could use more testing.</p>
+    <p>Repair the tests that fail under setuptools.</p>
+    <p>Test the ability to serve variants with a different map name.</p>
     
   </body>
 </html>
