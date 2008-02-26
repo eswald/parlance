@@ -145,7 +145,8 @@ They are:</p>
 
 	<!-- <h4>coast = Coasts</h4> -->
 	<li>Coast &mdash; can be one of <b>NCS, ECS, SCS, WCS</b>;
-	in great need, <b>NEC, SEC, SWC, NWC</b> might be accepted.</li>
+	in addition, <b>NEC, SEC, SWC, NWC</b> might be
+	accepted.<sup><a href="#coast_note" name="coasts">*</a></sup></li>
 
 	<!-- <h4>season = Phases</h4> -->
 	<li>Season and Phase &mdash; can be one of <b>SPR</b> (Spring
@@ -181,7 +182,7 @@ characters long, alphabetic only, and not case-sensitive.</p>
 <p>In this section, we just have the syntax required for getting a game
 up and running, ordering, retrieving results, and general game management.</p>
 
-<h3>(o) Choosing a game.</h3>
+<h3>(o) Choosing a game.<sup><a href="#multigame_note" name="multigame">*</a></sup></h3>
 
 <h4><a name="LST">client_command = LST</a></h4>
 <h4>server_message = LST ('gamename') (players_needed status) ('variant_name') (variant)</h4>
@@ -266,7 +267,8 @@ letters, numbers and underscore. The server will respond with
 records when the game ends. It is not possible for a client to request
 information about which client is playing each power.</p>
 
-<h4><a name="OBS">client_command = OBS [('name') ('version')]</a></h4>
+<h4><a name="OBS">client_command = OBS [('name') ('version')]</a><sup><a
+href="#observer_note">*</a></sup></h4>
 
 <p>This is sent by the client to the server in place of <b>NME</b>, to
 indicate that the connected client is actually just an observer, and
@@ -447,13 +449,15 @@ before sending <b>YES (MAP ('name'))</b>.</p>
 
 <p>The client can send the <a href="#NOW"><b>NOW</b></a> and
 <a href="#SCO"><b>SCO</b></a> commands to the server to determine the
-supply centre ownership and starting positions for the variant.</p>
+supply centre ownership and starting positions for the variant.<sup><a
+href="#position_note" name="position">*</a></sup></p>
 
 <p>The client must not assume that the supply centre ownership and
 starting positions will be the same as for the other games which use the
 same map; for example, a Fleet Rome game might use the same map name as
 Standard.  Note that for some variants, the map name may be different,
-but the actual map is the same as another variant.</p>
+but the actual map is the same as another variant.<sup><a
+href="#map_note">*</a></sup></p>
 
 <p>On all maps, the condition for a solo is having more than half the
 supply centres in the game. So for a map which has 34 or 35 centres, the
@@ -545,7 +549,8 @@ any options for the game. For example:</p>
 	<li><b><a name="AOA">variant_option = AOA</a></b> &mdash; any orders accepted. Any
 	orders which match the syntax for an order will be accepted,
 	whether they are legal or not. If not specified, then only
-	orders which could be valid will be accepted.</li>
+	orders which could be valid will be accepted.<sup><a
+	href="#foreign_note">*</a></sup></li>
 </ul>
 
 <!-- <h4>variant_option != Parameters any_token_sequence</h4> -->
@@ -1033,7 +1038,8 @@ because the power failed to load a saved game.  If the
 power reconnects, the server will send the
 message <b>NOT (CCD (power))</b>.</p>
 
-<h4>server_message = CCD (power) (turn)</h4>
+<h4>server_message = CCD (power) (turn)</b><sup><a
+href="#disorder_note">*</a></sup></h4>
 
 <p>This message is sent from the server to the client, and indicates
 that the specified power failed to get its orders in by the deadline for
@@ -1060,9 +1066,10 @@ game (for example, I'm having connection problems, or server going down,
 or I have to leave shortly). It can be sent by any client &mdash; player
 or observer &mdash; and can be sent before, during or after the game. It
 should not be used for negotiation. The server may interpret the message
-as a command, or it may forward the message to every client. The server
-may be configured to refuse admin messages, in which case it will reply
-to the client with <b>REJ (ADM ('name') ('message'))</b>.</p>
+as a command, or it may forward the message to every client.<sup><a
+href="#admin_note">*</a></sup>  The server may be configured to refuse
+admin messages, in which case it will reply to the client with
+<b>REJ (ADM ('name') ('message'))</b>.</p>
 
 <!--
 <h4><a name="PNG">server_command = PNG</a> [(any_token_sequence)]</h4>
@@ -1124,7 +1131,8 @@ dropped to 0 centres.</p>
 <p>The client can send the command <b>SMR</b> to the server with no
 arguments at any time.  The server will reply by sending another copy of
 the <b>SLO</b> or <b>DRW</b> message, if any, followed by the the
-<b>SMR</b> message, or <b>REJ (SMR)</b> if the game has not yet ended.</p>
+<b>SMR</b> message, or <b>REJ (SMR)</b> if the game has not yet
+ended.<sup><a href="#summary_note">*</a></sup></p>
 
 
 <h2><a name="level10">Level 10</a> : Peace and Allies</h2>
@@ -1198,7 +1206,7 @@ otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
 
-<h4>server_message = CCD (power) (SND (power power ...) (press_message))</h4>
+<h4>server_message = CCD (power) (SND (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
 <!-- <h4>server_message = CCD (power) (SND (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
@@ -1208,7 +1216,7 @@ multiple powers are listed in the <b>SND</b> command, and the server sends
 a <b>CCD</b> reply, then the message has not been sent to anybody
 (including the ones that are not in civil disorder).</p>
 
-<h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))</h4>
+<h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
 <!-- <h4>server_message = OUT (power) (SND (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
@@ -1230,8 +1238,9 @@ immediately before the first token to cause an error.
 
 <p>Either the game has not started, or it is a retreat phase in a
 <b>NPR</b> variant game or a build phase in a <b>NPB</b> variant game,
-or the press deadline has already passed in a <b>PTL</b> variant game,
-or the sending power has been eliminated.</p>
+or the press deadline has already passed in a <b>PTL</b> variant
+game,<sup><a href="#press_note">*</a></sup> or the sending power has
+been eliminated.</p>
 
 <h4>server_message = YES (SND (power power ...) (press_message))</h4>
 
@@ -1910,7 +1919,8 @@ information without first being queried for it.</p>
 <b>reply</b> can be any string of ASCII characters.</p>
 
 
-<h2><a name="appA">Appendix A</a> : Complete List of Tokens</h2>
+<h2><a name="appA">Appendix A</a> : Complete List of Tokens<sup><a
+href="#token_note">*</a></sup></h2>
 
 <p>The following is a complete alphabetical list of tokens specified in
 the Diplomacy AI Development Environment Syntax.  Token numbers refer to
@@ -2158,7 +2168,8 @@ various reasons.</p>
 </table>
 
 
-<h2><a name="appB">Appendix B</a> : Language Definition</h2>
+<h2><a name="appB">Appendix B</a> : Language Definition<sup><a
+href="#bnf_note">*</a></sup></h2></h2>
 
 <p>Embedded in this document, including its comments, is a BNF-like
 formal syntax specification.  The language elements are found in H4
@@ -2188,32 +2199,33 @@ document and <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">the
 official DAIDE syntax document</a>:
 
 <ul>
-	<li><a name="AI">All instances of "AI"</a>, except those occurring
-	in the phrase "Diplomacy AI Development Environment", have been
-	changed to either "client" or "player", as appropriate.  After all,
-	the most frequently-used client is not, in fact, an AI.  Many of the
-	second-person pronouns have also been changed, in favor of phrases
-	like "the client" or "the player".</li>
+	<li><a name="AI_note">All instances of "AI"</a>, except those
+	occurring in the phrase "Diplomacy AI Development Environment", have
+	been changed to either "client" or "player", as appropriate.  After
+	all, the most frequently-used client is not, in fact, an AI.  Many
+	of the second-person pronouns have also been changed, in favor of
+	phrases like "the client" or "the player".</li>
 
-	<li><a name="grammar">Several minor grammar changes</a> have been
-	made.  These don't affect the semantics, but make it sound nicer.
-	In particular, the oft-misunderstood Latin abbreviations "e.g." and
-	"i.e." have been changed to their English equivalents, even though
-	David almost always uses them correctly.</li>
+	<li><a name="grammar_note">Several minor grammar changes</a> have
+	been made.  These don't affect the semantics, but make it sound
+	nicer.  In particular, the oft-misunderstood Latin abbreviations
+	"e.g." and "i.e." have been changed to their English equivalents,
+	even though David almost always uses them correctly.</li>
 
-	<li>The four <a href="protocol.html#Coasts" name="coasts">alternate
-	coasts</a> defined in the protocol are listed with the four cardinal
+	<li>The four <a href="#coasts" name="coast_note">alternate
+	coasts</a> defined in <a href="protocol.html#Coasts"
+	name="coasts">the protocol</a> are listed with the four cardinal
 	ones.  Other software may or may not actually accept them; in either
 	case, they need to be in the document to avoid having future map
 	writers use their TLAs.</li>
 
-	<li><a name="multigame">Section (o)</a> under
-	<a href="#level0">Level 0</a> has been added, listing the multi-game
-	commands as implemented by the Parlance server.  These commands are
-	not guaranteed to be accepted by other servers, particularly with
+	<li><a href="#multigame" name="multigame_note">Section (o)</a> under
+	Level 0 has been added, listing the multi-game commands as
+	implemented by the Parlance server.  These commands are not
+	guaranteed to be accepted by other servers, particularly with
 	the exact syntax specified here.</li>
 
-	<li><a name="observers">Optional name and version</a> parameters
+	<li><a name="observer_note">Optional name and version</a> parameters
 	have been added to <a href="#OBS">the <b>OBS</b> command</a>.  This
 	was David's response to a somewhat ridiculous idea for allowing
 	observers to send <a href="#NME"><b>NME</b> messages</a>.
@@ -2222,12 +2234,12 @@ official DAIDE syntax document</a>:
 	included, upon which Parlance clients will send the <b>OBS</b>
 	without parameters.</li>
 
-	<li>The <a name="mapname">map name</a> has been specified as not
+	<li>The <a name="map_note">map name</a> has been specified as not
 	implying a given starting position.  That question has come up at
 	least twice within the DAIDE community, with conflicting answers;
 	this answer avoids problems with recovered games after a crash.</li>
 
-	<li>A recent addition to <a href="#AOA" name="foreign">the
+	<li>A recent addition to <a href="#AOA" name="foreign_note">the
 	<b>AOA</b> specification</a>, "and are for a unit owned by the AI
 	sending the order," has been omitted, because the Parlance server
 	accepts absolutely any order when <b>AOA</b> is specified, even
@@ -2241,14 +2253,14 @@ official DAIDE syntax document</a>:
 	power and passcode assignments, observers might desire an extra
 	copy.</li>
 
-	<li><a href="#SCO" name="starting"><b>SCO</b></a> and <a
+	<li><a href="#SCO" name="position_note"><b>SCO</b></a> and <a
 	href="#NOW"><b>NOW</b></a> commands sent by clients before the game
 	starts are specified to return copies of the starting messages, in
-	accordance with a statement under the <a href="#MDF"><b>MDF</b>
+	accordance with a statement under the <a href="#position"><b>MDF</b>
 	specification</a>.  The official document also allows the server to
 	send <b>REJ (SCO)</b> or <b>REJ (NOW)</b> in this case.</li>
 
-	<li><a href="#CCD" name="disorder">The <b>CCD</b> message</a> has
+	<li><a href="#CCD" name="disorder_note">The <b>CCD</b> message</a> has
 	been divided into three distinct message types:  One for a
 	disconnected power, one for a power that failed to get orders in on
 	time, and one for responding to <a href="#SND">a <b>SND</b>
@@ -2259,15 +2271,15 @@ official DAIDE syntax document</a>:
 
 	<li>As with the <b>CCD</b> response to an attempt to send press, a
 	second parameter has been added to <a href="#OUT"
-	name="eliminated">the <b>OUT</b> message</a>, listing the failed
-	press command.</li>
+	name="elimination_note">the <b>OUT</b> message</a>, listing the
+	failed press command.</li>
 
-	<li>This document specifies that the server may interpret <a
-	href="#ADM" name="admin">an admin message</a> as a command, instead
-	of forwarding it to other players.  This allows Mapper users to send
-	commands beyond the limits of this syntax document.</li>
+	<li>This document specifies that the server may interpret an
+	<a href="#ADM" name="admin_note">admin message</a> as a command,
+	instead of forwarding it to other players.  This allows Mapper users
+	to send commands beyond the limits of this syntax document.</li>
 
-	<li>A client command to request <a href="#SMR" name="summary">the
+	<li>A client command to request <a href="#SMR" name="summary_note">the
 	<b>SMR</b> message</a>, along with the game result, has been added.
 	This could be useful for a client that joins after the game
 	finishes.  Note the Parlance server also has behavior, disabled by
@@ -2275,13 +2287,14 @@ official DAIDE syntax document</a>:
 	clients of a different name and/or version; however, that behavior
 	has not yet been included in this syntax document.</li>
 
-	<li>The <a href="#PTL" name="limitation"><b>PTL</b> variant</a> has
-	been listed as a reason for rejecting a <b>SND</b> command.</li>
+	<li>The <a href="#PTL" name="press_note"><b>PTL</b> variant</a> has
+	been listed as a reason for rejecting a <a href="#PTL"><b>SND</b>
+	command</a>.</li>
 
-	<li><a href="#appA" name="numbers">Appendix A</a> is much more
+	<li><a href="#appA" name="token_note">Appendix A</a> is much more
 	complete, including obsolete tokens and token numbers.</li>
 
-	<li><a href="#appB" name="integration">Appendix B</a> describes how
+	<li><a href="#appB" name="bnf_note">Appendix B</a> describes how
 	the syntax has been integrated into the document as a whole, instead
 	of listing the syntax itself.  As part of this, many more syntax
 	items in the main text are prefixed with "label = ".</li>
@@ -2295,6 +2308,6 @@ official DAIDE syntax document</a>:
 	document.</li>
 </ul>
 
-<!-- vim: set tw=72 noet ts=4 sw=4 sts=0 noai inde= indk= fo=q : -->
+<!-- vim: set tw=72 noet ts=4 sw=4 sts=0 ai inde= indk= fo=q js : -->
 </body>
 </html>

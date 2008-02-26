@@ -66,7 +66,7 @@ class Validator(VerboseObject):
         strings = re.compile(r"'\w+'")
         repeats = re.compile(r'(.*) +\1 *\.\.\.')
         lev_mark = re.compile(r'<h2><a name="level(\d+)">.*: (\w[a-zA-Z ]*)<')
-        bnf_rule = re.compile(r'<(?:h4|li><b)>({\w\w\w} |)(?:<a name="\w+">|)(\w+) (\+|-|)= (.*?)</(?:h4|b)>')
+        bnf_rule = re.compile(r'<(?:h4|li><b)>({\w\w\w} |)(?:<a name="\w+">|)(\w+) (\+|-|)= (.*?)<(?:/h4|/b|sup)>')
         syntax_level = 0
         neg_level = protocol.max_neg_int
         levels = []
