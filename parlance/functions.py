@@ -13,6 +13,17 @@ r'''Parlance general utility functions
 from itertools import chain, ifilter, ifilterfalse
 from time import gmtime
 
+try:
+    from functools import wraps
+except ImportError:
+    def wraps(function):
+        '''Makes a function wrapper look like the function it wraps.'''
+        def decorator(wrapped):
+            wrapped.__doc__ = function.__doc__
+            wrapped.__name__ = function.__name__
+            return wrapped
+        return decorator
+
 __version__ = '1.3.1.x'
 
 def any(sequence):
@@ -410,7 +421,6 @@ def timestamp(seconds=None, static=[None, 0]):
 
 def todo(test):
     '''Makes a test always fail, with an appropriate note.'''
-    from functools import wraps
     @wraps(test)
     def wrapper(self):
         self.fail("Unwritten test")
