@@ -428,7 +428,9 @@ def todo(test):
     return wrapper
 
 class EntryPointContainer(object):
-    r'''Wrapper for a set of entry points, to be used like a dict.'''
+    r'''Wrapper for a set of entry points, to be used like a dict.
+        Keys are case-insensitive, to make admin commands easier.
+    '''#"""#'''
     
     def __init__(self, group):
         self.group = group
@@ -439,4 +441,9 @@ class EntryPointContainer(object):
         for item in iter_entry_points(self.group, name):
             return item.load()
         else:
-            raise KeyError(name)
+            for item in self:
+                if item.lower() == name.lower():
+                    return self[item]
+            else:
+                raise KeyError(name)
+

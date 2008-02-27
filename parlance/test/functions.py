@@ -30,6 +30,10 @@ class EntryPointTestCase(unittest.TestCase):
         self.assertEqual(self.bots["HoldBot"], HoldBot)
     def test_unfound(self):
         self.assertRaises(KeyError, lambda: self.bots["Unknown"])
+    def test_lower(self):
+        self.assertEqual(self.bots["holdbot"], HoldBot)
+    def test_upper(self):
+        self.assertEqual(self.bots["HOLDBOT"], HoldBot)
 
 if __name__ == '__main__':
     unittest.main()
