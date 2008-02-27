@@ -1,26 +1,28 @@
 <html>
-
 <head>
-<title>The Diplomacy AIJudge Client-Server Protocol</title>
+	<meta name="author" content="Andrew Rose, David Norman, and Eric Wald"/>
+        <meta name="description" content="Defines the network protocol
+          for communication between DAIDE clients and servers."/>
+        <meta name="keywords" content="Diplomacy artificial intelligence
+          DAIDE Parlance network protocol">
+	<title>The Parlance Client-Server Protocol</title>
+	<!--
+	Copyright (C) 2003-2008  Andrew Rose, David Norman, and Eric Wald
+	
+	Parlance may be used, modified, and/or redistributed under the terms of
+	the Artistic License 2.0, as published by the Perl Foundation.
+	-->
 </head>
-
 <body>
 
-<p>Author:             Andrew Rose, revised by David Norman</p>
-<p>Date:               25-Oct-2007</p>
-<p>Status:             Draft</p>
-
-<p class=Title1>The Diplomacy Centralisation Project Client-Server Protocol</p>
-<p class=Title1>Version 1</p>
-<p class=Title1>Revision 14</p>
-<p class=Title1>DRAFT COPY</p>
+<p>The Parlance Client-Server Protocol</p>
+<p>Version 1</p>
 
 <h1>1     Introduction</h1>
 
-<p>This document specifies the protocol by which a Diplomacy AI
-(&ldquo;client&rdquo;) should communicate with the AIJudge
-(&ldquo;server&rdquo;).  It should be read in conjunction with the
-<a href="syntax.html">AI Language Syntax</a>.  The remainder of
+<p>This document specifies the protocol by which a DAIDE client should
+communicate with a DAIDE server.  It should be read in conjunction with the
+<a href="syntax.html">Parlance Message Syntax</a>.  The remainder of
 this document is structured as follows:</p>
 
 <ul>
@@ -35,9 +37,9 @@ this document is structured as follows:</p>
 <p>This document is aimed at people who wish to:</p>
 <ul>
 	<li>Review the design of the protocol.</li>
-	<li>Implement an AIJudge.</li>
+	<li>Implement a DAIDE server.</li>
 	<li>Implement a client protocol wrapper.</li>
-	<li>Implement a Diplomacy AI where a client protocol wrapper
+	<li>Implement a DAIDE client where a client protocol wrapper
 	is not available.</li>
 </ul>
 
@@ -189,7 +191,7 @@ connections.</p>
 
 <p>The message contains a magic number that is designed to quickly
 catch connections that have (inadvertently or deliberately) been made
-to the server by a program other than a Diplomacy AI Client.  Because
+to the server by a program other than a DAIDE Client.  Because
 the magic number's bit pattern is not the same forwards and backwards,
 it will also catch clients who have failed to send in network byte
 order.  The message is only ever sent from the client to the server
@@ -336,7 +338,7 @@ it.  The error codes are defined in the following table.</p>
 <table>
 	<tr><td>Code</td><td>Meaning</td></tr>
 	<!-- These code names are open to negotiation,
-		but Pydip uses them in their current form.  -->
+		but Parlance uses them in their current form.  -->
 	<tr><td><a name="Timeout">0x01</a></td>
 		<td>IM timer popped</td></tr>
 	<tr><td><a name="NotIMError">0x02</a></td>
@@ -407,7 +409,7 @@ invalid for other reasons; for example, tokens in the
 	<li>00xxxxxx ( 64) - Integers</li>
 	<li>0100xxxx ( 16) - Various individual categories</li>
 	<li>01010xxx (  8) - Provinces</li>
-	<li>01011xxx (  8) - Reserved for individual AI/Server use.
+	<li>01011xxx (  8) - Reserved for individual Client/Server use.
 	Never transmitted.</li>
 	<li>011xxxxx ( 32) - Unassigned</li>
 	<li>1xxxxxxx (128) - Unassigned</li>
@@ -652,9 +654,9 @@ another.  Therefore, the end of a string can be identified when the
 first non-text token is received.</p>
 
 <!--
-<h2>4.??     <a name="PyDip">Added by PyDip (0x4E)</a></h2>
+<h2>4.??     <a name="Parlance">Added by Parlance (0x4E)</a></h2>
 
-<p>These are tokens used and/or documented by PyDip, that have not yet been
+<p>These are tokens used and/or documented by Parlance, that have not yet been
 assigned official numbers.  Their numbers are likely to change in future
 revisions of this document.</p>
 
@@ -795,9 +797,9 @@ centre or not.  The next two bits can be used to determine province
 type.</p>
 
 
-<h2>4.17     <a name="Reserved">Reserved for AI use (0x58 - 0x5F)</a></h2>
+<h2>4.17     <a name="Reserved">Reserved for individual use (0x58 - 0x5F)</a></h2>
 
-<p>These categories will never be assigned another use.  AI writers
+<p>These categories will never be assigned another use.  Software writers
 are free to use these categories as they see fit.  However, they must
 never be sent over the wire.</p>
 
