@@ -38,7 +38,7 @@ setup(
     description = "A framework for playing the Diplomacy board game over a network.",
     license = "Artistic License 2.0",
     keywords = "daide diplomacy board game server",
-    url = "https://sourceforge.net/projects/parlance/",
+    url = "http://sourceforge.net/projects/parlance/",
     classifiers = [
         "Development Status :: 2 - Pre-Alpha",
         "Environment :: Console",
