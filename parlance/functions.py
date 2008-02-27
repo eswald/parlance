@@ -11,6 +11,7 @@ r'''Parlance general utility functions
 '''#'''
 
 from itertools import chain, ifilter, ifilterfalse
+from pkg_resources import iter_entry_points
 from time import gmtime
 
 try:
@@ -425,3 +426,17 @@ def todo(test):
     def wrapper(self):
         self.fail("Unwritten test")
     return wrapper
+
+class EntryPointContainer(object):
+    r'''Wrapper for a set of entry points, to be used like a dict.'''
+    
+    def __init__(self, group):
+        self.group = group
+    def __iter__(self):
+        for item in iter_entry_points(self.group):
+            yield item.name
+    def __getitem__(self, name):
+        for item in iter_entry_points(self.group, name):
+            return item.load()
+        else:
+            raise KeyError(name)

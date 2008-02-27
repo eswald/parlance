@@ -30,6 +30,9 @@ setup(
         ],
         "gui_scripts": [
         ],
+        "parlance.bots": [
+            "HoldBot = parlance.player:HoldBot",
+        ],
     },
     
     # Project metadata
