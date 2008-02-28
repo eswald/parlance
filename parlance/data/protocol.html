@@ -22,7 +22,7 @@
   <a href="http://www.ellought.demon.co.uk/dipai/daide_protocol.html">The
     Diplomacy Centralisation Project Client-Server Protocol</a>.</p>
 
-<h2>1     Introduction</h2>
+<h2>1  Introduction</h2>
 
 <p>This document specifies the protocol by which a DAIDE client should
 communicate with a DAIDE server.  It should be read in conjunction with the
@@ -36,7 +36,7 @@ this document is structured as follows:</p>
 
 
 
-<h3>1.1         Intended Audience</h3>
+<h3>1.1  Intended Audience</h3>
 
 <p>This document is aimed at people who wish to:</p>
 <ul>
@@ -58,14 +58,14 @@ are under investigation.</p>
 </ul>
 
 
-<h2>2                   Transport mechanism</h2>
+<h2>2  Transport mechanism</h2>
 <p>This section defines the transport mechanism to be used.</p>
 
-<h3>2.1         Basic Mechanism</h3>
+<h3>2.1  Basic Mechanism</h3>
 <p>Client-server communications will be carried out over a TCP
 connection.</p>
 
-<h3>2.2         Server Requirements</h3>
+<h3>2.2  Server Requirements</h3>
 
 <h4>Listening for Connections</h4>
 <p>The server will publish an address and TCP port on which the server
@@ -95,7 +95,7 @@ structure (see chapter 3), the server will terminate the
 connection.</p>
 
 
-<h3>2.3         Client Requirements</h3>
+<h3>2.3  Client Requirements</h3>
 
 <h4>Establishing a Connection</h4>
 <p>To communicate with a server, a client shall first establish a TCP
@@ -109,7 +109,7 @@ connected to the server.</p>
 shall send an Initial Message (see section 3.2).</p>
 
 
-<h2>3                   Message Structures</h2>
+<h2>3  Message Structures</h2>
 <p>Once a connection has been established, the two parties may
 transfer messages as described in this section.  Both parties may send
 messages at any time except as limited below.</p>
@@ -119,7 +119,7 @@ network byte order (big endian).  Implementers of clients or servers
 for little endian machines (e.g. Intel) should take care in swapping
 the octets of multi-octet fields.</p>
 
-<h3>3.1         General Message Structure</h3>
+<h3>3.1  General Message Structure</h3>
 <p>All messages sent between a client and a server will have the
 following message structure.</p>
 
@@ -162,7 +162,7 @@ following message structure.</p>
 
 
 
-<h3>3.2         <a name="IM">The Initial Message</a> (IM)</h3>
+<h3>3.2  <a name="IM">The Initial Message</a> (IM)</h3>
 
 <p>This is a fixed length message.</p>
 
@@ -203,7 +203,7 @@ and it is only sent once.</p>
 
 
 
-<h3>3.3         <a name="RM">The Representation Message</a> (RM)</h3>
+<h3>3.3  <a name="RM">The Representation Message</a> (RM)</h3>
 <pre>
 
 0                   1                   2                   3
@@ -262,7 +262,7 @@ It is sent immediately following the IM, and at other times under
 limited circumstances.</p>
 
 
-<h3>3.4         <a name="DM">The Diplomacy Message</a> (DM)</h3>
+<h3>3.4  <a name="DM">The Diplomacy Message</a> (DM)</h3>
 
 <p>This is a variable length message.</p>
 
@@ -292,7 +292,7 @@ chapter &ldquo;Language Representation&rdquo;.  It can be sent by
 either party following the RM.</p>
 
 
-<h3>3.5         <a name="FM">The Final Message</a> (FM)</h3>
+<h3>3.5  <a name="FM">The Final Message</a> (FM)</h3>
 <p>This is a fixed length message.</p>
 <pre>
 
@@ -315,7 +315,7 @@ receipt, the receiving party will immediately close the connection
 without sending a final message or error message.</p>
 
 
-<h3>3.6         <a name="EM">The Error Message</a> (EM)</h3>
+<h3>3.6  <a name="EM">The Error Message</a> (EM)</h3>
 <p>This is a fixed length message.</p>
 <pre>
 
@@ -382,12 +382,12 @@ immediately close the connection without sending an error message or
 final message.</p>
 
 
-<h2>4                   LANGUAGE REPRESENTATION</h2>
+<h2>4  Language Representation</h2>
 
 <p>This section describes how a language message is encoded into the
 data part of a Diplomacy Message (see above).</p>
 
-<h3>4.1         General Coding Scheme</h3>
+<h3>4.1  General Coding Scheme</h3>
 
 <p>Every language token will be represented by a 2-octet field.</p>
 
@@ -405,7 +405,7 @@ invalid for other reasons; for example, tokens in the
 <a href="#Reserved">Reserved</a> category are always invalid.</p>
 
 
-<h3>4.2         Category Space</h3>
+<h3>4.2  Category Space</h3>
 
 <p>The category space is divided as follows:</p>
 
@@ -429,13 +429,13 @@ further subdivided in the future if appropriate.</p>
 and the token numbers within the category.</p>
 
 
-<h3>4.3         <a name="Integers">Integers (0x00 - 0x3F)</a></h3>
+<h3>4.3  <a name="Integers">Integers (0x00 - 0x3F)</a></h3>
 
 <p>The representable range of integers is -8192 to +8191.  They are
 coded as a 14-bit two's-complement value.  The top two bits of the
 category are always zero.</p>
 
-<h3>4.4         <a name="Miscellaneous">Miscellaneous (0x40)</a></h3>
+<h3>4.4  <a name="Miscellaneous">Miscellaneous (0x40)</a></h3>
 
 <ul>
 	<li>BRA 0x00  - The open bracket &lsquo;(&rsquo;</li>
@@ -443,7 +443,7 @@ category are always zero.</p>
 </ul>
 
 
-<h3>4.5         <a name="Powers">Powers (0x41)</a></h3>
+<h3>4.5  <a name="Powers">Powers (0x41)</a></h3>
 
 <ul>
 	<li>AUS 0x00</li>
@@ -456,7 +456,7 @@ category are always zero.</p>
 </ul>
 
 
-<h3>4.6         <a name="Unit_Types">Unit Types (0x42)</a></h3>
+<h3>4.6  <a name="Unit_Types">Unit Types (0x42)</a></h3>
 
 <ul>
 	<li>AMY 0x00</li>
@@ -464,7 +464,7 @@ category are always zero.</p>
 </ul>
 
 
-<h3>4.7         <a name="Orders">Orders (0x43)</a></h3>
+<h3>4.7  <a name="Orders">Orders (0x43)</a></h3>
 
 <ul>
 	<li>CTO 0x20</li>
@@ -488,7 +488,7 @@ the next is valid in the retreats phase and the last is valid in the
 movement phase.</p>
 
 
-<h3>4.8         <a name="Order_Notes">Order Notes (0x44)</a></h3>
+<h3>4.8  <a name="Order_Notes">Order Notes (0x44)</a></h3>
 
 <ul>
 	<li>MBV 0x00</li>
@@ -515,7 +515,7 @@ movement phase.</p>
 
 
 
-<h3>4.9         <a name="Results">Results (0x45)</a></h3>
+<h3>4.9  <a name="Results">Results (0x45)</a></h3>
 
 <ul>
 	<li>SUC 0x00</li>
@@ -527,7 +527,7 @@ movement phase.</p>
 	<li>RET 0x06</li>
 </ul>
 
-<h3>4.10     <a name="Coasts">Coasts (0x46)</a></h3>
+<h3>4.10  <a name="Coasts">Coasts (0x46)</a></h3>
 
 <ul>
 	<li>NCS 0x00</li>
@@ -541,7 +541,7 @@ movement phase.</p>
 </ul>
 
 
-<h3>4.11     <a name="Phases">Phases (0x47)</a></h3>
+<h3>4.11  <a name="Phases">Phases (0x47)</a></h3>
 
 <ul>
 	<li>SPR 0x00</li>
@@ -551,7 +551,7 @@ movement phase.</p>
 	<li>WIN 0x04</li>
 </ul>
 
-<h3>4.12     <a name="Commands">Commands (0x48)</a></h3>
+<h3>4.12  <a name="Commands">Commands (0x48)</a></h3>
 
 <ul>
 	<li>CCD 0x00</li>
@@ -587,7 +587,7 @@ movement phase.</p>
 	<li>SMR 0x1E</li>
 </ul>
 
-<h3>4.13     <a name="Parameters">Parameters (0x49)</a></h3>
+<h3>4.13  <a name="Parameters">Parameters (0x49)</a></h3>
 
 <ul>
 	<li>AOA 0x00</li>
@@ -607,7 +607,7 @@ movement phase.</p>
 	<li>DSD 0x0D</li>
 </ul>
 
-<h3>4.14     <a name="Press">Press (0x4A)</a></h3>
+<h3>4.14  <a name="Press">Press (0x4A)</a></h3>
 
 <ul>
 	<li>ALY 0x00</li>
@@ -649,7 +649,7 @@ movement phase.</p>
 	<li>UNT 0x24</li>
 </ul>
 
-<h3>4.15     <a name="Text">Text (0x4B)</a></h3>
+<h3>4.15  <a name="Text">Text (0x4B)</a></h3>
 
 <p>The value is the ASCII code for a single letter.  Strings are not
 delimited with quotation marks or anything else.  There are no
@@ -658,7 +658,7 @@ another.  Therefore, the end of a string can be identified when the
 first non-text token is received.</p>
 
 <!--
-<h3>4.??     <a name="Parlance">Added by Parlance (0x4E)</a></h3>
+<h3>4.??  <a name="Parlance">Added by Parlance (0x4E)</a></h3>
 
 <p>These are tokens used and/or documented by Parlance, that have not yet been
 assigned official numbers.  Their numbers are likely to change in future
@@ -675,7 +675,7 @@ revisions of this document.</p>
 </ul>
 -->
 
-<h3>4.16     <a name="Provinces">Provinces (0x50 - 0x57)</a></h3>
+<h3>4.16  <a name="Provinces">Provinces (0x50 - 0x57)</a></h3>
 
 <p>There are eight province categories as defined here.</p>
 
@@ -801,7 +801,7 @@ centre or not.  The next two bits can be used to determine province
 type.</p>
 
 
-<h3>4.17     <a name="Reserved">Reserved for private use (0x58 - 0x5F)</a></h3>
+<h3>4.17  <a name="Reserved">Reserved for private use (0x58 - 0x5F)</a></h3>
 
 <p>These categories will never be assigned another use.  Software writers
 are free to use these categories as they see fit.  However, they must
