@@ -1000,9 +1000,9 @@ class Protocol(VerboseObject):
                 err_type = int(line[pos+1:pos2], 16)
             
             if err_type:
-                match = re.search('<a name="([A-Z]\w+)">', line)
+                match = re.search(r'<a name="([A-Z]\w+)">', line)
                 if match: setattr(self, match.group(1), err_type)
-                match = re.match('.*>(\w+ [\w ]+)<', line)
+                match = re.search(r'>(\w+ [\w ]+)<', line)
                 if match:
                     self.error_strings[err_type] = match.group(1)
                     err_type = None
@@ -1010,14 +1010,14 @@ class Protocol(VerboseObject):
                 else: old_line = line[line.rfind('>'):].strip()
             elif msg_name:
                 if line.find('Message Type =') > 0:
-                    type_num = int(re.match('.*Type = (\d+)', line).group(1))
+                    type_num = int(re.search(r'Type = (\d+)', line).group(1))
                     self.message_types[msg_name] = type_num
                     msg_name = ''
             elif line.find(' (0x') > 0:
-                match = re.match('.*?[> ](\w[\w ]+) \((0x\w\w)', line)
+                match = re.search(r'[> ](\w[\w ]+) \((0x\w\w)', line)
                 descrip = match.group(1)
                 start_cat = int(match.group(2), 16)
-                match = re.match('.* (0x\w\w)\)', line)
+                match = re.search(r' (0x\w\w)\)', line)
                 if match:
                     last_cat = int(match.group(1), 16)
                     self.token_cats[descrip.replace(' ', '_')] = (start_cat, last_cat)
@@ -1031,7 +1031,7 @@ class Protocol(VerboseObject):
             elif last_cat:
                 if line.find('category =') > 0:
                     # This must come before the ' 0x' search.
-                    match = re.match('.*>([\w -]+) category = (0x\w\w)<', line)
+                    match = re.search(r'>([\w -]+) category = (0x\w\w)<', line)
                     if match:
                         last_cat = int(match.group(2), 16)
                         self.token_cats[last_cat] = descrip = match.group(1)
@@ -1041,20 +1041,20 @@ class Protocol(VerboseObject):
                     else:
                         self.log_debug(1, 'Bad line in protocol file: ' + line)
                 elif line.find(' 0x') > 0:
-                    match = re.search('>(\w\w\w) (0x\w\w)', line)
+                    match = re.search(r'>(\w\w\w) (0x\w\w)', line)
                     if match:
                         name = match.group(1).upper()
                         number = last_cat + int(match.group(2), 16)
                         if rep_item: default_tokens[number] = name
                         else: token_names[number] = name
             elif line.find('M)') > 0:
-                match = re.match('.*The (\w+) Message', line)
+                match = re.search(r'The (\w+) Message', line)
                 if match: msg_name = match.group(1)
             elif line.find('Version ') >= 0:
-                match = re.match('.*Version (\d+)', line)
+                match = re.search(r'Version (\d+)', line)
                 if match: self.version = int(match.group(1))
             elif line.find('Magic Number =') > 0:
-                match = re.search('Number = (0x\w+)', line)
+                match = re.search(r'Number = (0x\w+)', line)
                 if match: self.magic = int(match.group(1), 16)
                 else: self.log_debug(1, 'Invalid magic number: ' + line)
         self.base_rep = Representation(token_names, None)
