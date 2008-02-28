@@ -18,10 +18,6 @@
 <h1>The Parlance Client-Server Protocol</h1>
 <p>Version 1</p>
 
-<p>Modified from revision 14 of
-  <a href="http://www.ellought.demon.co.uk/dipai/daide_protocol.html">The
-    Diplomacy Centralisation Project Client-Server Protocol</a>.</p>
-
 <h2>1  Introduction</h2>
 
 <p>This document specifies the protocol by which a DAIDE client should
@@ -32,6 +28,8 @@ this document is structured as follows:</p>
 <ul>
 	<li>Chapter 2 defines the transport mechanism.</li>
 	<li>Chapter 3 defines the message structures.</li>
+	<li>Chapter 4 defines the language representation.</li>
+	<li>Chapter 5 describes modifications to this document.</li>
 </ul>
 
 
@@ -86,7 +84,7 @@ socket.</p>
 SO_KEEPALIVE socket option on the newly created socket.  This causes
 dead connections to be cleared by the server.</p>
 
-<p>The server will run a 30 second initial message timer.  If the
+<p>The server will run a 30-second initial message timer.  If the
 server hasn't received any data when the timer pops, the server will
 send an error message (see below) and terminate the connection.</p>
 
@@ -116,8 +114,8 @@ messages at any time except as limited below.</p>
 
 <p>All message structures described in this section are shown in
 network byte order (big endian).  Implementers of clients or servers
-for little endian machines (e.g. Intel) should take care in swapping
-the octets of multi-octet fields.</p>
+for little endian machines (for example, Intel) should take care to
+swap the octets of multi-octet fields.</p>
 
 <h3>3.1  General Message Structure</h3>
 <p>All messages sent between a client and a server will have the
@@ -144,7 +142,7 @@ following message structure.</p>
 	chapter.</dd>
 
 	<dt>Pad: 8 bits</dt>
-	<dd>This part of the message is not valid.  i.e. It may
+	<dd>This part of the message is not valid; that is, it may
 	contain any bit pattern.  It is included so that the length
 	field is naturally aligned.</dd>
 
@@ -164,7 +162,7 @@ following message structure.</p>
 
 <h3>3.2  <a name="IM">The Initial Message</a> (IM)</h3>
 
-<p>This is a fixed length message.</p>
+<p>This is a fixed-length message.</p>
 
 <pre>
 
@@ -188,7 +186,7 @@ following message structure.</p>
 
 <p>This message is sent from the client to the server as soon as the
 connection has been opened.  If the server discovers incompatible
-version numbers, it will send the error message and close the
+version numbers, it will send an error message and close the
 connection.  Note that a single instance of a server may be able to
 talk several different protocol versions over different
 connections.</p>
@@ -259,12 +257,12 @@ the number of powers less 1.</p>
 
 <p>This message is only ever sent from the server to the client.
 It is sent immediately following the IM, and at other times under
-limited circumstances.</p>
+limited circumstances.<sup><a href="#RM_note">*</a></sup></p>
 
 
 <h3>3.4  <a name="DM">The Diplomacy Message</a> (DM)</h3>
 
-<p>This is a variable length message.</p>
+<p>This is a variable-length message.</p>
 
 <pre>
 
@@ -293,7 +291,7 @@ either party following the RM.</p>
 
 
 <h3>3.5  <a name="FM">The Final Message</a> (FM)</h3>
-<p>This is a fixed length message.</p>
+<p>This is a fixed-length message.</p>
 <pre>
 
 0                   1                   2                   3
@@ -316,7 +314,7 @@ without sending a final message or error message.</p>
 
 
 <h3>3.6  <a name="EM">The Error Message</a> (EM)</h3>
-<p>This is a fixed length message.</p>
+<p>This is a fixed-length message.</p>
 <pre>
 
 0                   1                   2                   3
@@ -339,7 +337,7 @@ protocol error.  An EM may be sent at any time.  The party sending
 this message will terminate the connection immediately after sending
 it.  The error codes are defined in the following table.</p>
 
-<table>
+<table border=1>
 	<tr><td>Code</td><td>Meaning</td></tr>
 	<!-- These code names are open to negotiation,
 		but Parlance uses them in their current form.  -->
@@ -366,7 +364,7 @@ it.  The error codes are defined in the following table.</p>
 	<tr><td><a name="NotRMError">0x0B</a></td>
 		<td>RM was not the first message sent by the server</td></tr>
 	<tr><td><a name="UnexpectedRM">0x0C</a></td>
-		<td>Unexpected RM sent</td></tr>
+		<td>Unexpected RM sent<sup><a href="#RM_note">*</a></sup></td></tr>
 	<tr><td><a name="ClientRMError">0x0D</a></td>
 		<td>RM sent by client</td></tr>
 	<tr><td><a name="IllegalToken">0x0E</a></td>
@@ -402,7 +400,8 @@ simple determination of a token category from the top octet.
 Tokens not listed here may be valid, and thus should not trigger
 <a href="#EM">Error Message 0x0E</a> unless they can be determined
 invalid for other reasons; for example, tokens in the
-<a href="#Reserved">Reserved</a> category are always invalid.</p>
+<a href="#Reserved">Reserved</a> category are always
+invalid.<sup><a href="#invalid_note">*</a></sup></p>
 
 
 <h3>4.2  Category Space</h3>
@@ -796,7 +795,7 @@ provinces.</p>
 <p>Note that the province values form a sequence starting at zero and
 leading up to 74 (giving 75 provinces in total).  It will always be
 possible to use the bottom octet to index into a zero-based array.
-The low bit of the category determines if the province is a supply
+The low bit of the category determines whether the province is a supply
 centre or not.  The next two bits can be used to determine province
 type.</p>
 
@@ -806,6 +805,35 @@ type.</p>
 <p>These categories will never be assigned another use.  Software writers
 are free to use these categories as they see fit.  However, they must
 never be sent over the wire.</p>
+
+
+<h2>5  <a name="changes">Changes from the official document</a></h2>
+
+<p>This chapter lists the differences between this document and revision 14 of
+  <a href="http://www.ellought.demon.co.uk/dipai/daide_protocol.html">The
+    Diplomacy Centralisation Project Client-Server Protocol</a>.</p>
+
+<h3>5.1  <a name="RM_note">Multiple Representation Messages</a></h3>
+
+<p>The official protocol only allows the
+  <a href="#RM">Representation Message</a> to be sent once; however, to
+  support game selection, Parlance allows the server to send a new RM in
+  response to specific Diplomacy Messages sent by the client.  In conjunction
+  with this, <a href="#EM">Error Message 0x0C</a> has a slightly different
+  description in this document.</p>
+
+<h3>5.2  <a name="invalid_note">Invalid Tokens</a></h3>
+
+<p>The original document is less specific about when to send
+  <a href="#EM">Error Message 0x0E</a>; some implementations of this protocol
+  have been known to send it upon receiving any unknown token, even in a DM
+  that could be safely ignored.  Now that clients are allowed to send HUH
+  messages to the server, there is no longer any need for such behavior.</p>
+
+<h3>5.3  <a name="grammar_note">Minor Edits</a></h3>
+
+<p>Punctuation, grammar, style, and metadata have been changed in several
+  places, but do not affect the meaning of the document.</p>
 
 </body>
 </html>
