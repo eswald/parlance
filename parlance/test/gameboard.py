@@ -175,6 +175,94 @@ class VariantTests(unittest.TestCase):
             ONE=TWO, TRE, FUR
         ''')
         self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE", "FUR"]})
+    
+    def test_default_ownership(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.ownership, {})
+    def test_ownership_many(self):
+        variant = self.load('''
+            [ownership]
+            ONE=TWO,TRE,FUR
+        ''')
+        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE", "FUR"]})
+    def test_ownership_one(self):
+        variant = self.load('''
+            [ownership]
+            ONE=TWO
+        ''')
+        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO"]})
+    def test_ownership_empty(self):
+        variant = self.load('''
+            [ownership]
+            ONE=
+        ''')
+        self.failUnlessEqual(variant.ownership, {"ONE": []})
+    def test_ownership_multiple(self):
+        variant = self.load('''
+            [ownership]
+            ONE=TRE,FIV
+            TWO=FUR,SIX
+        ''')
+        self.failUnlessEqual(variant.ownership, {
+                "ONE": ["TRE", "FIV"],
+                "TWO": ["FUR", "SIX"],
+        })
+    def test_ownership_comma(self):
+        variant = self.load('''
+            [ownership]
+            ONE=TWO,TRE,
+        ''')
+        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE"]})
+    def test_ownership_spaces(self):
+        variant = self.load('''
+            [ownership]
+            ONE=TWO, TRE, FUR
+        ''')
+        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE", "FUR"]})
+    
+    def test_default_position(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.position, {})
+    def test_position_many(self):
+        variant = self.load('''
+            [positions]
+            ONE=AMY TWO,AMY TRE,FLT FUR
+        ''')
+        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "AMY TRE", "FLT FUR"]})
+    def test_position_one(self):
+        variant = self.load('''
+            [positions]
+            ONE=AMY TWO
+        ''')
+        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO"]})
+    def test_position_empty(self):
+        variant = self.load('''
+            [positions]
+            ONE=
+        ''')
+        self.failUnlessEqual(variant.position, {"ONE": []})
+    def test_position_multiple(self):
+        variant = self.load('''
+            [positions]
+            ONE=AMY TRE,FLT FIV
+            TWO=AMY FUR,FLT SIX
+        ''')
+        self.failUnlessEqual(variant.position, {
+                "ONE": ["AMY TRE", "FLT FIV"],
+                "TWO": ["AMY FUR", "FLT SIX"],
+        })
+    def test_position_comma(self):
+        variant = self.load('''
+            [positions]
+            ONE=AMY TWO,FLT TRE,
+        ''')
+        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "FLT TRE"]})
+    def test_position_spaces(self):
+        variant = self.load('''
+            [positions]
+            ONE=AMY TWO, AMY TRE, FLT FUR
+        ''')
+        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "AMY TRE", "FLT FUR"]})
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

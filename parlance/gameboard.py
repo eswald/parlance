@@ -81,8 +81,11 @@ class Variant(object):
     def parse_homes(self, key, value):
         self.homes[key] = [s.strip() for s in value.split(',') if s.strip()]
     
+    def parse_ownership(self, key, value):
+        self.ownership[key] = [s.strip() for s in value.split(',') if s.strip()]
+    
     def parse_positions(self, key, value):
-        pass
+        self.position[key] = [s.strip() for s in value.split(',') if s.strip()]
     
     def parse_borders(self, key, value):
         pass
