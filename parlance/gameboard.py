@@ -88,7 +88,27 @@ class Variant(object):
         self.position[key] = [s.strip() for s in value.split(',') if s.strip()]
     
     def parse_borders(self, key, value):
-        pass
+        sites = {}
+        for spec in value.split(","):
+            items = spec.split()
+            if items:
+                bits = iter(items)
+                first = bits.next()
+                try:
+                    site = self.rep[first]
+                except KeyError:
+                    if first[0] == "(":
+                        second = bits.next()
+                        site = (self.rep[first[1:]], self.rep[second[:-1]])
+                
+                provs = []
+                for item in bits:
+                    if item[0] == "(":
+                        second = bits.next()
+                        item = (item[1:], self.rep[second[:-1]])
+                    provs.append(item)
+                sites[site] = provs
+        self.borders[key] = sites
 
 
 class Map(VerboseObject):

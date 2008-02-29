@@ -283,6 +283,81 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.position, {
                 "ONE": ["AMY TWO", "AMY TRE", "FLT FUR"],
         })
+    
+    def test_default_borders(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.borders, {})
+    def test_borders_empty(self):
+        variant = self.load('''
+            [borders]
+            ONE=
+        ''')
+        self.failUnlessEqual(variant.borders, {"ONE": {}})
+    def test_borders_army(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO TRE FUR
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {AMY: ["TWO", "TRE", "FUR"]},
+        })
+    def test_borders_swiss(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {AMY: []},
+        })
+    def test_borders_fleet(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT TWO TRE FUR
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {FLT: ["TWO", "TRE", "FUR"]},
+        })
+    def test_borders_lake(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {FLT: []},
+        })
+    def test_borders_coastal(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, FLT TRE
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {
+                    AMY: ["TWO"],
+                    FLT: ["TRE"],
+                },
+        })
+    def test_borders_coastlines(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, (FLT SCS) TRE, (FLT NCS) FUR
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {
+                    AMY: ["TWO"],
+                    (FLT, SCS): ["TRE"],
+                    (FLT, NCS): ["FUR"],
+                },
+        })
+    def test_bordering_coastline(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT (TRE SCS)
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {
+                    FLT: [("TRE", SCS)],
+                },
+        })
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
