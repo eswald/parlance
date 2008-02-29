@@ -12,8 +12,10 @@ r'''Parlance standard map environment
 from sys       import modules
 
 from config    import variants
-from gameboard import Map
+from gameboard import Map, Variant
 from language  import protocol
+
+standard = Variant("standard", filename="parlance://data/standard.ini")
 
 __all__ = ['standard_map', 'standard_sco', 'standard_now',
         'default_rep', 'base_rep']

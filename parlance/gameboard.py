@@ -949,5 +949,3 @@ class Unit(Comparable):
     def can_be_convoyed(self):
         return self.coast.unit_type == AMY and self.coast.province.is_coastal()
     def exists(self): return self in self.coast.province.units
-
-standard = Variant("standard", filename="parlance://data/standard.ini")

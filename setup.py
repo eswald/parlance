@@ -37,7 +37,7 @@ setup(
             "standard = parlance.judge:Judge",
         ],
         "parlance.variants": [
-            "standard = parlance.gameboard:standard",
+            "standard = parlance.xtended:standard",
         ],
     },
     
