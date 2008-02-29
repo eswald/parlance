@@ -10,7 +10,7 @@ r'''Test cases for miscellaneous Parlance functions
 
 import unittest
 
-from parlance.functions import EntryPointContainer
+from parlance.config import EntryPointContainer
 from parlance.player import HoldBot
 
 class EntryPointTestCase(unittest.TestCase):

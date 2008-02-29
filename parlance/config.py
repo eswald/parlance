@@ -12,7 +12,7 @@ r'''Parlance configuration management
 import re
 from ConfigParser import RawConfigParser
 from os           import linesep, path
-from pkg_resources import resource_stream
+from pkg_resources import iter_entry_points, resource_stream
 from sys          import argv
 from weakref      import WeakValueDictionary
 
@@ -553,6 +553,31 @@ def read_representation_file(stream):
 
 # Global variables
 variants = VariantDict()
+
+# Entry points
+class EntryPointContainer(object):
+    r'''Wrapper for a set of entry points, to be used like a dict.
+        Keys are case-insensitive, to make admin commands easier.
+    '''#"""#'''
+    
+    def __init__(self, group):
+        self.group = group
+    def __iter__(self):
+        for item in iter_entry_points(self.group):
+            yield item.name
+    def __getitem__(self, name):
+        for item in iter_entry_points(self.group, name):
+            return item.load()
+        else:
+            for item in self:
+                if item.lower() == name.lower():
+                    return self[item]
+            else:
+                raise KeyError(name)
+
+bots = EntryPointContainer("parlance.bots")
+judges = EntryPointContainer("parlance.judges")
+#variants = EntryPointContainer("parlance.variants")
 
 
 class ConfigPrinter(Configuration):
