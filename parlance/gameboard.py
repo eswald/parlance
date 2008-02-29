@@ -9,7 +9,8 @@ r'''Parlance gameboard classes
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-from itertools   import chain
+from itertools import chain
+from pkg_resources import split_sections
 
 from config      import Configuration, VerboseObject, parse_file
 from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
@@ -50,13 +51,36 @@ class Variant(object):
         self.rep = rep or protocol.default_rep
         
         if filename:
-            parse_file(filename, self.parse_variant_file)
+            parse_file(filename, self.parse)
     
     def mdf(self):
         pass
     
-    def parse_variant_file(self, stream):
+    def parse(self, stream):
+        for section, lines in split_sections(stream):
+            parse = getattr(self, "parse_"+section)
+            for line in lines:
+                parse(*line.split("=", 1))
+    
+    def parse_variant(self, key, value):
+        if key == "name":
+            self.name = value
+    
+    def parse_powers(self, key, value):
         pass
+    
+    def parse_provinces(self, key, value):
+        pass
+    
+    def parse_homes(self, key, value):
+        pass
+    
+    def parse_positions(self, key, value):
+        pass
+    
+    def parse_borders(self, key, value):
+        pass
+
 
 class Map(VerboseObject):
     ''' The map for the game, with various notes.
@@ -949,3 +973,4 @@ class Unit(Comparable):
     def can_be_convoyed(self):
         return self.coast.unit_type == AMY and self.coast.province.is_coastal()
     def exists(self): return self in self.coast.province.units
+

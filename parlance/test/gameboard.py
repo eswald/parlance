@@ -25,6 +25,7 @@ class VariantTests(unittest.TestCase):
     "Tests for loading information from a variant file"
     def load(self, information):
         variant = Variant("testing")
+        variant.parse(line.strip() for line in information.split("\n"))
         return variant
     
     def test_variant_default_name(self):
