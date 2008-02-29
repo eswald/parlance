@@ -13,7 +13,7 @@ import unittest
 from parlance.config     import parse_file, read_representation_file
 from parlance.config     import MapVariant, variants
 from parlance.functions  import fails
-from parlance.gameboard  import Map, Province, Turn
+from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import IntegerToken, protocol
 from parlance.orders     import createUnitOrder
@@ -21,37 +21,21 @@ from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
 
-class Map_Variants(unittest.TestCase):
-    ''' Validity checks for each of the known variants'''
-    def define_variant(self, variant_name):
-        options = variants[variant_name]
-        game_map = Map(options)
-        if not game_map.valid: self.fail(game_map.define(options.map_mdf))
-    def test_abstraction2_map(self):     self.define_variant('abstraction2')
-    def test_african2_map(self):         self.define_variant('african2')
-    def test_americas4_map(self):        self.define_variant('americas4')
-    def test_chromatic_map(self):        self.define_variant('chromatic')
-    def test_classical_map(self):        self.define_variant('classical')
-    def test_fleet_rome_map(self):       self.define_variant('fleet_rome')
-    def test_hundred3_map(self):         self.define_variant('hundred3')
-    def test_hundred31_map(self):        self.define_variant('hundred31')
-    def test_hundred32_map(self):        self.define_variant('hundred32')
-    def test_iberian2_map(self):         self.define_variant('iberian2')
-    def test_modern_map(self):           self.define_variant('modern')
-    def test_sailho_map(self):           self.define_variant('sailho')
-    def test_shift_around_map(self):     self.define_variant('shift_around')
-    def test_south_america32_map(self):  self.define_variant('south_america32')
-    def test_south_america51_map(self):  self.define_variant('south_america51')
-    def test_south_east_asia3_map(self): self.define_variant('south_east_asia3')
-    def test_standard_map(self):         self.define_variant('standard')
-    def test_versailles3_map(self):      self.define_variant('versailles3')
-    def test_world3_map(self):           self.define_variant('world3')
-    def test_all_variant_maps(self):
-        for name, options in variants.iteritems():
-            game_map = Map(options)
-            if not game_map.valid:
-                err = game_map.define(options.map_mdf)
-                self.fail('%s map failed: %s' % (name, err))
+class VariantTests(unittest.TestCase):
+    "Tests for loading information from a variant file"
+    def load(self, information):
+        variant = Variant("testing")
+        return variant
+    
+    def test_variant_default_name(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.name, "testing")
+    def test_variant_name(self):
+        variant = self.load('''
+            [variant]
+            name=Something
+        ''')
+        self.failUnlessEqual(variant.name, "Something")
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

@@ -25,36 +25,38 @@ class Variant(object):
         - name         The name of the variant itself
         - map_name     The name to send in MAP messages
         - description  Brief description for help lists
-        - definition   The map definition message
         - ownership    The initial supply center ownerships
         - position     The initial unit positions
         - seasons      The sequence of seasons in a year
         - provinces    A mapping of province names
+        - borders      A mapping of province borders
         - powers       A mapping of power names
         - judge        The Judge class used for adjudication
         - rep          The representation dictionary
     '''#"""#'''
     
-    def __init__(self, map_name, variant_name=None, description=None,
-            definition=None, ownership=None, position=None,
-            provinces={}, powers={}, rep=protocol.default_rep,
-            judge=None, seasons=(SPR, SUM, FAL, AUT, WIN)):
-        
-        self.name = variant_name or map_name
+    def __init__(self, map_name, rep=None, filename=None):
+        self.name = map_name
         self.map_name = map_name
-        self.description = description
-        self.definition = definition
-        self.ownership = ownership
-        self.position = position
-        self.seasons = tuple(seasons)
-        self.provinces = provinces
-        self.powers = powers
-        self.judge = judge
-        self.rep = rep
-
-def parse_variant_file(stream):
-    name = "standard"
-    return Variant(name)
+        self.description = ""
+        self.provinces = {}
+        self.ownership = {}
+        self.position = {}
+        self.borders = {}
+        self.powers = {}
+        self.homes = {}
+        self.judge = "standard"
+        self.seasons = (SPR, SUM, FAL, AUT, WIN)
+        self.rep = rep or protocol.default_rep
+        
+        if filename:
+            parse_file(filename, self.parse_variant_file)
+    
+    def mdf(self):
+        pass
+    
+    def parse_variant_file(self, stream):
+        pass
 
 class Map(VerboseObject):
     ''' The map for the game, with various notes.
@@ -948,4 +950,4 @@ class Unit(Comparable):
         return self.coast.unit_type == AMY and self.coast.province.is_coastal()
     def exists(self): return self in self.coast.province.units
 
-standard = parse_file("parlance://data/standard.ini", parse_variant_file)
+standard = Variant("standard", filename="parlance://data/standard.ini")

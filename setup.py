@@ -33,6 +33,12 @@ setup(
         "parlance.bots": [
             "HoldBot = parlance.player:HoldBot",
         ],
+        "parlance.judges": [
+            "standard = parlance.judge:Judge",
+        ],
+        "parlance.variants": [
+            "standard = parlance.gameboard:standard",
+        ],
     },
     
     # Project metadata
