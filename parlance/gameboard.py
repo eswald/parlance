@@ -11,7 +11,7 @@ r'''Parlance gameboard classes
 
 from itertools   import chain
 
-from config      import Configuration, VerboseObject
+from config      import Configuration, VerboseObject, parse_file
 from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
 from language    import Token, Message, protocol
 from tokens      import AMY, AUT, FAL, FLT, MRT, NOW, SCO, SPR, SUM, UNO, WIN
@@ -19,6 +19,42 @@ from tokens      import AMY, AUT, FAL, FLT, MRT, NOW, SCO, SPR, SUM, UNO, WIN
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
     else:                      return (unit_type, loc[0], loc[1])
+
+class Variant(object):
+    r'''Representation of a map or rule variant
+        - name         The name of the variant itself
+        - map_name     The name to send in MAP messages
+        - description  Brief description for help lists
+        - definition   The map definition message
+        - ownership    The initial supply center ownerships
+        - position     The initial unit positions
+        - seasons      The sequence of seasons in a year
+        - provinces    A mapping of province names
+        - powers       A mapping of power names
+        - judge        The Judge class used for adjudication
+        - rep          The representation dictionary
+    '''#"""#'''
+    
+    def __init__(self, map_name, variant_name=None, description=None,
+            definition=None, ownership=None, position=None,
+            provinces={}, powers={}, rep=protocol.default_rep,
+            judge=None, seasons=(SPR, SUM, FAL, AUT, WIN)):
+        
+        self.name = variant_name or map_name
+        self.map_name = map_name
+        self.description = description
+        self.definition = definition
+        self.ownership = ownership
+        self.position = position
+        self.seasons = tuple(seasons)
+        self.provinces = provinces
+        self.powers = powers
+        self.judge = judge
+        self.rep = rep
+
+def parse_variant_file(stream):
+    name = "standard"
+    return Variant(name)
 
 class Map(VerboseObject):
     ''' The map for the game, with various notes.
@@ -911,3 +947,5 @@ class Unit(Comparable):
     def can_be_convoyed(self):
         return self.coast.unit_type == AMY and self.coast.province.is_coastal()
     def exists(self): return self in self.coast.province.units
+
+standard = parse_file("parlance://data/standard.ini", parse_variant_file)
