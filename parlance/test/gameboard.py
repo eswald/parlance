@@ -28,15 +28,51 @@ class VariantTests(unittest.TestCase):
         variant.parse(line.strip() for line in information.split("\n"))
         return variant
     
-    def test_variant_default_name(self):
+    def test_default_name(self):
         variant = Variant("testing")
         self.failUnlessEqual(variant.name, "testing")
-    def test_variant_name(self):
+    def test_name_loaded(self):
         variant = self.load('''
             [variant]
             name=Something
         ''')
         self.failUnlessEqual(variant.name, "Something")
+    def test_default_mapname(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.mapname, "testing")
+    def test_mapname_loaded(self):
+        variant = self.load('''
+            [variant]
+            mapname=Something
+        ''')
+        self.failUnlessEqual(variant.mapname, "Something")
+    def test_default_description(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.description, "")
+    def test_description_loaded(self):
+        variant = self.load('''
+            [variant]
+            description=Something
+        ''')
+        self.failUnlessEqual(variant.description, "Something")
+    def test_default_judge(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.judge, "standard")
+    def test_judge_loaded(self):
+        variant = self.load('''
+            [variant]
+            judge=Something
+        ''')
+        self.failUnlessEqual(variant.judge, "Something")
+    def test_default_start(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.start, "SPR 0")
+    def test_start_loaded(self):
+        variant = self.load('''
+            [variant]
+            start=WIN 2000
+        ''')
+        self.failUnlessEqual(variant.start, "WIN 2000")
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

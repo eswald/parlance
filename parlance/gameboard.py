@@ -36,9 +36,9 @@ class Variant(object):
         - rep          The representation dictionary
     '''#"""#'''
     
-    def __init__(self, map_name, rep=None, filename=None):
-        self.name = map_name
-        self.map_name = map_name
+    def __init__(self, name, rep=None, filename=None):
+        self.name = name
+        self.mapname = name
         self.description = ""
         self.provinces = {}
         self.ownership = {}
@@ -47,6 +47,7 @@ class Variant(object):
         self.powers = {}
         self.homes = {}
         self.judge = "standard"
+        self.start = "SPR 0"
         self.seasons = (SPR, SUM, FAL, AUT, WIN)
         self.rep = rep or protocol.default_rep
         
@@ -63,8 +64,8 @@ class Variant(object):
                 parse(*line.split("=", 1))
     
     def parse_variant(self, key, value):
-        if key == "name":
-            self.name = value
+        if key in ("name", "mapname", "description", "judge", "start"):
+            setattr(self, key, value)
     
     def parse_powers(self, key, value):
         pass
