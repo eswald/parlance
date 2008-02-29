@@ -79,7 +79,7 @@ class Variant(object):
         self.provinces[key] = value or key
     
     def parse_homes(self, key, value):
-        pass
+        self.homes[key] = [s.strip() for s in value.split(',') if s.strip()]
     
     def parse_positions(self, key, value):
         pass

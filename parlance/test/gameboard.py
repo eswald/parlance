@@ -131,6 +131,50 @@ class VariantTests(unittest.TestCase):
                 "ONE": "name",
                 "TWO": "somewhere",
         })
+    
+    def test_default_homes(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.homes, {})
+    def test_homes_many(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO,TRE,FUR
+        ''')
+        self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE", "FUR"]})
+    def test_homes_one(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+        ''')
+        self.failUnlessEqual(variant.homes, {"ONE": ["TWO"]})
+    def test_homes_empty(self):
+        variant = self.load('''
+            [homes]
+            ONE=
+        ''')
+        self.failUnlessEqual(variant.homes, {"ONE": []})
+    def test_homes_multiple(self):
+        variant = self.load('''
+            [homes]
+            ONE=TRE,FIV
+            TWO=FUR,SIX
+        ''')
+        self.failUnlessEqual(variant.homes, {
+                "ONE": ["TRE", "FIV"],
+                "TWO": ["FUR", "SIX"],
+        })
+    def test_homes_comma(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO,TRE,
+        ''')
+        self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE"]})
+    def test_homes_spaces(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO, TRE, FUR
+        ''')
+        self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE", "FUR"]})
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
