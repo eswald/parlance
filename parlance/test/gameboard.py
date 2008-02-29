@@ -82,19 +82,25 @@ class VariantTests(unittest.TestCase):
             [powers]
             ONE=name,adj
         ''')
-        self.failUnlessEqual(variant.powers, {"ONE": ("name", "adj")})
+        self.failUnlessEqual(variant.powers, {
+                "ONE": ("name", "adj"),
+        })
     def test_powers_name(self):
         variant = self.load('''
             [powers]
             TWO=someone
         ''')
-        self.failUnlessEqual(variant.powers, {"TWO": ("someone", "someone")})
+        self.failUnlessEqual(variant.powers, {
+                "TWO": ("someone", "someone"),
+        })
     def test_powers_empty(self):
         variant = self.load('''
             [powers]
             TRE=
         ''')
-        self.failUnlessEqual(variant.powers, {"TRE": ("TRE", "TRE")})
+        self.failUnlessEqual(variant.powers, {
+                "TRE": ("TRE", "TRE"),
+        })
     def test_powers_multiple(self):
         variant = self.load('''
             [powers]
@@ -140,7 +146,9 @@ class VariantTests(unittest.TestCase):
             [homes]
             ONE=TWO,TRE,FUR
         ''')
-        self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE", "FUR"]})
+        self.failUnlessEqual(variant.homes, {
+                "ONE": ["TWO", "TRE", "FUR"],
+        })
     def test_homes_one(self):
         variant = self.load('''
             [homes]
@@ -174,7 +182,9 @@ class VariantTests(unittest.TestCase):
             [homes]
             ONE=TWO, TRE, FUR
         ''')
-        self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE", "FUR"]})
+        self.failUnlessEqual(variant.homes, {
+                "ONE": ["TWO", "TRE", "FUR"],
+        })
     
     def test_default_ownership(self):
         variant = Variant("testing")
@@ -184,7 +194,9 @@ class VariantTests(unittest.TestCase):
             [ownership]
             ONE=TWO,TRE,FUR
         ''')
-        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE", "FUR"]})
+        self.failUnlessEqual(variant.ownership, {
+                "ONE": ["TWO", "TRE", "FUR"],
+        })
     def test_ownership_one(self):
         variant = self.load('''
             [ownership]
@@ -218,7 +230,9 @@ class VariantTests(unittest.TestCase):
             [ownership]
             ONE=TWO, TRE, FUR
         ''')
-        self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE", "FUR"]})
+        self.failUnlessEqual(variant.ownership, {
+                "ONE": ["TWO", "TRE", "FUR"],
+        })
     
     def test_default_position(self):
         variant = Variant("testing")
@@ -228,7 +242,9 @@ class VariantTests(unittest.TestCase):
             [positions]
             ONE=AMY TWO,AMY TRE,FLT FUR
         ''')
-        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "AMY TRE", "FLT FUR"]})
+        self.failUnlessEqual(variant.position, {
+                "ONE": ["AMY TWO", "AMY TRE", "FLT FUR"],
+        })
     def test_position_one(self):
         variant = self.load('''
             [positions]
@@ -256,13 +272,17 @@ class VariantTests(unittest.TestCase):
             [positions]
             ONE=AMY TWO,FLT TRE,
         ''')
-        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "FLT TRE"]})
+        self.failUnlessEqual(variant.position, {
+                "ONE": ["AMY TWO", "FLT TRE"],
+        })
     def test_position_spaces(self):
         variant = self.load('''
             [positions]
             ONE=AMY TWO, AMY TRE, FLT FUR
         ''')
-        self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO", "AMY TRE", "FLT FUR"]})
+        self.failUnlessEqual(variant.position, {
+                "ONE": ["AMY TWO", "AMY TRE", "FLT FUR"],
+        })
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
