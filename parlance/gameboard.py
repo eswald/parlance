@@ -76,7 +76,7 @@ class Variant(object):
             self.powers[key] = (value, value)
     
     def parse_provinces(self, key, value):
-        pass
+        self.provinces[key] = value or key
     
     def parse_homes(self, key, value):
         pass

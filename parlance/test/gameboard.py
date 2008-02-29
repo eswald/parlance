@@ -105,6 +105,32 @@ class VariantTests(unittest.TestCase):
                 "ONE": ("name", "adj"),
                 "TWO": ("someone", "somewhere"),
         })
+    
+    def test_default_provinces(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.provinces, {})
+    def test_provinces_name(self):
+        variant = self.load('''
+            [provinces]
+            TWO=somewhere
+        ''')
+        self.failUnlessEqual(variant.provinces, {"TWO": "somewhere"})
+    def test_provinces_empty(self):
+        variant = self.load('''
+            [provinces]
+            ONE=
+        ''')
+        self.failUnlessEqual(variant.provinces, {"ONE": "ONE"})
+    def test_provinces_multiple(self):
+        variant = self.load('''
+            [provinces]
+            ONE=name
+            TWO=somewhere
+        ''')
+        self.failUnlessEqual(variant.provinces, {
+                "ONE": "name",
+                "TWO": "somewhere",
+        })
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
