@@ -73,6 +73,38 @@ class VariantTests(unittest.TestCase):
             start=WIN 2000
         ''')
         self.failUnlessEqual(variant.start, "WIN 2000")
+    
+    def test_default_powers(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.powers, {})
+    def test_powers_both(self):
+        variant = self.load('''
+            [powers]
+            ONE=name,adj
+        ''')
+        self.failUnlessEqual(variant.powers, {"ONE": ("name", "adj")})
+    def test_powers_name(self):
+        variant = self.load('''
+            [powers]
+            TWO=someone
+        ''')
+        self.failUnlessEqual(variant.powers, {"TWO": ("someone", "someone")})
+    def test_powers_empty(self):
+        variant = self.load('''
+            [powers]
+            TRE=
+        ''')
+        self.failUnlessEqual(variant.powers, {"TRE": ("TRE", "TRE")})
+    def test_powers_multiple(self):
+        variant = self.load('''
+            [powers]
+            ONE=name,adj
+            TWO=someone,somewhere
+        ''')
+        self.failUnlessEqual(variant.powers, {
+                "ONE": ("name", "adj"),
+                "TWO": ("someone", "somewhere"),
+        })
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

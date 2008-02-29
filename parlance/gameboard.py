@@ -68,7 +68,12 @@ class Variant(object):
             setattr(self, key, value)
     
     def parse_powers(self, key, value):
-        pass
+        if not value:
+            self.powers[key] = (key, key)
+        elif ',' in value:
+            self.powers[key] = tuple(value.split(',', 1))
+        else:
+            self.powers[key] = (value, value)
     
     def parse_provinces(self, key, value):
         pass
