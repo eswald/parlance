@@ -767,6 +767,13 @@ class Representation(Configurable):
             result += "%04X:%s\n" % (token.number, name)
         return result
     
+    def __eq__(self, other):
+        r'''Compares two Representations, or a Representation and a dict.
+            Mostly useful for test cases, so efficiency is not important.
+        '''#"""#'''
+        
+        return other == self.names
+    
     def items(self):
         ''' Creates a name -> token mapping.'''
         return self.names.items()

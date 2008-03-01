@@ -58,10 +58,14 @@ class Variant(object):
         pass
     
     def parse(self, stream):
+        "Collects information file from a configuration file."
         for section, lines in split_sections(stream):
-            parse = getattr(self, "parse_"+section)
-            for line in lines:
-                parse(*line.split("=", 1))
+            if section:
+                parse = getattr(self, "parse_"+section)
+                for line in lines:
+                    parse(*line.split("=", 1))
+        
+        self.rep = {}
     
     def parse_variant(self, key, value):
         if key in ("name", "mapname", "description", "judge", "start"):

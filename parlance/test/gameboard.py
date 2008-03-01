@@ -15,7 +15,7 @@ from parlance.config     import MapVariant, variants
 from parlance.functions  import fails
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
-from parlance.language   import IntegerToken, protocol
+from parlance.language   import IntegerToken, Representation, protocol
 from parlance.orders     import createUnitOrder
 from parlance.tokens     import *
 from parlance.validation import Validator
@@ -27,6 +27,10 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         variant.parse(line.strip() for line in information.split("\n"))
         return variant
+    
+    def test_parse_empty(self):
+        # Variant.parse() must be able to handle an empty stream
+        variant = self.load("")
     
     def test_default_name(self):
         variant = Variant("testing")
@@ -309,6 +313,17 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.borders, {
                 "ONE": {AMY: []},
         })
+    def test_borders_island(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY, FLT TWO
+        ''')
+        self.failUnlessEqual(variant.borders, {
+                "ONE": {
+                    AMY: [],
+                    FLT: ["TWO"],
+                },
+        })
     def test_borders_fleet(self):
         variant = self.load('''
             [borders]
@@ -358,6 +373,17 @@ class VariantTests(unittest.TestCase):
                     FLT: [("TRE", SCS)],
                 },
         })
+    
+    def test_default_rep(self):
+        variant = Variant("testing")
+        self.failUnlessEqual(variant.rep, protocol.default_rep)
+    def test_passed_rep(self):
+        rep = Representation({0x4A00: "ONE"}, protocol.base_rep)
+        variant = Variant("testing", rep=rep)
+        self.failUnlessEqual(variant.rep, rep)
+    def test_parsed_rep(self):
+        variant = self.load("")
+        self.failUnlessEqual(variant.rep, {})
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

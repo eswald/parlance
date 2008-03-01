@@ -12,6 +12,7 @@ import unittest
 
 from parlance.config import EntryPointContainer
 from parlance.player import HoldBot
+from parlance.language import Representation, protocol
 
 class EntryPointTestCase(unittest.TestCase):
     def setUp(self):
@@ -34,6 +35,22 @@ class EntryPointTestCase(unittest.TestCase):
         self.assertEqual(self.bots["holdbot"], HoldBot)
     def test_upper(self):
         self.assertEqual(self.bots["HOLDBOT"], HoldBot)
+
+class RepresentationTests(unittest.TestCase):
+    "Test cases for the Representation class"
+    
+    def test_empty_reps_equal(self):
+        first = Representation({}, protocol.base_rep)
+        second = Representation({}, protocol.base_rep)
+        self.failUnlessEqual(first, second)
+    def test_simple_reps_equal(self):
+        first = Representation({0x4A00: "ONE"}, protocol.base_rep)
+        second = Representation({0x4A00: "ONE"}, protocol.base_rep)
+        self.failUnlessEqual(first, second)
+    def test_rep_equals_dict(self):
+        first = Representation({0x4A00: "ONE"}, protocol.base_rep)
+        second = {"ONE": 0x4A00}
+        self.failUnlessEqual(first, second)
 
 if __name__ == '__main__':
     unittest.main()
