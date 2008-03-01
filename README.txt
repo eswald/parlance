@@ -57,7 +57,7 @@ parlance-raw-server:
 Installation
 ------------
 
-Parlance can be installed with `Easy Install` from a command prompt::
+Parlance can be installed with `Easy Install`_ from a command prompt::
 
     > easy_install parlance
 
