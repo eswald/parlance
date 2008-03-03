@@ -560,20 +560,66 @@ class VariantTests(unittest.TestCase):
         variant = self.load("")
         mdf = MDF () ([], []) ()
         self.failUnlessEqual(variant.mdf(), mdf)
-    def test_mdf_neutral(self):
+    def test_mdf_neutral_empty(self):
         variant = self.load('''
             [homes]
             UNO=
         ''')
         mdf = MDF () ([(UNO, )], []) ()
         self.failUnlessEqual(variant.mdf(), mdf)
-    def test_mdf_power(self):
+    def test_mdf_neutral_center(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE
+            [borders]
+            ONE=AMY TWO
+        ''')
+        ONE = variant.rep["ONE"]
+        mdf = MDF () ([(UNO, ONE)], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_neutral_multiple(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE,TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        mdf = MDF () ([(UNO, ONE, TWO)], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_power_empty(self):
         variant = self.load('''
             [homes]
             ONE=
         ''')
         ONE = variant.rep["ONE"]
         mdf = MDF (ONE) ([(ONE, )], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_power_center(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE
+            [borders]
+            ONE=AMY TWO
+        ''')
+        ONE = variant.rep["ONE"]
+        TRE = variant.rep["TRE"]
+        mdf = MDF (TRE) ([(TRE, ONE)], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_power_multiple(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE,TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        mdf = MDF (TRE) ([(TRE, ONE, TWO)], []) ()
         self.failUnlessEqual(variant.mdf(), mdf)
 
 class Map_Bugfix(unittest.TestCase):

@@ -61,7 +61,9 @@ class Variant(object):
             power = self.rep[name]
             if power is not UNO:
                 powers.append(power)
-            centers.append([power])
+            
+            homes = [self.rep[prov] for prov in self.homes[name]]
+            centers.append([power] + homes)
         return MDF (*powers) (centers, []) ()
     
     def tokens(self):
