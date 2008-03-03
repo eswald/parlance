@@ -28,6 +28,9 @@ class VariantTests(unittest.TestCase):
         variant.parse(line.strip() for line in information.splitlines())
         variant.rep = variant.tokens()
         return variant
+    def assertContains(self, container, item):
+        if item not in container:
+            raise self.failureException, '%s not in %s' % (item, container)
     
     def test_parse_empty(self):
         # Variant.parse() must be able to handle an empty stream
@@ -587,7 +590,7 @@ class VariantTests(unittest.TestCase):
             [homes]
             UNO=ONE
             [borders]
-            ONE=AMY TWO
+            ONE=AMY
         ''')
         ONE = variant.rep["ONE"]
         centers = variant.mdf().fold()[2][0]
@@ -617,7 +620,7 @@ class VariantTests(unittest.TestCase):
             [homes]
             TRE=ONE
             [borders]
-            ONE=AMY TWO
+            ONE=AMY
         ''')
         ONE = variant.rep["ONE"]
         TRE = variant.rep["TRE"]
@@ -639,7 +642,7 @@ class VariantTests(unittest.TestCase):
     def test_mdf_prov(self):
         variant = self.load('''
             [borders]
-            ONE=AMY TWO
+            ONE=AMY
         ''')
         ONE = variant.rep["ONE"]
         provs = variant.mdf().fold()[2][1]
@@ -682,6 +685,93 @@ class VariantTests(unittest.TestCase):
         ''')
         borders = variant.mdf().fold()[3]
         self.failUnlessEqual(borders, [])
+    def test_mdf_borders_swiss(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY
+        ''')
+        ONE = variant.rep["ONE"]
+        borders = variant.mdf().fold()[3]
+        self.failUnlessEqual(borders, [[ONE, [AMY]]])
+    def test_mdf_borders_inland(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO TRE
+            TWO=
+            TRE=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders, [ONE, [AMY, TWO, TRE]])
+    def test_mdf_borders_island(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY, FLT TWO
+            TWO=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders, [ONE, [AMY], [FLT, TWO]])
+    def test_mdf_borders_sea(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT TWO TRE
+            TWO=
+            TRE=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders, [ONE, [FLT, TWO, TRE]])
+    def test_mdf_borders_lake(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT
+        ''')
+        ONE = variant.rep["ONE"]
+        borders = variant.mdf().fold()[3]
+        self.failUnlessEqual(borders, [[ONE, [FLT]]])
+    def test_mdf_borders_coastal(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, FLT TRE
+            TWO=
+            TRE=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders, [ONE, [AMY, TWO], [FLT, TRE]])
+    def test_mdf_borders_coastlines(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, (FLT SCS) TRE, (FLT NCS) FUR
+            TWO=
+            TRE=
+            FUR=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FUR = variant.rep["FUR"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders,
+            [ONE, [AMY, TWO], [[FLT, SCS], TRE], [[FLT, NCS], FUR]])
+    def test_mdf_bordering_coastline(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT (TWO SCS)
+            TWO=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        borders = variant.mdf().fold()[3]
+        self.assertContains(borders, [ONE, [FLT, [TWO, SCS]]])
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

@@ -68,11 +68,20 @@ class Variant(object):
             seen.extend(homes)
         
         provs = []
+        borders = []
         for name in sorted(self.borders):
             prov = self.rep[name]
             if prov not in seen:
                 provs.append(prov)
-        return MDF (*powers) (centers, provs) ()
+            
+            boundaries = [prov]
+            adjacencies = self.borders[name]
+            for item in adjacencies:
+                boundary = self.rep.translate(adjacencies[item])
+                boundaries.append([item] + boundary)
+            borders.append(boundaries)
+        
+        return MDF (powers) (centers, provs) (borders)
     
     def tokens(self):
         cats = defaultdict(list)
