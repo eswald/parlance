@@ -381,9 +381,132 @@ class VariantTests(unittest.TestCase):
         rep = Representation({0x4A00: "ONE"}, protocol.base_rep)
         variant = Variant("testing", rep=rep)
         self.failUnlessEqual(variant.rep, rep)
-    def test_parsed_rep(self):
+    def test_rep_empty(self):
         variant = self.load("")
         self.failUnlessEqual(variant.rep, {})
+    def test_rep_inland(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5000,
+        })
+    def test_rep_inland_sc(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE
+            [borders]
+            ONE=AMY TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5100,
+        })
+    def test_rep_inland_home(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE
+            [borders]
+            ONE=AMY TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5100,
+        })
+    def test_rep_sea(self):
+        variant = self.load('''
+            [borders]
+            ONE=FLT TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5200,
+        })
+    def test_rep_sea_sc(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE
+            [borders]
+            ONE=FLT TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5300,
+        })
+    def test_rep_sea_home(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE
+            [borders]
+            ONE=FLT TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5300,
+        })
+    def test_rep_coastal(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, FLT FUR
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5400,
+        })
+    def test_rep_coastal_sc(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE
+            [borders]
+            ONE=AMY TWO, FLT FUR
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5500,
+        })
+    def test_rep_coastal_home(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE
+            [borders]
+            ONE=AMY TWO, FLT FUR
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5500,
+        })
+    def test_rep_bicoastal(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, (FLT NCS) FUR, (FLT SCS) SIX
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5600,
+        })
+    def test_rep_bicoastal_sc(self):
+        variant = self.load('''
+            [homes]
+            UNO=ONE
+            [borders]
+            ONE=AMY TWO, (FLT NCS) FUR, (FLT SCS) SIX
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5700,
+        })
+    def test_rep_bicoastal_home(self):
+        variant = self.load('''
+            [homes]
+            TRE=ONE
+            [borders]
+            ONE=AMY TWO, (FLT NCS) FUR, (FLT SCS) SIX
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5700,
+        })
+    # Inland_non-SC = 0x50
+    # Inland_SC = 0x51
+    # Sea_non-SC = 0x52
+    # Sea_SC = 0x53
+    # Coastal_non-SC = 0x54
+    # Coastal_SC = 0x55
+    # Bicoastal_non-SC = 0x56
+    # Bicoastal_SC = 0x57
+    def test_rep_standard(self):
+        # Final exam: Does the standard map match the protocol?
+        self.failUnlessEqual(standard.rep, protocol.default_rep)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
