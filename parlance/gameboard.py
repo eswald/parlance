@@ -14,8 +14,8 @@ from pkg_resources import split_sections
 
 from config      import Configuration, VerboseObject, parse_file
 from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
-from language    import Token, Message, protocol
-from tokens      import AMY, AUT, FAL, FLT, MRT, NOW, SCO, SPR, SUM, UNO, WIN
+from language    import Message, Representation, Token, protocol
+from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
@@ -55,7 +55,14 @@ class Variant(object):
             parse_file(filename, self.parse)
     
     def mdf(self):
-        pass
+        centers = []
+        powers = []
+        for name in self.homes:
+            power = self.rep[name]
+            if power is not UNO:
+                powers.append(power)
+            centers.append([power])
+        return MDF (*powers) (centers, []) ()
     
     def tokens(self):
         cats = defaultdict(list)
@@ -85,13 +92,13 @@ class Variant(object):
         index = count()
         for cat in sorted(cats):
             for prov in cats[cat]:
-                numbers[prov] = cat + index.next()
+                numbers[cat + index.next()] = prov
         
         for index, power in enumerate(sorted(self.homes)):
             if power != "UNO":
-                numbers[power] = 0x4100 + index
+                numbers[0x4100 + index] = power
         
-        return numbers
+        return Representation(numbers, protocol.default_rep)
     
     def parse(self, stream):
         "Collects information file from a configuration file."

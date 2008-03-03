@@ -549,9 +549,32 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x4100,
                 "TRE": 0x4101,
         })
+    def test_rep_type(self):
+        variant = self.load("")
+        self.failUnlessEqual(type(variant.rep), Representation)
     def test_rep_standard(self):
         # Final exam: Does the standard map match the protocol?
         self.failUnlessEqual(standard.tokens(), protocol.default_rep)
+    
+    def test_mdf_empty(self):
+        variant = self.load("")
+        mdf = MDF () ([], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_neutral(self):
+        variant = self.load('''
+            [homes]
+            UNO=
+        ''')
+        mdf = MDF () ([(UNO, )], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_power(self):
+        variant = self.load('''
+            [homes]
+            ONE=
+        ''')
+        ONE = variant.rep["ONE"]
+        mdf = MDF (ONE) ([(ONE, )], []) ()
+        self.failUnlessEqual(variant.mdf(), mdf)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
