@@ -88,6 +88,8 @@ class Variant(object):
             num = 0x5000
             keys = list(self.borders[prov])
             if len(keys) > 2:
+                # Yes, we should probably look for coastline specs,
+                # but this works for anything in the current variants.
                 num += 0x0600
             elif AMY not in keys:
                 num += 0x0200
@@ -156,12 +158,7 @@ class Variant(object):
                         second = bits.next()
                         site = (self.rep[first[1:]], self.rep[second[:-1]])
                 
-                provs = []
-                for item in bits:
-                    if item[0] == "(":
-                        second = bits.next()
-                        item = (item[1:], self.rep[second[:-1]])
-                    provs.append(item)
+                provs = str.join(" ", bits)
                 sites[site] = provs
         self.borders[key] = sites
 

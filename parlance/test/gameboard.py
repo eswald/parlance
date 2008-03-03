@@ -304,7 +304,7 @@ class VariantTests(unittest.TestCase):
             ONE=AMY TWO TRE FUR
         ''')
         self.failUnlessEqual(variant.borders, {
-                "ONE": {AMY: ["TWO", "TRE", "FUR"]},
+                "ONE": {AMY: "TWO TRE FUR"},
         })
     def test_borders_swiss(self):
         variant = self.load('''
@@ -312,7 +312,7 @@ class VariantTests(unittest.TestCase):
             ONE=AMY
         ''')
         self.failUnlessEqual(variant.borders, {
-                "ONE": {AMY: []},
+                "ONE": {AMY: ""},
         })
     def test_borders_island(self):
         variant = self.load('''
@@ -321,8 +321,8 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.borders, {
                 "ONE": {
-                    AMY: [],
-                    FLT: ["TWO"],
+                    AMY: "",
+                    FLT: "TWO",
                 },
         })
     def test_borders_fleet(self):
@@ -331,7 +331,7 @@ class VariantTests(unittest.TestCase):
             ONE=FLT TWO TRE FUR
         ''')
         self.failUnlessEqual(variant.borders, {
-                "ONE": {FLT: ["TWO", "TRE", "FUR"]},
+                "ONE": {FLT: "TWO TRE FUR"},
         })
     def test_borders_lake(self):
         variant = self.load('''
@@ -339,7 +339,7 @@ class VariantTests(unittest.TestCase):
             ONE=FLT
         ''')
         self.failUnlessEqual(variant.borders, {
-                "ONE": {FLT: []},
+                "ONE": {FLT: ""},
         })
     def test_borders_coastal(self):
         variant = self.load('''
@@ -348,8 +348,8 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.borders, {
                 "ONE": {
-                    AMY: ["TWO"],
-                    FLT: ["TRE"],
+                    AMY: "TWO",
+                    FLT: "TRE",
                 },
         })
     def test_borders_coastlines(self):
@@ -359,9 +359,9 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.borders, {
                 "ONE": {
-                    AMY: ["TWO"],
-                    (FLT, SCS): ["TRE"],
-                    (FLT, NCS): ["FUR"],
+                    AMY: "TWO",
+                    (FLT, SCS): "TRE",
+                    (FLT, NCS): "FUR",
                 },
         })
     def test_bordering_coastline(self):
@@ -371,7 +371,7 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.borders, {
                 "ONE": {
-                    FLT: [("TRE", SCS)],
+                    FLT: "(TRE SCS)",
                 },
         })
     
