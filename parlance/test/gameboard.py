@@ -636,6 +636,46 @@ class VariantTests(unittest.TestCase):
         TRE = variant.rep["TRE"]
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[TRE, ONE, TWO]], centers)
+    def test_mdf_prov(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO
+        ''')
+        ONE = variant.rep["ONE"]
+        provs = variant.mdf().fold()[2][1]
+        self.failUnlessEqual(provs, [ONE])
+    def test_mdf_provs(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        provs = variant.mdf().fold()[2][1]
+        self.failUnlessEqual(provs, [ONE, TWO])
+    def test_mdf_provs_without_center(self):
+        variant = self.load('''
+            [homes]
+            UNO=TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        provs = variant.mdf().fold()[2][1]
+        self.failUnlessEqual(provs, [ONE])
+    def test_mdf_provs_without_home(self):
+        variant = self.load('''
+            [homes]
+            TRE=TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        provs = variant.mdf().fold()[2][1]
+        self.failUnlessEqual(provs, [ONE])
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

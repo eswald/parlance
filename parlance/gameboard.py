@@ -57,6 +57,7 @@ class Variant(object):
     def mdf(self):
         centers = []
         powers = []
+        seen = []
         for name in self.homes:
             power = self.rep[name]
             if power is not UNO:
@@ -64,7 +65,14 @@ class Variant(object):
             
             homes = [self.rep[prov] for prov in self.homes[name]]
             centers.append([power] + homes)
-        return MDF (*powers) (centers, []) ()
+            seen.extend(homes)
+        
+        provs = []
+        for name in sorted(self.borders):
+            prov = self.rep[name]
+            if prov not in seen:
+                provs.append(prov)
+        return MDF (*powers) (centers, provs) ()
     
     def tokens(self):
         cats = defaultdict(list)
