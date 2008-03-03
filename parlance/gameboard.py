@@ -87,6 +87,10 @@ class Variant(object):
             for prov in cats[cat]:
                 numbers[prov] = cat + index.next()
         
+        for index, power in enumerate(sorted(self.homes)):
+            if power != "UNO":
+                numbers[power] = 0x4100 + index
+        
         return numbers
     
     def parse(self, stream):

@@ -412,6 +412,7 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5100,
+                "TRE": 0x4100,
         })
     def test_rep_sea(self):
         variant = self.load('''
@@ -440,6 +441,7 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5300,
+                "TRE": 0x4100,
         })
     def test_rep_coastal(self):
         variant = self.load('''
@@ -468,6 +470,7 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5500,
+                "TRE": 0x4100,
         })
     def test_rep_bicoastal(self):
         variant = self.load('''
@@ -496,6 +499,7 @@ class VariantTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5700,
+                "TRE": 0x4100,
         })
     def test_rep_two_inland(self):
         variant = self.load('''
@@ -526,6 +530,24 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5401,
                 "TWO": 0x5000,
+        })
+    def test_rep_power(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x4100,
+        })
+    def test_rep_powers(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            TRE=TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x4100,
+                "TRE": 0x4101,
         })
     def test_rep_standard(self):
         # Final exam: Does the standard map match the protocol?
