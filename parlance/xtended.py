@@ -17,7 +17,7 @@ from language  import protocol
 
 standard = Variant("standard", filename="parlance://data/standard.cfg")
 
-__all__ = ['standard_map', 'standard_sco', 'standard_now',
+__all__ = ['standard', 'standard_map', 'standard_sco', 'standard_now',
         'default_rep', 'base_rep']
 
 # Standard map and its various attendants

@@ -26,6 +26,7 @@ class VariantTests(unittest.TestCase):
     def load(self, information):
         variant = Variant("testing")
         variant.parse(line.strip() for line in information.splitlines())
+        variant.rep = variant.tokens()
         return variant
     
     def test_parse_empty(self):
@@ -496,17 +497,39 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.rep, {
                 "ONE": 0x5700,
         })
-    # Inland_non-SC = 0x50
-    # Inland_SC = 0x51
-    # Sea_non-SC = 0x52
-    # Sea_SC = 0x53
-    # Coastal_non-SC = 0x54
-    # Coastal_SC = 0x55
-    # Bicoastal_non-SC = 0x56
-    # Bicoastal_SC = 0x57
+    def test_rep_two_inland(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5000,
+                "TWO": 0x5001,
+        })
+    def test_rep_two_inland_swapped(self):
+        variant = self.load('''
+            [borders]
+            TWO=AMY ONE
+            ONE=AMY TWO
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5000,
+                "TWO": 0x5001,
+        })
+    def test_rep_categories(self):
+        variant = self.load('''
+            [borders]
+            ONE=AMY TWO, FLT TWO
+            TWO=AMY ONE
+        ''')
+        self.failUnlessEqual(variant.rep, {
+                "ONE": 0x5401,
+                "TWO": 0x5000,
+        })
     def test_rep_standard(self):
         # Final exam: Does the standard map match the protocol?
-        self.failUnlessEqual(standard.rep, protocol.default_rep)
+        self.failUnlessEqual(standard.tokens(), protocol.default_rep)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

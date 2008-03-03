@@ -9,7 +9,7 @@ r'''Parlance gameboard classes
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-from itertools import chain
+from itertools import chain, count
 from pkg_resources import split_sections
 
 from config      import Configuration, VerboseObject, parse_file
@@ -57,6 +57,38 @@ class Variant(object):
     def mdf(self):
         pass
     
+    def tokens(self):
+        cats = defaultdict(list)
+        for prov in sorted(self.borders):
+            # Inland_non-SC = 0x50
+            # Inland_SC = 0x51
+            # Sea_non-SC = 0x52
+            # Sea_SC = 0x53
+            # Coastal_non-SC = 0x54
+            # Coastal_SC = 0x55
+            # Bicoastal_non-SC = 0x56
+            # Bicoastal_SC = 0x57
+            num = 0x5000
+            keys = list(self.borders[prov])
+            if len(keys) > 2:
+                num += 0x0600
+            elif AMY not in keys:
+                num += 0x0200
+            elif FLT in keys:
+                num += 0x0400
+            
+            if any(prov in self.homes[power] for power in self.homes):
+                num += 0x0100
+            cats[num].append(prov)
+        
+        numbers = {}
+        index = count()
+        for cat in sorted(cats):
+            for prov in cats[cat]:
+                numbers[prov] = cat + index.next()
+        
+        return numbers
+    
     def parse(self, stream):
         "Collects information file from a configuration file."
         for section, lines in split_sections(stream):
@@ -64,8 +96,6 @@ class Variant(object):
                 parse = getattr(self, "parse_"+section)
                 for line in lines:
                     parse(*line.split("=", 1))
-        
-        self.rep = {}
     
     def parse_variant(self, key, value):
         if key in ("name", "mapname", "description", "judge", "start"):
