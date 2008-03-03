@@ -560,13 +560,28 @@ class VariantTests(unittest.TestCase):
         variant = self.load("")
         mdf = MDF () ([], []) ()
         self.failUnlessEqual(variant.mdf(), mdf)
+    def test_mdf_neutral(self):
+        variant = self.load('''
+            [homes]
+            UNO=
+        ''')
+        powers = variant.mdf().fold()[1]
+        self.failUnlessEqual([], powers)
+    def test_mdf_power(self):
+        variant = self.load('''
+            [homes]
+            ONE=
+        ''')
+        ONE = variant.rep["ONE"]
+        powers = variant.mdf().fold()[1]
+        self.failUnlessEqual([ONE], powers)
     def test_mdf_neutral_empty(self):
         variant = self.load('''
             [homes]
             UNO=
         ''')
-        mdf = MDF () ([(UNO, )], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[UNO]], centers)
     def test_mdf_neutral_center(self):
         variant = self.load('''
             [homes]
@@ -575,8 +590,8 @@ class VariantTests(unittest.TestCase):
             ONE=AMY TWO
         ''')
         ONE = variant.rep["ONE"]
-        mdf = MDF () ([(UNO, ONE)], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[UNO, ONE]], centers)
     def test_mdf_neutral_multiple(self):
         variant = self.load('''
             [homes]
@@ -587,17 +602,17 @@ class VariantTests(unittest.TestCase):
         ''')
         ONE = variant.rep["ONE"]
         TWO = variant.rep["TWO"]
-        mdf = MDF () ([(UNO, ONE, TWO)], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
-    def test_mdf_power_empty(self):
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[UNO, ONE, TWO]], centers)
+    def test_mdf_homes_empty(self):
         variant = self.load('''
             [homes]
             ONE=
         ''')
         ONE = variant.rep["ONE"]
-        mdf = MDF (ONE) ([(ONE, )], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
-    def test_mdf_power_center(self):
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[ONE]], centers)
+    def test_mdf_homes_center(self):
         variant = self.load('''
             [homes]
             TRE=ONE
@@ -606,9 +621,9 @@ class VariantTests(unittest.TestCase):
         ''')
         ONE = variant.rep["ONE"]
         TRE = variant.rep["TRE"]
-        mdf = MDF (TRE) ([(TRE, ONE)], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
-    def test_mdf_power_multiple(self):
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[TRE, ONE]], centers)
+    def test_mdf_homes_multiple(self):
         variant = self.load('''
             [homes]
             TRE=ONE,TWO
@@ -619,8 +634,8 @@ class VariantTests(unittest.TestCase):
         ONE = variant.rep["ONE"]
         TWO = variant.rep["TWO"]
         TRE = variant.rep["TRE"]
-        mdf = MDF (TRE) ([(TRE, ONE, TWO)], []) ()
-        self.failUnlessEqual(variant.mdf(), mdf)
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[TRE, ONE, TWO]], centers)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
