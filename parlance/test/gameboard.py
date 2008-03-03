@@ -676,6 +676,12 @@ class VariantTests(unittest.TestCase):
         ONE = variant.rep["ONE"]
         provs = variant.mdf().fold()[2][1]
         self.failUnlessEqual(provs, [ONE])
+    def test_mdf_borders_empty(self):
+        variant = self.load('''
+            [borders]
+        ''')
+        borders = variant.mdf().fold()[3]
+        self.failUnlessEqual(borders, [])
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
