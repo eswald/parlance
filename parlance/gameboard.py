@@ -83,6 +83,14 @@ class Variant(object):
         
         return MDF (powers) (centers, provs) (borders)
     
+    def sco(self):
+        msg = +SCO
+        for name in sorted(self.ownership):
+            power = self.rep[name]
+            centers = [self.rep[prov] for prov in self.ownership[name]]
+            msg = msg(power, *centers)
+        return msg
+    
     def tokens(self):
         cats = defaultdict(list)
         for prov in sorted(self.borders):
@@ -128,6 +136,13 @@ class Variant(object):
                 parse = getattr(self, "parse_"+section)
                 for line in lines:
                     parse(*line.split("=", 1))
+        
+        if self.position and not self.ownership:
+            # Base the default starting ownership on the starting position.
+            # This is more often the case than starting with all home centers.
+            for name in self.position:
+                owned = [unit.split()[1] for unit in self.position[name]]
+                self.ownership[name] = owned
     
     def parse_variant(self, key, value):
         if key in ("name", "mapname", "description", "judge", "start"):

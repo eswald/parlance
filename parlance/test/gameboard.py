@@ -772,6 +772,56 @@ class VariantTests(unittest.TestCase):
         TWO = variant.rep["TWO"]
         borders = variant.mdf().fold()[3]
         self.assertContains(borders, [ONE, [FLT, [TWO, SCS]]])
+    
+    def test_sco_empty(self):
+        variant = self.load("")
+        self.failUnlessEqual(variant.sco(), +SCO)
+    def test_sco_single(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            [ownership]
+            ONE=TWO
+            [borders]
+            TWO=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO))
+    def test_sco_multiple(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            TRE=FUR
+            [ownership]
+            ONE=TWO
+            TRE=FUR
+            [borders]
+            TWO=
+            FUR=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FUR = variant.rep["FUR"]
+        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
+    def test_sco_position(self):
+        variant = self.load('''
+            [homes]
+            ONE=FUR
+            TRE=TWO
+            [positions]
+            ONE=FLT TWO
+            TRE=AMY FUR
+            [borders]
+            TWO=AMY FUR, FLT FUR
+            FUR=AMY TWO, FLT TWO
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FUR = variant.rep["FUR"]
+        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
