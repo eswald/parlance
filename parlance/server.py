@@ -13,7 +13,7 @@ from os         import path
 from random     import randint, shuffle
 from time       import time
 
-from config     import GameOptions, VerboseObject, variants
+from config     import GameOptions, VerboseObject, bots, variants
 from functions  import defaultdict, expand_list, \
         instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
@@ -21,10 +21,6 @@ from language   import Message, Time, protocol
 from player     import HoldBot
 from tokens     import *
 from validation import Validator
-
-bots = {
-    "holdbot": HoldBot,
-}
 
 class Command(object):
     def __init__(self, pattern, callback, help):
@@ -285,9 +281,9 @@ class Server(VerboseObject):
             client.admin(line)
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
-        for bot_class in bots.itervalues():
-            client.admin('  %s - %s', bot_class.__name__,
-                    bot_class.__doc__.split('\r')[0].split('\n')[0])
+        for name in bots:
+            description = bots[name].__doc__.splitlines()[0].strip()
+            client.admin('  %s - %s', name, description)
     def list_status(self, client, match):
         for game in self.games.itervalues():
             if game.closed: message = 'Closed'
@@ -1307,11 +1303,11 @@ class Game(Historian):
             client.admin('Recruit more players first, or use your own bots.')
             return
         bot_name = match.group(2)
-        if bot_name[-1] == 's' and not bots.has_key(bot_name):
+        if bot_name[-1] == 's' and bot_name not in bots:
             bot_name = bot_name[:-1]
             default_num = 0
         else: default_num = 1
-        if bots.has_key(bot_name):
+        if bot_name in bots:
             bot_class = bots[bot_name]
             country = match.group(3)
             if country:

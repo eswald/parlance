@@ -18,7 +18,7 @@ from parlance.language   import Time
 from parlance.main       import ThreadManager
 from parlance.network    import Service
 from parlance.player     import Clock, HoldBot
-from parlance.server     import Server, bots
+from parlance.server     import Server
 from parlance.tokens     import *
 from parlance.xtended    import ITA, LON, PAR
 
@@ -554,6 +554,11 @@ class Server_Admin(ServerTestCase):
 
 class Server_Admin_Bots(Server_Admin):
     ''' Starting bots with admin commands'''
+    def test_list_bots(self):
+        items = self.master.admin('Server: list bots')
+        self.failUnlessEqual('Available types of bots:', items[0])
+        self.assertContains("  HoldBot - "
+            "A simple bot that justs holds units in place.", items)
     def test_start_bot(self):
         ''' Players can start new bots in their current game.'''
         game = self.game
@@ -574,12 +579,13 @@ class Server_Admin_Bots(Server_Admin):
         self.failIf(game.clients[-1].closed)
     def test_start_bot_an(self):
         ''' Players can start a bot using the article "an".'''
-        class AlterBot(HoldBot): pass
+        # This no longer tests "an" in the response.
+        # That requires either monkeypatching EntryPointContainer,
+        # or shipping a bot whose name begins with a vowel.
         game = self.game
         count = len(game.clients)
-        bots["alterbot"] = AlterBot
-        self.assertAdminVetoable(self.master, 'start an alterbot',
-                'Fake Human Player (Fake_Master) is starting an AlterBot.')
+        self.assertAdminVetoable(self.master, 'start an holdbot',
+                'Fake Human Player (Fake_Master) is starting a HoldBot.')
         self.wait_for_actions()
         self.failUnless(len(game.clients) > count)
         self.failIf(game.clients[-1].closed)
