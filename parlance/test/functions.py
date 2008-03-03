@@ -27,6 +27,8 @@ class EntryPointTestCase(unittest.TestCase):
         self.assertContains("HoldBot", names)
     def test_contains(self):
         self.assertContains("HoldBot", self.bots)
+    def test_contains_lower(self):
+        self.assertContains("holdbot", self.bots)
     def test_load(self):
         self.assertEqual(self.bots["HoldBot"], HoldBot)
     def test_unfound(self):

@@ -574,6 +574,9 @@ class EntryPointContainer(object):
                     return self[item]
             else:
                 raise KeyError(name)
+    def __contains__(self, name):
+        lower = name.lower()
+        return any(lower == n.lower() for n in self)
 
 bots = EntryPointContainer("parlance.bots")
 judges = EntryPointContainer("parlance.judges")
