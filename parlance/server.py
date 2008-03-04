@@ -255,6 +255,8 @@ class Server(VerboseObject):
         except KeyError:
             if client:
                 client.admin('Unknown variant "%s"', var_name)
+            else:
+                raise ValueError('Unknown variant "%s"' % var_name)
         else:
             game_id = timestamp()
             self.started_games += 1
@@ -445,13 +447,14 @@ class Historian(VerboseObject):
                 messages[first] = message
                 if first is MAP:
                     variant_name = message.fold()[1][0]
-                    self.variant = variants.get(variant_name.lower())
-                    if self.variant:
-                        rep = self.variant.rep
-                    else:
+                    try:
+                        self.variant = variants[variant_name]
+                    except KeyError:
                         self.log_debug(7, 'Variant %r not found among %r',
                                 variant_name, variants.keys())
                         return False
+                    else:
+                        rep = self.variant.rep
                 elif first is HLO:
                     self.game_options.parse_message(message)
             elif first in (DRW, SLO):
@@ -634,9 +637,9 @@ class Game(Historian):
         self.closed         = False
         self.variant        = variant
         self.judge          = variant.new_judge(self.game_options)
-        self.messages[MAP]  = MAP(self.judge.map_name)
-        self.messages[VAR]  = VAR(self.judge.variant_name)
-        self.messages[MDF]  = variant.map_mdf
+        self.messages[MAP]  = MAP(variant.mapname)
+        self.messages[VAR]  = VAR(variant.name)
+        self.messages[MDF]  = self.judge.mdf
         
         # Press- and time-related variables
         self.press_allowed  = False
@@ -957,7 +960,7 @@ class Game(Historian):
     def listing(self, result=None):
         need = (not self.closed) and self.players_needed() or 0
         return (LST(self.game_id)(need, result or self.status())
-                (self.variant.variant)(self.game_options))
+                (self.variant.name)(self.game_options))
     def status(self):
         disconnected = False
         robotic = False

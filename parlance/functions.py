@@ -361,6 +361,48 @@ def fails(test_function):
         else: test_case.fail('Test unexpectedly passed')
     return test_wrapper
 
+def failing(exception):
+    ''' Marks a test as failing, notifying the user when it succeeds.
+        >>> class DummyTestCase:
+        ...     failureException = AssertionError
+        ...     def fail(self, line=None):
+        ...         raise self.failureException(line or 'Test case failed!')
+        ...     @failing(ValueError)
+        ...     def test_failure(self):
+        ...         self.fail()
+        ...     @failing(ValueError)
+        ...     def test_passing(self):
+        ...         pass
+        ...     @failing(ValueError)
+        ...     def test_expected(self):
+        ...         raise ValueError('This error should be silenced.')
+        ...     @failing(ValueError)
+        ...     def test_error(self):
+        ...         raise UserWarning('Other errors propogate through.')
+        ...
+        >>> d = DummyTestCase()
+        >>> d.test_failure()
+        Traceback (most recent call last):
+            ...
+        AssertionError: Test case failed!
+        >>> d.test_passing()
+        Traceback (most recent call last):
+            ...
+        AssertionError: Test unexpectedly passed
+        >>> d.test_expected()
+        >>> d.test_error()
+        Traceback (most recent call last):
+            ...
+        UserWarning: Other errors propogate through.
+    '''#'''
+    def decorator(test_function):
+        def test_wrapper(test_case):
+            try: test_function(test_case)
+            except exception: pass
+            else: test_case.fail('Test unexpectedly passed')
+        return test_wrapper
+    return decorator
+
 def timestamp(seconds=None, static=[None, 0]):
     ''' Creates a game name from the current time.
         This implementation can handle up to fifty games per second;

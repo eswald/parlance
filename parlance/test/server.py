@@ -12,7 +12,7 @@ import unittest
 from time       import sleep, time
 
 from parlance.config     import Configuration, GameOptions, VerboseObject
-from parlance.functions  import num2name
+from parlance.functions  import num2name, fails, failing
 from parlance.gameboard  import Turn
 from parlance.language   import Time
 from parlance.main       import ThreadManager
@@ -320,6 +320,7 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    @failing(ValueError)  # Until the fleet_rome variant is included
     def test_historian_var(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -359,6 +360,8 @@ class Server_Basics(ServerTestCase):
         self.set_option('send_ORD', True)
         self.connect_server()
         self.start_game()
+        sco = self.game.judge.map.create_SCO()
+        now = self.game.judge.map.create_NOW()
         self.game.run_judge()
         self.game.close()
         class Stream(list):
@@ -369,10 +372,10 @@ class Server_Basics(ServerTestCase):
             self.game.listing(),
             MAP (self.game.judge.map_name),
             VAR (self.game.judge.variant_name),
-            self.game.variant.map_mdf,
+            self.game.variant.mdf(),
             HLO (OBS) (0) (self.game.game_options),
-            self.game.variant.start_sco,
-            self.game.variant.start_now,
+            sco,
+            now,
         ] + sorted([
             ORD (SPR, 1901) ([unit], HLD) (SUC)
             for unit in self.game.judge.map.units
@@ -424,6 +427,7 @@ class Server_Basics(ServerTestCase):
         sleep(12)
         game.run()
         self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
+    @failing(ValueError)  # Until the fleet_rome variant is included
     def test_variant_map_name(self):
         ''' Variants should use the name of the map in MAP messages.
             For example, Fleet Rome should use MAP ("standard").
@@ -432,6 +436,7 @@ class Server_Basics(ServerTestCase):
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP ("standard"), player.queue)
+    @failing(ValueError)  # Until the fleet_rome variant is included
     def test_variant_name(self):
         ''' The server should answer a VAR command with the variant name.'''
         self.set_option('variant', 'fleet_rome')
@@ -1015,6 +1020,7 @@ class Server_Multigame(ServerTestCase):
         self.master.admin('Server: start holdbot')
         self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
+    @fails  # Until the sailho variant is included
     def test_sailho_game(self):
         self.new_game('sailho')
         self.failUnlessEqual(len(self.server.games), 2)
@@ -1039,6 +1045,7 @@ class Server_Multigame(ServerTestCase):
                 LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
         self.assertEqual(YES (LST), self.master.queue[-1])
+    @fails  # Until the sailho variant is included
     def test_multigame_LST_reply(self):
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id

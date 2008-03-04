@@ -320,14 +320,14 @@ class JudgeInterface(VerboseObject):
         None for games ended or not yet started.
     '''#'''
     
-    def __init__(self, variant_opts, game_opts):
+    def __init__(self, variant, game_opts):
         ''' Initializes instance variables.'''
         self.__super.__init__()
-        self.map = Map(variant_opts)
+        self.map = Map(variant)
         assert self.map.valid
-        self.mdf = variant_opts.map_mdf
-        self.map_name = variant_opts.map_name
-        self.variant_name = variant_opts.variant
+        self.mdf = variant.mdf()
+        self.map_name = variant.mapname
+        self.variant_name = variant.name
         self.game_opts = game_opts
         self.game_result = None
         self.unready = True
@@ -423,9 +423,9 @@ class Judge(JudgeInterface):
             'Can slow down the game, particularly when syntax-checked by each client.'),
     )
     
-    def __init__(self, variant_opts, game_opts):
+    def __init__(self, variant, game_opts):
         ''' Initializes instance variables.'''
-        self.__super.__init__(variant_opts, game_opts)
+        self.__super.__init__(variant, game_opts)
         self.datc = DatcOptions()
         self.last_orders = [REJ(ORD)]
         self.next_orders = OrderSet()
@@ -554,7 +554,7 @@ class Judge(JudgeInterface):
         self.unready = set()
         self.static = 0
         self.init_turn()
-        return [self.map.opts.start_sco, self.map.opts.start_now]
+        return [self.map.create_NOW(), self.map.create_SCO()]
     def run(self):
         ''' Process orders, whether or not the powers are all ready.
             Returns applicable ORD, NOW, and SCO messages.
