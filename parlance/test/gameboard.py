@@ -72,15 +72,15 @@ class VariantTests(unittest.TestCase):
             judge=Something
         ''')
         self.failUnlessEqual(variant.judge, "Something")
-    def test_default_start(self):
+    def test_default_season(self):
         variant = Variant("testing")
-        self.failUnlessEqual(variant.start, "SPR 0")
-    def test_start_loaded(self):
+        self.failUnlessEqual(variant.start, (SPR, 0))
+    def test_season_loaded(self):
         variant = self.load('''
             [variant]
             start=WIN 2000
         ''')
-        self.failUnlessEqual(variant.start, "WIN 2000")
+        self.failUnlessEqual(variant.start, (WIN, 2000))
     
     def test_default_powers(self):
         variant = Variant("testing")
@@ -822,6 +822,90 @@ class VariantTests(unittest.TestCase):
         TRE = variant.rep["TRE"]
         FUR = variant.rep["FUR"]
         self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
+    
+    def test_now_empty(self):
+        variant = self.load("")
+        self.failUnlessEqual(variant.now(), NOW (SPR, 0))
+    def test_now_season(self):
+        variant = self.load('''
+            [variant]
+            start=WIN 2000
+        ''')
+        season = variant.now().fold()[1]
+        self.failUnlessEqual(season, [WIN, 2000])
+    def test_now_army(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            [positions]
+            ONE=AMY TWO
+            [borders]
+            TWO=AMY
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        units = variant.now().fold()[2:]
+        self.failUnlessEqual(units, [[ONE, AMY, TWO]])
+    def test_now_fleet(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            [positions]
+            ONE=FLT TWO
+            [borders]
+            TWO=FLT
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        units = variant.now().fold()[2:]
+        self.failUnlessEqual(units, [[ONE, FLT, TWO]])
+    def test_now_bicoastal(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            [positions]
+            ONE=FLT TWO NCS
+            [borders]
+            TWO=(FLT SCS), (FLT NCS)
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        units = variant.now().fold()[2:]
+        self.failUnlessEqual(units, [[ONE, FLT, [TWO, NCS]]])
+    def test_now_multiple(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            TRE=FUR
+            [positions]
+            ONE=AMY TWO
+            TRE=AMY FUR
+            [borders]
+            TWO=
+            FUR=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FUR = variant.rep["FUR"]
+        units = variant.now().fold()[2:]
+        self.failUnlessEqual(units, [[ONE, AMY, TWO], [TRE, AMY, FUR]])
+    def test_now_double(self):
+        variant = self.load('''
+            [homes]
+            ONE=TWO
+            TRE=FUR
+            [positions]
+            ONE=AMY TWO, AMY TRE
+            [borders]
+            TWO=
+            TRE=
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        units = variant.now().fold()[2:]
+        self.failUnlessEqual(units, [[ONE, AMY, TWO], [ONE, AMY, TRE]])
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

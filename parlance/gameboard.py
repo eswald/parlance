@@ -47,7 +47,7 @@ class Variant(object):
         self.powers = {}
         self.homes = {}
         self.judge = "standard"
-        self.start = "SPR 0"
+        self.start = (SPR, 0)
         self.seasons = (SPR, SUM, FAL, AUT, WIN)
         self.rep = rep or protocol.default_rep
         
@@ -89,6 +89,21 @@ class Variant(object):
             power = self.rep[name]
             centers = [self.rep[prov] for prov in self.ownership[name]]
             msg = msg(power, *centers)
+        return msg
+    
+    def now(self):
+        msg = NOW(self.start)
+        for name in sorted(self.position):
+            power = self.rep[name]
+            for unit in self.position[name]:
+                bits = [self.rep[prov] for prov in unit.split()]
+                if len(bits) == 2:
+                    site = bits[1]
+                elif len(bits) == 3:
+                    site = (bits[1], bits[2])
+                else:
+                    raise ValueError("Invalid unit spec: %r" % unit)
+                msg = msg(power, bits[0], site)
         return msg
     
     def tokens(self):
@@ -145,8 +160,10 @@ class Variant(object):
                 self.ownership[name] = owned
     
     def parse_variant(self, key, value):
-        if key in ("name", "mapname", "description", "judge", "start"):
+        if key in ("name", "mapname", "description", "judge"):
             setattr(self, key, value)
+        elif key == "start":
+            self.start = tuple(self.rep.translate(value))
     
     def parse_powers(self, key, value):
         if not value:
