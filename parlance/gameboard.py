@@ -158,9 +158,17 @@ class Variant(object):
         if self.position and not self.ownership:
             # Base the default starting ownership on the starting position.
             # This is more often the case than starting with all home centers.
+            homes = set(p for power in self.homes for p in self.homes[power])
             for name in self.position:
-                owned = [unit.split()[1] for unit in self.position[name]]
+                owned = []
+                for unit in self.position[name]:
+                    province = unit.split()[1]
+                    if province in homes:
+                        homes.remove(province)
+                        owned.append(province)
+                owned.sort()
                 self.ownership[name] = owned
+            self.ownership["UNO"] = list(sorted(homes))
     
     def parse_variant(self, key, value):
         if key in ("name", "mapname", "description", "judge"):
@@ -521,10 +529,10 @@ class Map(VerboseObject):
             >>> standard_map.handle_SCO(standard_sco)
             >>> for sc in standard_map.neutral.centers: print sc,
             ... 
-            NWY SWE DEN HOL BEL SPA POR TUN GRE SER RUM BUL
+            BEL BUL DEN GRE HOL NWY POR RUM SER SPA SWE TUN
             >>> for sc in standard_map.powers[ENG].centers: print sc,
             ... 
-            LVP EDI LON
+            EDI LON LVP
             >>> print standard_map.spaces[NWY].owner
             Nobody
             >>> print standard_map.spaces[EDI].owner
@@ -585,8 +593,8 @@ class Map(VerboseObject):
             Returns a list of countries that gained supply centers.
             
             >>> then = Message(standard_now[:])
-            >>> then[21] = RUS
-            >>> then[81] = ENG
+            >>> then[then.index(LON) - 2] = RUS
+            >>> then[then.index(STP) - 3] = ENG
             >>> standard_map.handle_NOW(then)
             >>> countries = standard_map.adjust_ownership()
             >>> ENG == standard_map.spaces[STP].owner

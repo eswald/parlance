@@ -22,7 +22,7 @@ __all__ = ['standard', 'standard_map', 'standard_sco', 'standard_now',
 # Standard map and its various attendants
 standard_map = Map(standard)
 standard_sco = standard.sco()
-standard_now = standard.sco()
+standard_now = standard.now()
 default_rep = protocol.default_rep
 base_rep = protocol.base_rep
 

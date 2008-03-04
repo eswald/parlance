@@ -266,7 +266,7 @@ class Message(list):
             
             >>> units = standard_now.fold()[5:8]
             >>> print NOW (FAL, 1901) % units
-            NOW ( FAL 1901 ) ( ENG FLT LON ) ( ENG FLT EDI ) ( ENG AMY LVP )
+            NOW ( FAL 1901 ) ( ENG FLT EDI ) ( ENG FLT LON ) ( ENG AMY LVP )
         '''#'''
         return reduce(apply, [(item,) for item in other], self)
     

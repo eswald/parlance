@@ -777,6 +777,19 @@ class VariantTests(unittest.TestCase):
     def test_sco_empty(self):
         variant = load_variant("")
         self.failUnlessEqual(variant.sco(), +SCO)
+    def test_sco_neutral(self):
+        variant = load_variant('''
+            [homes]
+            UNO=ONE,TWO
+            [ownership]
+            UNO=ONE,TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        self.failUnlessEqual(variant.sco(), SCO (UNO, ONE, TWO))
     def test_sco_single(self):
         variant = load_variant('''
             [homes]
@@ -822,7 +835,25 @@ class VariantTests(unittest.TestCase):
         TWO = variant.rep["TWO"]
         TRE = variant.rep["TRE"]
         FUR = variant.rep["FUR"]
-        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
+        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR) (UNO))
+    def test_sco_position_neutral(self):
+        variant = load_variant('''
+            [homes]
+            ONE=TWO
+            TRE=TWO
+            [positions]
+            ONE=AMY FUR
+            TRE=AMY FIV
+            [borders]
+            TWO=AMY FUR FIV, FLT FUR
+            FUR=AMY TWO FIV, FLT TWO
+            FIV=AMY TWO FUR
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FIV = variant.rep["FIV"]
+        self.failUnlessEqual(variant.sco(), SCO (ONE) (TRE) (UNO, TWO))
     
     def test_now_empty(self):
         variant = load_variant("")
