@@ -17,7 +17,7 @@ from setuptools import setup
 setup(
     # Provided items
     name = "Parlance",
-    version = "1.4.0",
+    version = "1.4.1",
     packages = ["parlance"],
     entry_points = {
         "console_scripts": [
@@ -45,11 +45,13 @@ setup(
     author = "Eric Wald",
     author_email = "breadman@users.sourceforge.net",
     description = "A framework for playing the Diplomacy board game over a network.",
+    long_description = open('README.txt').read(),
     license = "Artistic License 2.0",
     keywords = "daide diplomacy board game server",
     url = "http://sourceforge.net/projects/parlance/",
+    platform = "Any",
     classifiers = [
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Environment :: Console :: Curses",
         "Environment :: No Input/Output (Daemon)",

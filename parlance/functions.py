@@ -24,7 +24,7 @@ except ImportError:
             return wrapped
         return decorator
 
-__version__ = '1.3.1.x'
+__version__ = '1.4.1.x'
 
 def any(sequence):
     ''' Returns True any item in the sequence is true.
