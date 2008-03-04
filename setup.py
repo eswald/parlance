@@ -65,6 +65,6 @@ setup(
     zip_safe = True,
     test_suite = "parlance.test",
     package_data = {
-        "parlance": ["data/*.html"],
+        "parlance": ["data/*.html", "data/*.cfg"],
     },
 )
