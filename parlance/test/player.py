@@ -11,12 +11,13 @@ r'''Test cases for Parlance clients
 
 import unittest
 
-from parlance.config     import Configuration, GameOptions, variants
+from parlance.config     import Configuration, GameOptions
+from parlance.functions  import fails
 from parlance.language   import Token
 from parlance.player     import AutoObserver, Player, HoldBot
 from parlance.tokens     import *
 from parlance.validation import Validator
-from parlance.xtended    import ENG, FRA, GER
+from parlance.xtended    import ENG, FRA, GER, standard
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -45,7 +46,7 @@ class PlayerTestCase(unittest.TestCase):
         ''' Initializes class variables for test cases.'''
         self.set_verbosity(0)
         Configuration._cache.update(self.game_options)
-        self.variant = variants['standard']
+        self.variant = standard
         opts = GameOptions()
         self.params = opts.get_params()
         self.level = opts.LVL
@@ -81,15 +82,15 @@ class PlayerTestCase(unittest.TestCase):
             msg = self.replies.pop(0)
             if msg[0] is NME: self.accept(msg); break
         else: self.fail('No NME message')
-        self.send(MAP(self.variant.map_name))
+        self.send(MAP(self.variant.mapname))
         while self.replies:
             msg = self.replies.pop(0)
             if msg[0] is MDF: self.send(self.variant.map_mdf)
             elif msg[0] is YES and msg[2] is MAP: break
         else: self.fail('Failed to accept the map')
         self.send_hello()
-        self.send(self.variant.start_sco)
-        self.send(self.variant.start_now)
+        self.send(self.variant.sco())
+        self.send(self.variant.now())
     def assertContains(self, item, series):
         self.failUnless(item in series, 'Expected %r among %r' % (item, series))
 
@@ -130,6 +131,7 @@ class Player_Tests(PlayerTestCase):
         self.player.validator = validator or Validator()
         self.send(REJ(YES))
         self.failUnless(self.player.closed)
+    @fails  # Until the fleet_rome variant is included
     def test_known_map(self):
         self.connect_player(self.Test_Player)
         self.seek_reply(NME (self.player.name) (self.player.version))
@@ -140,7 +142,7 @@ class Player_Tests(PlayerTestCase):
         self.seek_reply(NME (self.player.name) (self.player.version))
         self.send(MAP('unknown'))
         self.seek_reply(+MDF)
-        self.send(variants['fleet_rome'].map_mdf)
+        self.send(standard.mdf())
         self.seek_reply(YES(MAP('unknown')))
     def test_HLO_PDA(self):
         ''' The HLO message should be valid with level 10 parameters.'''
@@ -181,7 +183,7 @@ class Player_Tests(PlayerTestCase):
             msg = self.replies.pop(0)
             if msg[0] is NME: self.accept(msg); break
         else: self.fail('No NME message')
-        msg = MAP(self.variant.map_name.upper())
+        msg = MAP(self.variant.mapname.upper())
         self.send(msg)
         self.seek_reply(YES(msg))
     def test_HUH_bounce(self):

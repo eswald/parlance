@@ -554,7 +554,7 @@ class Judge(JudgeInterface):
         self.unready = set()
         self.static = 0
         self.init_turn()
-        return [self.map.create_NOW(), self.map.create_SCO()]
+        return [self.map.create_SCO(), self.map.create_NOW()]
     def run(self):
         ''' Process orders, whether or not the powers are all ready.
             Returns applicable ORD, NOW, and SCO messages.
