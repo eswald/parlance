@@ -455,8 +455,8 @@ def run_server(server_class, default_verbosity):
     #try: remainder = Configuration.parse_argument_list(argv[1:])
     #except: usage()
     if remainder:
-        if variants.has_key(remainder[0].lower()):
-            Configuration.set_globally('variant', remainder[0].lower())
+        if remainder[0] in variants:
+            Configuration.set_globally('variant', remainder[0])
         else: usage('Unknown variant %r', remainder[0])
     manager = ThreadManager()
     server = ServerSocket(server_class, manager)

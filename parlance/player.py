@@ -19,9 +19,9 @@ from os         import path
 from random     import shuffle
 from time       import ctime
 
-from config     import GameOptions, MapVariant, VerboseObject, variants
+from config     import GameOptions, VerboseObject, variants
 from functions  import s, version_string
-from gameboard  import Map, Turn
+from gameboard  import Map, Turn, Variant
 from language   import Message, Time, Token
 from main       import ThreadManager, run_player
 from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
@@ -190,10 +190,10 @@ class Observer(VerboseObject):
         '''#'''
         if self.use_map:
             mapname = message.fold()[1][0]
-            variant = variants.get(mapname.lower())
-            if not variant:
-                variant = MapVariant(mapname, mapname, {}, self.rep)
-                variants[mapname.lower()] = variant
+            try:
+                variant = variants[mapname]
+            except KeyError:
+                variant = Variant(mapname, rep=self.rep)
             self.map = Map(variant)
             if self.map.valid:
                 if self.process_map():

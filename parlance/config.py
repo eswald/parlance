@@ -387,90 +387,6 @@ class VerboseObject(Configurable):
     @settable_property
     def prefix(self): return self.__class__.__name__
 
-class MapVariant(VerboseObject):
-    ''' Options set by the game variant.
-        - map_name     The name to send in MAP messages
-        - map_mdf      The map definition message
-        - rep          The representation dictionary
-        - start_sco    The initial supply center ownerships
-        - start_now    The initial unit positions
-        - seasons      The list of seasons in a year
-    '''#'''
-    def __init__(self, variant_name, description, files, rep=None):
-        ''' Finds and loads the variant files.
-            This implementation requires rem, mdf, sco, and now files,
-            as distributed by David Norman's server.
-            Throws exceptions if something is wrong.
-        '''#'''
-        from tokens import SPR, SUM, FAL, AUT, WIN
-        self.__super.__init__()
-        self.prefix = '%s(%r)' % (self.__class__.__name__, variant_name)
-        self.variant = variant_name
-        fname = files.get('mdf', variant_name.lower())
-        self.map_name = path.splitext(path.basename(fname))[0]
-        self.description = description
-        self.files = files
-        self.rep = rep or self.get_representation()
-        self.seasons = [SPR, SUM, FAL, AUT, WIN]
-        self.msg_cache  = {}
-    def new_judge(self, game_options):
-        from judge import Judge
-        return Judge(self, game_options)
-    def get_representation(self):
-        from language import protocol
-        filename = self.files.get('rem')
-        if filename: return parse_file(filename, read_representation_file)
-        else: return protocol.default_rep
-    def read_file(self, extension):
-        result = self.msg_cache.get(extension)
-        if not result:
-            filename = self.files.get(extension)
-            if filename:
-                result = self.rep.read_message_file(filename)
-                self.msg_cache[extension] = result
-        return result
-    def cache_msg(self, extension, message):
-        result = self.msg_cache.get(extension)
-        if result and result != message:
-            self.log_debug(7, 'Changing cached "%s" message from "%s" to "%s"',
-                    extension, result, message)
-        self.msg_cache[extension] = message
-    def open_file(self, extension): return file(self.files[extension])
-    map_mdf = property(fget = lambda self: self.read_file('mdf'),
-            fset = lambda self, msg: self.cache_msg('mdf', msg))
-    start_now = property(fget = lambda self: self.read_file('now'),
-            fset = lambda self, msg: self.cache_msg('now', msg))
-    start_sco = property(fget = lambda self: self.read_file('sco'),
-            fset = lambda self, msg: self.cache_msg('sco', msg))
-    
-    @settable_property
-    def names(self):
-        ''' Attempts to read the country and province names from a file.
-            No big deal if it fails, but it's a nice touch.
-        '''#'''
-        names = {}
-        try: name_file = self.open_file('nam')
-        except (KeyError, IOError): return names
-        else:
-            try:
-                from tokens import UNO
-                for line in name_file:
-                    fields = line.strip().split(':')
-                    if fields[0]:
-                        token = self.rep[fields[0].upper()]
-                        if token.is_province():
-                            names[token] = fields[1]
-                        elif token.is_power() or token is UNO:
-                            names[token] = (fields[1], fields[2])
-                        else:
-                            self.log_debug(11,
-                                    "Unknown token type for %r", token)
-            except Exception, err:
-                self.log_debug(1, "Error parsing name file: %s", err)
-            else: self.log_debug(11, "Name file loaded")
-            name_file.close()
-        self.names = names
-        return names
 
 # File parsing
 def parse_file(filename, parser):
@@ -487,46 +403,6 @@ def parse_file(filename, parser):
     try: result = parser(stream)
     finally: stream.close()
     return result
-
-class VariantDict(dict):
-    ''' Simple way to avoid parsing the variants file until we need to.'''
-    __section__ = 'syntax'
-    __options__ = (
-        # path.abspath(__file__) could be useful here.
-        ('variant_file', file, path.join('docs', 'variants.html'), 'variants file',
-            'Document listing the available map variants, with their names and files.'),
-    )
-    
-    def __init__(self):
-        self.options = Configuration()
-        self.options.parse_options(self.__class__)
-    def __getitem__(self, key):
-        if not self: parse_file(self.options.variant_file, self.parse_variants)
-        return dict.__getitem__(self, key)
-    def parse_variants(self, stream):
-        name_pattern = re.compile('<td>(\w[^<]*)</td><td>(\w+)</td>')
-        file_pattern = re.compile("<a href='([^']+)'>(\w+)</a>")
-        descrip = name = None
-        for line in stream:
-            match = name_pattern.search(line)
-            if match:
-                descrip, name = match.groups()
-                files = {}
-            elif name and descrip:
-                match = file_pattern.search(line)
-                if match:
-                    ref, ext = match.groups()
-                    files[ext.lower()] = path.normpath(path.join(
-                        path.dirname(self.options.variant_file), ref))
-                elif '</tr>' in line:
-                    self[name.lower()] = MapVariant(name, descrip, files)
-                    descrip = name = None
-    def has_key(self, key):
-        if not self: parse_file(self.options.variant_file, self.parse_variants)
-        return dict.has_key(self, key)
-    def get(self, key):
-        if not self: parse_file(self.options.variant_file, self.parse_variants)
-        return dict.get(self, key)
 
 def read_representation_file(stream):
     ''' Parses a representation file.
@@ -550,9 +426,6 @@ def read_representation_file(stream):
         else: raise ValueError, 'Wrong number of lines in representation file'
     else: return protocol.default_rep
 
-
-# Global variables
-variants = VariantDict()
 
 # Entry points
 class EntryPointContainer(object):
@@ -580,7 +453,7 @@ class EntryPointContainer(object):
 
 bots = EntryPointContainer("parlance.bots")
 judges = EntryPointContainer("parlance.judges")
-#variants = EntryPointContainer("parlance.variants")
+variants = EntryPointContainer("parlance.variants")
 
 
 class ConfigPrinter(Configuration):

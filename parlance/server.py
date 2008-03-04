@@ -249,8 +249,13 @@ class Server(VerboseObject):
         if match and match.lastindex:
             var_name = match.group(2)
         else: var_name = self.options.variant
-        variant = variants.get(var_name.lower())
-        if variant:
+        
+        try:
+            variant = variants[var_name]
+        except KeyError:
+            if client:
+                client.admin('Unknown variant "%s"', var_name)
+        else:
             game_id = timestamp()
             self.started_games += 1
             if client: client.admin('New game started, with id %s.', game_id)
@@ -260,7 +265,6 @@ class Server(VerboseObject):
             self.manager.add_dynamic(game)
             self.manager.start_clients(game_id)
             return game
-        elif client: client.admin('Unknown variant "%s"', var_name)
         return None
     def select_game(self, client, match):
         game_id = match.group(1)
@@ -269,9 +273,8 @@ class Server(VerboseObject):
         else: client.admin('Unknown game %s.', game_id)
     
     def list_variants(self, client, match):
-        names = variants.keys()
-        names.sort()
-        client.admin('Known map variants: %s', expand_list(names))
+        names = expand_list(sorted(variants))
+        client.admin('Known map variants: %s', names)
     def list_help(self, client, match):
         for line in ([
             #'Begin an admin message with "All:" to send it to all players, not just the ones in the current game.',

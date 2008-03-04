@@ -11,7 +11,6 @@ r'''Parlance standard map environment
 
 from sys       import modules
 
-from config    import variants
 from gameboard import Map, Variant
 from language  import protocol
 
@@ -21,10 +20,9 @@ __all__ = ['standard', 'standard_map', 'standard_sco', 'standard_now',
         'default_rep', 'base_rep']
 
 # Standard map and its various attendants
-opts = variants['standard']
-standard_map = Map(opts)
-standard_sco = opts.start_sco
-standard_now = opts.start_now
+standard_map = Map(standard)
+standard_sco = standard.sco()
+standard_now = standard.sco()
 default_rep = protocol.default_rep
 base_rep = protocol.base_rep
 

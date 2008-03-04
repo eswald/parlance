@@ -782,17 +782,6 @@ class Representation(Configurable):
         ''' Returns a list of token TLAs.'''
         return self.names.keys()
     
-    def read_message_file(self, filename):
-        ''' Reads a Diplomacy message written in a text file.
-            >>> msg = default_rep.read_message_file('variants/standard.sco')
-            >>> msg.fold()[2]
-            [ENG, LVP, EDI, LON]
-        '''#'''
-        message_file = open(filename, 'r', 1)
-        text = str.join(' ', message_file.readlines())
-        message_file.close()
-        return self.translate(text)
-    
     def translate(self, text):
         ''' Translates diplomacy message strings into Messages,
             choosing an escape model based on options.

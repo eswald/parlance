@@ -8,10 +8,10 @@ r'''Test cases for the Parlance gameboard and unit orders
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+import time
 import unittest
 
-from parlance.config     import parse_file, read_representation_file
-from parlance.config     import MapVariant, variants
+from parlance.config     import variants
 from parlance.functions  import fails
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
@@ -21,26 +21,27 @@ from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
 
+def load_variant(information):
+    variant = Variant("testing")
+    variant.parse(line.strip() for line in information.splitlines())
+    variant.rep = variant.tokens()
+    return variant
+
 class VariantTests(unittest.TestCase):
     "Tests for loading information from a variant file"
-    def load(self, information):
-        variant = Variant("testing")
-        variant.parse(line.strip() for line in information.splitlines())
-        variant.rep = variant.tokens()
-        return variant
     def assertContains(self, container, item):
         if item not in container:
             raise self.failureException, '%s not in %s' % (item, container)
     
     def test_parse_empty(self):
         # Variant.parse() must be able to handle an empty stream
-        variant = self.load("")
+        variant = load_variant("")
     
     def test_default_name(self):
         variant = Variant("testing")
         self.failUnlessEqual(variant.name, "testing")
     def test_name_loaded(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             name=Something
         ''')
@@ -49,7 +50,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.mapname, "testing")
     def test_mapname_loaded(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             mapname=Something
         ''')
@@ -58,7 +59,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.description, "")
     def test_description_loaded(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             description=Something
         ''')
@@ -67,7 +68,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.judge, "standard")
     def test_judge_loaded(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             judge=Something
         ''')
@@ -76,7 +77,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.start, (SPR, 0))
     def test_season_loaded(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             start=WIN 2000
         ''')
@@ -86,7 +87,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.powers, {})
     def test_powers_both(self):
-        variant = self.load('''
+        variant = load_variant('''
             [powers]
             ONE=name,adj
         ''')
@@ -94,7 +95,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": ("name", "adj"),
         })
     def test_powers_name(self):
-        variant = self.load('''
+        variant = load_variant('''
             [powers]
             TWO=someone
         ''')
@@ -102,7 +103,7 @@ class VariantTests(unittest.TestCase):
                 "TWO": ("someone", "someone"),
         })
     def test_powers_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [powers]
             TRE=
         ''')
@@ -110,7 +111,7 @@ class VariantTests(unittest.TestCase):
                 "TRE": ("TRE", "TRE"),
         })
     def test_powers_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [powers]
             ONE=name,adj
             TWO=someone,somewhere
@@ -124,19 +125,19 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.provinces, {})
     def test_provinces_name(self):
-        variant = self.load('''
+        variant = load_variant('''
             [provinces]
             TWO=somewhere
         ''')
         self.failUnlessEqual(variant.provinces, {"TWO": "somewhere"})
     def test_provinces_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [provinces]
             ONE=
         ''')
         self.failUnlessEqual(variant.provinces, {"ONE": "ONE"})
     def test_provinces_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [provinces]
             ONE=name
             TWO=somewhere
@@ -150,7 +151,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.homes, {})
     def test_homes_many(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO,TRE,FUR
         ''')
@@ -158,19 +159,19 @@ class VariantTests(unittest.TestCase):
                 "ONE": ["TWO", "TRE", "FUR"],
         })
     def test_homes_one(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
         ''')
         self.failUnlessEqual(variant.homes, {"ONE": ["TWO"]})
     def test_homes_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=
         ''')
         self.failUnlessEqual(variant.homes, {"ONE": []})
     def test_homes_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TRE,FIV
             TWO=FUR,SIX
@@ -180,13 +181,13 @@ class VariantTests(unittest.TestCase):
                 "TWO": ["FUR", "SIX"],
         })
     def test_homes_comma(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO,TRE,
         ''')
         self.failUnlessEqual(variant.homes, {"ONE": ["TWO", "TRE"]})
     def test_homes_spaces(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO, TRE, FUR
         ''')
@@ -198,7 +199,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.ownership, {})
     def test_ownership_many(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=TWO,TRE,FUR
         ''')
@@ -206,19 +207,19 @@ class VariantTests(unittest.TestCase):
                 "ONE": ["TWO", "TRE", "FUR"],
         })
     def test_ownership_one(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=TWO
         ''')
         self.failUnlessEqual(variant.ownership, {"ONE": ["TWO"]})
     def test_ownership_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=
         ''')
         self.failUnlessEqual(variant.ownership, {"ONE": []})
     def test_ownership_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=TRE,FIV
             TWO=FUR,SIX
@@ -228,13 +229,13 @@ class VariantTests(unittest.TestCase):
                 "TWO": ["FUR", "SIX"],
         })
     def test_ownership_comma(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=TWO,TRE,
         ''')
         self.failUnlessEqual(variant.ownership, {"ONE": ["TWO", "TRE"]})
     def test_ownership_spaces(self):
-        variant = self.load('''
+        variant = load_variant('''
             [ownership]
             ONE=TWO, TRE, FUR
         ''')
@@ -246,7 +247,7 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.position, {})
     def test_position_many(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=AMY TWO,AMY TRE,FLT FUR
         ''')
@@ -254,19 +255,19 @@ class VariantTests(unittest.TestCase):
                 "ONE": ["AMY TWO", "AMY TRE", "FLT FUR"],
         })
     def test_position_one(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=AMY TWO
         ''')
         self.failUnlessEqual(variant.position, {"ONE": ["AMY TWO"]})
     def test_position_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=
         ''')
         self.failUnlessEqual(variant.position, {"ONE": []})
     def test_position_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=AMY TRE,FLT FIV
             TWO=AMY FUR,FLT SIX
@@ -276,7 +277,7 @@ class VariantTests(unittest.TestCase):
                 "TWO": ["AMY FUR", "FLT SIX"],
         })
     def test_position_comma(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=AMY TWO,FLT TRE,
         ''')
@@ -284,7 +285,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": ["AMY TWO", "FLT TRE"],
         })
     def test_position_spaces(self):
-        variant = self.load('''
+        variant = load_variant('''
             [positions]
             ONE=AMY TWO, AMY TRE, FLT FUR
         ''')
@@ -296,13 +297,13 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing")
         self.failUnlessEqual(variant.borders, {})
     def test_borders_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=
         ''')
         self.failUnlessEqual(variant.borders, {"ONE": {}})
     def test_borders_army(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO TRE FUR
         ''')
@@ -310,7 +311,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": {AMY: "TWO TRE FUR"},
         })
     def test_borders_swiss(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY
         ''')
@@ -318,7 +319,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": {AMY: ""},
         })
     def test_borders_island(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY, FLT TWO
         ''')
@@ -329,7 +330,7 @@ class VariantTests(unittest.TestCase):
                 },
         })
     def test_borders_fleet(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT TWO TRE FUR
         ''')
@@ -337,7 +338,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": {FLT: "TWO TRE FUR"},
         })
     def test_borders_lake(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT
         ''')
@@ -345,7 +346,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": {FLT: ""},
         })
     def test_borders_coastal(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, FLT TRE
         ''')
@@ -356,7 +357,7 @@ class VariantTests(unittest.TestCase):
                 },
         })
     def test_borders_coastlines(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, (FLT SCS) TRE, (FLT NCS) FUR
         ''')
@@ -368,7 +369,7 @@ class VariantTests(unittest.TestCase):
                 },
         })
     def test_bordering_coastline(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT (TRE SCS)
         ''')
@@ -386,10 +387,10 @@ class VariantTests(unittest.TestCase):
         variant = Variant("testing", rep=rep)
         self.failUnlessEqual(variant.rep, rep)
     def test_rep_empty(self):
-        variant = self.load("")
+        variant = load_variant("")
         self.failUnlessEqual(variant.rep, {})
     def test_rep_inland(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO
         ''')
@@ -397,7 +398,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5000,
         })
     def test_rep_inland_sc(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE
             [borders]
@@ -407,7 +408,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5100,
         })
     def test_rep_inland_home(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE
             [borders]
@@ -418,7 +419,7 @@ class VariantTests(unittest.TestCase):
                 "TRE": 0x4100,
         })
     def test_rep_sea(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT TWO
         ''')
@@ -426,7 +427,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5200,
         })
     def test_rep_sea_sc(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE
             [borders]
@@ -436,7 +437,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5300,
         })
     def test_rep_sea_home(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE
             [borders]
@@ -447,7 +448,7 @@ class VariantTests(unittest.TestCase):
                 "TRE": 0x4100,
         })
     def test_rep_coastal(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, FLT FUR
         ''')
@@ -455,7 +456,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5400,
         })
     def test_rep_coastal_sc(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE
             [borders]
@@ -465,7 +466,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5500,
         })
     def test_rep_coastal_home(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE
             [borders]
@@ -476,7 +477,7 @@ class VariantTests(unittest.TestCase):
                 "TRE": 0x4100,
         })
     def test_rep_bicoastal(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, (FLT NCS) FUR, (FLT SCS) SIX
         ''')
@@ -484,7 +485,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5600,
         })
     def test_rep_bicoastal_sc(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE
             [borders]
@@ -494,7 +495,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x5700,
         })
     def test_rep_bicoastal_home(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE
             [borders]
@@ -505,7 +506,7 @@ class VariantTests(unittest.TestCase):
                 "TRE": 0x4100,
         })
     def test_rep_two_inland(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO
             TWO=AMY ONE
@@ -515,7 +516,7 @@ class VariantTests(unittest.TestCase):
                 "TWO": 0x5001,
         })
     def test_rep_two_inland_swapped(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             TWO=AMY ONE
             ONE=AMY TWO
@@ -525,7 +526,7 @@ class VariantTests(unittest.TestCase):
                 "TWO": 0x5001,
         })
     def test_rep_categories(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, FLT TWO
             TWO=AMY ONE
@@ -535,7 +536,7 @@ class VariantTests(unittest.TestCase):
                 "TWO": 0x5000,
         })
     def test_rep_power(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
         ''')
@@ -543,7 +544,7 @@ class VariantTests(unittest.TestCase):
                 "ONE": 0x4100,
         })
     def test_rep_powers(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             TRE=TWO
@@ -553,25 +554,25 @@ class VariantTests(unittest.TestCase):
                 "TRE": 0x4101,
         })
     def test_rep_type(self):
-        variant = self.load("")
+        variant = load_variant("")
         self.failUnlessEqual(type(variant.rep), Representation)
     def test_rep_standard(self):
         # Final exam: Does the standard map match the protocol?
         self.failUnlessEqual(standard.tokens(), protocol.default_rep)
     
     def test_mdf_empty(self):
-        variant = self.load("")
+        variant = load_variant("")
         mdf = MDF () ([], []) ()
         self.failUnlessEqual(variant.mdf(), mdf)
     def test_mdf_neutral(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=
         ''')
         powers = variant.mdf().fold()[1]
         self.failUnlessEqual([], powers)
     def test_mdf_power(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=
         ''')
@@ -579,14 +580,14 @@ class VariantTests(unittest.TestCase):
         powers = variant.mdf().fold()[1]
         self.failUnlessEqual([ONE], powers)
     def test_mdf_neutral_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=
         ''')
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[UNO]], centers)
     def test_mdf_neutral_center(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE
             [borders]
@@ -596,7 +597,7 @@ class VariantTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[UNO, ONE]], centers)
     def test_mdf_neutral_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=ONE,TWO
             [borders]
@@ -608,7 +609,7 @@ class VariantTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[UNO, ONE, TWO]], centers)
     def test_mdf_homes_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=
         ''')
@@ -616,7 +617,7 @@ class VariantTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[ONE]], centers)
     def test_mdf_homes_center(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE
             [borders]
@@ -627,7 +628,7 @@ class VariantTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[TRE, ONE]], centers)
     def test_mdf_homes_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=ONE,TWO
             [borders]
@@ -640,7 +641,7 @@ class VariantTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[TRE, ONE, TWO]], centers)
     def test_mdf_prov(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY
         ''')
@@ -648,7 +649,7 @@ class VariantTests(unittest.TestCase):
         provs = variant.mdf().fold()[2][1]
         self.failUnlessEqual(provs, [ONE])
     def test_mdf_provs(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO
             TWO=AMY ONE
@@ -658,7 +659,7 @@ class VariantTests(unittest.TestCase):
         provs = variant.mdf().fold()[2][1]
         self.failUnlessEqual(provs, [ONE, TWO])
     def test_mdf_provs_without_center(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             UNO=TWO
             [borders]
@@ -669,7 +670,7 @@ class VariantTests(unittest.TestCase):
         provs = variant.mdf().fold()[2][1]
         self.failUnlessEqual(provs, [ONE])
     def test_mdf_provs_without_home(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             TRE=TWO
             [borders]
@@ -680,13 +681,13 @@ class VariantTests(unittest.TestCase):
         provs = variant.mdf().fold()[2][1]
         self.failUnlessEqual(provs, [ONE])
     def test_mdf_borders_empty(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
         ''')
         borders = variant.mdf().fold()[3]
         self.failUnlessEqual(borders, [])
     def test_mdf_borders_swiss(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY
         ''')
@@ -694,7 +695,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.failUnlessEqual(borders, [[ONE, [AMY]]])
     def test_mdf_borders_inland(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO TRE
             TWO=
@@ -706,7 +707,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.assertContains(borders, [ONE, [AMY, TWO, TRE]])
     def test_mdf_borders_island(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY, FLT TWO
             TWO=
@@ -716,7 +717,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.assertContains(borders, [ONE, [AMY], [FLT, TWO]])
     def test_mdf_borders_sea(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT TWO TRE
             TWO=
@@ -728,7 +729,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.assertContains(borders, [ONE, [FLT, TWO, TRE]])
     def test_mdf_borders_lake(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT
         ''')
@@ -736,7 +737,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.failUnlessEqual(borders, [[ONE, [FLT]]])
     def test_mdf_borders_coastal(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, FLT TRE
             TWO=
@@ -748,7 +749,7 @@ class VariantTests(unittest.TestCase):
         borders = variant.mdf().fold()[3]
         self.assertContains(borders, [ONE, [AMY, TWO], [FLT, TRE]])
     def test_mdf_borders_coastlines(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=AMY TWO, (FLT SCS) TRE, (FLT NCS) FUR
             TWO=
@@ -763,7 +764,7 @@ class VariantTests(unittest.TestCase):
         self.assertContains(borders,
             [ONE, [AMY, TWO], [[FLT, SCS], TRE], [[FLT, NCS], FUR]])
     def test_mdf_bordering_coastline(self):
-        variant = self.load('''
+        variant = load_variant('''
             [borders]
             ONE=FLT (TWO SCS)
             TWO=
@@ -774,10 +775,10 @@ class VariantTests(unittest.TestCase):
         self.assertContains(borders, [ONE, [FLT, [TWO, SCS]]])
     
     def test_sco_empty(self):
-        variant = self.load("")
+        variant = load_variant("")
         self.failUnlessEqual(variant.sco(), +SCO)
     def test_sco_single(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             [ownership]
@@ -789,7 +790,7 @@ class VariantTests(unittest.TestCase):
         TWO = variant.rep["TWO"]
         self.failUnlessEqual(variant.sco(), SCO (ONE, TWO))
     def test_sco_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             TRE=FUR
@@ -806,7 +807,7 @@ class VariantTests(unittest.TestCase):
         FUR = variant.rep["FUR"]
         self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
     def test_sco_position(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=FUR
             TRE=TWO
@@ -824,17 +825,17 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
     
     def test_now_empty(self):
-        variant = self.load("")
+        variant = load_variant("")
         self.failUnlessEqual(variant.now(), NOW (SPR, 0))
     def test_now_season(self):
-        variant = self.load('''
+        variant = load_variant('''
             [variant]
             start=WIN 2000
         ''')
         season = variant.now().fold()[1]
         self.failUnlessEqual(season, [WIN, 2000])
     def test_now_army(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             [positions]
@@ -847,7 +848,7 @@ class VariantTests(unittest.TestCase):
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, AMY, TWO]])
     def test_now_fleet(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             [positions]
@@ -860,7 +861,7 @@ class VariantTests(unittest.TestCase):
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, FLT, TWO]])
     def test_now_bicoastal(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             [positions]
@@ -873,7 +874,7 @@ class VariantTests(unittest.TestCase):
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, FLT, [TWO, NCS]]])
     def test_now_multiple(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             TRE=FUR
@@ -891,7 +892,7 @@ class VariantTests(unittest.TestCase):
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, AMY, TWO], [TRE, AMY, FUR]])
     def test_now_double(self):
-        variant = self.load('''
+        variant = load_variant('''
             [homes]
             ONE=TWO
             TRE=FUR
@@ -998,18 +999,21 @@ class Map_Bugfix(unittest.TestCase):
              (yor(AMY edi lon lvp wal)(FLT edi nth lon))
             )
         '''#'''
-        standard = variants['standard']
-        options = MapVariant(standard.variant,
-            standard.description, standard.files)
-        options.map_mdf = options.rep.translate(mdf)
-        options.map_name = 'standard_empty_UNO'
+        options = Variant("testing")
+        mdf = options.rep.translate(mdf)
         game_map = Map(options)
-        if not game_map.valid: self.fail(game_map.define(options.map_mdf))
+        msg = game_map.define(mdf)
+        self.failIf(msg, msg)
     def test_island_Pale(self):
-        ''' Check for The Pale in Hundred3, which is an island.'''
-        options = variants['hundred3']
-        game_map = Map(options)
-        prov = options.rep['PAL']
+        "Check that Map can handle island provinces."
+        variant = load_variant('''
+            [borders]
+            ONE=AMY, FLT TWO, FLT TRE
+            TWO=FLT TRE, FLT ONE
+            TRE=FLT TWO, FLT ONE
+        ''')
+        game_map = Map(variant)
+        prov = variant.rep['ONE']
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
         coast = game_map.coasts[(AMY, prov, None)]
         self.failUnless(coast.is_valid())
@@ -1018,21 +1022,113 @@ class Map_Bugfix(unittest.TestCase):
         ''' Test whether Province can define island spaces.'''
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)
         self.failUnless(island.is_valid())
+    @fails  # MDF messages no longer get cached.
     def test_cache_mdf(self):
-        opts = MapVariant('testing', 'Test map', {})
-        Map(opts).handle_MDF(variants['standard'].map_mdf)
+        opts = Variant('testing')
+        Map(opts).handle_MDF(standard.mdf())
         new_map = Map(opts)
         self.failUnless(new_map.valid)
+    def test_power_names(self):
+        variant = load_variant('''
+            [powers]
+            ONE=Somebody,Someone's
+            [homes]
+            ONE=
+            [borders]
+            TWO=AMY TRE
+            TRE=AMY TWO
+        ''')
+        board = Map(variant)
+        power = board.powers[variant.rep["ONE"]]
+        self.failUnlessEqual(power.name, "Somebody")
+    def test_province_names(self):
+        variant = load_variant('''
+            [provinces]
+            TWO=Somewhere
+            [homes]
+            ONE=
+            [borders]
+            TWO=AMY TRE
+            TRE=AMY TWO
+        ''')
+        board = Map(variant)
+        province = board.spaces[variant.rep["TWO"]]
+        self.failUnlessEqual(province.name, "Somewhere")
 
 class Coast_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Coast class'''
     def test_infinite_convoy(self):
-        variant = variants['americas4']
+        # Originally notices in the Americas4 variant.
+        variant = load_variant('''
+            [borders]
+            ALA=AMY NCA NWT, FLT BEA BER GOA NCA NPO NWT
+            ORE=AMY CAL NCA, FLT CAL GOA NCA NPO
+            NWT=AMY ALA NCA, FLT ALA ARC BEA HUD LAB
+            CAL=AMY ORE, FLT GSC NPO ORE
+            NCA=AMY ALA NWT ORE, FLT ALA GOA ORE
+            ACH=FLT ECB MAO SAR
+            AGU=FLT CGU HUM SPO
+            ARC=FLT BEA LAB NAO NWT
+            APP=FLT FST GOM
+            BBL=FLT BGR RLP SAO
+            BEA=FLT ALA ARC BER NWT
+            BER=FLT ALA BEA NPO
+            BGR=FLT BBL DRA SAO
+            BTR=FLT NAO NTH SAR STH
+            CGU=FLT AGU DRA SPO
+            CHG=FLT GFO GOG GOP MPO
+            COB=FLT GBA MAO SAO
+            COM=FLT GOT MPO SOC
+            COP=FLT GOG HUM SPO
+            CPO=FLT MPO NPO SPO
+            DRA=FLT BGR CGU SAO SPO
+            ECB=FLT ACH GOU GOV NCB SAR WCB
+            FST=FLT APP GOM SCH
+            GBA=FLT COB PBA SAO
+            GOA=FLT ALA NCA NPO ORE
+            GOC=FLT GOM
+            GFO=FLT CHG GOT MPO
+            GOG=FLT CHG COP GOP SPO
+            GOH=FLT WCB
+            GOM=FLT APP FST GOC SOY
+            GOP=FLT CHG GOG
+            GOS=FLT LAB NAO
+            GOT=FLT COM GFO MPO
+            GOU=FLT ECB GOV MOS WCB
+            GOV=FLT ECB GOU
+            GSC=FLT CAL MPO NPO
+            GSE=FLT MAO MBA
+            HUD=FLT LAB NWT
+            HUM=FLT AGU COP SPO
+            LAB=FLT ARC GOS HUD NAO NWT
+            MAO=FLT ACH COB GSE MBA NAO SAO SAR
+            MAS=FLT NAO NTH
+            MBA=FLT GSE MAO
+            MOS=FLT GOU WCB
+            MPO=FLT CHG COM CPO GFO GOT GSC NPO SOC SPO
+            NAO=FLT ARC BTR GOS LAB MAO MAS NTH SAR
+            NCB=FLT ECB SCH SOY WCB
+            NTH=FLT BTR MAS NAO STH
+            NPO=FLT ALA BER CAL CPO GOA GSC MPO ORE
+            PBA=FLT GBA RLP SAO
+            RLP=FLT BBL PBA SAO
+            SAO=FLT BBL BGR COB DRA GBA MAO PBA RLP
+            SAR=FLT ACH BTR ECB MAO NAO SCH STH
+            SCH=FLT FST NCB SAR STH
+            STH=FLT BTR NTH SAR SCH
+            SOC=FLT COM MPO
+            SOY=FLT GOM NCB WCB
+            SPO=FLT AGU CGU COP CPO DRA GOG HUM MPO
+            WCB=FLT ECB GOH GOU MOS NCB SOY
+        ''')
         board = Map(variant)
         Alaska = board.spaces[variant.rep['ALA']]
         Oregon = board.coasts[(AMY, variant.rep['ORE'], None)]
+        start = time.time()
         results = Oregon.convoy_routes(Alaska, board)
+        finish = time.time()
         self.failUnlessEqual(results, [])
+        self.failUnless(finish - start < 1, "convoy_routes() took too long.")
 
 class Order_Strings(unittest.TestCase):
     def check_order(self, order, result):
@@ -1133,9 +1229,7 @@ class Gameboard_Doctests(unittest.TestCase):
         
         self.failIf(Validator().validate_server_message(mdf),
                 'Invalid MDF message')
-        m = Map(MapVariant('simplified',
-            'Small board for testing purposes', {},
-            protocol.default_rep))
+        m = Map(Variant('simplified'))
         self.failIf(m.valid, 'Map valid before MDF')
         result = m.define(mdf)
         self.failIf(result, result)
@@ -1156,15 +1250,5 @@ class Gameboard_Doctests(unittest.TestCase):
     def test_turn_phase_name(self):
         t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
-    
-    # Tests from other modules
-    def test_read_representation_file(self):
-        ''' Tests the config.read_representation_file() function.'''
-        rep = parse_file('variants/sailho.rem', read_representation_file)
-        self.failUnlessEqual(repr(rep['NTH']), "Token('NTH', 0x4100)")
-        
-        # This used to be 'Psy'; it was probably changed for consistency.
-        self.failUnlessEqual(repr(rep[0x563B]), "Token('PSY', 0x563B)")
-        self.failUnlessEqual(len(rep), 64)
 
 if __name__ == '__main__': unittest.main()

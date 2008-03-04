@@ -12,7 +12,7 @@ r'''Parlance gameboard classes
 from itertools import chain, count
 from pkg_resources import split_sections
 
-from config      import Configuration, VerboseObject, parse_file
+from config      import Configuration, VerboseObject, judges, parse_file
 from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
 from language    import Message, Representation, Token, protocol
 from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
@@ -24,7 +24,7 @@ def location_key(unit_type, loc):
 class Variant(object):
     r'''Representation of a map or rule variant
         - name         The name of the variant itself
-        - map_name     The name to send in MAP messages
+        - mapname      The name to send in MAP messages
         - description  Brief description for help lists
         - ownership    The initial supply center ownerships
         - position     The initial unit positions
@@ -144,6 +144,9 @@ class Variant(object):
         
         return Representation(numbers, protocol.default_rep)
     
+    def new_judge(self, options):
+        return judges[self.judge](self, options)
+    
     def parse(self, stream):
         "Collects information file from a configuration file."
         for section, lines in split_sections(stream):
@@ -215,16 +218,17 @@ class Map(VerboseObject):
             - neutral:  A Power representing the neutral supply centers
     '''#'''
     
-    def __init__(self, options):
-        ''' Initializes the map from a MapVariant instance.'''
+    def __init__(self, variant):
+        ''' Initializes the map from a Variant instance.'''
         self.__super.__init__()
         self.powers  = {}
-        self.opts    = options
-        self.name    = options.map_name
-        self.prefix  = options.variant + ' map'
-        self.valid   = options.map_mdf and not self.define(options.map_mdf)
-        self.current_turn = Turn(options.seasons[0], 0, options.seasons, 0)
-        self.restart()
+        self.variant = variant
+        self.name    = variant.mapname
+        self.prefix  = variant.name + ' map'
+        season, year = variant.start
+        self.current_turn = Turn(season, year, variant.seasons)
+        self.valid = variant.borders and not self.define(variant.mdf())
+        if self.valid: self.restart()
     def __str__(self): return "Map(%r)" % self.name
     
     def define(self, message):
@@ -233,7 +237,8 @@ class Map(VerboseObject):
             which is empty if creation succeeded.
             Note: This routine does not set self.valid.
         '''#'''
-        names = self.opts.names
+        power_names = self.variant.powers
+        province_names = self.variant.provinces
         
         (mdf, powers, provinces, adjacencies) = message.fold()
         (centres, non_centres) = provinces
@@ -255,9 +260,11 @@ class Map(VerboseObject):
         
         pows = {}
         for country, homes in pow_homes.iteritems():
-            pows[country] = Power(country, homes, *names.get(country, ()))
+            pows[country] = Power(country, homes,
+                *power_names.get(country.text, ()))
         self.powers = pows
-        self.neutral = Power(UNO, (), *names.get(UNO, ('Nobody', 'Neutral')))
+        self.neutral = Power(UNO, (),
+            *power_names.get("UNO", ("Nobody", "Neutral")))
         
         provs = {}
         coasts = {}
@@ -270,7 +277,7 @@ class Map(VerboseObject):
             elif is_sc: home = prov_homes[prov]
             else:       home = None
             
-            province = Province(prov, adj, home, names.get(prov))
+            province = Province(prov, adj, home, province_names.get(prov.text))
             provs[prov] = province
             for coast in province.coasts: coasts[coast.key] = coast
         for key,coast in coasts.iteritems():
@@ -284,8 +291,8 @@ class Map(VerboseObject):
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
         else: return ''
     def restart(self):
-        if self.opts.start_sco: self.handle_SCO(self.opts.start_sco)
-        if self.opts.start_now: self.handle_NOW(self.opts.start_now)
+        if self.variant.ownership: self.handle_SCO(self.variant.sco())
+        if self.variant.position: self.handle_NOW(self.variant.now())
     
     # Information gathering
     def current_powers(self):
@@ -508,7 +515,6 @@ class Map(VerboseObject):
     # Message handlers
     def handle_MDF(self, message):
         ''' Handles the MDF command, loading province information.'''
-        if not self.opts.map_mdf: self.opts.map_mdf = message
         self.valid = not self.define(message)
     def handle_SCO(self, message):
         ''' Handles the SCO command, loading center ownership information.
