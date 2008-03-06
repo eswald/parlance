@@ -9,8 +9,12 @@ r'''Parlance setup script
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-from ez_setup import use_setuptools
-use_setuptools()
+try:
+    from setuptools import setup
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
 from setuptools import setup
 
