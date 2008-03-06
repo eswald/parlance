@@ -8,25 +8,30 @@ r'''Test cases for Parlance bots
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+import unittest
+
+from parlance.player       import HoldBot
+from parlance.player       import HUH, SUB
+from parlance.test.player  import PlayerTestCase
+from parlance.test.network import NetworkTestCase
+
 from blabberbot       import BlabberBot
 from dumbbot          import DumbBot
 from evilbot          import EvilBot
 from neurotic         import Neurotic
 from project20m       import Project20M
-from unittest_player  import PlayerTestCase
-from unittest_network import NetworkTestCase
 
 class Player_Bots(PlayerTestCase):
-    def setUp(self):
+    def connect_player(self, bot_class, **kwargs):
+        PlayerTestCase.connect_player(self, bot_class, **kwargs)
         def handle_THX(player, message):
             ''' Fail on bad order submission.'''
             self.fail('Invalid order submitted: ' + str(message))
         def handle_MIS(player, message):
             ''' Fail on incomplete order submission.'''
             self.fail('Missing orders: ' + str(message))
-        PlayerTestCase.setUp(self)
-        Player.handle_THX = handle_THX
-        Player.handle_MIS = handle_MIS
+        self.player.handle_THX = handle_THX
+        self.player.handle_MIS = handle_MIS
     def attempt_one_phase(self, bot_class):
         ''' Demonstrates that the given bot can at least start up
             and submit a complete set of orders for the first season.
@@ -57,7 +62,8 @@ class Player_Bots(PlayerTestCase):
                 for message in self.replies if message[0] == SUB]
         self.failUnlessEqual(first_result, second_result)
 
-class Network_Full_Games(NetworkTestCase):
+class FullBotGames(NetworkTestCase):
+    "Functional tests, pitting bots against each other."
     def test_one_dumbbot(self):
         ''' Six drawing holdbots and a dumbbot'''
         self.set_verbosity(1)
@@ -65,7 +71,7 @@ class Network_Full_Games(NetworkTestCase):
                 HoldBot, HoldBot, HoldBot, HoldBot])
     def test_dumbbots(self):
         ''' seven dumbbots, quick game'''
-        self.set_verbosity(1)
+        self.set_verbosity(5)
         self.connect_server([DumbBot] * 7)
     def test_evilbots(self):
         ''' Six drawing evilbots and a holdbot'''

@@ -9,7 +9,7 @@ import math
 import random
 import string
 
-from config import VerboseObject
+from parlance.config import VerboseObject
 
 random.seed()
 

@@ -3,10 +3,10 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from thread       import allocate_lock
+from thread import allocate_lock
 
-from dumbbot      import DumbBot
-from orders       import OrderSet
+from parlance.orders import OrderSet
+from dumbbot import DumbBot
 
 class EvilBot(DumbBot):
     ''' A cheating scumball.
@@ -104,5 +104,5 @@ class EvilBot(DumbBot):
 
 
 if __name__ == "__main__":
-    from main import run_player
+    from parlance.main import run_player
     run_player(EvilBot)

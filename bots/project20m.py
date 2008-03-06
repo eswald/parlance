@@ -4,13 +4,13 @@
     Project20M has since been placed into the Public Domain.
 '''#'''
 
-from random       import random
+from random import random
 
-from config       import VerboseObject
-from gameboard    import Power, Province, Unit
-from orders       import *
-from player       import Player
-from tokens       import AMY, FLT, SPR, SUM, WIN
+from parlance.config    import VerboseObject
+from parlance.gameboard import Power, Province, Unit
+from parlance.orders    import *
+from parlance.player    import Player
+from parlance.tokens    import AMY, FLT, SPR, SUM, WIN
 
 class Project20M(Player):
     ''' A clone of Andrew Huff's bot.

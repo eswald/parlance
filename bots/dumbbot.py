@@ -18,16 +18,16 @@
      **/
 '''#'''
 
-from copy         import copy
-from random       import randint, random, shuffle
-from time         import ctime
+from copy   import copy
+from random import randint, random, shuffle
+from time   import ctime
 
-from config       import Configuration, stringlist
-from functions    import defaultdict, expand_list
-from gameboard    import Unit
-from orders       import *
-from player       import Player
-from tokens       import AUT, FAL, SPR, SUM, UNO, WIN
+from parlance.config    import Configuration, stringlist
+from parlance.functions import defaultdict, expand_list
+from parlance.gameboard import Unit
+from parlance.orders    import *
+from parlance.player    import Player
+from parlance.tokens    import AUT, FAL, SPR, SUM, UNO, WIN
 
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10
@@ -814,5 +814,5 @@ class DumbBot(Player):
 
 
 if __name__ == "__main__":
-    from main import run_player
+    from parlance.main import run_player
     run_player(DumbBot)

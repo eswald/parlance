@@ -3,12 +3,14 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from random       import choice, random, randrange, shuffle
+from random import choice, random, randrange, shuffle
 
-from dumbbot      import DumbBot
-from language     import IntegerToken, Message, StringToken, Token, protocol
-from tokens       import BWX, ECS, HUH, NCS, NEC, REJ, SEC, SCS, TRY, WCS, YES
-from validation   import Validator
+from parlance.language import IntegerToken, \
+        Message, StringToken, Token, protocol
+from parlance.tokens import BWX, ECS, HUH, \
+        NCS, NEC, REJ, SEC, SCS, TRY, WCS, YES
+from parlance.validation import Validator
+from dumbbot import DumbBot
 
 class BlabberBot(DumbBot):
     ''' Senseless, ceaseless ramblings.
@@ -132,5 +134,5 @@ class BlabberBot(DumbBot):
 
 
 if __name__ == "__main__":
-    from main import run_player
+    from parlance.main import run_player
     run_player(BlabberBot)

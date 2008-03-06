@@ -3,18 +3,19 @@
     Licensed under the Open Software License version 3.0
 '''#'''
 
-from cPickle      import Pickler, Unpickler
-from math         import sqrt
-from time         import ctime
+from cPickle import Pickler, Unpickler
+from math    import sqrt
+from time    import ctime
 
-from bpnn         import NN
-from config       import VerboseObject
-from functions    import defaultdict
-from gameboard    import Turn, Unit
-from judge        import DatcOptions
-from orders       import *
-from player       import Player
-from tokens       import MBV
+from parlance.config    import VerboseObject
+from parlance.functions import defaultdict
+from parlance.gameboard import Turn, Unit
+from parlance.judge     import DatcOptions
+from parlance.orders    import *
+from parlance.player    import Player
+from parlance.tokens    import MBV
+
+from bpnn import NN
 
 class Brain(VerboseObject):
     ''' Stores the neural networks for Neurotic bots.
