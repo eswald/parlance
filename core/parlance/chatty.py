@@ -39,8 +39,8 @@ class Chatty(Observer):
     def handle_SCO(self, message):
         dists = message.fold()[1:]
         dists.sort()
-        self.output('Supply Centres: ' + '; '.join(
-            ['%s, %d' % (dist[0], len(dist) - 1) for dist in dists]))
+        self.output('Supply Centres: ' +
+            '; '.join('%s, %d' % (dist[0], len(dist) - 1) for dist in dists))
     def handle_DRW(self, message):
         if len(message) > 2:
             self.output('Draw declared among %s', expand_list(message[2:-1]))
@@ -113,10 +113,11 @@ else:
             self.__super.handle_MAP(message)
             if self.map.valid:
                 try:
-                    message = self.map.opts.read_file('tty')
+                    message = self.map.variant.tty()
                     if message: self.show_map(message)
                 except Exception, e:
-                    self.output('Error reading tty file for %s: %s', self.map.name, e)
+                    self.output('Error creating text map for %s: %s',
+                        self.map.name, e)
                 # Just in case it works...
                 self.send(NOW)
                 self.send(SCO)
@@ -222,19 +223,22 @@ else:
                 win.refresh()
                 self.editwin.refresh()
         def handle_SCO(self, message):
-            distrib = message.fold()[1:]
             owners = []
             win = self.mapwin
-            if win:
-                for dist in distrib:
-                    power = self.map.powers.get(dist[0])
-                    owners.append('%s, %d' %
-                            (power and power.name or 'Unowned', len(dist) - 1))
+            for dist in message.fold()[1:]:
+                power = self.map.powers.get(dist[0])
+                owners.append('%s, %d' %
+                    (power and power.name or 'Unowned', len(dist) - 1))
+                if win:
                     for prov in dist[1:]:
                         province = self.map.spaces[prov]
-                        if power: color = self.get_color(power.__color, province.__color, True)
-                        else:     color = self.get_color(0, province.__color, False)
+                        if power:
+                            color = self.get_color(power.__color,
+                                province.__color, True)
+                        else:
+                            color = self.get_color(0, province.__color, False)
                         win.addstr(province.__y, province.__x, '*', color)
+            if win:
                 win.refresh()
             self.output('Supply Centres %s: %s',
                     self.map.current_turn, '; '.join(owners))
