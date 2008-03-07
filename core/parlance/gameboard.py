@@ -1021,8 +1021,7 @@ class Coast(Comparable, VerboseObject):
                     if p.can_convoy() and len(p.units) > 0
                 ])
             # Sort shorter paths to the front, to speed up checking
-            # Todo: Try sort(key=len)  (possibly a Python 2.5 feature)
-            path_list.sort(lambda x,y: cmp(len(x), len(y)))
+            path_list.sort(key=len)
         self.log_debug(11, 'Routes found: %s', path_list)
         return path_list
     def matches(self, key):
