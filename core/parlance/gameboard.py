@@ -180,7 +180,8 @@ class Variant(object):
         if not value:
             self.powers[key] = (key, key)
         elif ',' in value:
-            self.powers[key] = tuple(value.split(',', 1))
+            self.powers[key] = tuple(name.strip()
+                for name in value.split(',', 1))
         else:
             self.powers[key] = (value, value)
     

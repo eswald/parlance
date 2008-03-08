@@ -94,6 +94,14 @@ class VariantTests(unittest.TestCase):
         self.failUnlessEqual(variant.powers, {
                 "ONE": ("name", "adj"),
         })
+    def test_powers_spaced(self):
+        variant = load_variant('''
+            [powers]
+            ONE=name, adj
+        ''')
+        self.failUnlessEqual(variant.powers, {
+                "ONE": ("name", "adj"),
+        })
     def test_powers_name(self):
         variant = load_variant('''
             [powers]
