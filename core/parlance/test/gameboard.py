@@ -27,7 +27,7 @@ def load_variant(information):
     variant.rep = variant.tokens()
     return variant
 
-class VariantTests(unittest.TestCase):
+class VariantFileTests(unittest.TestCase):
     "Tests for loading information from a variant file"
     def assertContains(self, container, item):
         if item not in container:
@@ -946,6 +946,19 @@ class VariantTests(unittest.TestCase):
         TRE = variant.rep["TRE"]
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, AMY, TWO], [ONE, AMY, TRE]])
+
+class StandardVariantTests(unittest.TestCase):
+    "Tests for the standard map variant"
+    variant = "standard"
+    def failUnlessValid(self, message):
+        result = Validator().validate_server_message(message)
+        self.failIf(result, result)
+    def test_mdf_valid(self):
+        self.failUnlessValid(variants[self.variant].mdf())
+    def test_sco_valid(self):
+        self.failUnlessValid(variants[self.variant].sco())
+    def test_now_valid(self):
+        self.failUnlessValid(variants[self.variant].sco())
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
