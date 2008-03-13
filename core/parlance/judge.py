@@ -125,7 +125,7 @@ class DatcOptions(Configuration):
             'd: Support to a specific coast is allowed, but not required.',
             'e: Support to a specific coast is not allowed.',
             'DATC: d; DPTG: e; DAIDE: e'),
-        ('datc_4b5', datc('ab', 'a'), 'a', # Todo: b
+        ('datc_4b5', datc('ab', 'ab'), 'a',
             'wrong coast of ordered unit',
             '4.B.5.  WRONG COAST OF ORDERED UNIT',
             'a: The move fails.',
