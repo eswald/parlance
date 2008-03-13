@@ -240,6 +240,30 @@ class Judge_Convoys(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrdered(ORD (SPR, 1901)
             ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (NSO))
+    def test_partly_disrupted_convoy_path(self):
+        ''' A convoy with one disrupted path shows that when disrupted'''
+        self.judge.datc.datc_4a1 = 'a'
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+            [GER, FLT, DEN],
+            [GER, FLT, HOL],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(GER, [(GER, FLT, DEN), MTO, NTH])
+        self.legalOrder(GER, [(GER, FLT, HOL), SUP, (GER, FLT, DEN), MTO, NTH])
+        self.assertMapState([
+            [ENG, FLT, ECH],
+            [ENG, FLT, NTH, MRT],
+            [ENG, AMY, LON],
+            [GER, FLT, NTH],
+            [GER, FLT, HOL],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [NTH]) (DSR))
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
     ''' Basic Judge Functionality'''

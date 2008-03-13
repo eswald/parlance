@@ -1216,7 +1216,10 @@ class Path_Decision(Tristate_Decision):
             # None means an overland route; empty list means unavailable convoy.
             if self.routes is None:
                 self.passed = self.order.unit.can_move_to(self.order.destination)
-            else: self.passed = False
+            else:
+                routes = self.order.get_routes(convoyers, True)
+                if routes: self.order.set_path(route)
+                self.passed = False
             self.failed = not self.passed
         return self.decided()
     def calc_path_pass(self):
@@ -1226,9 +1229,7 @@ class Path_Decision(Tristate_Decision):
                 for choice in path:
                     if not choice.failed: break
                 else:
-                    self.routes = [path]
-                    route = [choice.order.unit for choice in path]
-                    self.order.set_path(route)
+                    self.set_route(path)
                     return True
             else: return False
         else:
@@ -1236,6 +1237,7 @@ class Path_Decision(Tristate_Decision):
             for path in self.routes:
                 for choice in path:
                     if not choice.failed: return False
+            self.set_route(self.routes[0])
         return True
     def calc_path_fail(self):
         if self.disrupt_all:
@@ -1244,13 +1246,21 @@ class Path_Decision(Tristate_Decision):
                 for choice in path:
                     if choice.passed: break
                 else: return False
-            else: return True
+            else:
+                self.set_route(self.routes[0])
+                return True
         else:
             # Check for a dislodged unit on any path
             for path in self.routes:
                 for choice in path:
-                    if choice.passed: return True
+                    if choice.passed:
+                        self.set_route(path)
+                        return True
         return False
+    def set_route(self, path):
+        self.routes = [path]
+        route = [choice.order.unit for choice in path]
+        self.order.set_path(route)
 class Head_Decision(Tristate_Decision):
     # Failed: the units bypass each other; Passed: they battle each other.
     __slots__ = ()
