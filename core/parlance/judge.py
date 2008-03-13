@@ -57,7 +57,7 @@ class DatcOptions(Configuration):
             'b: A convoy is disrupted when all possible routes are disrupted.',
             'c: Multi-route convoys are not allowed.',
             'DATC: b; DPTG: a; DAIDE: c'),
-        ('datc_4a2', datc('abcdef', 'def'), 'd', # Todo: b
+        ('datc_4a2', datc('abcdef', 'bdef'), 'd',
             'convoy disruption paradoxes',
             '4.A.2.  CONVOY DISRUPTION PARADOXES',
             "a: Convoyed armies don't cut support to fleets attacking its convoy fleet.",
@@ -784,6 +784,12 @@ class Judge(JudgeInterface):
         decision_list = decisions.sorted()
         for choice in decisions: choice.init_deps()
         
+        # 4a) Pre-make some decisions if so requested
+        if self.datc.datc_4a2 == 'b':
+            resolved = self.eightytwo(decision_list)
+            decision_list = [choice for choice in decision_list
+                if choice not in resolved]
+        
         # 4) Run through the decisions until they are all made.
         while decision_list:
             self.log_debug(11, '%d decisions to make...', len(decision_list))
@@ -911,6 +917,38 @@ class Judge(JudgeInterface):
             self.log_debug(8, '- %s', choice)
             decision_list.discard(choice)
         return decision_list
+    def eightytwo(self, decisions):
+        ''' Applies the 1982 rule for convoy disruption paradoxes:
+            If a convoyed army attacks a fleet which is supporting an action
+            in a body of water, and that body of water contains a convoying
+            fleet, that support is not cut.
+        '''#'''
+        result = []
+        self.log_debug(8, 'Applying 1982 convoy-disruption rule.')
+        def is_convoyed(choice):
+            if choice.type == Decision.ATTACK:
+                result = choice.order.is_convoyed()
+            else: result = False
+            return result
+        def is_convoying(unit):
+            if unit and unit.current_order.is_convoying():
+                if self.datc.datc_4a1 == 'a':
+                    convoyed = unit.current_order.supported
+                    deps = convoyed.decisions[Decision.PATH].depends
+                    result = unit.decisions[Decision.DISLODGE] in deps
+                else: result = True
+            else: result = False
+            return result
+        for choice in decisions:
+            if choice.type == Decision.SUPPORT:
+                convoying = is_convoying(choice.order.destination.province.unit)
+                army = any(is_convoyed(attack) for attack in choice.depends)
+                self.log_debug(11, '* %s: %s, %s', choice, convoying, army)
+                for dep in choice.depends: self.log_debug(17, '- ' + str(dep))
+                if convoying and army:
+                    choice.passed = True
+                    result.append(choice)
+        return result
     def Szykman(self, decisions):
         ''' Applies the Szykman rule for convoy disruption paradoxes:
             Any convoyed units in the paradox are treated as if they held.
@@ -935,7 +973,7 @@ class Judge(JudgeInterface):
         def confused(choice):
             result = (choice.type == Decision.SUPPORT
                     and choice.order.supported.current_order.is_convoying())
-            if result: self.log_debug(11, '* Confused: %s (%s)', choice)
+            if result: self.log_debug(11, '* Confused: %s', choice)
             return result
         if any(confused(d) for d in decisions):
             return self.fallback(decisions)

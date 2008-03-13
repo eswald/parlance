@@ -2344,7 +2344,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         super(DATC_6_F_Paradox_1982, self).setUp()
         self.judge.datc.datc_4a2 = 'b'
     
-    @fails
     def test_6F14(self):
         "6.F.14.b  SIMPLE CONVOY PARADOX"
         steady_state = [
@@ -2363,7 +2362,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH],
             [FRA, FLT, ECH, MRT],
         ])
-    @fails
     def test_6F15(self):
         "6.F.15.b  SIMPLE CONVOY PARADOX WITH ADDITIONAL CONVOY"
         steady_state = [
@@ -2389,7 +2387,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH, MRT],
             [ITA, AMY, WAL],
         ])
-    #@fails  # Passes, but for the wrong reason
     def test_6F16(self):
         "6.F.16.b  PANDIN'S PARADOX"
         steady_state = [
@@ -2408,7 +2405,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, FLT, NTH), SUP, (GER, FLT, BEL), MTO, ECH])
         self.legalOrder(GER, [(GER, FLT, BEL), MTO, ECH])
         self.assertMapState(steady_state)
-    @fails
     def test_6F17(self):
         "6.F.17.b  PANDIN'S EXTENDED PARADOX"
         steady_state = [
@@ -2433,7 +2429,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, LON, MRT],
             [FRA, AMY, LON],
         ])
-    @fails
     def test_6F18(self):
         "6.F.18.b  BETRAYAL PARADOX"
         steady_state = [
@@ -2456,7 +2451,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, BEL],
             [FRA, FLT, BEL, MRT],
         ])
-    @fails
     def test_6F19_any(self):
         "6.F.19.b.a  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
@@ -2479,7 +2473,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, TYS, MRT],
             [ITA, FLT, TYS],
         ])
-    @fails
     def test_6F19_all(self):
         "6.F.19.b.b  MULTI-ROUTE CONVOY DISRUPTION PARADOX"
         # 4.A.1, as well
@@ -2502,7 +2495,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, TYS, MRT],
             [ITA, FLT, TYS],
         ])
-    #@fails  # Passes, but for the wrong reason
     def test_6F20_any(self):
         "6.F.20.b.a  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
@@ -2527,7 +2519,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [ITA, FLT, ION, MRT],
             [TUR, FLT, ION],
         ])
-    @fails
     def test_6F20_all(self):
         "6.F.20.b.b  UNWANTED MULTI-ROUTE CONVOY PARADOX"
         # 4.A.1, as well
@@ -2550,7 +2541,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, EAS), MTO, ION])
         self.assertMapState(steady_state + [
         ])
-    @fails
     def test_6F21(self):
         "6.F.21.b  DAD'S ARMY CONVOY"
         steady_state = [
@@ -2577,7 +2567,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [RUS, AMY, CLY],
             [ENG, FLT, CLY, MRT],
         ])
-    @fails
     def test_6F22(self):
         "6.F.22.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS"
         steady_state = [
@@ -2606,7 +2595,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [GER, FLT, ECH],
             [RUS, FLT, NTH, MRT],
         ])
-    @fails
     def test_6F22_extended(self):
         ''' 6.F.22.extended.b  SECOND ORDER PARADOX WITH TWO RESOLUTIONS
             The Russian move from St Petersbug to Edinburgh is not part
@@ -2647,7 +2635,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
             [RUS, FLT, NTH, MRT],
             [RUS, AMY, EDI],
         ])
-    #@fails  # Passes, but for the wrong reason
     def test_6F23(self):
         "6.F.23.b  SECOND ORDER PARADOX WITH TWO EXCLUSIVE CONVOYS"
         steady_state = [
@@ -2676,7 +2663,6 @@ class DATC_6_F_Paradox_1982(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NTH), CVY, (RUS, AMY, NWY), CTO, BEL])
         self.assertMapState(steady_state + [
         ])
-    @fails
     def test_6F24(self):
         "6.F.24.b  SECOND ORDER PARADOX WITH NO RESOLUTION"
         steady_state = [

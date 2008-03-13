@@ -70,7 +70,6 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH, MRT],
             [FRA, FLT, ECH],
         ])
-    @fails
     def test_4A2_1982(self):
         '4.A.2.b  CONVOY DISRUPTION PARADOXES'
         # Combination of 6.F.14, 6.F.18, and 6.F.24
