@@ -3739,8 +3739,8 @@ class DATC_6_F_Paradox_DPTG(DiplomacyAdjudicatorTestCase):
 
 class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
     "6.G.  CONVOYING TO ADJACENT PLACES"
-    # This batch always uses CTO for the possibly convoyed units;
-    # that's often not the intent, but MTO guessing is not yet implemented.
+    # This batch always uses CTO for the possibly convoyed units,
+    # even where that's not really the intent.
     def test_6G1(self):
         "6.G.1.c  TWO UNITS CAN SWAP PLACES BY CONVOY"
         steady_state = [
@@ -3993,11 +3993,10 @@ class DATC_6_G_CTO(DiplomacyAdjudicatorTestCase):
 class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
     "6.G.  CONVOYING TO ADJACENT PLACES"
     # Most of these depend on or relate to 4.A.3
-    # This batch always uses MTO for the possibly convoyed units;
-    # unfortunately, the judge never considers convoys then.
-    # Todo: Implement tests for option d.
-    def test_6G1(self):
-        "6.G.1.m  TWO UNITS CAN SWAP PLACES BY CONVOY"
+    # This batch always uses MTO for the possibly convoyed units,
+    # sometimes allowing the judge to guess the intent.
+    def test_6G1_f(self):
+        "6.G.1.m.f  TWO UNITS CAN SWAP PLACES BY CONVOY"
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, SKA],
@@ -4010,6 +4009,23 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (ENG, AMY, NWY), CTO, SWE])
         self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
         self.assertMapState(steady_state + [
+        ])
+    def test_6G1_d(self):
+        "6.G.1.m.d  TWO UNITS CAN SWAP PLACES BY CONVOY"
+        self.judge.datc.datc_4a3 = 'd'
+        steady_state = [
+            [ENG, FLT, SKA],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (ENG, AMY, NWY), CTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, SWE],
+            [RUS, AMY, NWY],
         ])
     def test_6G2(self):
         "6.G.2.m  KIDNAPPING AN ARMY"
@@ -4070,8 +4086,8 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
             [ENG, FLT, ECH, MRT],
             [ENG, AMY, BEL, MRT],
         ])
-    def test_6G5(self):
-        "6.G.5.m  SWAPPING WITH INTENT"
+    def test_6G5_f(self):
+        "6.G.5.m.f  SWAPPING WITH INTENT"
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ITA, FLT, TYS],
@@ -4087,8 +4103,27 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(TUR, [(TUR, FLT, ION), CVY, (TUR, AMY, APU), CTO, ROM])
         self.assertMapState(steady_state + [
         ])
-    def test_6G6(self):
-        "6.G.6.m  SWAPPING WITH UNINTENDED INTENT"
+    def test_6G5_d(self):
+        "6.G.5.m.d  SWAPPING WITH INTENT"
+        self.judge.datc.datc_4a3 = 'd'
+        steady_state = [
+            [ITA, FLT, TYS],
+            [TUR, FLT, ION],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, AMY, ROM],
+            [TUR, AMY, APU],
+        ])
+        self.legalOrder(ITA, [(ITA, AMY, ROM), MTO, APU])
+        self.legalOrder(ITA, [(ITA, FLT, TYS), CVY, (TUR, AMY, APU), CTO, ROM])
+        self.legalOrder(TUR, [(TUR, AMY, APU), MTO, ROM])
+        self.legalOrder(TUR, [(TUR, FLT, ION), CVY, (TUR, AMY, APU), CTO, ROM])
+        self.assertMapState(steady_state + [
+            [ITA, AMY, APU],
+            [TUR, AMY, ROM],
+        ])
+    def test_6G6_f(self):
+        "6.G.6.m.f  SWAPPING WITH UNINTENDED INTENT"
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, ECH],
@@ -4110,8 +4145,33 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.legalOrder(RUS, [(RUS, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, EDI])
         self.assertMapState(steady_state + [
         ])
-    def test_6G9(self):
-        "6.G.9.m  SWAPPED OR DISLODGED?"
+    def test_6G6_d(self):
+        "6.G.6.m.d  SWAPPING WITH UNINTENDED INTENT"
+        self.judge.datc.datc_4a3 = 'd'
+        steady_state = [
+            [ENG, FLT, ECH],
+            [FRA, FLT, IRI],
+            [FRA, FLT, NTH],
+            [RUS, FLT, NWG],
+            [RUS, FLT, NAO],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, LVP],
+            [GER, AMY, EDI],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LVP), MTO, EDI])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LVP), CTO, EDI])
+        self.legalOrder(GER, [(GER, AMY, EDI), MTO, LVP])
+        self.legalOrder(FRA, [(FRA, FLT, IRI), HLD])
+        self.legalOrder(FRA, [(FRA, FLT, NTH), HLD])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), CVY, (ENG, AMY, LVP), CTO, EDI])
+        self.legalOrder(RUS, [(RUS, FLT, NAO), CVY, (ENG, AMY, LVP), CTO, EDI])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, EDI],
+            [GER, AMY, LVP],
+        ])
+    def test_6G9_f(self):
+        "6.G.9.m.f  SWAPPED OR DISLODGED?"
         self.judge.datc.datc_4a3 = 'f'
         steady_state = [
             [ENG, FLT, SKA],
@@ -4128,6 +4188,25 @@ class DATC_6_G_MTO(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [ENG, AMY, SWE],
             [RUS, AMY, SWE, MRT],
+        ])
+    def test_6G9_d(self):
+        "6.G.9.m.d  SWAPPED OR DISLODGED?"
+        self.judge.datc.datc_4a3 = 'd'
+        steady_state = [
+            [ENG, FLT, SKA],
+            [ENG, FLT, FIN],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ENG, AMY, NWY],
+            [RUS, AMY, SWE],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (ENG, AMY, NWY), CTO, SWE])
+        self.legalOrder(ENG, [(ENG, FLT, FIN), SUP, (ENG, AMY, NWY), MTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, SWE), MTO, NWY])
+        self.assertMapState(steady_state + [
+            [ENG, AMY, SWE],
+            [RUS, AMY, NWY],
         ])
 
 class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
