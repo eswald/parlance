@@ -131,23 +131,115 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
 
 class Judge_Convoys(DiplomacyAdjudicatorTestCase):
     ''' Minute details of convoy adjudication'''
+    game_options = {
+        'send_ORD': True,
+        'AOA': False,
+    }
     
-    @todo
+    def assertOrdered(self, order):
+        orders = [msg for msg in self.results if msg[0] is ORD]
+        self.assertContains(orders, order)
+    
     def test_pathless_convoy(self):
         ''' Convoy orders can be sent without a path'''
-    @todo
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BRE])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BRE])
+        self.assertMapState([
+            [ENG, FLT, ECH],
+            [ENG, AMY, BRE],
+        ])
     def test_successful_convoy_path(self):
         ''' Successful pathless convoys have a good path in the ORD message'''
-    @todo
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BRE])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BRE])
+        self.assertMapState([
+            [ENG, FLT, ECH],
+            [ENG, AMY, BRE],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BRE, VIA, [ECH]) (SUC))
     def test_disrupted_convoy_path(self):
         ''' Disrupted pathless convoys have a valid path in the ORD message'''
-    @todo
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+            [FRA, FLT, MAO],
+            [FRA, FLT, BRE],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, FLT, BRE), SUP, (FRA, FLT, MAO), MTO, ECH])
+        self.assertMapState([
+            [ENG, FLT, ECH, MRT],
+            [ENG, AMY, LON],
+            [FRA, FLT, ECH],
+            [FRA, FLT, BRE],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (DSR))
     def test_ignored_convoy_path(self):
         ''' A convoy with a specified path ignores other possible paths'''
-        # Lon - Nth - Bel ignores Ech c Lon - Bel
-    @todo
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+            [FRA, FLT, MAO],
+            [FRA, FLT, BRE],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL, VIA, [ECH]])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, FLT, BRE), SUP, (FRA, FLT, MAO), MTO, ECH])
+        self.assertMapState([
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH, MRT],
+            [ENG, AMY, LON],
+            [FRA, FLT, ECH],
+            [FRA, FLT, BRE],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (DSR))
     def test_convoy_path_repeated(self):
         ''' A convoy with a specified path uses that path in the ORD message'''
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL, VIA, [ECH]])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.assertMapState([
+            [ENG, FLT, NTH],
+            [ENG, FLT, ECH],
+            [ENG, AMY, BEL],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (SUC))
+    def test_unmatched_convoy_path(self):
+        ''' Unconvoyed pathless convoys have a reasonable path in the ORD message'''
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), CTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), MTO, BRE])
+        self.assertMapState([
+            [ENG, FLT, BRE],
+            [ENG, AMY, LON],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (NSO))
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
     ''' Basic Judge Functionality'''

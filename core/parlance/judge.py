@@ -1227,6 +1227,8 @@ class Path_Decision(Tristate_Decision):
                     if not choice.failed: break
                 else:
                     self.routes = [path]
+                    route = [choice.order.unit for choice in path]
+                    self.order.set_path(route)
                     return True
             else: return False
         else:
