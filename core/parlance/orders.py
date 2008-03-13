@@ -277,7 +277,7 @@ class ConvoyedOrder(MovementPhaseOrder):
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0])
         dest = board.ordered_coast(unit, order[2], datc)
-        if len(order) > 4:
+        if len(order) > 4 and datc.datc_4a6 != 'a':
             path = [board.ordered_unit(nation, prov) for prov in order[4]]
             #for prov in path: print 'Convoying unit: %s' % prov
         else: path = None

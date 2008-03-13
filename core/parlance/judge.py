@@ -82,7 +82,7 @@ class DatcOptions(Configuration):
             'a: Dislodged units may not retreat to the starting place of any attacker.',
             'b: Dislodged units may retreat to the starting place of a convoyed attacker.',
             'DATC: b; DPTG: b; DAIDE: a'),
-        ('datc_4a6', datc('abc', 'b'), 'b', # Todo: ac
+        ('datc_4a6', datc('abc', 'ab'), 'b', # Todo: c
             'convoy path specification',
             '4.A.6.  CONVOY PATH SPECIFICATION',
             'a: Path specifications are ignored.',
