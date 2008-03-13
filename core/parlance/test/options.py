@@ -674,10 +674,8 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
     def test_4A4_cut(self):
         '4.A.4.b  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY'
         # Test 6.G.13
-        # This situation cannot occur with 4.A.3 choice b or c;
-        # the test fails anyway, but this gives a nicer error.
-        assert self.judge.datc.datc_4a3 not in 'bc'
-        
+        # This situation cannot occur with 4.A.3 choice b or c.
+        self.judge.datc.datc_4a3 = 'd'
         self.judge.datc.datc_4a4 = 'b'
         steady_state = [
             [AUS, FLT, ADR],
@@ -737,10 +735,8 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
     def test_4A5_retreat(self):
         '4.A.5.b  RETREAT WHEN DISLODGED BY CONVOY'
         # Test 6.H.12
-        # This situation cannot occur with 4.A.3 choice c;
-        # the test fails anyway, but this gives a nicer error.
-        assert self.judge.datc.datc_4a3 != 'c'
-        
+        # This situation cannot occur with 4.A.3 choice c.
+        self.judge.datc.datc_4a3 = 'd'
         self.judge.datc.datc_4a5 = 'b'
         steady_state = [
             [ENG, AMY, BUR],
