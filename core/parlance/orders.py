@@ -282,7 +282,9 @@ class ConvoyedOrder(MovementPhaseOrder):
             #for prov in path: print 'Convoying unit: %s' % prov
         else: path = None
         result = klass(unit, dest, path)
-        result.routes = unit.coast.convoy_routes(dest.province, board)
+        if datc.datc_4a6 == 'c' and path is None:
+            result.routes = []
+        else: result.routes = unit.coast.convoy_routes(dest.province, board)
         result.order = order
         return result
 

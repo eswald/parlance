@@ -828,7 +828,6 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
             [ENG, AMY, NWY],
             [FRA, FLT, ECH],
         ])
-    @fails
     def test_4A6_required(self):
         '4.A.6.c  CONVOY PATH SPECIFICATION'
         self.judge.datc.datc_4a6 = 'c'
