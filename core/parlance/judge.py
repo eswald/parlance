@@ -19,13 +19,6 @@ from orders import DisbandOrder, HoldOrder, OrderSet, \
         RemoveOrder, WaiveOrder, createUnitOrder
 from tokens import *
 
-def minmax(decision_list):
-    ''' Returns the highest maximum and minimum values in the decision list.'''
-    min_found = max_found = 0
-    for decision in decision_list:
-        if decision.min_value > min_found: min_found = decision.min_value
-        if decision.max_value > max_found: max_found = decision.max_value
-    return min_found, max_found
 
 class DatcOptions(Configuration):
     ''' Options from the Diplomacy Adjudicator Test Cases,
@@ -1169,7 +1162,15 @@ class Tristate_Decision(Decision):
             for choice in self.depends: print '-', choice
         #if self.passed or self.failed: print 'Decision made for ' + str(self)
         return self.passed or self.failed
-    def state(self): return self.status[(self.passed, self.failed)]
+    def state(self):
+        return self.status[(self.passed, self.failed)]
+    def minmax(self, decision_list):
+        ''' Returns the highest maximum and minimum values in the decision list.'''
+        min_found = max_found = 0
+        for decision in decision_list:
+            if decision.min_value > min_found: min_found = decision.min_value
+            if decision.max_value > max_found: max_found = decision.max_value
+        return min_found, max_found
 class Move_Decision(Tristate_Decision):
     __slots__ = ()
     type = Decision.MOVE
@@ -1188,7 +1189,7 @@ class Move_Decision(Tristate_Decision):
         #print 'Calculating %s:' % str(self)
         #for dep in self.depends: print '+ ' + str(dep)
         attack = self.depends[0]
-        min_oppose, max_oppose = minmax(self.depends[1:])
+        min_oppose, max_oppose = self.minmax(self.depends[1:])
         self.passed = attack.min_value >  max_oppose
         self.failed = attack.max_value <= min_oppose
         if self.passed:
@@ -1206,7 +1207,7 @@ class Support_Decision(Tristate_Decision):
         ]
     def calculate(self):
         dislodge = self.depends[0]
-        min_oppose, max_oppose = minmax(self.depends[1:])
+        min_oppose, max_oppose = self.minmax(self.depends[1:])
         self.passed = dislodge.failed and max_oppose == 0
         self.failed = dislodge.passed or  min_oppose >= 1
         return self.decided()
