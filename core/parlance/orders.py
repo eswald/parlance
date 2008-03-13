@@ -52,7 +52,7 @@ class UnitOrder(Comparable):
     def __cmp__(self, other): return cmp(self.key, other.key)
     @classmethod
     def create(klass, order, nation, board, datc):
-        result = klass(board.ordered_unit(nation, order[0]))
+        result = klass(board.ordered_unit(nation, order[0], datc))
         result.order = order
         return result
     
@@ -169,7 +169,7 @@ class MoveOrder(MovementPhaseOrder):
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
-        unit = board.ordered_unit(nation, order[0])
+        unit = board.ordered_unit(nation, order[0], datc)
         dest = board.ordered_coast(unit, order[2], datc)
         if unit.can_be_convoyed() and datc.datc_4a3 != 'f':
             # Implicit convoys are allowed; check for them
@@ -220,8 +220,8 @@ class ConvoyingOrder(MovementPhaseOrder):
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
-        unit = board.ordered_unit(nation, order[0])
-        mover = board.ordered_unit(nation, order[2])
+        unit = board.ordered_unit(nation, order[0], datc)
+        mover = board.ordered_unit(nation, order[2], datc)
         dest = board.ordered_coast(mover, order[4], datc)
         result = klass(unit, mover, dest)
         result.routes = mover.coast.convoy_routes(dest.province, board)
@@ -275,10 +275,11 @@ class ConvoyedOrder(MovementPhaseOrder):
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
-        unit = board.ordered_unit(nation, order[0])
+        unit = board.ordered_unit(nation, order[0], datc)
         dest = board.ordered_coast(unit, order[2], datc)
         if len(order) > 4 and datc.datc_4a6 != 'a':
-            path = [board.ordered_unit(nation, prov) for prov in order[4]]
+            path = [board.ordered_unit(nation, prov, datc)
+                for prov in order[4]]
             #for prov in path: print 'Convoying unit: %s' % prov
         else: path = None
         result = klass(unit, dest, path)
@@ -302,8 +303,8 @@ class SupportOrder(MovementPhaseOrder):
     @classmethod  # This one could be staticmethod, but pychecker complains.
     def create(klass, order, nation, board, datc):
         # Note that we don't care about order[3], so it could be MTO or CTO.
-        unit = board.ordered_unit(nation, order[0])
-        supported = board.ordered_unit(nation, order[2])
+        unit = board.ordered_unit(nation, order[0], datc)
+        supported = board.ordered_unit(nation, order[2], datc)
         if len(order) > 4:
             dest = board.ordered_coast(supported, order[4], datc)
             legal_dest = True
@@ -397,7 +398,7 @@ class RetreatOrder(RetreatPhaseOrder):
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
-        unit = board.ordered_unit(nation, order[0])
+        unit = board.ordered_unit(nation, order[0], datc)
         dest = board.ordered_coast(unit, order[2], datc)
         result = klass(unit, dest)
         result.order = order

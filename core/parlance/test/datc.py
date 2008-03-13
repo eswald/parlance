@@ -576,21 +576,20 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, coast specification must match the unit.
             This is the preferred solution for DAIDE.
         '''#'''
-        self.judge.datc.wrong_coast = False
+        self.judge.datc.datc_4b5 = 'a'
         start_state = [
             [FRA, FLT, [SPA, SCS]],
         ]
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, [SPA, NCS]), MTO, GOL])
         self.assertMapState(start_state)
-    @fails
     def test_6B10_ignore(self):
         ''' 6.B.10.b  UNIT ORDERED WITH WRONG COAST
             Subject to issue 4.B.5 (wrong_coast).
             In this case, coast specification is ignored for the ordered unit.
             This is the preferred solution for DATC.
         '''#'''
-        self.judge.datc.wrong_coast = True
+        self.judge.datc.datc_4b5 = 'b'
         start_state = [
             [FRA, FLT, [SPA, SCS]],
         ]
@@ -603,7 +602,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         ''' 6.B.11.a  COAST CAN NOT BE ORDERED TO CHANGE
             Related to issue 4.B.5 (wrong_coast).
         '''#'''
-        self.judge.datc.wrong_coast = False
+        self.judge.datc.datc_4b5 = 'a'
         start_state = [
             [FRA, FLT, [SPA, NCS]],
         ]
@@ -614,7 +613,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
         ''' 6.B.11.b  COAST CAN NOT BE ORDERED TO CHANGE
             Related to issue 4.B.5 (wrong_coast).
         '''#'''
-        self.judge.datc.wrong_coast = True
+        self.judge.datc.datc_4b5 = 'b'
         start_state = [
             [FRA, FLT, [SPA, NCS]],
         ]

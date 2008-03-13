@@ -360,7 +360,7 @@ class Map(VerboseObject):
         units = sum([power.units for power in self.powers.values()], [])
         units.sort()
         return NOW(self.current_turn) % units
-    def ordered_unit(self, nation, unit_spec):
+    def ordered_unit(self, nation, unit_spec, datc=None):
         ''' Finds a unit from its token representation.
             If the specified unit doesn't exist, returns a fake one.
             Accepts any combination of country, unit type, province,
@@ -395,12 +395,19 @@ class Map(VerboseObject):
             >>> unit.exists()
             False
             
-            # Will not correct unambiguously wrong orders
+            # Will not correct unambiguously wrong orders unless asked
             >>> unit = standard_map.ordered_unit(Russia, [RUS, (STP, NCS)])
             >>> print unit
             RUS FLT ( STP NCS )
             >>> unit.exists()
             False
+            >>> class datc(object):
+            ...     datc_4b5 = 'b'
+            >>> unit = standard_map.ordered_unit(Russia, [RUS, (STP, NCS)], datc)
+            >>> print unit
+            RUS FLT ( STP SCS )
+            >>> unit.exists()
+            True
         '''#'''
         # Collect specifications
         country = unit_type = coastline = province = None
@@ -418,8 +425,11 @@ class Map(VerboseObject):
         unit = None
         for item in province.units:
             if unit_type and item.coast.unit_type != unit_type: continue
-            if coastline and item.coast.coastline != coastline: continue
             if country and item.nation != country: continue
+            if (coastline and item.coast.coastline != coastline
+                    and not (datc and datc.datc_4b5 == 'b')):
+                continue
+            
             if unit:
                 if item.dislodged == unit.dislodged:
                     if item.nation == unit.nation:
