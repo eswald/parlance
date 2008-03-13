@@ -187,6 +187,12 @@ class MoveOrder(MovementPhaseOrder):
         else: result = klass(unit, dest)
         result.order = order
         return result
+    def set_path(self, path):
+        # Allows the server to send path specifications
+        # even on orders that didn't originally have any.
+        self.path = path
+        self.path_key = tuple([fleet.coast.province.key for fleet in path])
+        self.key = (self.unit.key, CTO, self.destination.province.key, VIA, self.path_key)
 class ConvoyingOrder(MovementPhaseOrder):
     order_type = CVY
     def __init__(self, unit, mover, destination):

@@ -986,7 +986,7 @@ class Judge(JudgeInterface):
         return result or decisions
     def process_results(self, unit):
         ''' Returns the result of the unit's order, based on decisions.
-            False Path    -> DSR (FAR determined earlier)
+            False Path    -> DSR or NSO (FAR determined earlier)
             True Dislodge -> RET (Maybe after another result)
             False Support -> CUT (NSO determined earlier)
             False Move    -> BNC (Unless DSR)
@@ -1005,13 +1005,15 @@ class Judge(JudgeInterface):
             for choice in unit.decisions.itervalues():
                 self.log_debug(14, '- ' + str(choice))
             if order.is_moving():
-                if unit.decisions[Decision.PATH].passed:
+                path = unit.decisions[Decision.PATH]
+                if path.passed:
                     if unit.decisions[Decision.MOVE].passed:
                         self.log_debug(11, 'Moving %s to %s', unit, order.destination)
                         unit.move_to(order.destination)
                         result = SUC
                     else: result = BNC
-                else: result = DSR
+                elif path.routes: result = DSR
+                else: result = NSO
             elif order.is_supporting():
                 if unit.decisions[Decision.SUPPORT].passed: result = SUC
                 else: result = CUT
@@ -1217,8 +1219,8 @@ class Path_Decision(Tristate_Decision):
             if self.routes is None:
                 self.passed = self.order.unit.can_move_to(self.order.destination)
             else:
-                routes = self.order.get_routes(convoyers, True)
-                if routes: self.order.set_path(route)
+                routes = self.order.routes
+                if routes: self.order.set_path([prov.unit for prov in routes[0]])
                 self.passed = False
             self.failed = not self.passed
         return self.decided()

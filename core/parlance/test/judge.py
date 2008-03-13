@@ -12,7 +12,7 @@ import unittest
 from time import time
 
 from parlance.config    import variants, Configuration, GameOptions
-from parlance.functions import fails, todo
+from parlance.functions import fails
 from parlance.judge     import Attack_Decision, Hold_Decision, \
         Move_Decision, Path_Decision, Prevent_Decision
 from parlance.language  import Token
@@ -264,6 +264,42 @@ class Judge_Convoys(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrdered(ORD (SPR, 1901)
             ([ENG, AMY, LON], CTO, BEL, VIA, [NTH]) (DSR))
+    def test_convoyed_move_order(self):
+        ''' Move orders get changed to convoy orders when actually convoyed'''
+        self.judge.datc.datc_4a3 = 'd'
+        self.init_state(SPR, 1901, [
+            [ENG, FLT, ECH],
+            [ENG, AMY, LON],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, LON), MTO, BEL])
+        self.legalOrder(ENG, [(ENG, FLT, ECH), CVY, (ENG, AMY, LON), CTO, BEL])
+        self.assertMapState([
+            [ENG, FLT, ECH],
+            [ENG, AMY, BEL],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, LON], CTO, BEL, VIA, [ECH]) (SUC))
+    def test_swapping_convoy_path(self):
+        ''' Move orders to adjacent provinces can get changed to convoy orders'''
+        self.judge.datc.datc_4a3 = 'd'
+        steady_state = [
+            [ITA, FLT, TYS],
+            [TUR, FLT, ION],
+        ]
+        self.init_state(SPR, 1901, steady_state + [
+            [ITA, AMY, ROM],
+            [TUR, AMY, APU],
+        ])
+        self.legalOrder(ITA, [(ITA, AMY, ROM), MTO, APU])
+        self.legalOrder(ITA, [(ITA, FLT, TYS), CVY, (TUR, AMY, APU), CTO, ROM])
+        self.legalOrder(TUR, [(TUR, AMY, APU), MTO, ROM])
+        self.legalOrder(TUR, [(TUR, FLT, ION), CVY, (TUR, AMY, APU), CTO, ROM])
+        self.assertMapState(steady_state + [
+            [ITA, AMY, APU],
+            [TUR, AMY, ROM],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([TUR, AMY, APU], CTO, ROM, VIA, [ION, TYS]) (SUC))
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
     ''' Basic Judge Functionality'''
