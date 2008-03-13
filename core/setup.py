@@ -16,6 +16,12 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
+try:
+    readme = open('README.txt').read()
+except:
+    # Todo: Attempt to find the README file.
+    readme = None
+
 from setuptools import setup
 
 setup(
@@ -49,11 +55,11 @@ setup(
     author = "Eric Wald",
     author_email = "breadman@users.sourceforge.net",
     description = "A framework for playing the Diplomacy board game over a network.",
-    long_description = open('README.txt').read(),
+    long_description = readme,
     license = "Artistic License 2.0",
     keywords = "daide diplomacy board game server",
     url = "http://sourceforge.net/projects/parlance/",
-    platform = "Any",
+    platforms = "Any",
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Console",
