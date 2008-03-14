@@ -222,7 +222,7 @@ class DATC_6_A(DiplomacyAdjudicatorTestCase):
         self.legalOrder(ITA, [(ITA, AMY, APU), MTO, VEN])
         self.assertMapState(start_state)
     def test_6A10_old(self):
-        "6.A.10.old support on unreachable destination is not possible"
+        "6.A.10.old  SUPPORT ON UNREACHABLE DESTINATION IS NOT POSSIBLE"
         start_state = [
             [AUS, AMY, BUD],
             [AUS, FLT, TRI],

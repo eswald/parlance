@@ -15,28 +15,29 @@ from subprocess import Popen
 from sys        import argv, modules
 from time       import sleep
 
-import functions
-import unittest_datc
-import unittest_options
-from config     import Configuration, variants
-from gameboard  import Map
-from main       import ThreadManager
-from network    import Client
-from player     import Player
-from tokens     import DRW, HUH, NOW, THX
-
-# Import all of the DATC test cases
-module = modules[__name__]
-for name in dir(unittest_datc):
-    if name.startswith('DATC'):
-        setattr(module, name, getattr(unittest_datc, name))
-for name in dir(unittest_options):
-    if name.startswith('DATC'):
-        setattr(module, name, getattr(unittest_options, name))
+from parlance import functions
 
 # Disable normal failure notices.
 def fails(function): return function
 functions.fails = fails
+
+from parlance.test       import datc, options
+from parlance.config     import Configuration, variants
+from parlance.gameboard  import Map
+from parlance.main       import ThreadManager
+from parlance.network    import Client
+from parlance.player     import Player
+from parlance.tokens     import DRW, HUH, NOW, THX
+from parlance.xtended    import standard_now
+
+# Import all of the DATC test cases
+module = modules[__name__]
+for name in dir(datc):
+    if name.startswith('DATC'):
+        setattr(module, name, getattr(datc, name))
+for name in dir(options):
+    if name.startswith('DATC'):
+        setattr(module, name, getattr(options, name))
 
 # Rearrange the testing system to use a foreign server
 class FakePlayer(Player):
@@ -45,16 +46,25 @@ class FakePlayer(Player):
             def add(self, order, nation=None): pass
         self.responses = []
         self.__super.__init__(*args, **kwargs)
+        self.threaded = []
         self.orders = FakeOrders()
         self.has_NOW = False
+        self.done = False
     def handle_message(self, message):
         self.responses.append(message)
         self.__super.handle_message(message)
     def handle_NOW(self, message):
+        if self.done: self.send(DRW)
         self.has_NOW = True
+    def handle_MIS(self, message):
+        pass
     def get_reply(self):
-        while not self.responses: sleep(.1)
+        while not self.responses:
+            self.manager.process(.1)
         return self.responses[0]
+    def finish(self):
+        self.send(DRW)
+        self.done = True
     def close(self):
         self.send(DRW)
         self.__super.close()
@@ -78,7 +88,7 @@ def check_results(unit_list, results):
         if unit not in unit_list: return False
     return True
 
-server_directory = r'D:\Daide\aiserver'
+server_directory = r"/cygdrive/c/webroot/games/daide/aiserver"
 def write_file(self, extension, contents):
     fname = 'test_%s%s%s' % (self.map.name, path.extsep, extension)
     #print 'Writing to', fname
@@ -92,42 +102,58 @@ def setUp(self):
     Configuration._cache.update(self.game_options)
     variant = variants[self.variant_name]
     self.manager = ThreadManager()
+    self.manager.options.block_exceptions = False
     self.players = []
     self.judge = FakeJudge(self)
     self.map = Map(variant)
-    self.write_file('mdf', str(variant.map_mdf).replace(' ( ', '\n( '))
-    self.write_file('sco', variant.start_sco)
+    self.write_file('mdf', str(variant.mdf()).replace(' ( ', '\n( '))
+    self.write_file('sco', variant.sco())
     self.write_file('rem', variant.rep)
-def tearDown(self): self.manager.close()
+def tearDown(self):
+    #print "Tearing Down..."
+    for player in self.players:
+        player.finish()
+    self.manager.process(5)
+    for player in self.players:
+        player.close()
+    self.manager.process(5)
+    self.manager.close()
+    sleep(2)
 def init_state(self, season, year, unit_list):
     self.write_file('now', NOW(season, year) % unit_list)
     program = [path.join(server_directory, 'AiServer.exe'),
-            '-start',
-            '-var=test_' + self.map.name,
-            '-exit=1',
-            '-mtl=3',
-            '-rtl=3',
-            '-btl=3',
-            ]
+        '-start',
+        '-var=test_' + self.map.name,
+        '-exit=1',
+        '-mtl=3',
+        '-rtl=3',
+        '-btl=3',
+    ]
     process = Popen(program, cwd=server_directory)
+    #print dir(process)
     #print "Started '%s' with pid %s" % (str.join(' ', program), process.pid)
     sleep(2)
     for country in self.map.powers:
+        #print "Starting %s..." % country
         client = self.manager.add_client(FakePlayer)
         if not client: raise UserWarning('Thread failed to start!')
+        if not client.player: self.manager.process(0.1)
         self.players.append(client.player)
     results = self.wait_now()
     if not check_results(unit_list, results):
         raise UserWarning('Incorrectly configured server!')
 def wait_now(self):
+    #print "Waiting for NOW..."
     player = self.players[-1]
-    player.responses = []
-    player.has_NOW = False
     tries = 0
     while tries < 30 and not player.has_NOW:
         tries += 1
         self.manager.process()
-    return player.responses
+    results = player.responses
+    for player in self.players:
+        player.responses = []
+        player.has_NOW = False
+    return results
 def chown_sc(self, owner, sc_list):
     newsco = self.map.create_SCO()
     idx = newsco.index(owner)
@@ -137,7 +163,10 @@ def chown_sc(self, owner, sc_list):
     self.map.handle_SCO(newsco)
     self.write_file('sco', newsco)
 def submitOrder(self, country, order):
-    client = [p for t,p in self.players if p.power == country][0]
+    if not self.players:
+        now = standard_now.fold()
+        self.init_state(now[1][0], now[1][1], now[2:])
+    client = [p for p in self.players if p.power == country][0]
     client.responses = []
     client.submit(order)
     client.get_reply()
@@ -147,13 +176,13 @@ def submitOrder(self, country, order):
         elif reply == HUH: break
     return reply
 
-unittest_datc.DiplomacyAdjudicatorTestCase.write_file = write_file
-unittest_datc.DiplomacyAdjudicatorTestCase.setUp = setUp
-unittest_datc.DiplomacyAdjudicatorTestCase.tearDown = tearDown
-unittest_datc.DiplomacyAdjudicatorTestCase.init_state = init_state
-unittest_datc.DiplomacyAdjudicatorTestCase.wait_now = wait_now
-unittest_datc.DiplomacyAdjudicatorTestCase.chown_sc = chown_sc
-unittest_datc.DiplomacyAdjudicatorTestCase.submitOrder = submitOrder
+datc.DiplomacyAdjudicatorTestCase.write_file = write_file
+datc.DiplomacyAdjudicatorTestCase.setUp = setUp
+datc.DiplomacyAdjudicatorTestCase.tearDown = tearDown
+datc.DiplomacyAdjudicatorTestCase.init_state = init_state
+datc.DiplomacyAdjudicatorTestCase.wait_now = wait_now
+datc.DiplomacyAdjudicatorTestCase.chown_sc = chown_sc
+datc.DiplomacyAdjudicatorTestCase.submitOrder = submitOrder
 
 if __name__ == '__main__':
     if len(argv) > 1 and path.isdir(argv[1]):
