@@ -664,7 +664,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             In this case, coast specification is required for fleet builds.
             This is the preferred solution for DATC and DAIDE.
         '''#'''
-        self.judge.datc.build_coast = False
+        self.judge.datc.datc_4b7 = 'a'
         start_state = []
         self.init_state(WIN, 1901, start_state)
         self.illegalOrder(RUS, [(RUS, FLT, STP), BLD])
@@ -675,7 +675,7 @@ class DATC_6_B(DiplomacyAdjudicatorTestCase):
             Subject to issue 4.B.7 (build_coast).
             In this case, fleets are built in a default coast if unspecified.
         '''#'''
-        self.judge.datc.build_coast = True
+        self.judge.datc.datc_4b7 = 'b'
         start_state = []
         self.init_state(WIN, 1901, start_state)
         self.illegalOrder(RUS, [(RUS, FLT, STP), BLD])
@@ -4318,8 +4318,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     @fails
     def test_6G10_never(self):
         "6.G.10.a  SWAPPED OR AN HEAD TO HEAD BATTLE?"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = False
+        self.judge.datc.datc_4a7 = 'a'
         steady_state = [
             [ENG, FLT, DEN],
             [ENG, FLT, FIN],
@@ -4347,8 +4346,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G10_bounce(self):
         "6.G.10.b  SWAPPED OR AN HEAD TO HEAD BATTLE?"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = True
+        self.judge.datc.datc_4a7 = 'b'
         steady_state = [
             [ENG, FLT, DEN],
             [ENG, FLT, FIN],
@@ -4375,11 +4373,10 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G11_Szykman(self):
         "6.G.11.d  A CONVOY TO AN ADJACENT PLACE WITH A PARADOX"
-        # 4.A.2 (paradox)
         # This situation becomes paradoxical if we must choose
         # between the land and convoy routes (4.A.3 a or d).
         self.judge.datc.datc_4a3 = 'f'
-        self.judge.datc.paradox = 'Szykman'
+        self.judge.datc.datc_4a2 = 'd'
         steady_state = [
             [ENG, FLT, NTH],
             [RUS, FLT, BAR],
@@ -4400,8 +4397,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G13_given(self):
         "6.G.13.a  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY"
-        # 4.A.4 (convoy_cuts)
-        self.judge.datc.convoy_cuts = False
+        self.judge.datc.datc_4a4 = 'a'
         steady_state = [
             [AUS, FLT, ADR],
             [ITA, FLT, VEN],
@@ -4421,8 +4417,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     @fails
     def test_6G13_cut(self):
         "6.G.13.b  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY"
-        # 4.A.4 (convoy_cuts)
-        self.judge.datc.convoy_cuts = True
+        self.judge.datc.datc_4a4 = 'b'
         steady_state = [
             [AUS, FLT, ADR],
             [AUS, AMY, TRI],
@@ -4440,8 +4435,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     @fails
     def test_6G14_never(self):
         "6.G.14.a  BOUNCE BY CONVOY TO ADJACENT PLACE"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = True
+        self.judge.datc.datc_4a7 = 'a'
         steady_state = [
             [ENG, FLT, DEN],
             [ENG, FLT, FIN],
@@ -4469,8 +4463,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G14_bounce(self):
         "6.G.14.b  BOUNCE BY CONVOY TO ADJACENT PLACE"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = True
+        self.judge.datc.datc_4a7 = 'b'
         steady_state = [
             [ENG, FLT, DEN],
             [ENG, FLT, FIN],
@@ -4498,8 +4491,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
     @fails
     def test_6G15_never(self):
         "6.G.15.a  BOUNCE AND DISLODGE WITH DOUBLE CONVOY"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = False
+        self.judge.datc.datc_4a7 = 'a'
         steady_state = [
             [ENG, FLT, NTH],
             [ENG, AMY, HOL],
@@ -4522,8 +4514,7 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
         ])
     def test_6G15_bounce(self):
         "6.G.15.b  BOUNCE AND DISLODGE WITH DOUBLE CONVOY"
-        # 4.A.7 (convoy_bounce)
-        self.judge.datc.convoy_bounce = True
+        self.judge.datc.datc_4a7 = 'b'
         steady_state = [
             [ENG, FLT, NTH],
             [ENG, AMY, HOL],
