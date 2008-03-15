@@ -1,7 +1,0 @@
-This directory is intended for saved statistics.
-
-The Ladder observer uses a 'ladder_scores' file here to store its score
-information.  The evolution framework will by default log its activities
-in an 'evolution' file in this directory.
-
-You may also store your own statistics files here, if desired.
