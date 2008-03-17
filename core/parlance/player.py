@@ -299,11 +299,11 @@ class Player(Observer):
     def close(self):
         self.__super.close()
         self.closed = True
+    @property
     def prefix(self):
         result = self.__class__.__name__
         if self.power: result += ' (%s)' % (self.power,)
         return result
-    prefix = property(fget=prefix)
     
     # Starting the game
     def send_identity(self):

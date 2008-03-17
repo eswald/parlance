@@ -556,8 +556,8 @@ class Token(_integer_Token):
             return name + '(' + repr(self.text) + ')'
         else: return name+'('+repr(self.text)+', '+('0x%04X'%self.number)+')'
     def tokenize(self): return [self]
+    @property
     def key(self): return self
-    key = property(fget=key)
     
     # Actions
     def __call__(self, *args):

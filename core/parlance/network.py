@@ -237,10 +237,10 @@ class Client(Connection):
         self.pclass = player_class
         self.kwargs = kwargs
         self.player = None
+    @property
     def prefix(self):
         return (self.player and self.player.prefix
                 or self.pclass.__name__) + ' Client'
-    prefix = property(fget=prefix)
     
     def send(self, msg):
         self.log_debug(5, '>> %s', msg)
