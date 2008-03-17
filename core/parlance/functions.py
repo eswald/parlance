@@ -13,6 +13,8 @@ r'''Parlance general utility functions
 from itertools import chain, ifilter, ifilterfalse
 from time import gmtime
 
+import parlance
+
 try:
     from functools import wraps
 except ImportError:
@@ -24,7 +26,6 @@ except ImportError:
             return wrapped
         return decorator
 
-__version__ = '1.4.1.x'
 
 def any(sequence):
     ''' Returns True any item in the sequence is true.
@@ -226,34 +227,13 @@ class defaultdict(dict):
             self[key] = result
             return result
 
-def version_number(static=[]):
-    ''' Find the git commit id, if available, or the software version number.
-        Caches the result, to avoid excess system calls.
-    '''#'''
-    if static: return static[0]
-    
-    def system(*args):
-        from subprocess import PIPE, Popen
-        try:
-            process = Popen(args, stdout=PIPE, stderr=PIPE)
-            result = process.communicate()[0].rstrip()
-        except OSError: result = None
-        return result
-    
-    result = version = 'v' + __version__
-    commit = system('git-describe')
-    if commit: result = commit
-    
-    static.append(result)
-    return result
-
 def version_string(extra=None):
     ''' Compute a version string for the NME message.
         The version string starts with 'Parlance',
         and ends with the Parlance version or commit id.
         If extra is given, it is stuffed in between.
     '''#'''
-    items = ['Parlance', extra, version_number()]
+    items = ['Parlance', extra, parlance.__version__]
     return str.join(' ', filter(None, items))
 
 def num2name(number):

@@ -10,6 +10,8 @@ r'''Parlance Diplomacy framework
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+from pkg_resources import get_distribution, DistributionNotFound
+
 # List of available modules
 __all__ = [
     'chatty',
@@ -27,3 +29,10 @@ __all__ = [
     'validation',
     'xtended',
 ]
+
+try:
+    dist = get_distribution('Parlance')
+except DistributionNotFound:
+    __version__ = None
+else: __version__ = 'v' + dist.version
+
