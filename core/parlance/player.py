@@ -291,7 +291,7 @@ class Player(Observer):
         # Usefully sent through keyword arguments
         self.power = power     # The power being played, or None
         self.pcode = passcode  # The passcode from the HLO message
-        if not isinstance(passcode, (int, None.__class__)):
+        if passcode is not None:
             try: self.pcode = int(passcode)
             except ValueError:
                 self.log_debug(1, 'Invalid passcode "%r"', passcode)
