@@ -1,0 +1,139 @@
+History of the Parlance Diplomacy Framework
+
+PyDip 1.0 -- 2 March 2006
+-------------------------
+The first public release of what became the Parlance package.
+
+
+PyDip 1.1 -- 30 March 2006
+--------------------------
+- Added "who" and "veto" admin commands.
+- Bugfix: The server could occasionally report negative time limits.
+- Bugfix: The NPR and NPB effects were incorrectly based on RTL and BTL.
+- The "enable press level" admin command can accept verbal press levels.
+- Bugfix: The server sent OBS instead of UNO in the HLO message.
+- Bugfix: An anchor name in the protocol document was incorrect.
+- Server now attempts to set SO_KEEPALIVE on sockets.
+- Failing test cases marked by a decorator, instead of mangling their names.
+- New server option for deterministic power assignments.
+- Now parses syntax and press levels straight from the syntax file.
+- Updated to DAIDE Message Syntax version 0.13:
+  * Clients can send HUH and PRN messages
+  * The server sends MIS instead of REJ (MIS) when all orders are in
+  * GOF is assumed each turn, not saved across turn adjudication
+  * Multipart messages are now required to have multiple parts
+  * "Must not" is used in place of the more ambiguous "may not"
+  * "Should" is used for things not easily checked by the server
+- Implemented CCD messages for failure to submit orders on time.
+- No longer broadcasts player passcodes on disconnection.
+- Server sends NOT (TME (seconds)) when a game is ended prematurely.
+- Output from the "status" admin command now contains more information.
+- Unimplemented unit tests no longer get run.
+- Implemented a raw token syntax client.
+- Press level can no longer be changed by admin command after the game starts.
+- Added an option to disable admin commands.
+- Removed the admin command password option.
+- Added comments to the options in the sample configuration file.
+- Changed default values for the syntax level, variable end length,
+  and client message validation options.
+- Removed the "double quotes" and "escape character" options, in favor of
+  new "input escape character" and "output escape character" options.
+- Allowed name and version parameters in OBS messages.
+- Automatic versioning from Subversion tags.
+- SMR can now show name and version of replacement players.
+- Server now trims TRY messages and blocks press to eliminated powers.
+- Combined token creation methods into a Representation class.
+- Client message validation no longer complains about PDA in HLO messages.
+- Players no longer send HUH and TRY in response to HUH or TRY press.
+- Bugfix: run_player() choked on single-digit verbosity levels.
+- Players now send HUH press if press handling throws an exception.
+- Added documentation for a hypothetical PRB press token.
+- Chatty now warns the user when admin messages are disabled.
+
+
+PyDip 1.2 -- 22 April 2006
+--------------------------
+- Bugfix: Failure to start a bot could cause the server to crash.
+- Bugfix: Platforms without a poll() call could generate import errors.
+- Bugfix: Windows can't handle empty host names for client sockets.
+- Server now waits for clients to disconnect before shutting down.
+- RawClient offers better error messages for token errors.
+- Eliminated a recursive Server.close() path.
+- SET messages no longer contain eliminated nations.
+- SEL now requests just the game id.
+- Added disambiguation parameters to CCD messages.
+- The server now strips WRT and message ids from press messages.
+- Players no longer send press with WRT syntax.
+- DRW power lists must have at least two powers, unfortunately.
+- CHO, BCC, and UNT have new official token numbers.
+- SET, LST, SEL, PNG, PRF, and PRB have new unofficial token numbers.
+- Documented how the PRF command should work.
+- Tokens can no longer be directly created with a single argument.
+- Now sends EM 0x0E only for reserved tokens, not unknown, by default.
+- Bugfix: Convoy orders always had NSO results, even when they succeeded.
+- Python message creation now looks more like DAIDE message syntax.
+- Renamed the internal syntax and protocol documents.
+- Players no longer send HUH messages with multiple ERR tokens.
+- Server no longer allows press after a game closes.
+- Province and power names are now cached with the variant information.
+- UNO now gets default power and adjective names.
+- The Player class now inherits from a more general Observer class.
+- Now requires Python 2.4 for set and decorator syntax, as well as doctests.
+- Documented the clarification of Error Message 0x0E.
+- Documented the unofficial duplicate RM possibility.
+- Switched any() and all() to match Python 2.5 syntax.
+- Tokens can no longer be added to strings.
+- Doctests in functions and orders are now run with the rest.
+- Server now handles invalid bot numbers a bit more robustly.
+- Various options are now handled by a Protocol class.
+- All-caps messages are no longer seen as commands unless commands are enabled.
+- The Judge classes have been renamed.
+- The variants file now uses multiple lines per variant.
+- Added "time limit" admin command.
+- Now boots players who cause too many server-side exceptions.
+- Bugfix: Logging output lines are no longer interleaved.
+- Implemented HST commands.
+- Saves game logs to disk when requested.
+- Run script now changes to its parent directory when run.
+- Bugfix: REJ_NME had the wrong signature.
+
+
+PyDip 1.3 -- 29 June 2006
+-------------------------
+- Various classes have been renamed and/or moved around.
+- Implemented a raw token syntax server.
+- Repaired the HST handling.
+- Clients now use register() instead of __init__() to send identity messages.
+- Observers now default to using their class name as their NME/OBS name.
+- Ladder score file is now configurable.
+- Slightly better Subversion-based version string.
+- Polling and threading refactored into a ThreadManager class.
+- The Judge no longer rejects HST commands out of hand.
+- Game ids are now the same names used by SVE and LOD, instead of numbers.
+- Moved a few free functions into relevant classes.
+- Token is now a subclass of int, instead of tuple.
+- Message validation has been split into a new class.
+- ThreadManager now watches for KeyboardInterrupt exceptions.
+- Automatically threaded message handlers now use the ThreadManager.
+- Chatty now uses the same InputWaiter as RawClient and RawServer.
+- Bugfix: DSD-paused games now resume when all players are connected.
+- Unpausing can now be vetoed.
+- The "status" admin command is now available to all clients.
+- Observer/Player __init__() arguments are purely keyword, not positional.
+- Switched to Python 2.5-compatible defaultdict() interface.
+- New, more automatic configuration system, tied into the command-line.
+- Various options have been renamed and/or moved to different classes.
+- Created the tokens module for importing tokens from the core protocol.
+- Now parses EM code names from protocol document, instead of configuration.
+- Turn instances are now immutable.
+- New command to print a sample configuration file.
+- Moved common test case imports from extend_globals() to the xtended module.
+- Representation instances can generate .rem files for David's server.
+- Bugfix: AutoObserver could throw an exception on certain input.
+- The server can now be configured to not send the standard RM.
+
+
+PyDip 1.3.1 -- 30 June 2006
+---------------------------
+- Bugfix: Boolean options missing the command-line argument could cause errors.
+
