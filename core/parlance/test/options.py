@@ -1129,7 +1129,6 @@ class DATC_4_B(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1901, start_state)
         self.illegalOrder(FRA, [(FRA, FLT, [SPA, NCS]), MTO, GOL])
         self.assertMapState(start_state)
-    @fails
     def test_4B5_ignore(self):
         '4.B.5.b  WRONG COAST OF ORDERED UNIT'
         # Test 6.B.10
