@@ -383,7 +383,30 @@ def failing(exception):
         return test_wrapper
     return decorator
 
-def timestamp(seconds=None, static=[None, 0]):
+def static(**kwargs):
+    r'''Initializes static variables of a function.
+        Such variables can then be accessed as attributes of
+        the function itself, assuming you know how to find it.
+        Warning: Don't use attributes set by Python itself.
+        
+        >>> @static(compound='')
+        ... def f(s):
+        ...     f.compound += s
+        ...     return f.compound
+        ...
+        >>> f('a')
+        'a'
+        >>> f('b')
+        'ab'
+    '''#"""#'''
+    def decorator(func):
+        for key in kwargs:
+            setattr(func, key, kwargs[key])
+        return func
+    return decorator
+
+@static(base=None, appendix=0)
+def timestamp(seconds=None):
     ''' Creates a game name from the current time.
         This implementation can handle up to fifty games per second;
         beyond that, it starts creating nine-character names.
@@ -436,10 +459,12 @@ def timestamp(seconds=None, static=[None, 0]):
     second = now[5] // 2                #  0 - 29 (or perhaps 30)
     result = (chars[year] + chars[month] + chars[day] +
             chars[hour] + chars[minute] + chars[second])
-    if result == static[0]: static[1] += 1
-    else: static[1] = 0
-    static[0] = result
-    return '%s%02d' % (result, static[1])
+    if result == timestamp.base:
+        timestamp.appendix += 1
+    else:
+        timestamp.base = result
+        timestamp.appendix = 0
+    return '%s%02d' % (result, timestamp.appendix)
 
 def todo(test):
     '''Makes a test always fail, with an appropriate note.'''
