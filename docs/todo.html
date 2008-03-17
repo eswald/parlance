@@ -12,7 +12,7 @@
     
     <h2>Documentation</h2>
     <p>The software needs some package-level documentation, beyond the page
-      specific to the public server.  Consider a readme, a change list, and
+      specific to the public server.  Consider a change list and detailed
       usage notes.</p>
     <p>Potential bot writers in particular need a lot more help than I
       currently give them.  Perhaps a template bot file, with all sorts of
@@ -27,7 +27,8 @@
     <p>The server should make its move logs available for perusal.</p>
     <p>Games should each have an open game log file, writing all broadcasts to
       it with timestamps.  This should be more robust, particularly in the
-      face of crashes, than the current log-on-exit idea.</p>
+      face of crashes, than the current log-on-exit idea.  Alternatively,
+      log straight to a database, defaulting to sqlite in memory.</p>
     <p>A <code>playback</code> admin command could be in order, sending one
       turn per second.  That could also be done client-side, but the Mapper
       doesn't have such a function yet.</p>
@@ -57,6 +58,7 @@
     <p>Bots started from the server could be optimized a bit.  This would
       probably start with the socket.socketpair() call, new in Python 2.4,
       but may extend to avoiding the network layer altogether.</p>
+    <p>Players should be allowed to start bots to replace themselves.</p>
     
     <h3>PeaceBot</h3>
     <p>PeaceBot is excessively limited at the moment.  Ideally, it should
@@ -87,25 +89,25 @@
       particular, decide whether "and" and "or" go at the end or beginning of
       a line, and whether to put space around parentheses in DAIDE-like
       expressions.</p>
+    <p>Docstrings in particular should be switched to the newer form, instead
+      of having an extra space at the beginning of the first line.</p>
     <p>Mac OS X ships with Python 2.2; as nice as the 2.4 syntax is, I want
-      Mac users to be able to run this out of the box (so to speak).</p>
+      Mac users to be able to run this out of the box (so to speak).
+      Then again, newer Macs probably have newer Python versions.</p>
     
     <h2>Packaging</h2>
-    <p>Submit to PyPI</p>
-    <p>Switch to "pkg_resources.iter_entry_points('parlance.bots')" for
-      deciding what bots the server can start.</p>
+    <p>The bots and variants should be released in a separate package,
+      with a non-commercial license.</p>
     
     <h2>DATC Options</h2>
     <p>Various tests have yet to be written, and many options have yet to be
       supported.  The comments in the config file should also reflect the lack
       of support for various options.</p>
-    <p>Perhaps the syntax checking should reflect certain DATC options.  As it
-      is, some options can be rendered useless by the overly strict syntax.</p>
+    <p>Some options could use HLO parameter support.</p>
+    <p>Perhaps the syntax should allow any loose order in a support clause.
+      Or at least any loose movement order.</p>
     
     <h2>Refactoring</h2>
-    <p>The various bot modules should be in a subdirectory, as should the test
-      modules.  Unfortunately, this requires either Python 2.5's relative
-      import syntax, or package installation.</p>
     <p>The validation and startup code should probably be optimized a bit
       more, particularly near regular expressions.</p>
     <p>Project20M also needs some refactoring for thread-safety, option
@@ -130,19 +132,13 @@
       non-optional item.  I seem to have eliminated all such cases from the
       syntax document, but perhaps I should create a check in the code for
       this case.</p>
+    <p>There seem to be some memory leaks that cause problems when running the
+      entire test suite on an old machine.</p>
     
     <h2>User Interface</h2>
-    <p>Some modules could give explanatory messages instead of doing nothing
-      when run as a script.  Ideas:
-      <table>
-        <tr><td>gameboard</td><td>?</td></tr>
-        <tr><td>judge</td><td>?</td></tr>
-        <tr><td>language</td><td>Show the base token values?</td></tr>
-        <tr><td>orders</td><td>?</td></tr>
-        <tr><td>validation</td>
-          <td>validate a message file, or print syntax rules</td></tr>
-        <tr><td>xtended</td><td>Show the standard token values?</td></tr>
-      </table>
+    <p>The run_player function would probably be better as a class method of
+      the Observer class.  That would require some refactoring of RawClient,
+      but would make it easier to export scripts for the various observers.
     </p>
     <p>Output might be better run through the <code>logger</code> package.</p>
     <p>Bot developers are requesting a real-time display of all press in the
@@ -180,14 +176,14 @@
       admin-command pauses.  When all players reconnect, either one will
       trigger a server-generated vetoable resume command.  However, this
       can cause a delay, where the official behavior specifies none.</p>
-    <p>Time messages can currently send or accept negative times, meaning
-      hours.  This is not official.  Better would be to have an optional
-      second parameter for the hours, so the time can still be accurate to the
-      second.</p>
+    <p>Time messages can currently accept negative times, meaning hours.
+      This is not official.  For that matter, sending hours as an additional
+      parameter isn't yet official either, nor is it well documented.</p>
     <p>My <a href="HST">HST</a> behavior may differ slightly from the
       standard.  Double-check that sometime.  Note that there doesn't seem to
       be an official way to get the starting NOW and SCO messages after the
-      game has started.</a>
+      game has started; it would probably be best to re-purpose the HST
+      message without arguments to serve that need.</a>
     <p>I allow players to cancel movement orders with NOT (SUB).  That is not
       technically allowed by the syntax document, but neither is it
       technically disallowed.</p>
@@ -215,12 +211,16 @@
     
     <h2>Unit Testing</h2>
     <p>The remaining doctests should probably be refactored into proper
-      unittest modules.</p>
+      unittest modules, or combined into a unittest suite.</p>
     <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
     <p>The network tests could use better assertions for some tests.</p>
     <p>THX order notes could use more testing.</p>
-    <p>Repair the tests that fail under setuptools.</p>
     <p>Test the ability to serve variants with a different map name.</p>
+    <p>Bot and variant test suites could be fleshed out some more.
+      In particular, bot testing should include movement, retreats, forced
+      disbands, removals, building inland, building on coasts, and perhaps
+      building at sea.  Variant tests should check that each key in various
+      sections is actually a province or power, and that all exist if any.</p>
     
   </body>
 </html>
