@@ -170,7 +170,7 @@ class DatcOptions(Configuration):
             'building a fleet in a land area',
             '4.C.4.  BUILDING A FLEET IN A LAND AREA',
             'a: The build always fails.',
-            'b: An army us built instead.',
+            'b: An army is built instead.',
             'DATC: a; DPTG: ?; DAIDE: a'),
         ('datc_4c5', datc('abc', 'b'), 'b', # Todo: a
             'missing nationality in support order',
