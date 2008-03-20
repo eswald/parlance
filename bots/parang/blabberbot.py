@@ -136,6 +136,6 @@ class BlabberBot(DumbBot):
         return result
 
 
-if __name__ == "__main__":
+def run():
     from parlance.main import run_player
     run_player(BlabberBot)

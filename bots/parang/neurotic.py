@@ -400,6 +400,6 @@ class Neurotic(Player):
             del self.learned[last_turn]
 
 
-if __name__ == "__main__":
+def run():
     from main import run_player
     run_player(Neurotic)

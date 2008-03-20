@@ -13,14 +13,16 @@ multiple games (consecutively or concurrently), is more configurable, can be
 managed remotely through admin commands, and accepts a slightly broader message
 syntax.
 
-Parlance also includes a framework for clients, including a command-line game
-observer, and can be used as a library for computer players (bots).
+Parlance also includes a framework for clients, along with a simple bot to
+replace an absent player.  This framework has also been used by the clients of
+the `Parang`_ package.
 
 Parlance may be used, modified, and/or redistributed under the terms of
 the `Artistic License 2.0`_, as published by the Perl Foundation.
 
 .. _Diplomacy: http://en.wikipedia.org/wiki/Diplomacy_(game)
 .. _Diplomacy AI Development Environment: http://www.daide.org.uk/index.xml
+.. _Parang: http://pypi.python.org/pypi/Parang/
 .. _Artistic License 2.0: http://www.perlfoundation.org/artistic_license_2_0
 
 
@@ -34,9 +36,6 @@ parlance-server
 
 parlance-holdbot
   Starts one or more HoldBots
-
-parlance-chatty
-  Starts a game observer
 
 parlance-config
   Prints out an example configuration file

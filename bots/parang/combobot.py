@@ -490,6 +490,6 @@ class ComboSet(object):
     #dislodge_prob = Memoize(dislodge_prob)
 
 
-if __name__ == "__main__":
+def run():
     from main import run_player
     run_player(ComboBot)

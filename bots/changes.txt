@@ -11,6 +11,7 @@ PyDip 1.1 -- 10 June 2006
 - Switched default DumbBot values back to those from David's code.
 - New PeaceBot, with simplistic press handling on a DumbBot core.
 - New BlabberBot, sending loads of random press messages.
+- Chatty now warns the user when admin messages are disabled.
 
 
 PyDip 1.2 -- 22 April 2006
@@ -30,5 +31,5 @@ PyDip 1.3 -- 29 June 2006
 - Bot class __init__() arguments are purely keyword-based, not positional.
 - DumbBot and ComboBot switched to Python 2.5-based defaultdict() interface.
 - Switched to the new configuration system.
-- New script to apply DATC test cases to David's server.
+- Chatty now uses the same InputWaiter as RawClient and RawServer.
 

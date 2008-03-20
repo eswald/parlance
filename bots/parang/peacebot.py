@@ -91,6 +91,6 @@ class PeaceBot(DumbBot):
         self.handle_press_REJ(sender, folded)
 
 
-if __name__ == "__main__":
+def run():
     from parlance.main import run_player
     run_player(PeaceBot)

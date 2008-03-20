@@ -6,8 +6,9 @@ r'''Parlance chat-only console clients
     observers, with no ability to actually play the game, but allow chatting
     with players and other observers using admin messages.
     
-    Parlance may be used, modified, and/or redistributed under the terms of
-    the Artistic License 2.0, as published by the Perl Foundation.
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 from functions import expand_list, version_string

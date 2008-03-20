@@ -801,6 +801,6 @@ class DumbBot(Player):
     def get_values(self): return self.vals
 
 
-if __name__ == "__main__":
+def run():
     from parlance.main import run_player
     run_player(DumbBot)

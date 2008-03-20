@@ -48,7 +48,6 @@ PyDip 1.1 -- 30 March 2006
 - Bugfix: run_player() choked on single-digit verbosity levels.
 - Players now send HUH press if press handling throws an exception.
 - Added documentation for a hypothetical PRB press token.
-- Chatty now warns the user when admin messages are disabled.
 
 
 PyDip 1.2 -- 22 April 2006
@@ -115,7 +114,6 @@ PyDip 1.3 -- 29 June 2006
 - Message validation has been split into a new class.
 - ThreadManager now watches for KeyboardInterrupt exceptions.
 - Automatically threaded message handlers now use the ThreadManager.
-- Chatty now uses the same InputWaiter as RawClient and RawServer.
 - Bugfix: DSD-paused games now resume when all players are connected.
 - Unpausing can now be vetoed.
 - The "status" admin command is now available to all clients.

@@ -106,6 +106,6 @@ class EvilBot(DumbBot):
         self.__super.handle_OFF(message)
 
 
-if __name__ == "__main__":
+def run():
     from parlance.main import run_player
     run_player(EvilBot)

@@ -1,12 +1,13 @@
 #!/bin/env python
-r'''Parlance setup script
+r'''Parang setup script
     Copyright (C) 2008  Eric Wald
     
     This distribution script uses setuptools, by Phillip J. Eby.
     To use it, enter "python setup.py install" at a command line.
     
-    Parlance may be used, modified, and/or redistributed under the terms of
-    the Artistic License 2.0, as published by the Perl Foundation.
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 try:
@@ -26,44 +27,47 @@ from setuptools import setup
 
 setup(
     # Provided items
-    name = "Parlance",
+    name = "Parang",
     version = "1.4.1",
-    packages = ["parlance"],
+    packages = ["parang"],
     entry_points = {
         "console_scripts": [
-            "parlance-server = parlance.server:run",
-            "parlance-holdbot = parlance.player:run",
-            "parlance-config = parlance.config:run",
-            "parlance-raw-client = parlance.main:run",
-            "parlance-raw-server = parlance.network:run",
+            "blabberbot = parang.blabberbot:run",
+            "chatty = parang.chatty:run",
+            "combobot = parang.combobot:run",
+            "dumbbot = parang.dumbbot:run",
+            "evilbot = parang.evilbot:run",
+            "neurotic = parang.neurotic:run",
+            "peacebot = parang.peacebot:run",
+            "project20m = parang.project20m:run",
         ],
         "gui_scripts": [
         ],
         "parlance.bots": [
-            "HoldBot = parlance.player:HoldBot",
-        ],
-        "parlance.judges": [
-            "standard = parlance.judge:Judge",
-        ],
-        "parlance.variants": [
-            "standard = parlance.xtended:standard",
+            "BlabberBot = parang.blabberbot:BlabberBot",
+            "ComboBot = parang.combobot:ComboBot",
+            "DumbBot = parang.dumbbot:DumbBot",
+            "EvilBot = parang.evilbot:EvilBot",
+            "Neurotic = parang.neurotic:Neurotic",
+            "PeaceBot = parang.peacebot:PeaceBot",
+            "Project20M = parang.project20m:Project20M",
         ],
     },
     
     # Project metadata
     author = "Eric Wald",
     author_email = "breadman@users.sourceforge.net",
-    description = "A framework for playing the Diplomacy board game over a network.",
+    description = "A set of clients for the Parlance Diplomacy Framework.",
     long_description = readme,
-    license = "Artistic License 2.0",
+    license = "Non-commercial",
     keywords = "daide diplomacy board game server",
-    url = "http://sourceforge.net/projects/parlance/",
     platforms = "Any",
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Console",
+        "Environment :: Console :: Curses",
         "Environment :: No Input/Output (Daemon)",
-        "License :: OSI Approved :: Artistic License",
+        "License :: Non-commercial",
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
@@ -73,8 +77,8 @@ setup(
     
     # Installation options
     zip_safe = True,
-    test_suite = "parlance.test",
+    test_suite = "parang.testing",
     package_data = {
-        "parlance": ["data/*.html", "data/*.cfg"],
+        "parang": [],
     },
 )

@@ -1140,6 +1140,6 @@ def target(order):
     return order.destination.province
 
 
-if __name__ == "__main__":
+def run():
     from parlance.main import run_player
     run_player(Project20M)
