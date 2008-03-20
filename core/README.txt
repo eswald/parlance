@@ -1,8 +1,6 @@
-============================
 Parlance Diplomacy Framework
 ============================
 
---------------
 About Parlance
 --------------
 
@@ -26,7 +24,6 @@ the `Artistic License 2.0`_, as published by the Perl Foundation.
 .. _Artistic License 2.0: http://www.perlfoundation.org/artistic_license_2_0
 
 
---------
 Commands
 --------
 
@@ -53,7 +50,6 @@ parlance-raw-server:
   syntax on standard input and output.
 
 
-------------
 Installation
 ------------
 
@@ -68,7 +64,7 @@ can install it with::
 
 .. _Easy Install: http://peak.telecommunity.com/DevCenter/EasyInstall
 
--------
+
 Credits
 -------
 
