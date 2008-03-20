@@ -1,9 +1,10 @@
-# Back-Propagation Neural Networks
-# 
-# Written in Python.  See http://www.python.org/
-# Placed in the public domain.
-# Neil Schemenauer <nas@arctrix.com>
-# Slightly modified by Eric Wald <eswald@brainshell.org>
+r'''Back-Propagation Neural Networks
+    Copyright (C) 2007-2008  Neil Schemenauer and Eric Wald
+    
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
+'''#'''
 
 import math
 import random

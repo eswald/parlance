@@ -1,12 +1,15 @@
 ''' PeaceBot - An overly trusting diplomacy bot.
-    Copyright (C) 2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+    Copyright (C) 2006-2008  Eric Wald
+    
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
-from dumbbot      import DumbBot
-from language     import Message
-from orders       import OrderSet
-from tokens       import ERR, PCE, PRP, YES
+from parang.dumbbot    import DumbBot
+from parlance.language import Message
+from parlance.orders   import OrderSet
+from parlance.tokens   import ERR, PCE, PRP, YES
 
 class PeaceBot(DumbBot):
     ''' An overly trusting bot that just wants peace.
@@ -89,5 +92,5 @@ class PeaceBot(DumbBot):
 
 
 if __name__ == "__main__":
-    from main import run_player
+    from parlance.main import run_player
     run_player(PeaceBot)

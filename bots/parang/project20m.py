@@ -1,7 +1,10 @@
-''' Project20M - A Python version of Project20M, by Andrew Huff,
-    Vincent Chan, Laurence Tondelier, Damian Bundred, and Colm Egan.
-    Rewritten for PyDip by Eric Wald, and included with permission.
-    Project20M has since been placed into the Public Domain.
+r'''Project20M - A Python version of Project20M
+    Copyright (C) 2004-2008  Andrew Huff, Vincent Chan, Laurence Tondelier,
+    Damian Bundred, Colm Egan, and Eric Wald
+    
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 from random import random
@@ -1138,5 +1141,5 @@ def target(order):
 
 
 if __name__ == "__main__":
-    from main import run_player
+    from parlance.main import run_player
     run_player(Project20M)

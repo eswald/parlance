@@ -1,6 +1,9 @@
 ''' Genetic evolver for PyDip bots
-    Copyright (C) 2004-2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+    Copyright (C) 2004-2008  Eric Wald
+    
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 from main      import ThreadManager

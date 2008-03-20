@@ -1,9 +1,9 @@
-History of the non-commercial Parlance support package
+History of the Parang Diplomacy clients
 
 PyDip 1.0 -- 2 March 2006
 -------------------------
-First public release of what later split into Parlance and this package.
-Included DumbBot, ported from David's C code, and EvilBot, a cheater.
+First public release of what later split into Parlance and Parang.
+Included ComboBot, DumbBot, and EvilBot.
 
 
 PyDip 1.1 -- 10 June 2006

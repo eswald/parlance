@@ -1,6 +1,9 @@
 ''' BlabberBot - A talkative creature that makes no sense.
-    Copyright (C) 2006 Eric Wald
-    Licensed under the Open Software License version 3.0
+    Copyright (C) 2006-2008  Eric Wald
+    
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 from random import choice, random, randrange, shuffle

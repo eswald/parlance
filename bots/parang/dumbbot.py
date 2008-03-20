@@ -1,21 +1,9 @@
 ''' DumberBot - A Python version of David Norman's DumbBot
-    Modified by Eric Wald, 2004-2006
+    Copyright (C) 2003-2008  David Norman and Eric Wald
     
-    This file is released under the same terms as the original:
-    
-    /**
-     * DumbBot - A Bot which runs under the DAIDE project.
-     *
-     * This file contains the entire code for the Bot to run within the
-     * Client Framework
-     *
-     * (C) David Norman 2003 david@ellought.demon.co.uk
-     *
-     * This software may be reused for non-commercial purposes without
-     * charge, and without notifying the author. Use of any part of this
-     * software for commercial purposes without permission from the Author
-     * is prohibited.
-     **/
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 from copy   import copy

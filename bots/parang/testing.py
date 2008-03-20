@@ -1,25 +1,23 @@
-r'''Test cases for Parlance bots
+r'''Test cases for Parang bots
     Copyright (C) 2004-2008  Eric Wald
     
-    This module contains the test cases removed from the Parlance core
-    framework due to dependence on restricted or incomplete bot code.
-    
-    Parlance may be used, modified, and/or redistributed under the terms of
-    the Artistic License 2.0, as published by the Perl Foundation.
+    This software may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this software for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 import unittest
 
 from parlance.player       import HoldBot
-from parlance.player       import HUH, SUB
+from parlance.tokens       import HUH, SUB
 from parlance.test.player  import PlayerTestCase
 from parlance.test.network import NetworkTestCase
 
-from blabberbot       import BlabberBot
-from dumbbot          import DumbBot
-from evilbot          import EvilBot
-from neurotic         import Neurotic
-from project20m       import Project20M
+from parang.blabberbot import BlabberBot
+from parang.dumbbot    import DumbBot
+from parang.evilbot    import EvilBot
+from parang.neurotic   import Neurotic
+from parang.project20m import Project20M
 
 class Player_Bots(PlayerTestCase):
     def connect_player(self, bot_class, **kwargs):
