@@ -355,6 +355,9 @@ class Player(Observer):
         current = set(self.map.current_powers())
         for power_set in self.draws:
             if power_set == current: self.send(DRW)
+            elif len(power_set) <= 1:
+                self.log_debug(11,
+                    "Skipping power set in draws: %s", power_set)
             elif self.game_opts.PDA and power_set <= current:
                 self.send(DRW(power_set))
     def generate_orders(self):

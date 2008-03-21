@@ -202,6 +202,14 @@ class Player_Tests(PlayerTestCase):
         self.seek_reply(HUH(MAP(ERR, 0)))
         self.send(HUH(ERR, HUH(MAP(ERR, 0))))
         self.failUnlessEqual(self.replies, [])
+    def test_single_draw(self):
+        "Players no longer automatically request draws of only one player."
+        self.connect_player(self.Test_Player)
+        self.start_game()
+        country = self.player.power.key
+        self.player.draws.append(set([country]))
+        self.player.request_draws()
+        self.failIf(DRW(country) in self.replies)
 
 class Player_HoldBot(PlayerTestCase):
     r'''Test cases specific to the HoldBot class.
