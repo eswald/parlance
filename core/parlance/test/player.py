@@ -131,12 +131,11 @@ class Player_Tests(PlayerTestCase):
         self.player.validator = validator or Validator()
         self.send(REJ(YES))
         self.failUnless(self.player.closed)
-    @fails  # Until the fleet_rome variant is included
     def test_known_map(self):
         self.connect_player(self.Test_Player)
         self.seek_reply(NME (self.player.name) (self.player.version))
-        self.send(MAP('fleet_rome'))
-        self.seek_reply(YES(MAP('fleet_rome')))
+        self.send(MAP('standard'))
+        self.seek_reply(YES(MAP('standard')))
     def test_unknown_map(self):
         self.connect_player(self.Test_Player)
         self.seek_reply(NME (self.player.name) (self.player.version))
