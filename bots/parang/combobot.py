@@ -10,9 +10,9 @@ from copy         import copy
 from operator     import mul
 from random       import random
 
-from dumbbot      import DumbBot
-from functions    import all, any, defaultdict, sublists
-from orders       import *
+from parang.dumbbot      import DumbBot
+from parlance.functions  import all, any, defaultdict, sublists
+from parlance.orders     import *
 
 class ComboBot(DumbBot):
     ''' A bot that considers unit combinations.

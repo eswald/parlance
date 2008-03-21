@@ -10,45 +10,36 @@ import unittest
 
 from parlance.player       import HoldBot
 from parlance.tokens       import HUH, SUB
-from parlance.test.player  import PlayerTestCase
+from parlance.test.player  import BotTestCase
 from parlance.test.network import NetworkTestCase
 
 from parang.blabberbot import BlabberBot
+from parang.combobot   import ComboBot
 from parang.dumbbot    import DumbBot
 from parang.evilbot    import EvilBot
 from parang.neurotic   import Neurotic
+from parang.peacebot   import PeaceBot
 from parang.project20m import Project20M
 
-class Player_Bots(PlayerTestCase):
-    def connect_player(self, bot_class, **kwargs):
-        PlayerTestCase.connect_player(self, bot_class, **kwargs)
-        def handle_THX(player, message):
-            ''' Fail on bad order submission.'''
-            self.fail('Invalid order submitted: ' + str(message))
-        def handle_MIS(player, message):
-            ''' Fail on incomplete order submission.'''
-            self.fail('Missing orders: ' + str(message))
-        self.player.handle_THX = handle_THX
-        self.player.handle_MIS = handle_MIS
-    def attempt_one_phase(self, bot_class):
-        ''' Demonstrates that the given bot can at least start up
-            and submit a complete set of orders for the first season.
-        '''#'''
-        self.connect_player(bot_class)
-        self.start_game()
-        result = [message[0] for message in self.replies]
-        self.assertContains(SUB, result)
-        self.failIf(HUH in result)
+class BlabberBotTestCase(BotTestCase):
+    bot_class = BlabberBot
+
+class DumbBotTestCase(BotTestCase):
+    bot_class = DumbBot
+
+class ComboBotTestCase(BotTestCase):
+    bot_class = ComboBot
+
+class EvilBotTestCase(BotTestCase):
+    bot_class = EvilBot
+
+class NeuroticTestCase(BotTestCase):
+    bot_class = Neurotic
+    def setUp(self):
+        BotTestCase.setUp(self)
+        self.variant = variants['hundred3']
     
-    def test_project20m(self):
-        self.attempt_one_phase(Project20M)
-    def test_blabberbot(self):
-        self.attempt_one_phase(BlabberBot)
-    def test_neurotic(self):
-        self.variant = variants['hundred3']
-        self.attempt_one_phase(Neurotic)
     def test_neurotic_duplication(self):
-        self.variant = variants['hundred3']
         self.connect_player(Neurotic)
         self.start_game()
         first_result = [message
@@ -59,6 +50,12 @@ class Player_Bots(PlayerTestCase):
         second_result = [message
                 for message in self.replies if message[0] == SUB]
         self.failUnlessEqual(first_result, second_result)
+
+class PeaceBotTestCase(BotTestCase):
+    bot_class = PeaceBot
+
+class HuffTestCase(BotTestCase):
+    bot_class = Project20M
 
 class FullBotGames(NetworkTestCase):
     "Functional tests, pitting bots against each other."
