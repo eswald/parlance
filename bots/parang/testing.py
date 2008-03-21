@@ -8,6 +8,7 @@ r'''Test cases for Parang bots
 
 import unittest
 
+from parlance.config       import variants
 from parlance.player       import HoldBot
 from parlance.gameboard    import Variant
 from parlance.language     import protocol
