@@ -67,7 +67,7 @@ setup(
         "Environment :: Console",
         "Environment :: Console :: Curses",
         "Environment :: No Input/Output (Daemon)",
-        "License :: Non-commercial",
+        "License :: Free for non-commercial use",
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
