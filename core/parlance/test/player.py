@@ -12,12 +12,14 @@ r'''Test cases for Parlance clients
 import unittest
 
 from parlance.config     import Configuration, GameOptions
-from parlance.functions  import fails
+from parlance.gameboard  import Map, Variant
+from parlance.judge      import DatcOptions
 from parlance.language   import Token
+from parlance.orders     import OrderSet, createUnitOrder
 from parlance.player     import AutoObserver, Player, HoldBot
 from parlance.tokens     import *
 from parlance.validation import Validator
-from parlance.xtended    import ENG, FRA, GER, standard
+from parlance.xtended    import *
 
 class NumberToken(object):
     def __eq__(self, other):
@@ -77,7 +79,7 @@ class PlayerTestCase(unittest.TestCase):
             msg = self.replies.pop(0)
             if msg == message: break
         else: self.fail(error or 'Expected: ' + str(message))
-    def start_game(self):
+    def start_game(self, now=None, sco=None, country=None):
         while self.replies:
             msg = self.replies.pop(0)
             if msg[0] is NME: self.accept(msg); break
@@ -85,12 +87,12 @@ class PlayerTestCase(unittest.TestCase):
         self.send(MAP(self.variant.mapname))
         while self.replies:
             msg = self.replies.pop(0)
-            if msg[0] is MDF: self.send(self.variant.map_mdf)
+            if msg[0] is MDF: self.send(self.variant.mdf())
             elif msg[0] is YES and msg[2] is MAP: break
         else: self.fail('Failed to accept the map')
-        self.send_hello()
-        self.send(self.variant.sco())
-        self.send(self.variant.now())
+        self.send_hello(country)
+        self.send(sco or self.variant.sco())
+        self.send(now or self.variant.now())
     def assertContains(self, item, series):
         self.failUnless(item in series, 'Expected %r among %r' % (item, series))
 
@@ -202,6 +204,11 @@ class Player_Tests(PlayerTestCase):
         self.failUnlessEqual(self.replies, [])
 
 class Player_HoldBot(PlayerTestCase):
+    r'''Test cases specific to the HoldBot class.
+        These could go in a subclass of BotTestCase,
+        but that would run each case of the latter twice.
+    '''#"""#'''
+    
     def setUp(self):
         PlayerTestCase.setUp(self)
         self.connect_player(HoldBot)
@@ -213,31 +220,90 @@ class Player_HoldBot(PlayerTestCase):
         self.seek_reply(SND(FRA)(HUH(ERR + offer)))
         self.seek_reply(SND(FRA)(TRY()))
 
-class Player_Bots(PlayerTestCase):
-    def connect_player(self, bot_class):
-        PlayerTestCase.connect_player(self, bot_class)
-        def handle_THX(player, message):
-            ''' Fail on bad order submission.'''
-            folded = message.fold()
-            result = folded[2][0]
-            if result != MBV:
-                self.fail('Invalid order submitted: ' + str(message))
-        def handle_MIS(player, message):
-            ''' Fail on incomplete order submission.'''
-            self.fail('Missing orders: ' + str(message))
-        self.player.handle_THX = handle_THX
-        self.player.handle_MIS = handle_MIS
-    def attempt_one_phase(self, bot_class):
-        ''' Demonstrates that the given bot can at least start up
-            and submit a complete set of orders for the first season.
-        '''#'''
-        self.connect_player(bot_class)
+class BotTestCase(PlayerTestCase):
+    r'''Test cases applicable to all computer players.
+        When subclassing, override the bot_class variable.
+        Subclasses may also include bot-specific tests, if desired.
+    '''#"""#'''
+    
+    bot_class = HoldBot
+    
+    def setUp(self):
+        PlayerTestCase.setUp(self)
+        self.connect_player(self.bot_class)
+    def handle_message(self, message):
+        self.failIfEqual(message[0], HUH, message)
+        PlayerTestCase.handle_message(self, message)
+    def failUnlessComplete(self, now, sco, country):
+        orders = OrderSet()
+        datc = DatcOptions()
+        board = Map(self.variant)
+        if sco: board.handle_SCO(sco)
+        if now: board.handle_NOW(now)
+        power = board.powers[country]
+        phase = board.current_turn.phase()
+        self.start_game(now, sco, country)
+        for msg in self.replies:
+            if msg[0] is SUB:
+                for item in msg.fold()[1:]:
+                    order = createUnitOrder(item, power, board, datc)
+                    note = order.order_note(power, phase, orders)
+                    self.failUnlessEqual(note, MBV)
+                    orders.add(order, country)
+            elif msg[0] is NOT and msg[2] is SUB:
+                # Todo: Handle partial unsubmittals correctly.
+                orders = OrderSet()
+        result = orders.missing_orders(phase, power)
+        self.failIf(result, result)
+    
+    # Do not use docstrings for tests here,
+    # because they will make tests of different bots indistinguishable.
+    def test_startup(self):
+        # The bot can at least start up without complaining.
+        self.start_game()
+        result = [message[0] for message in self.replies]
+        self.failIf(HUH in result)
+    def test_any_orders(self):
+        # The bot tries to submit orders for the first season.
         self.start_game()
         result = [message[0] for message in self.replies]
         self.assertContains(SUB, result)
-        self.failIf(HUH in result)
-    
-    def test_holdbot(self):
-        self.attempt_one_phase(HoldBot)
+    def test_spring_orders(self):
+        # The bot can submit a complete set of orders for the spring season.
+        self.failUnlessComplete(None, None, ENG)
+    def test_retreat_orders(self):
+        self.failUnlessComplete(
+            NOW (SUM, 1901) (ENG, FLT, LON, MRT, [WAL, ECH]) (ENG, FLT, NTH),
+            None, ENG)
+    def test_disband_orders(self):
+        self.failUnlessComplete(
+            NOW (SUM, 1901) (ENG, FLT, LON, MRT, []),
+            None, ENG)
+    def test_removal_orders(self):
+        self.failUnlessComplete(NOW (WIN, 1901)
+            (ENG, FLT, LON) (ENG, AMY, WAL) (ENG, FLT, NTH) (ENG, FLT, ECH),
+            None, ENG)
+    def test_inland_builds(self):
+        self.failUnlessComplete(NOW (WIN, 1901) (AUS, FLT, TRI), None, AUS)
+    def test_coastal_builds(self):
+        self.failUnlessComplete(NOW (WIN, 1901), None, ENG)
+    def test_bicoastal_builds(self):
+        self.failUnlessComplete(NOW (WIN, 1901)
+            (RUS, FLT, SEV) (RUS, AMY, UKR) (RUS, AMY, MOS),
+            None, RUS)
+    def test_sea_builds(self):
+        self.variant = sea = Variant("sea")
+        information = '''
+            [homes]
+            ENG=NTH
+            [ownership]
+            ENG=NTH
+            [borders]
+            NTH=FLT ECH
+            ECH=FLT NTH
+        '''#"""#'''
+        sea.parse(line.strip() for line in information.splitlines())
+        sea.rep = sea.tokens()
+        self.failUnlessComplete(NOW (WIN, 1901), None, sea.rep["ENG"])
 
 if __name__ == '__main__': unittest.main()
