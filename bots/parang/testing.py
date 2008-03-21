@@ -9,6 +9,8 @@ r'''Test cases for Parang bots
 import unittest
 
 from parlance.player       import HoldBot
+from parlance.gameboard    import Variant
+from parlance.language     import protocol
 from parlance.tokens       import HUH, SUB
 from parlance.test.player  import BotTestCase
 from parlance.test.network import NetworkTestCase
@@ -23,6 +25,29 @@ from parang.project20m import Project20M
 
 class BlabberBotTestCase(BotTestCase):
     bot_class = BlabberBot
+    
+    def test_alone(self):
+        # BlabberBot used to cry if it had nobody to talk to.
+        self.variant = alone = Variant("alone")
+        information = '''
+            [homes]
+            ENG=LON
+            [ownership]
+            ENG=LON
+            [borders]
+            WAL=AMY LON, FLT ECH
+            LON=AMY WAL, FLT ECH NTH
+            ECH=FLT NTH LON WAL
+            NTH=FLT ECH LON
+        '''#"""#'''
+        alone.parse(line.strip() for line in information.splitlines())
+        alone.rep = alone.tokens()
+        self.failUnlessComplete(None, None, alone.rep["ENG"])
+    def test_seasons(self):
+        # Slight API change in the Map class went unnoticed for a time.
+        self.start_game()
+        season = self.player.random_category("Phases")
+        self.failUnlessEqual(season.category, protocol.token_cats["Phases"])
 
 class DumbBotTestCase(BotTestCase):
     bot_class = DumbBot

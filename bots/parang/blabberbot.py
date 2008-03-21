@@ -42,9 +42,10 @@ class BlabberBot(DumbBot):
         if press[0] not in replies + (HUH, TRY):
             self.send_press(sender, choice(replies)(press))
     def run(self):
-        self.send_press(choice(self.countries),
+        if self.countries:
+            self.send_press(choice(self.countries),
                 self.random_expression('press_message'))
-        self.manager.add_timed(self, 5 + random() * 10)
+            self.manager.add_timed(self, 5 + random() * 10)
     def random_expression(self, expression):
         self.log_debug(11, 'random_expression(%r)', expression)
         try: items = self.syntax[expression]
@@ -119,7 +120,7 @@ class BlabberBot(DumbBot):
         elif category == 'Integers':
             result = IntegerToken(randrange(protocol.max_pos_int))
         elif category == 'Phases':
-            result = choice(self.map.opts.seasons)
+            result = choice(self.map.variant.seasons)
         elif category == 'Coasts':
             result = choice([NCS, ECS, SCS, WCS])
         elif category == 'Text':
