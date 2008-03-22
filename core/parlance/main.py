@@ -21,6 +21,7 @@ except ImportError:
 
 from config    import Configuration, VerboseObject, variants
 from network   import Client, ServerSocket
+from functions import any
 
 __all__ = [
     'ThreadManager',
@@ -398,6 +399,10 @@ class ThreadManager(VerboseObject):
                 self.log_debug(11, 'Removing queued client: %s', client.prefix)
             else: self.attempt(client)
 
+def help_requested():
+    signals = "--help", "-h", "-?", "/?", "/h"
+    return any(flag in argv for flag in signals)
+
 def run_player(player_class, allow_multiple=True, allow_country=True):
     name = player_class.__name__
     num = None
@@ -415,6 +420,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
         if problem: print str(problem) % args
         exit(1)
     
+    if help_requested(): usage()
     remainder = Configuration.arguments
     #try: remainder = Configuration.parse_argument_list(argv[1:])
     #except Exception, err: usage(err)
@@ -449,6 +455,8 @@ def run_server(server_class, default_verbosity):
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
         if problem: print str(problem) % args
         exit(1)
+    if help_requested(): usage()
+    
     Configuration._args.setdefault('verbosity', default_verbosity)
     opts = {}
     remainder = Configuration.arguments
