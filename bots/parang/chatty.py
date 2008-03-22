@@ -11,10 +11,12 @@ r'''Parlance chat-only console clients
     commercial purposes without permission from the authors is prohibited.
 '''#'''
 
-from functions import expand_list, version_string
-from language  import Token
-from player    import Observer
-from tokens    import NOW, SCO
+from pkg_resources import resource_string
+
+from parlance.functions import expand_list, version_string
+from parlance.language  import Token
+from parlance.player    import Observer
+from parlance.tokens    import NOW, SCO
 
 class Chatty(Observer):
     ''' An observer that simply lets a human chat with Admin messages.'''
@@ -113,12 +115,14 @@ else:
         def handle_MAP(self, message):
             self.__super.handle_MAP(message)
             if self.map.valid:
+                mapname = self.map.name
                 try:
-                    message = self.map.variant.tty()
+                    text = resource_string("parang", "maps/%s.tty" % mapname)
+                    message = self.map.variant.rep.translate(text)
                     if message: self.show_map(message)
                 except Exception, e:
                     self.output('Error creating text map for %s: %s',
-                        self.map.name, e)
+                        mapname, e)
                 # Just in case it works...
                 self.send(NOW)
                 self.send(SCO)
@@ -251,5 +255,5 @@ def run():
         screen, using the curses library; otherwise, run a purely line-based
         console client.
     '''#'''
-    from main import run_player
+    from parlance.main import run_player
     run_player(MapChat, False, False)

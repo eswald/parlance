@@ -797,7 +797,7 @@ class Representation(Configurable):
             Traceback (most recent call last):
                 ...
             KeyError: 'unknown token \\'"\\''
-        '''#'''
+        '''#"""#'''
         if self.options.input_escape == self.options.quot_char:
             return self.translate_doubled_quotes(text)
         else: return self.translate_backslashed(text)
@@ -815,7 +815,7 @@ class Representation(Configurable):
             Traceback (most recent call last):
                 ...
             ValueError: unterminated string in Diplomacy message
-        '''#'''
+        '''#"""#'''
         # initialization
         fragments = text.split(self.options.quot_char)
         message = []
@@ -861,7 +861,7 @@ class Representation(Configurable):
             Traceback (most recent call last):
                 ...
             ValueError: unterminated string in Diplomacy message
-        '''#'''
+        '''#"""#'''
         
         # initialization
         fragments = text.split(self.options.quot_char)
