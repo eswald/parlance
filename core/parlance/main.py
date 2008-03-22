@@ -11,6 +11,7 @@ r'''Parlance command-line interface
 
 import select
 from itertools import chain
+from os.path   import basename
 from sys       import argv, exit, stdin
 from time      import sleep, time
 
@@ -403,6 +404,9 @@ def help_requested():
     signals = "--help", "-h", "-?", "/?", "/h"
     return any(flag in argv for flag in signals)
 
+def progname():
+    return basename(argv[0])
+
 def run_player(player_class, allow_multiple=True, allow_country=True):
     name = player_class.__name__
     num = None
@@ -410,11 +414,11 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
     
     def usage(problem=None, *args):
         if allow_multiple:
-            print 'Usage: %s [host][:port] [number]%s [-v<level>]' % (argv[0],
-                    allow_country and ' [power=passcode] ...' or '')
+            print ('Usage: %s [host][:port] [number]%s [-v<level>]' %
+                (progname(), allow_country and ' [power=passcode] ...' or ''))
             print 'Connects <number> copies of %s to <host>:<port>' % name
         else:
-            print 'Usage: %s [host][:port]%s -v<level>' % (argv[0],
+            print 'Usage: %s [host][:port]%s -v<level>' % (progname(),
                     allow_country and ' [power=passcode]' or '')
             print 'Connects a copy of %s to <host>:<port>' % name
         if problem: print str(problem) % args
@@ -451,7 +455,7 @@ def run_player(player_class, allow_multiple=True, allow_country=True):
 
 def run_server(server_class, default_verbosity):
     def usage(problem=None, *args):
-        print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % (argv[0],)
+        print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % progname()
         print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
         if problem: print str(problem) % args
         exit(1)
