@@ -256,8 +256,8 @@ def spit_borders(borders):
         yield province + "=" + str.join(", ", items)
     yield ""
 
-def write_file(basename, stream):
-    output = open(basename + ".cfg", "w")
+def write_file(filename, stream):
+    output = open(filename, "w")
     output.writelines(line + "\n" for line in stream)
     output.close()
 
@@ -265,7 +265,9 @@ def run_variant(name, description, files):
     print name + ": " + description
     lines = parse_files(name, description, files["mdf"],
         files["sco"], files["now"], files.get("nam"))
-    write_file(name, lines)
+    directory = "../parterre/data/"
+    filename = directory + name + ".cfg"
+    write_file(filename, lines)
 
 def run():
     parse_file('variants.html', parse_variants)
