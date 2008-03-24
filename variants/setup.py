@@ -1,5 +1,5 @@
 #!/bin/env python
-r'''Parang setup script
+r'''Parterre setup script
     Copyright (C) 2008  Eric Wald
     
     This distribution script uses setuptools, by Phillip J. Eby.
@@ -23,42 +23,31 @@ except:
     # Todo: Attempt to find the README file.
     readme = None
 
+def variant_list():
+    from os import listdir, path
+    entries = []
+    for filename in listdir(path.join("parterre", "data")):
+        name = path.splitext(filename)[0]
+        entry_point = "%s = parterre.loader:loader.%s" % (name, name)
+        entries.append(entry_point)
+    return entries
+
 setup(
     # Provided items
-    name = "Parang",
+    name = "Parterre",
     version = "1.4.1",
-    packages = ["parang"],
+    packages = ["parterre"],
     entry_points = {
-        "console_scripts": [
-            "blabberbot = parang.blabberbot:run",
-            "chatty = parang.chatty:run",
-            "combobot = parang.combobot:run",
-            "dumbbot = parang.dumbbot:run",
-            "evilbot = parang.evilbot:run",
-            "neurotic = parang.neurotic:run",
-            "peacebot = parang.peacebot:run",
-            "project20m = parang.project20m:run",
-        ],
-        "gui_scripts": [
-        ],
-        "parlance.bots": [
-            "BlabberBot = parang.blabberbot:BlabberBot",
-            "ComboBot = parang.combobot:ComboBot",
-            "DumbBot = parang.dumbbot:DumbBot",
-            "EvilBot = parang.evilbot:EvilBot",
-            "Neurotic = parang.neurotic:Neurotic",
-            "PeaceBot = parang.peacebot:PeaceBot",
-            "Project20M = parang.project20m:Project20M",
-        ],
+        "parlance.variants": variant_list(),
     },
     
     # Project metadata
     author = "Eric Wald",
     author_email = "breadman@users.sourceforge.net",
-    description = "A set of clients for the Parlance Diplomacy Framework.",
+    description = "A set of variants for the Parlance Diplomacy Framework.",
     long_description = readme,
     license = "Non-commercial",
-    keywords = "daide diplomacy board game server",
+    keywords = "daide diplomacy board game variants",
     platforms = "Any",
     classifiers = [
         "Development Status :: 4 - Beta",
@@ -75,8 +64,8 @@ setup(
     
     # Installation options
     zip_safe = True,
-    test_suite = "parang.testing",
+    test_suite = "parterre.datc",
     package_data = {
-        "parang": ["maps/*.tty"],
+        "parterre": ["data/*.cfg"],
     },
 )

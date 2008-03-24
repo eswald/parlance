@@ -392,7 +392,10 @@ class VerboseObject(Configurable):
 def parse_file(filename, parser):
     result = None
     try:
-        if filename.startswith("parlance://"):
+        if filename.startswith("resource://"):
+            parts = filename.split("/", 3)
+            stream = resource_stream(parts[2], parts[3])
+        elif filename.startswith("parlance://"):
             stream = resource_stream(__name__, filename.split("://")[1])
         else:
             stream = open(filename, 'rU', 1)

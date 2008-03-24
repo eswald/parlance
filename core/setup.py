@@ -22,8 +22,6 @@ except:
     # Todo: Attempt to find the README file.
     readme = None
 
-from setuptools import setup
-
 setup(
     # Provided items
     name = "Parlance",
