@@ -8,12 +8,13 @@ r'''Parterre variant loader
     commercial purposes without permission from the authors is prohibited.
 '''#"""#'''
 
+from parlance.config import VerboseObject
 from parlance.gameboard import Variant
 
-class Loader(object):
+class Loader(VerboseObject):
     def __getattr__(self, name):
         resource = "resource://%s/data/%s.cfg" % (__name__, name)
-        print "Loading", resource
+        self.log_debug(11, "Loading %s", resource)
         variant = Variant(name, filename=resource)
         setattr(self, name, variant)
         return variant
