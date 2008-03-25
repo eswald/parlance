@@ -217,9 +217,14 @@ class Validator(VerboseObject):
             # Just to restore the state for other tests:
             >>> base_rep.options.squeeze_parens = squeeze
         '''#'''
+        self.log_debug(20, "Validating %s against %r", msg, base_expression)
         if msg.count(BRA) != msg.count(KET):
-            if msg[0] == PRN: return False
-            else: return PRN(msg)
+            if msg[0] == PRN:
+                return False
+            else:
+                self.log_debug(17, "Bracket counts differ: %d != %d",
+                    msg.count(BRA), msg.count(KET))
+                return PRN(msg)
         else:
             index, valid = self.validate_expression(msg, base_expression)
             if valid and index == len(msg): return False
