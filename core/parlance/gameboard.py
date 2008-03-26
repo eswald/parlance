@@ -169,6 +169,8 @@ class Variant(object):
                 owned.sort()
                 self.ownership[name] = owned
             self.ownership["UNO"] = list(sorted(homes))
+        
+        self.rep = self.tokens()
     
     def parse_variant(self, key, value):
         if key in ("name", "mapname", "description", "judge"):

@@ -24,7 +24,6 @@ from parlance.xtended    import *
 def load_variant(information):
     variant = Variant("testing")
     variant.parse(line.strip() for line in information.splitlines())
-    variant.rep = variant.tokens()
     return variant
 
 class VariantFileTests(unittest.TestCase):

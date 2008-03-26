@@ -64,7 +64,7 @@ setup(
     
     # Installation options
     zip_safe = True,
-    test_suite = "parterre.datc",
+    test_suite = "parterre.testing",
     package_data = {
         "parterre": ["data/*.cfg"],
     },
