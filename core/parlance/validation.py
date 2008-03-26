@@ -231,9 +231,13 @@ class Validator(VerboseObject):
             else:
                 if index < len(msg) and msg[index] == KET:
                     submsg = msg[:index + 1]
-                    if submsg.count(BRA) != submsg.count(KET):
-                        if msg[0] == PRN: return False
-                        else: return PRN(msg)
+                    if submsg.count(BRA) < submsg.count(KET):
+                        if msg[0] == PRN:
+                            return False
+                        else:
+                            self.log_debug(17, "Bracket counts: %d < %d",
+                                submsg.count(BRA), submsg.count(KET))
+                            return PRN(msg)
                 result = HUH(msg)
                 result.insert(index + 2, ERR)
                 return result

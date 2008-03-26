@@ -10,7 +10,7 @@ r'''Test cases for the Parlance server
 import unittest
 
 from parlance.functions  import fails
-from parlance.tokens     import AMY, DRW, ERR, FLT, HUH, MDF, UNO
+from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import ENG, FRA, BRE, ECH, EDI, LON, PAR, WAL
 
@@ -28,5 +28,9 @@ class ValidatorTestCase(unittest.TestCase):
             [ECH, (FLT, LON, BRE)])
         reply = self.validator.validate_server_message(message)
         self.failUnlessEqual(reply, False)
+    def test_mistaken_prn(self):
+        message = SND (FRA) (PRP (SCD (ENG)))
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, HUH (SND (FRA) (PRP (SCD (ENG, ERR)))))
 
 if __name__ == '__main__': unittest.main()
