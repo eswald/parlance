@@ -135,3 +135,41 @@ PyDip 1.3.1 -- 30 June 2006
 ---------------------------
 - Bugfix: Boolean options missing the command-line argument could cause errors.
 
+
+Parlance 1.4.0 -- 4 March 2008
+------------------------------
+- Switched to the Artistic License 2.0
+- Split most variants and bots into separate packages.
+- Observer and Player classes no longer have name and version class variables.
+- Observer and Player descriptions are now taken from class docstrings.
+- Tried to use the git description for version numbers, with a static default.
+- Modified the LST message to include a game status.
+- Bugfix: Draws usually failed to get recorded as a game result.
+- Clients can now request the SMR message.
+- Syntax now distinguishes between client and player messages.
+- Syntax checking for orders is now looser, but stricter for press and ORD.
+- Server now handles waive orders without a power.
+- Improved input loop robustness, integrating it into the ThreadManager.
+- Revised, corrected, and updated quite a bit of documentation.
+- The syntax and protocol documents now explain differences from official ones.
+- Bugfix: Certain messages could cause infinite loops in the validator.
+- Validator internals have been modified slightly.
+- Clients can now recognize known maps regardless of case used in MAP messages.
+- New client hook for bot-specific map processing.
+- ThreadManager now has support for a low-priority action queue.
+- Bugfix: Disband orders no longer get issued for non-disloged units.
+- Now uses two tokens instead of negative numbers for long times.
+- Bugfix: Archived games responded incorrectly to SUB and MAP commands.
+- Implemented the VAR command for discovering the variant name.
+- Bugfix: Loose orders could result in units forgetting their type.
+- Several options have been switched to more polite defaults.
+- More DATC options have been implemented.
+- Changed the package and config file names.
+- Added a setuptools install script, which now installs new commands.
+- Most modules no longer do anything when run as a script.
+- Removed the now-broken DATC url from the configuration file.
+- Configuration printer now searches a package instead of a directory.
+- Data files can now be loaded from eggs, instead of the current directory.
+- Default game names now use UTC, and wrap every forty years.
+- New variant file format and parser.
+
