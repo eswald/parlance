@@ -11,7 +11,7 @@ from random import choice, random, randrange, shuffle
 from parlance.language import IntegerToken, \
         Message, StringToken, Token, protocol
 from parlance.tokens import BWX, ECS, HUH, \
-        NCS, NEC, REJ, SEC, SCS, TRY, WCS, YES
+        NCS, REJ, SCS, TRY, WCS, YES
 from parlance.validation import Validator
 from dumbbot import DumbBot
 

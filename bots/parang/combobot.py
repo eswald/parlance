@@ -8,7 +8,6 @@
 
 from copy         import copy
 from operator     import mul
-from random       import random
 
 from parang.dumbbot      import DumbBot
 from parlance.functions  import all, any, defaultdict, sublists
@@ -346,7 +345,6 @@ class ComboSet(object):
             - provs_lost         probability of enemy being there (I'm there or own it)
             - provs_doomed       probability of being destroyed
         '''#'''
-        #return 1 + random() * .1
         result = 0
         adj_provinces = set()
         for order in self.unit_orders:

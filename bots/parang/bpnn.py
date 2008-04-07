@@ -8,7 +8,6 @@ r'''Back-Propagation Neural Networks
 
 import math
 import random
-import string
 
 from parlance.config import VerboseObject
 

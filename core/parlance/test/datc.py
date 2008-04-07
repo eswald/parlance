@@ -12,7 +12,6 @@ import unittest
 
 from parlance.config    import Configuration, GameOptions, variants
 from parlance.functions import fails
-from parlance.language  import Message
 from parlance.tokens    import *
 from parlance.xtended   import *
 

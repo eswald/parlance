@@ -18,7 +18,6 @@ from functions  import defaultdict, expand_list, \
         instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
 from language   import Message, Time, protocol
-from player     import HoldBot
 from tokens     import *
 from validation import Validator
 

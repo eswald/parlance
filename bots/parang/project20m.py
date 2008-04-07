@@ -10,7 +10,7 @@ r'''Project20M - A Python version of Project20M
 from random import random
 
 from parlance.config    import VerboseObject
-from parlance.gameboard import Power, Province, Unit
+from parlance.gameboard import Unit
 from parlance.orders    import *
 from parlance.player    import Player
 from parlance.tokens    import AMY, FLT, SPR, SUM, WIN

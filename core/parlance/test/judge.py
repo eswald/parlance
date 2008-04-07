@@ -12,7 +12,6 @@ import unittest
 from time import time
 
 from parlance.config    import variants, Configuration, GameOptions
-from parlance.functions import fails
 from parlance.judge     import Attack_Decision, Hold_Decision, \
         Move_Decision, Path_Decision, Prevent_Decision
 from parlance.language  import Token

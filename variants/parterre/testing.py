@@ -10,7 +10,6 @@ r'''Parterre variant test cases
 
 import unittest
 
-from parlance.config import variants
 from parlance.test.gameboard import StandardVariantTests
 
 # Each variant is listed explicitly,

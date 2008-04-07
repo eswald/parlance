@@ -12,7 +12,7 @@ from parlance.config       import variants
 from parlance.player       import HoldBot
 from parlance.gameboard    import Variant
 from parlance.language     import protocol
-from parlance.tokens       import HUH, SUB
+from parlance.tokens       import SUB
 from parlance.test.player  import BotTestCase
 from parlance.test.network import NetworkTestCase
 

@@ -9,7 +9,6 @@ r'''Parlance configuration management
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-import re
 from ConfigParser import RawConfigParser
 from os           import linesep, path
 from pkg_resources import iter_entry_points, resource_stream

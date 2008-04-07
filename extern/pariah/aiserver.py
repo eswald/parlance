@@ -25,7 +25,6 @@ from parlance.test       import datc, options
 from parlance.config     import Configuration, variants
 from parlance.gameboard  import Map
 from parlance.main       import ThreadManager
-from parlance.network    import Client
 from parlance.player     import Player
 from parlance.tokens     import DRW, HUH, NOW, THX
 from parlance.xtended    import standard_now

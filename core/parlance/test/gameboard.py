@@ -15,7 +15,7 @@ from parlance.config     import variants
 from parlance.functions  import fails
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
-from parlance.language   import IntegerToken, Representation, protocol
+from parlance.language   import Representation, protocol
 from parlance.orders     import createUnitOrder
 from parlance.tokens     import *
 from parlance.validation import Validator
