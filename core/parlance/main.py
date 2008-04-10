@@ -369,7 +369,7 @@ class ThreadManager(VerboseObject):
     
     # Queue management
     def enqueue(self, target, *args, **kwargs):
-        self.add_queued(ThreadClient(target, args, kwargs))
+        self.add_queued(self.ThreadClient(target, args, kwargs))
     def add_queued(self, client):
         assert not self.closed
         self.queue_lock.acquire()
