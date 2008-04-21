@@ -4,8 +4,9 @@ r'''Parlance variant migrator
     This module harfs variant files as distributed with David's server,
     creating configuration files readable by Parlance software.
     
-    Parlance may be used, modified, and/or redistributed under the terms of
-    the Artistic License 2.0, as published by the Perl Foundation.
+    This package may be reused for non-commercial purposes without charge,
+    and without notifying the authors.  Use of any part of this package for
+    commercial purposes without permission from the authors is prohibited.
 '''#'''
 
 import re
@@ -175,35 +176,47 @@ def parse_definition(stream):
                 site.add(prov)
     return homes, borders
 
+def matches(filename, basename):
+    return basename == path.splitext(path.basename(filename))[0]
+
 def parse_files(name, description, mdf, sco, now, nam=None):
     groups = []
-    season, position = parse_position(open(now))
-    groups.append(spit_variant(name, season, description))
-    groups.append(spit_positions(position))
+    base = None
+    for filename in filter(None, (mdf, sco, now, nam)):
+        basename = path.splitext(path.basename(filename))[0]
+        if basename != name:
+            base = basename
     
-    # Todo: Skip this part if ownership can be derived from position
-    ownership = parse_centers(open(sco))
-    groups.append(spit_centers("ownership", ownership))
+    if matches(now, name):
+        season, position = parse_position(open(now))
+        groups.append(spit_variant(name, season, description, base))
+        groups.append(spit_positions(position))
+    else:
+        groups.append(spit_variant(name, None, description, base))
     
-    # Todo: Skip this part if another variant can be re-used
-    homes, borders = parse_definition(open(mdf))
-    groups.append(spit_centers("homes", homes))
-    groups.append(spit_borders(borders))
+    if matches(sco, name):
+        ownership = parse_centers(open(sco))
+        groups.append(spit_centers("ownership", ownership))
     
-    if nam:
+    if matches(mdf, name):
+        homes, borders = parse_definition(open(mdf))
+        groups.append(spit_centers("homes", homes))
+        groups.append(spit_borders(borders))
+    
+    if nam and matches(nam, name):
         powers, provinces = parse_names(open(nam))
         groups.append(spit_powers(powers))
         groups.append(spit_provinces(provinces))
     
     return chain(*groups)
 
-def spit_variant(name, season, description=None):
+def spit_variant(name, season, description=None, base=None):
     yield "[variant]"
     yield "name=" + name
     yield "judge=standard"
-    if description:
-        yield "description=" + description
-    yield "start=" + str.join(" ", season)
+    if description: yield "description=" + description
+    if season: yield "start=" + str.join(" ", season)
+    if base: yield "base=" + base
     yield ""
 
 def spit_powers(powers):
