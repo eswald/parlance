@@ -12,7 +12,7 @@ import time
 import unittest
 
 from parlance.config     import variants
-from parlance.functions  import fails
+from parlance.functions  import fails, todo
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Representation, protocol
@@ -945,6 +945,43 @@ class VariantFileTests(unittest.TestCase):
         TRE = variant.rep["TRE"]
         units = variant.now().fold()[2:]
         self.failUnlessEqual(units, [[ONE, AMY, TWO], [ONE, AMY, TRE]])
+    
+    def test_base_powers(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.powers, standard.powers)
+    def test_base_provinces(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.provinces, standard.provinces)
+    def test_base_homes(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.homes, standard.homes)
+    def test_base_ownership(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.ownership, standard.ownership)
+    def test_base_position(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.position, standard.position)
+    def test_base_borders(self):
+        variant = load_variant('''
+            [variant]
+            base=standard
+        ''')
+        self.failUnlessEqual(variant.borders, standard.borders)
 
 class StandardVariantTests(unittest.TestCase):
     "Tests for the standard map variant"

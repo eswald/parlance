@@ -12,9 +12,9 @@ r'''Parlance gameboard classes
 from itertools import chain, count
 from pkg_resources import split_sections
 
-from config      import Configuration, VerboseObject, judges, parse_file
-from functions   import Comparable, Immutable, Infinity, all, any, defaultdict
-from language    import Message, Representation, Token, protocol
+from config import Configuration, VerboseObject, judges, parse_file, variants
+from functions import Comparable, Immutable, Infinity, all, any, defaultdict
+from language import Message, Representation, Token, protocol
 from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
 
 def location_key(unit_type, loc):
@@ -38,6 +38,7 @@ class Variant(object):
     
     def __init__(self, name, rep=None, filename=None):
         self.name = name
+        self.base = None
         self.mapname = name
         self.description = ""
         self.provinces = {}
@@ -155,7 +156,7 @@ class Variant(object):
                 for line in lines:
                     parse(*line.split("=", 1))
         
-        if self.position and not self.ownership:
+        if self.position and self.homes and not self.ownership:
             # Base the default starting ownership on the starting position.
             # This is more often the case than starting with all home centers.
             homes = set(p for power in self.homes for p in self.homes[power])
@@ -170,10 +171,20 @@ class Variant(object):
                 self.ownership[name] = owned
             self.ownership["UNO"] = list(sorted(homes))
         
+        if self.base:
+            base = variants[self.base]
+            if not self.start: self.start = base.start
+            if not self.powers: self.powers = base.powers
+            if not self.provinces: self.provinces = base.provinces
+            if not self.homes: self.homes = base.homes
+            if not self.ownership: self.ownership = base.ownership
+            if not self.position: self.position = base.position
+            if not self.borders: self.borders = base.borders
+        
         self.rep = self.tokens()
     
     def parse_variant(self, key, value):
-        if key in ("name", "mapname", "description", "judge"):
+        if key in ("name", "base", "mapname", "description", "judge"):
             setattr(self, key, value)
         elif key == "start":
             self.start = tuple(self.rep.translate(value))
@@ -198,6 +209,7 @@ class Variant(object):
     
     def parse_positions(self, key, value):
         self.position[key] = [s.strip() for s in value.split(',') if s.strip()]
+        #self.position[key] = filter(None, map(str.strip, value.split(',')))
     
     def parse_borders(self, key, value):
         sites = {}
