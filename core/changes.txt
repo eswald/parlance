@@ -150,6 +150,7 @@ Parlance 1.4.0 -- 4 March 2008
 - Syntax checking for orders is now looser, but stricter for press and ORD.
 - Server now handles waive orders without a power.
 - Improved input loop robustness, integrating it into the ThreadManager.
+- Added, revised, corrected, updated, and improved many test cases.
 - Revised, corrected, and updated quite a bit of documentation.
 - The syntax and protocol documents now explain differences from official ones.
 - Bugfix: Certain messages could cause infinite loops in the validator.
@@ -172,4 +173,24 @@ Parlance 1.4.0 -- 4 March 2008
 - Data files can now be loaded from eggs, instead of the current directory.
 - Default game names now use UTC, and wrap every forty years.
 - New variant file format and parser.
+
+
+Parlance 1.4.1 -- Not yet released
+----------------------------------
+- Bugfix: Clients were sending the wrong version number in NME messages.
+- Now ignores when setuptools is already installed.
+- Minor optimizations.
+- Variant files format loosened a bit.
+- Corrected alphabetization of a few border specifications.
+- Bugfix: Server was sending invalid ORD messages.
+- Implemented a few more DATC options.
+- Moved the minmax function into TristateDecision.
+- Moved the curses-based observer clients to the Parang package.
+- More improvements to the testing suite.
+- Bugfix: Players no longer attempt to request a single-player draw.
+- Bugfix: MDF messages with empty neutral center lists failed to validate.
+- Bugfix: Validation could send PRN messages where inappropriate.
+- Variants loaded from a file now switch to an auto-generated Representation.
+- Cleaned out a few unused import statements.
+- Bugfix: The ThreadManager queue was slightly broken.
 

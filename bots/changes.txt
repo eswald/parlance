@@ -33,3 +33,21 @@ PyDip 1.3 -- 29 June 2006
 - Switched to the new configuration system.
 - Chatty now uses the same InputWaiter as RawClient and RawServer.
 
+
+Parang 1.4.1 -- Not yet released
+--------------------------------
+- Switched to a non-commercial license.
+- Split away from the main Parlance framework.
+- Moved bot descriptions into class docstrings.
+- Dropped the class-level name and version variables, no longer used by core.
+- Bugfix: BlabberBot could use incorrect province tokens in some situations.
+- Chatty now uses the input handler of the ThreadManager.
+- Project20M no longer monkeypatches the gameboard and orders modules.
+- BlabberBot now sends only cardinal-direction coastlines.
+- New Neurotic bot, using a massive variant-specific neural net.
+- Bugfix: MapChatty was failing to print SCO messages when it lacked a map.
+- Switched bot test cases to each use the new Parlance BotTestCase.
+- Bugfix: BlabberBot no longer tries to send press in single-player games.
+- Now checks for help flags in the main console scripts.
+- Cleaned out a few unused import statements.
+
