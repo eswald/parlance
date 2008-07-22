@@ -883,7 +883,7 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
     variant_name = 'americas4'
     def test_convoy_problem(self):
         ''' This situation started chewing up memory and CPU like mad.'''
-        rep = self.judge.map.opts.rep
+        rep = self.judge.map.variant.rep
         now = rep.translate('''NOW ( FAL 1848 )
                 ( MXC AMY ORE ) ( MXC FLT COM ) ( MXC FLT MPO )
                 ( MXC FLT NPO ) ( MXC FLT WCB )
