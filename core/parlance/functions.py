@@ -16,7 +16,7 @@ from time import gmtime
 import parlance
 
 try:
-    from functools import wraps
+    from functools import decorator, wraps
 except ImportError:
     def wraps(function):
         '''Makes a function wrapper look like the function it wraps.'''
@@ -335,6 +335,7 @@ def fails(test_function):
             ...
         ValueError: Errors propogate through.
     '''#'''
+    @wraps(test_function)
     def test_wrapper(test_case):
         try: test_function(test_case)
         except test_case.failureException: pass
@@ -376,6 +377,7 @@ def failing(exception):
         UserWarning: Other errors propogate through.
     '''#'''
     def decorator(test_function):
+        @wraps(test_function)
         def test_wrapper(test_case):
             try: test_function(test_case)
             except exception: pass
