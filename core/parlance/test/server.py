@@ -320,8 +320,8 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
-    @failing(ValueError)  # Until the fleet_rome variant is included
     def test_historian_var(self):
+        # Note: This test may fail if the fleet_rome variant is unavailable.
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
         self.set_option('variant', 'fleet_rome')
@@ -427,18 +427,19 @@ class Server_Basics(ServerTestCase):
         sleep(12)
         game.run()
         self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
-    @failing(ValueError)  # Until the fleet_rome variant is included
+    @fails
     def test_variant_map_name(self):
         ''' Variants should use the name of the map in MAP messages.
             For example, Fleet Rome should use MAP ("standard").
         '''#'''
+        # Note: This test may fail if the fleet_rome variant is unavailable.
         self.set_option('variant', 'fleet_rome')
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP ("standard"), player.queue)
-    @failing(ValueError)  # Until the fleet_rome variant is included
     def test_variant_name(self):
         ''' The server should answer a VAR command with the variant name.'''
+        # Note: This test may fail if the fleet_rome variant is unavailable.
         self.set_option('variant', 'fleet_rome')
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
@@ -1020,8 +1021,8 @@ class Server_Multigame(ServerTestCase):
         self.master.admin('Server: start holdbot')
         self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
-    @fails  # Until the sailho variant is included
     def test_sailho_game(self):
+        # Note: This test may fail if the sailho variant is unavailable.
         self.new_game('sailho')
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
@@ -1045,8 +1046,8 @@ class Server_Multigame(ServerTestCase):
                 LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
         self.assertEqual(YES (LST), self.master.queue[-1])
-    @fails  # Until the sailho variant is included
     def test_multigame_LST_reply(self):
+        # Note: This test may fail if the sailho variant is unavailable.
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
         game = self.new_game('sailho')
