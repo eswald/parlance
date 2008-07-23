@@ -23,6 +23,7 @@ from parang.evilbot    import EvilBot
 from parang.neurotic   import Neurotic
 from parang.peacebot   import PeaceBot
 from parang.project20m import Project20M
+from parang.teddybot   import TeddyBot
 
 class BlabberBotTestCase(BotTestCase):
     bot_class = BlabberBot
@@ -79,6 +80,9 @@ class NeuroticTestCase(BotTestCase):
 
 class PeaceBotTestCase(BotTestCase):
     bot_class = PeaceBot
+
+class TeddyBotTestCase(BotTestCase):
+    bot_class = TeddyBot
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M

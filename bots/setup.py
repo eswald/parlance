@@ -38,6 +38,7 @@ setup(
             "neurotic = parang.neurotic:run",
             "peacebot = parang.peacebot:run",
             "project20m = parang.project20m:run",
+            "teddybot = parang.teddybot:run",
         ],
         "gui_scripts": [
         ],
