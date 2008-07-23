@@ -994,7 +994,7 @@ class StandardVariantTests(unittest.TestCase):
     def test_sco_valid(self):
         self.failUnlessValid(variants[self.variant].sco())
     def test_now_valid(self):
-        self.failUnlessValid(variants[self.variant].sco())
+        self.failUnlessValid(variants[self.variant].now())
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
