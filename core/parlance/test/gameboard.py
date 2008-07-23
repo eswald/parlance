@@ -989,12 +989,20 @@ class StandardVariantTests(unittest.TestCase):
     def failUnlessValid(self, message):
         result = Validator().validate_server_message(message)
         self.failIf(result, result)
+    def var(self):
+        return variants[self.variant]
     def test_mdf_valid(self):
-        self.failUnlessValid(variants[self.variant].mdf())
+        self.failUnlessValid(self.var().mdf())
     def test_sco_valid(self):
-        self.failUnlessValid(variants[self.variant].sco())
+        self.failUnlessValid(self.var().sco())
     def test_now_valid(self):
-        self.failUnlessValid(variants[self.variant].now())
+        self.failUnlessValid(self.var().now())
+    def test_density(self):
+        # I don't particularly care whether this is correct,
+        # just that it's a float in the proper range.
+        density = self.var().density()
+        #print self.variant + ": " + repr(density)
+        self.failUnless(0 <= density <= 1, density)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''

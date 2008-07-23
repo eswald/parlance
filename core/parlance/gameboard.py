@@ -148,6 +148,22 @@ class Variant(object):
     def new_judge(self, options):
         return judges[self.judge](self, options)
     
+    def density(self):
+        # Calculates the graph density of the map
+        from tokens import BRA
+        edges = 0
+        for name in self.borders:
+            adjacencies = self.borders[name]
+            borders = set(token
+                for item in adjacencies
+                for token in self.rep.translate(adjacencies[item])
+                if token.is_province())
+            borders.add(self.rep[name])
+            edges += len(borders) - 1
+        
+        count = len(self.borders)
+        return float(edges) / (count * (count - 1))
+    
     def parse(self, stream):
         "Collects information file from a configuration file."
         for section, lines in split_sections(stream):
