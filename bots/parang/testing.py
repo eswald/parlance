@@ -83,6 +83,20 @@ class PeaceBotTestCase(BotTestCase):
 
 class TeddyBotTestCase(BotTestCase):
     bot_class = TeddyBot
+    
+    def assertOrder(self, now, sco, country, order):
+        self.start_game(now, sco, country)
+        orders = sum((msg.fold()[1:]
+                for msg in self.replies if msg[0] is SUB), [])
+        self.assertContains(order, orders)
+    
+    def test_fall_opportunity(self):
+        # Teddy takes a completely open center in the Fall
+        from parlance.tokens import NOW, FAL, AMY, MTO
+        from parlance.xtended import TUR, CON, BUL
+        now = NOW (FAL, 1901) (TUR, AMY, CON)
+        expected = [[TUR, AMY, CON], MTO, BUL]
+        self.assertOrder(now, None, TUR, expected)
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M
