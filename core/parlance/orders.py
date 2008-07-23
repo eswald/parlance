@@ -731,7 +731,7 @@ class OrderSet(defaultdict):
         elif phase == Turn.build_phase:
             for power in board.powers.itervalues():
                 builds = self.builds_remaining(power)
-                if builds > 0:   self.waive(power, builds)
+                if builds > 0: self.waive(builds, power)
                 elif builds < 0: self.default_removes(-builds, power, board)
         else: raise UserWarning, 'Unknown phase %d' % phase
     def default_removes(self, surplus, power, board):
