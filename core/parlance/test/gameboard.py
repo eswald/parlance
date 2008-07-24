@@ -16,7 +16,7 @@ from parlance.functions  import fails, todo
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Representation, protocol
-from parlance.orders     import createUnitOrder
+from parlance.orders     import OrderSet, createUnitOrder
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
@@ -1346,5 +1346,13 @@ class Gameboard_Doctests(unittest.TestCase):
     def test_turn_phase_name(self):
         t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
+
+class OrderSetTestCase(unittest.TestCase):
+    def test_complete_waives(self):
+        board = Map(standard)
+        board.handle_NOW(NOW (WIN, 1901) (RUS, AMY, MOS))
+        orders = OrderSet()
+        orders.complete_set(board)
+        self.failUnlessEqual(len(orders), 21)
 
 if __name__ == '__main__': unittest.main()
