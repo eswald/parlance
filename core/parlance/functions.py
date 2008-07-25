@@ -184,12 +184,30 @@ class Immutable(object):
             raise AttributeError("'%s' object has no attribute '%s'" %
                     (cls.__name__, name))
 
-class Infinity(object):
+class Infinity(Immutable):
+    r'''A representation of an arbitrarily large number.
+        Always larger than anything except itself.
+        
+        >>> Infinity > 1
+        True
+        >>> Infinity < 1
+        False
+        >>> Infinity + 1
+        Infinity
+        >>> Infinity + Infinity
+        Infinity
+        >>> 1 + Infinity
+        Infinity
+    '''#'''
+    
     def __gt__(self, other): return True
     def __lt__(self, other): return False
     def __ge__(self, other): return True
     def __le__(self, other): return False
+    def __add__(self, other): return Infinity
+    def __radd__(self, other): return Infinity
     def __str__(self): return 'Infinity'
+    def __repr__(self): return 'Infinity'
 Infinity = Infinity()
 
 class settable_property(object):
@@ -211,6 +229,8 @@ class defaultdict(dict):
         >>> d2[1].append('there')
         >>> d2
         {1: ['hello', 'there'], 2: ['world']}
+        >>> d2.has_key(3)
+        False
     '''#'''
     __slots__ = ('default_factory',)
     def __init__(self, default_factory=None):
