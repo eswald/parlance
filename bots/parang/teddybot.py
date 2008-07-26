@@ -6,7 +6,7 @@ r'''TeddyBot - A Diplomacy bot that attempts to choose targets.
     commercial purposes without permission from the authors is prohibited.
 '''#"""#'''
 
-from parlance.functions import Infinity, defaultdict
+from parlance.functions import Infinity, cache, defaultdict
 from parlance.orders import OrderSet
 from parlance.player import Player
 
@@ -24,7 +24,12 @@ class TeddyBot(Player):
             For TeddyBot, this involves distance and centrality calculations.
             Returns whether to accept the MAP message.
         '''#"""#'''
-        self.distance = distance = defaultdict(lambda: Infinity)
+        self.distance = cache('Teddy.distance.' + self.map.name,
+            self.calc_distances)
+        return True
+    
+    def calc_distances(self):
+        distance = defaultdict(lambda: Infinity)
         
         coasts = self.map.coasts
         for source in coasts:
@@ -48,7 +53,7 @@ class TeddyBot(Player):
                     if dist < distance[(source, sink)]:
                         distance[(source, sink)] = dist
         
-        return True
+        return dict(distance)
 
 
 def run():

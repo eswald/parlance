@@ -495,3 +495,37 @@ def todo(test):
         self.fail("Unwritten test")
     return wrapper
 
+@static(values={})
+def cache(key, factory, *args, **kwargs):
+    r'''Simple cache system.
+        If the key exists in the cache, its value is returned.
+        Otherwise, the factory function is called with any supplied arguments,
+        and its value is stored in the cache as the new value.
+        Ideally, the factory should be idempotent;
+        cache items may be stored indefinitely, or discarded at any time.
+        
+        >>> def f(value):
+        ...     print "Storing " + repr(value)
+        ...     return value
+        ...
+        >>> cache('a', f, 'b')
+        Storing 'b'
+        'b'
+        >>> cache('a', f, 'b')
+        'b'
+        >>> cache('b', f, value='c')
+        Storing 'c'
+        'c'
+    '''#"""#'''
+    
+    # Todo: "expires" keyword argument?
+    # Todo: Start deleting values if we run out of memory.
+    # Todo: Store values elsewhere, like in a database.
+    
+    try:
+        value = cache.values[key]
+    except KeyError:
+        value = factory(*args, **kwargs)
+        cache.values[key] = value
+    return value
+
