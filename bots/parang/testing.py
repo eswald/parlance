@@ -152,6 +152,12 @@ class TeddyBotTestCase(BotTestCase):
         self.start_game()
         dist = self.player.distance[(POR, POR)]
         self.failUnlessEqual(dist, 0)
+    
+    def test_land_centrality(self):
+        from parlance.xtended import MUN, SYR
+        self.start_game()
+        centrality = self.player.centrality
+        self.failUnless(centrality[MUN] > centrality[SYR])
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M

@@ -26,6 +26,8 @@ class TeddyBot(Player):
         '''#"""#'''
         self.distance = cache('Teddy.distance.' + self.map.name,
             self.calc_distances)
+        self.centrality = cache('Teddy.centrality.' + self.map.name,
+            self.calc_centrality, self.distance)
         return True
     
     def calc_distances(self):
@@ -56,6 +58,18 @@ class TeddyBot(Player):
                         distance[(source, sink)] = dist
         
         return dict(distance)
+    
+    def calc_centrality(self, distance):
+        closeness = {}
+        coasts = self.map.coasts
+        for source in coasts:
+            closeness[source] = sum(2 ** -distance[source, sink]
+                for sink in coasts if sink != source)
+        spaces = self.map.spaces
+        for source in spaces:
+            closeness[source] = sum(2 ** -distance[source, sink]
+                for sink in spaces if sink.is_supply())
+        return closeness
 
 
 def run():
