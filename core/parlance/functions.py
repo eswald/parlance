@@ -184,7 +184,7 @@ class Immutable(object):
             raise AttributeError("'%s' object has no attribute '%s'" %
                     (cls.__name__, name))
 
-class Infinity(Immutable):
+class _Infinity(Immutable):
     r'''A representation of an arbitrarily large number.
         Always larger than anything except itself.
         
@@ -198,17 +198,49 @@ class Infinity(Immutable):
         Infinity
         >>> 1 + Infinity
         Infinity
+        >>> -Infinity
+        -Infinity
     '''#'''
     
     def __gt__(self, other): return True
     def __lt__(self, other): return False
     def __ge__(self, other): return True
     def __le__(self, other): return False
-    def __add__(self, other): return Infinity
-    def __radd__(self, other): return Infinity
+    def __add__(self, other): return self
+    def __radd__(self, other): return self
+    def __neg__(self): return NegativeInfinity
     def __str__(self): return 'Infinity'
     def __repr__(self): return 'Infinity'
-Infinity = Infinity()
+    def __unicode__(self): return u'\u221E'
+Infinity = _Infinity()
+
+class _NegativeInfinity(Immutable):
+    r'''A representation of an arbitrarily large negative number.
+        Always less than anything except itself.
+        
+        >>> NegativeInfinity < 1
+        True
+        >>> NegativeInfinity > 1
+        False
+        >>> NegativeInfinity + NegativeInfinity
+        -Infinity
+        >>> -NegativeInfinity
+        Infinity
+        >>> 2 ** NegativeInfinity
+        0
+    '''#'''
+    
+    def __gt__(self, other): return False
+    def __lt__(self, other): return True
+    def __ge__(self, other): return False
+    def __le__(self, other): return True
+    def __add__(self, other): return self
+    def __rpow__(self, other): return 0
+    def __neg__(self): return Infinity
+    def __str__(self): return '-Infinity'
+    def __repr__(self): return '-Infinity'
+    def __unicode__(self): return u'-\u221E'
+NegativeInfinity = _NegativeInfinity()
 
 class settable_property(object):
     def __init__(self, fget): self.fget = fget
