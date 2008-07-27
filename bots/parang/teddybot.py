@@ -33,6 +33,7 @@ class TeddyBot(Player):
         
         coasts = self.map.coasts
         for source in coasts:
+            distance[source, source] = 0
             for border in coasts[source].borders_out:
                 distance[(source, border)] = 1
         for mid in coasts:
@@ -44,6 +45,7 @@ class TeddyBot(Player):
         
         spaces = self.map.spaces
         for source in spaces:
+            distance[source, source] = 0
             for border in spaces[source].borders_out:
                 distance[(source, border)] = 1
         for mid in spaces:

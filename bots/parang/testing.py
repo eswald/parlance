@@ -118,6 +118,12 @@ class TeddyBotTestCase(BotTestCase):
         self.start_game()
         dist = self.player.distance[((FLT, MAR, None), (FLT, GAS, None))]
         self.failUnlessEqual(dist, 3)
+    def test_fleet_distance_self(self):
+        from parlance.tokens import FLT
+        from parlance.xtended import POR
+        self.start_game()
+        dist = self.player.distance[((FLT, POR, None), (FLT, POR, None))]
+        self.failUnlessEqual(dist, 0)
     def test_army_distance(self):
         from parlance.tokens import AMY
         from parlance.xtended import POR, FIN
@@ -130,11 +136,22 @@ class TeddyBotTestCase(BotTestCase):
         self.start_game()
         dist = self.player.distance[((AMY, TUN, None), (AMY, NAP, None))]
         self.failUnlessEqual(dist, Infinity)
+    def test_army_distance_self(self):
+        from parlance.tokens import AMY
+        from parlance.xtended import POR
+        self.start_game()
+        dist = self.player.distance[((AMY, POR, None), (AMY, POR, None))]
+        self.failUnlessEqual(dist, 0)
     def test_convoy_distance(self):
         from parlance.xtended import POR, FIN
         self.start_game()
         dist = self.player.distance[(POR, FIN)]
         self.failUnlessEqual(dist, 5)
+    def test_convoy_distance_self(self):
+        from parlance.xtended import POR
+        self.start_game()
+        dist = self.player.distance[(POR, POR)]
+        self.failUnlessEqual(dist, 0)
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M
