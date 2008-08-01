@@ -7,7 +7,7 @@ r'''TeddyBot - A Diplomacy bot that attempts to choose targets.
 '''#"""#'''
 
 from parlance.functions import Infinity, cache, defaultdict
-from parlance.orders import OrderSet
+from parlance.orders import OrderSet, MoveOrder
 from parlance.player import Player
 
 class TeddyBot(Player):
@@ -16,6 +16,15 @@ class TeddyBot(Player):
     
     def generate_orders(self):
         orders = OrderSet(self.power)
+        turn = self.map.current_turn
+        phase = turn.phase()
+        if phase == turn.move_phase:
+            for unit in self.power.units:
+                for site in unit.coast.borders_out:
+                    if not self.map.spaces[site[1]].units:
+                        order = MoveOrder(unit, self.map.coasts[site])
+                        orders.add(order, unit.nation)
+        
         orders.complete_set(self.map)
         self.submit_set(orders)
     
