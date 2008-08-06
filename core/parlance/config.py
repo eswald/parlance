@@ -76,7 +76,8 @@ class Configuration(object):
         self._configurations[id(self)] = self
     def parse_options(self, klass):
         for cls in reversed(klass.__mro__):
-            section = cls.__dict__.get('__section__', cls.__module__)
+            module = cls.__module__.split('.')[-1]
+            section = cls.__dict__.get('__section__', module)
             opts = cls.__dict__.get('__options__', ())
             for item in opts: self.add_option(section, *item)
     def add_option(self, section, name, option_type, default, alt_names, *help):
@@ -84,6 +85,7 @@ class Configuration(object):
         if self._cache.has_key(name):
             value = self._cache[name]
         else:
+            #print 'Looking for %r in section %r' % (name, section)
             parser = self._validators.get(option_type, option_type)
             def attempt_arg(option):
                 result = None
