@@ -23,6 +23,18 @@ except:
     # Todo: Attempt to find the README file.
     readme = None
 
+# Class name => module
+bots = {
+    "BlabberBot": "blabberbot",
+    "ComboBot": "combobot",
+    "DumbBot": "dumbbot",
+    "EvilBot": "evilbot",
+    "Neurotic": "neurotic",
+    "PeaceBot": "peacebot",
+    "Project20M": "project20m",
+    "TeddyBot": "teddybot",
+}
+
 setup(
     # Provided items
     name = "Parang",
@@ -30,26 +42,14 @@ setup(
     packages = ["parang"],
     entry_points = {
         "console_scripts": [
-            "blabberbot = parang.blabberbot:run",
+            "%s = parang.%s:run" % (bot.lower(), bots[bot]) for bot in bots
+        ] + [
             "chatty = parang.chatty:run",
-            "combobot = parang.combobot:run",
-            "dumbbot = parang.dumbbot:run",
-            "evilbot = parang.evilbot:run",
-            "neurotic = parang.neurotic:run",
-            "peacebot = parang.peacebot:run",
-            "project20m = parang.project20m:run",
-            "teddybot = parang.teddybot:run",
         ],
         "gui_scripts": [
         ],
         "parlance.bots": [
-            "BlabberBot = parang.blabberbot:BlabberBot",
-            "ComboBot = parang.combobot:ComboBot",
-            "DumbBot = parang.dumbbot:DumbBot",
-            "EvilBot = parang.evilbot:EvilBot",
-            "Neurotic = parang.neurotic:Neurotic",
-            "PeaceBot = parang.peacebot:PeaceBot",
-            "Project20M = parang.project20m:Project20M",
+            "%s = parang.%s:%s" % (bot, bots[bot], bot) for bot in bots
         ],
     },
     
