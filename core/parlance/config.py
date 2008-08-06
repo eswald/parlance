@@ -559,8 +559,11 @@ class ConfigPrinter(Configuration):
                 #else: print '  Class %s has no __dict__?' % item.__name__
     
     def collect_modules(self, package):
+        # Todo: Replace this with something based on pkg_resources
+        import modulefinder
         pack = __import__(package, {}, {}, [])
-        for name in pack.__all__:
+        modules = modulefinder.ModuleFinder().find_all_submodules(pack)
+        for name in modules:
             try:
                 module = getattr(pack, name)
             except AttributeError:
