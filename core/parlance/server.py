@@ -285,7 +285,7 @@ class Server(VerboseObject):
             client.admin(line)
     def list_bots(self, client, match):
         client.admin('Available types of bots:')
-        for name in bots:
+        for name in sorted(bots):
             description = bots[name].__doc__.splitlines()[0].strip()
             client.admin('  %s - %s', name, description)
     def list_status(self, client, match):
