@@ -12,8 +12,9 @@ from parlance.config       import variants
 from parlance.functions    import Infinity
 from parlance.gameboard    import Variant
 from parlance.language     import protocol
-from parlance.tokens       import SUB
+from parlance.tokens       import AMY, FAL, FLT, MTO, NCS, NOW, SCO, SUB, UNO
 from parlance.player       import HoldBot
+from parlance.xtended      import *
 from parlance.test.player  import BotTestCase
 from parlance.test.network import NetworkTestCase
 
@@ -91,70 +92,75 @@ class TeddyBotTestCase(BotTestCase):
                 for msg in self.replies if msg[0] is SUB), [])
         self.assertContains(order, orders)
     
-    def test_fall_opportunity(self):
+    def test_neutral_opportunity(self):
         # Teddy takes a completely open center in the Fall
-        from parlance.tokens import NOW, FAL, AMY, MTO
-        from parlance.xtended import TUR, CON, BUL
         now = NOW (FAL, 1901) (TUR, AMY, CON)
         expected = [[TUR, AMY, CON], MTO, BUL]
         self.assertOrder(now, None, TUR, expected)
+    def test_central_opportunity(self):
+        # Given a choice, Teddy prefers a more central center
+        now = NOW (FAL, 1901) (TUR, AMY, BUR)
+        expected = [[TUR, AMY, BUR], MTO, MUN]
+        self.assertOrder(now, None, TUR, expected)
+    def test_unowned_opportunity(self):
+        # Teddy prefers to take new centers over moving into his own
+        now = NOW (FAL, 1901) (TUR, AMY, BUR)
+        sco = SCO (AUS, BUD, TRI, VIE) (ENG, LVP, EDI, LON) (FRA, BRE, PAR) \
+            (GER, KIE, BER) (ITA, ROM, NAP, VEN) (RUS, STP, MOS, WAR, SEV) \
+            (TUR, ANK, CON, SMY, MAR, MUN, BEL) \
+            (UNO, NWY, SWE, DEN, HOL, SPA, POR, TUN, GRE, SER, RUM, BUL)
+        expected = [[TUR, AMY, BUR], MTO, MUN]
+        self.assertOrder(now, sco, TUR, expected)
+    def test_leader_opportunity(self):
+        # Teddy attacks anyone close to winning
+        now = NOW (FAL, 1901) (TUR, AMY, BUR)
+        sco = SCO (AUS, BUD) (ENG, EDI, LVP, LON, BEL) \
+            (FRA, BRE, PAR) (GER, KIE, BER, MUN) \
+            (ITA, ROM, NAP, VEN, TRI, VIE, MAR, DEN, HOL,
+                SPA, POR, TUN, GRE, SER, RUM, BUL, MOS, WAR) \
+            (RUS, STP, SEV) (TUR, ANK, CON, SMY) (UNO, NWY, SWE)
+        expected = [[TUR, AMY, BUR], MTO, MAR]
+        self.assertOrder(now, sco, TUR, expected)
     
     def test_fleet_distance(self):
-        from parlance.tokens import FLT
-        from parlance.xtended import POR, FIN
         self.start_game()
         dist = self.player.distance[((FLT, POR, None), (FLT, FIN, None))]
         self.failUnlessEqual(dist, 6)
     def test_fleet_distance_coastal(self):
-        from parlance.tokens import FLT, NCS
-        from parlance.xtended import SPA, PIE
         self.start_game()
         dist = self.player.distance[((FLT, SPA, NCS), (FLT, PIE, None))]
         self.failUnlessEqual(dist, 4)
     def test_fleet_distance_coastal_crawl(self):
         # Fleets distance doesn't allow coast switching
-        from parlance.tokens import FLT
-        from parlance.xtended import MAR, GAS
         self.start_game()
         dist = self.player.distance[((FLT, MAR, None), (FLT, GAS, None))]
         self.failUnlessEqual(dist, 3)
     def test_fleet_distance_self(self):
-        from parlance.tokens import FLT
-        from parlance.xtended import POR
         self.start_game()
         dist = self.player.distance[((FLT, POR, None), (FLT, POR, None))]
         self.failUnlessEqual(dist, 0)
     def test_army_distance(self):
-        from parlance.tokens import AMY
-        from parlance.xtended import POR, FIN
         self.start_game()
         dist = self.player.distance[((AMY, POR, None), (AMY, FIN, None))]
         self.failUnlessEqual(dist, 8)
     def test_army_distance_infinity(self):
-        from parlance.tokens import AMY
-        from parlance.xtended import TUN, NAP
         self.start_game()
         dist = self.player.distance[((AMY, TUN, None), (AMY, NAP, None))]
         self.failUnlessEqual(dist, Infinity)
     def test_army_distance_self(self):
-        from parlance.tokens import AMY
-        from parlance.xtended import POR
         self.start_game()
         dist = self.player.distance[((AMY, POR, None), (AMY, POR, None))]
         self.failUnlessEqual(dist, 0)
     def test_convoy_distance(self):
-        from parlance.xtended import POR, FIN
         self.start_game()
         dist = self.player.distance[(POR, FIN)]
         self.failUnlessEqual(dist, 5)
     def test_convoy_distance_self(self):
-        from parlance.xtended import POR
         self.start_game()
         dist = self.player.distance[(POR, POR)]
         self.failUnlessEqual(dist, 0)
     
     def test_land_centrality(self):
-        from parlance.xtended import MUN, SYR
         self.start_game()
         centrality = self.player.centrality
         self.failUnless(centrality[MUN] > centrality[SYR])
