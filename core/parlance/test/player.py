@@ -242,7 +242,7 @@ class BotTestCase(PlayerTestCase):
     def handle_message(self, message):
         self.failIfEqual(message[0], HUH, message)
         PlayerTestCase.handle_message(self, message)
-    def failUnlessComplete(self, now, sco, country):
+    def collect_orders(self, now, sco, country):
         orders = OrderSet()
         datc = DatcOptions()
         board = Map(self.variant)
@@ -261,7 +261,15 @@ class BotTestCase(PlayerTestCase):
             elif msg[0] is NOT and msg[2] is SUB:
                 # Todo: Handle partial unsubmittals correctly.
                 orders = OrderSet()
+        return orders
+    def failUnlessComplete(self, now, sco, country):
+        orders = self.collect_orders(now, sco, country)
         result = orders.missing_orders(phase, power)
+        self.failIf(result, result)
+    def failIfConflicts(self, now, sco, country):
+        orders = self.collect_orders(now, sco, country)
+        result = [[str(order) for order in vals]
+            for vals in orders.values() if len(vals) > 1]
         self.failIf(result, result)
     
     # Do not use docstrings for tests here,
@@ -279,6 +287,9 @@ class BotTestCase(PlayerTestCase):
     def test_spring_orders(self):
         # The bot can submit a complete set of orders for the spring season.
         self.failUnlessComplete(None, None, ENG)
+    def test_spring_conflicts(self):
+        # The bot does not submit conflicting orders for the spring season.
+        self.failIfConflicts(None, None, ENG)
     def test_retreat_orders(self):
         self.failUnlessComplete(
             NOW (SUM, 1901) (ENG, FLT, LON, MRT, [WAL, ECH]) (ENG, FLT, NTH),
