@@ -261,13 +261,13 @@ class BotTestCase(PlayerTestCase):
             elif msg[0] is NOT and msg[2] is SUB:
                 # Todo: Handle partial unsubmittals correctly.
                 orders = OrderSet()
-        return orders
+        return phase, power, orders
     def failUnlessComplete(self, now, sco, country):
-        orders = self.collect_orders(now, sco, country)
+        phase, power, orders = self.collect_orders(now, sco, country)
         result = orders.missing_orders(phase, power)
         self.failIf(result, result)
     def failIfConflicts(self, now, sco, country):
-        orders = self.collect_orders(now, sco, country)
+        phase, power, orders = self.collect_orders(now, sco, country)
         result = [[str(order) for order in vals]
             for vals in orders.values() if len(vals) > 1]
         self.failIf(result, result)
