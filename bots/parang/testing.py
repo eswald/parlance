@@ -102,6 +102,11 @@ class TeddyBotTestCase(BotTestCase):
         now = NOW (FAL, 1901) (TUR, AMY, BUR)
         expected = [[TUR, AMY, BUR], MTO, MUN]
         self.assertOrder(now, None, TUR, expected)
+    def test_unopposed_opportunity(self):
+        # Teddy takes uncontested centers first
+        now = NOW (FAL, 1901) (TUR, AMY, BUR) (GER, AMY, KIE) (FRA, AMY, GAS)
+        expected = [[TUR, AMY, BUR], MTO, BEL]
+        self.assertOrder(now, None, TUR, expected)
     def test_unowned_opportunity(self):
         # Teddy prefers to take new centers over moving into his own
         now = NOW (FAL, 1901) (TUR, AMY, BUR)
