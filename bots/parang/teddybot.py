@@ -20,10 +20,20 @@ class TeddyBot(Player):
         phase = turn.phase()
         if phase == turn.move_phase:
             for unit in self.power.units:
+                values = {}
+                self.log_debug(9, unit)
                 for site in unit.coast.borders_out:
-                    if not self.map.spaces[site[1]].units:
-                        order = MoveOrder(unit, self.map.coasts[site])
-                        orders.add(order, unit.nation)
+                    space = self.map.spaces[site[1]]
+                    supply = 0
+                    if space.is_supply():
+                        if space.owner != self.power:
+                            supply = len(space.owner.centers)
+                    value = supply
+                    values[value] = site
+                    self.log_debug(9, '%s: %s', (site, value))
+                destination = self.map.coasts[values[max(values)]]
+                order = MoveOrder(unit, destination)
+                orders.add(order, unit.nation)
         
         orders.complete_set(self.map)
         self.submit_set(orders)
@@ -33,6 +43,9 @@ class TeddyBot(Player):
             For TeddyBot, this involves distance and centrality calculations.
             Returns whether to accept the MAP message.
         '''#"""#'''
+        self.distance = defaultdict(lambda: Infinity)
+        self.centrality = defaultdict(int)
+        return True
         self.distance = cache('Teddy.distance.' + self.map.name,
             self.calc_distances)
         self.centrality = cache('Teddy.centrality.' + self.map.name,

@@ -99,8 +99,8 @@ class TeddyBotTestCase(BotTestCase):
         self.assertOrder(now, None, TUR, expected)
     def test_central_opportunity(self):
         # Given a choice, Teddy prefers a more central center
-        now = NOW (FAL, 1901) (TUR, AMY, BUR)
-        expected = [[TUR, AMY, BUR], MTO, MUN]
+        now = NOW (FAL, 1901) (TUR, AMY, LVN)
+        expected = [[TUR, AMY, LVN], MTO, WAR]
         self.assertOrder(now, None, TUR, expected)
     def test_unopposed_opportunity(self):
         # Teddy takes uncontested centers first
@@ -114,7 +114,7 @@ class TeddyBotTestCase(BotTestCase):
             (GER, KIE, BER) (ITA, ROM, NAP, VEN) (RUS, STP, MOS, WAR, SEV) \
             (TUR, ANK, CON, SMY, MAR, MUN, BEL) \
             (UNO, NWY, SWE, DEN, HOL, SPA, POR, TUN, GRE, SER, RUM, BUL)
-        expected = [[TUR, AMY, BUR], MTO, MUN]
+        expected = [[TUR, AMY, BUR], MTO, PAR]
         self.assertOrder(now, sco, TUR, expected)
     def test_leader_opportunity(self):
         # Teddy attacks anyone close to winning
