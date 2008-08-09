@@ -121,49 +121,54 @@ class TeddyBotTestCase(BotTestCase):
             (RUS, STP, SEV) (TUR, ANK, CON, SMY) (UNO, NWY, SWE)
         expected = [[TUR, AMY, BUR], MTO, MAR]
         self.assertOrder(now, sco, TUR, expected)
+
+class CentralityTestCase(unittest.TestCase):
+    r"""Low-level unit tests for TeddyBot's internal calculations.
+        Currently tests its distance and centrality computations.
+    """#'''#"""
+    bot_class = TeddyBot
+    
+    def setUp(self):
+        player = self.bot_class(send_method=self.handle_message,
+            representation=standard.rep)
+        player.map = standard_map
+        self.distance = player.calc_distances()
+        self.centrality = player.calc_centrality(self.distance)
+    def handle_message(self, message):
+        # Ignore messages from the player
+        pass
     
     def test_fleet_distance(self):
-        self.start_game()
-        dist = self.player.distance[((FLT, POR, None), (FLT, FIN, None))]
+        dist = self.distance[((FLT, POR, None), (FLT, FIN, None))]
         self.failUnlessEqual(dist, 6)
     def test_fleet_distance_coastal(self):
-        self.start_game()
-        dist = self.player.distance[((FLT, SPA, NCS), (FLT, PIE, None))]
+        dist = self.distance[((FLT, SPA, NCS), (FLT, PIE, None))]
         self.failUnlessEqual(dist, 4)
     def test_fleet_distance_coastal_crawl(self):
         # Fleets distance doesn't allow coast switching
-        self.start_game()
-        dist = self.player.distance[((FLT, MAR, None), (FLT, GAS, None))]
+        dist = self.distance[((FLT, MAR, None), (FLT, GAS, None))]
         self.failUnlessEqual(dist, 3)
     def test_fleet_distance_self(self):
-        self.start_game()
-        dist = self.player.distance[((FLT, POR, None), (FLT, POR, None))]
+        dist = self.distance[((FLT, POR, None), (FLT, POR, None))]
         self.failUnlessEqual(dist, 0)
     def test_army_distance(self):
-        self.start_game()
-        dist = self.player.distance[((AMY, POR, None), (AMY, FIN, None))]
+        dist = self.distance[((AMY, POR, None), (AMY, FIN, None))]
         self.failUnlessEqual(dist, 8)
     def test_army_distance_infinity(self):
-        self.start_game()
-        dist = self.player.distance[((AMY, TUN, None), (AMY, NAP, None))]
+        dist = self.distance[((AMY, TUN, None), (AMY, NAP, None))]
         self.failUnlessEqual(dist, Infinity)
     def test_army_distance_self(self):
-        self.start_game()
-        dist = self.player.distance[((AMY, POR, None), (AMY, POR, None))]
+        dist = self.distance[((AMY, POR, None), (AMY, POR, None))]
         self.failUnlessEqual(dist, 0)
     def test_convoy_distance(self):
-        self.start_game()
-        dist = self.player.distance[(POR, FIN)]
+        dist = self.distance[(POR, FIN)]
         self.failUnlessEqual(dist, 5)
     def test_convoy_distance_self(self):
-        self.start_game()
-        dist = self.player.distance[(POR, POR)]
+        dist = self.distance[(POR, POR)]
         self.failUnlessEqual(dist, 0)
     
     def test_land_centrality(self):
-        self.start_game()
-        centrality = self.player.centrality
-        self.failUnless(centrality[MUN] > centrality[SYR])
+        self.failUnless(self.centrality[MUN] > self.centrality[SYR])
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M
