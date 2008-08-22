@@ -372,6 +372,9 @@ class _integer_Token(int):
                     (self.__class__.__name__, name))
         else: super(_integer_Token, self).__setattr__(name, value)
 
+def _fetch_token(klass, *args):
+    return klass.__new__(klass, *args)
+
 class Token(_integer_Token):
     ''' Embodies a single token, with both text and integer components.
         Instances are (mostly) immutable, and may be used as dictionary keys.
@@ -403,6 +406,21 @@ class Token(_integer_Token):
             result.category = (number & 0xFF00) >> 8
             Token.cache[key] = result
         return result
+    def __reduce_ex__(self, proto):
+        r'''Enables pickling tokens.
+            >>> from pickle import dumps, loads
+            >>> s = dumps(KET)
+            >>> k = loads(s)
+            >>> k == KET
+            True
+            >>> k.text == KET.text
+            True
+            >>> k.category == KET.category
+            True
+            >>> k is KET
+            True
+        '''#"""#'''
+        return _fetch_token, (Token, self.text, self.number)
     
     # Components
     def category_name(self):
