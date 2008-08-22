@@ -527,7 +527,7 @@ def todo(test):
         self.fail("Unwritten test")
     return wrapper
 
-@static(values={})
+@static(data=None)
 def cache(key, factory, *args, **kwargs):
     r'''Simple cache system.
         If the key exists in the cache, its value is returned.
@@ -548,16 +548,24 @@ def cache(key, factory, *args, **kwargs):
         >>> cache('b', f, value='c')
         Storing 'c'
         'c'
+        
+        # Cleanup to make the tests work next time; not part of the API
+        >>> del cache.data['a']
+        >>> del cache.data['b']
     '''#"""#'''
     
     # Todo: "expires" keyword argument?
-    # Todo: Start deleting values if we run out of memory.
-    # Todo: Store values elsewhere, like in a database.
+    # Todo: Make the filename configurable.
     
-    try:
-        value = cache.values[key]
-    except KeyError:
+    if cache.data is None:
+        import shelve
+        cache.data = shelve.open("datastore")
+    
+    if key in cache.data:
+        value = cache.data[key]
+    else:
         value = factory(*args, **kwargs)
-        cache.values[key] = value
+        cache.data[key] = value
+        cache.data.sync()
     return value
 
