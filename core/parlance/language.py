@@ -634,6 +634,26 @@ class StringToken(Token):
                 result = Token.__new__(klass, char, protocol.quot_prefix + charnum)
             StringToken.cache[char] = result
         return result
+    def __reduce_ex__(self, proto):
+        r'''Ensures that unpickled StringTokens work correctly.
+            >>> from pickle import dumps, loads
+            >>> five = StringToken('5')
+            >>> s = dumps(five)
+            >>> t = loads(s)
+            >>> t == five
+            True
+            >>> t.text == five.text
+            True
+            >>> t.category == five.category
+            True
+            >>> t is five
+            True
+            >>> del Token.cache[t.text, t.number]
+            >>> del StringToken.cache[t.text]
+            >>> loads(s)
+            StringToken('5')
+        '''#"""#'''
+        return _fetch_token, (StringToken, self.text)
 
 class IntegerToken(Token):
     ''' A token representing a DM integer.
@@ -665,6 +685,26 @@ class IntegerToken(Token):
             result = Token.__new__(klass, name, key)
             IntegerToken.cache[key] = result
         return result
+    def __reduce_ex__(self, proto):
+        r'''Ensures that unpickled IntegerTokens work correctly.
+            >>> from pickle import dumps, loads
+            >>> five = base_rep[5]
+            >>> s = dumps(five)
+            >>> t = loads(s)
+            >>> t == five
+            True
+            >>> t.text == five.text
+            True
+            >>> t.category == five.category
+            True
+            >>> t is five
+            True
+            >>> del Token.cache[t.text, 5]
+            >>> del IntegerToken.cache[5]
+            >>> loads(s)
+            IntegerToken(5)
+        '''#"""#'''
+        return _fetch_token, (IntegerToken, self.number)
 
 
 class Time(Comparable):
