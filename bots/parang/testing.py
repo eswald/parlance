@@ -12,7 +12,7 @@ from parlance.config       import variants
 from parlance.functions    import Infinity
 from parlance.gameboard    import Variant
 from parlance.language     import protocol
-from parlance.tokens       import AMY, FAL, FLT, MTO, NCS, NOW, SCO, SUB, UNO
+from parlance.tokens       import *
 from parlance.player       import HoldBot
 from parlance.xtended      import *
 from parlance.test.player  import BotTestCase
@@ -87,11 +87,15 @@ class TeddyBotTestCase(BotTestCase):
     bot_class = TeddyBot
     
     def assertOrder(self, now, sco, country, order):
+        self.assertOrders(now, sco, country, [order])
+    def assertOrders(self, now, sco, country, orders):
         self.start_game(now, sco, country)
-        orders = sum((msg.fold()[1:]
+        obtained = sum((msg.fold()[1:]
                 for msg in self.replies if msg[0] is SUB), [])
-        self.assertContains(order, orders)
+        for order in orders:
+            self.assertContains(order, obtained)
     
+    # Fall
     def test_neutral_opportunity(self):
         # Teddy takes a completely open center in the Fall
         now = NOW (FAL, 1901) (TUR, AMY, CON)
@@ -101,6 +105,11 @@ class TeddyBotTestCase(BotTestCase):
         # Given a choice, Teddy prefers a more central center
         now = NOW (FAL, 1901) (TUR, AMY, LVN)
         expected = [[TUR, AMY, LVN], MTO, WAR]
+        self.assertOrder(now, None, TUR, expected)
+    def test_island_opportunity(self):
+        # Given a choice, Teddy prefers a more central center
+        now = NOW (FAL, 1901) (TUR, FLT, WAL)
+        expected = [[TUR, FLT, WAL], MTO, LON]
         self.assertOrder(now, None, TUR, expected)
     def test_unopposed_opportunity(self):
         # Teddy takes uncontested centers first
@@ -126,6 +135,18 @@ class TeddyBotTestCase(BotTestCase):
             (RUS, STP, SEV) (TUR, ANK, CON, SMY) (UNO, NWY, SWE)
         expected = [[TUR, AMY, BUR], MTO, MAR]
         self.assertOrder(now, sco, TUR, expected)
+    
+    def test_build_fleet(self):
+        # Teddy makes reasonable building decisions
+        now = NOW (WIN, 1901) (ENG, AMY, YOR) (ENG, AMY, WAL)
+        expected = [[ENG, FLT, LON], BLD]
+        self.assertOrder(now, None, ENG, expected)
+    def test_two_armies(self):
+        # Teddy can build two units in the same phase
+        now = NOW (WIN, 1901) (AUS, FLT, TRI)
+        expected = [[[AUS, AMY, VIE], BLD],
+            [[AUS, AMY, BUD], BLD]]
+        self.assertOrders(now, None, AUS, expected)
 
 class CentralityTestCase(unittest.TestCase):
     r"""Low-level unit tests for TeddyBot's internal calculations.

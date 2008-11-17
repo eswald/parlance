@@ -6,8 +6,9 @@ r'''TeddyBot - A Diplomacy bot that attempts to choose targets.
     commercial purposes without permission from the authors is prohibited.
 '''#"""#'''
 
-from parlance.functions import Infinity, cache, defaultdict
-from parlance.orders import OrderSet, MoveOrder
+from parlance.functions import Infinity, cache
+from parlance.gameboard import Unit
+from parlance.orders import OrderSet, BuildOrder, MoveOrder
 from parlance.player import Player
 
 class TeddyBot(Player):
@@ -28,12 +29,26 @@ class TeddyBot(Player):
                     if space.is_supply():
                         if space.owner != self.power:
                             supply = len(space.owner.centers)
-                    value = supply
+                    value = (supply, self.centrality[site])
                     values[value] = site
-                    self.log_debug(9, '%s: %s', (site, value))
+                    self.log_debug(9, '%s: %s', site, value)
                 destination = self.map.coasts[values[max(values)]]
                 order = MoveOrder(unit, destination)
                 orders.add(order, unit.nation)
+        elif phase == turn.build_phase:
+            builds = -self.power.surplus()
+            if builds > 0:
+                values = []
+                for prov in self.power.homes:
+                    space = self.map.spaces[prov]
+                    if not space.units:
+                        for site in space.coasts:
+                            val = self.centrality[site.key]
+                            values.append((val, site))
+                for value, site in sorted(values)[-builds:]:
+                    unit = Unit(self.power, site)
+                    order = BuildOrder(unit)
+                    orders.add(order, unit.nation)
         
         orders.complete_set(self.map)
         self.submit_set(orders)
@@ -43,9 +58,6 @@ class TeddyBot(Player):
             For TeddyBot, this involves distance and centrality calculations.
             Returns whether to accept the MAP message.
         '''#"""#'''
-        self.distance = defaultdict(lambda: Infinity)
-        self.centrality = defaultdict(int)
-        return True
         self.distance = cache('Teddy.distance.' + self.map.name,
             self.calc_distances)
         self.centrality = cache('Teddy.centrality.' + self.map.name,
@@ -53,10 +65,12 @@ class TeddyBot(Player):
         return True
     
     def calc_distances(self):
-        distance = defaultdict(lambda: Infinity)
+        distance = {}
         
         coasts = self.map.coasts
         for source in coasts:
+            for sink in coasts:
+                distance[(source, sink)] = Infinity
             distance[source, source] = 0
             for border in coasts[source].borders_out:
                 distance[(source, border)] = 1
@@ -69,6 +83,8 @@ class TeddyBot(Player):
         
         spaces = self.map.spaces
         for source in spaces:
+            for sink in spaces:
+                distance[(source, sink)] = Infinity
             distance[source, source] = 0
             for border in spaces[source].borders_out:
                 distance[(source, border)] = 1
@@ -79,7 +95,7 @@ class TeddyBot(Player):
                     if dist < distance[(source, sink)]:
                         distance[(source, sink)] = dist
         
-        return dict(distance)
+        return distance
     
     def calc_centrality(self, distance):
         closeness = {}
