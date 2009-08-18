@@ -127,6 +127,46 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.legalOrder(GER, [(GER, AMY, GAS), MTO, SPA])
         self.legalOrder(ITA, [(ITA, FLT, POR), MTO, (SPA, NCS)])
         self.assertMapState(steady_state)
+    def test_beleagured(self):
+        ''' Massive beleagured garrison situation
+            Presented by David Norman
+        '''#'''
+        steady_state = [
+            [ENG, FLT, ECH],
+            [ENG, FLT, LON],
+            [ENG, FLT, YOR],
+            [ENG, FLT, EDI],
+            
+            [RUS, FLT, NWY],
+            [RUS, FLT, NWG],
+            [RUS, FLT, SKA],
+            [RUS, FLT, DEN],
+            
+            [GER, FLT, NTH],
+            [GER, FLT, BEL],
+            [GER, FLT, PIC],
+            
+            [FRA, FLT, BRE],
+            [FRA, FLT, MAO],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, ECH), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, LON), SUP, (ENG, FLT, ECH), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, YOR), SUP, (ENG, FLT, ECH), MTO, NTH])
+        self.legalOrder(ENG, [(ENG, FLT, EDI), SUP, (ENG, FLT, ECH), MTO, NTH])
+        
+        self.legalOrder(RUS, [(RUS, FLT, NWY), MTO, NTH])
+        self.legalOrder(RUS, [(RUS, FLT, NWG), SUP, (RUS, FLT, NWY), MTO, NTH])
+        self.legalOrder(RUS, [(RUS, FLT, SKA), SUP, (RUS, FLT, NWY), MTO, NTH])
+        self.legalOrder(RUS, [(RUS, FLT, DEN), SUP, (RUS, FLT, NWY), MTO, NTH])
+        
+        self.legalOrder(GER, [(GER, FLT, NTH), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, BEL), SUP, (GER, FLT, NTH), MTO, ECH])
+        self.legalOrder(GER, [(GER, FLT, PIC), SUP, (GER, FLT, NTH), MTO, ECH])
+        
+        self.legalOrder(FRA, [(FRA, FLT, BRE), MTO, ECH])
+        self.legalOrder(FRA, [(FRA, FLT, MAO), SUP, (FRA, FLT, BRE), MTO, ECH])
+        self.assertMapState(steady_state)
 
 class Judge_Convoys(DiplomacyAdjudicatorTestCase):
     ''' Minute details of convoy adjudication'''
