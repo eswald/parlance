@@ -4413,7 +4413,6 @@ class DATC_6_G_Disputable(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, TRI, MRT],
             [ITA, AMY, TRI],
         ])
-    @fails
     def test_6G13_cut(self):
         "6.G.13.b  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY"
         self.judge.datc.datc_4a4 = 'b'

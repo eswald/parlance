@@ -70,7 +70,7 @@ class DatcOptions(Configuration):
             'e: Use the land route unless specifically ordered to be convoyed.',
             'f: Never convoy unless specifically ordered.',
             'DATC: d(c); DPTG: e; DAIDE: f'),
-        ('datc_4a4', datc('ab', 'a'), 'a', # Todo: b
+        ('datc_4a4', datc('ab', 'ab'), 'a',
             'support cut on attack on itself via convoy',
             '4.A.4.  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY',
             'a: Support is not cut.',
@@ -744,6 +744,7 @@ class Judge(JudgeInterface):
         # Each moving unit gets Move, Attack, and Prevent decisions.
         # Each valid supporting unit gets a Support decision.
         # Each province moved into gets a Hold decision.
+        support = {'a': Support_Decision, 'b': Support_Decision_Cuttable}
         for unit in self.map.units:
             order = unit.current_order = self.unit_order(unit, HoldOrder)
             self.log_debug(13, 'Using "%s" for %s', order, unit)
@@ -758,7 +759,7 @@ class Judge(JudgeInterface):
                 elif not order.__result: order.__result = NSO
             elif order.is_supporting() and not order.__result:
                 if order.matches(self.next_orders):
-                    decisions.add(Support_Decision(order))
+                    decisions.add(support[self.datc.datc_4a4](order))
                 else: order.__result = NSO
         self.log_debug(11, "Convoyers = %s", convoyers)
         
@@ -1208,6 +1209,35 @@ class Support_Decision(Tristate_Decision):
     def calculate(self):
         dislodge = self.depends[0]
         min_oppose, max_oppose = self.minmax(self.depends[1:])
+        self.passed = dislodge.failed and max_oppose == 0
+        self.failed = dislodge.passed or  min_oppose >= 1
+        return self.decided()
+class Support_Decision_Cuttable(Tristate_Decision):
+    # Similar to the standard Support_Decision,
+    # but allows cuts from the province attacked if they're convoyed.
+    __slots__ = ('attacks', 'paths')
+    type = Decision.SUPPORT
+    def init_deps(self):
+        self.attacks = attacks = []
+        self.paths = paths = {}
+        for u in self.order.unit.coast.province.entering:
+            if u.coast.province != self.into:
+                attacks.append(u.decisions[Decision.ATTACK])
+            elif u.decisions[Decision.PATH].routes:
+                paths[u.decisions[Decision.PATH]] = u.decisions[Decision.ATTACK]
+        self.depends = ([self.order.unit.decisions[Decision.DISLODGE]] +
+            attacks + paths.keys() + paths.values())
+    def calculate(self):
+        dislodge = self.depends[0]
+        if self.paths:
+            min_oppose =  max_oppose = 0
+            actual = [self.paths[p] for p in self.paths if p.passed]
+            possible = [self.paths[p] for p in self.paths if not p.failed]
+            for decision in self.attacks + actual:
+                if decision.min_value > min_oppose: min_oppose = decision.min_value
+            for decision in self.attacks + possible:
+                if decision.max_value > max_oppose: max_oppose = decision.max_value
+        else: min_oppose, max_oppose = self.minmax(self.attacks)
         self.passed = dislodge.failed and max_oppose == 0
         self.failed = dislodge.passed or  min_oppose >= 1
         return self.decided()
