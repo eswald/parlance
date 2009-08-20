@@ -670,7 +670,6 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
             [AUS, AMY, TRI, MRT],
             [ITA, AMY, TRI],
         ])
-    @fails
     def test_4A4_cut(self):
         '4.A.4.b  SUPPORT CUT ON ATTACK ON ITSELF VIA CONVOY'
         # Test 6.G.13
