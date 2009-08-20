@@ -10,6 +10,7 @@ r'''DAIDE compatibility testing for Parlance
 '''#'''
 
 import unittest
+from itertools  import count
 from os         import path
 from subprocess import Popen
 from sys        import argv, modules
@@ -87,7 +88,7 @@ def check_results(unit_list, results):
         if unit not in unit_list: return False
     return True
 
-server_directory = r"/cygdrive/c/webroot/games/daide/aiserver"
+server_directory = r"/home/eswald/Programs/parlance/extern/daide/aiserver"
 def write_file(self, extension, contents):
     fname = 'test_%s%s%s' % (self.map.name, path.extsep, extension)
     #print 'Writing to', fname
@@ -95,9 +96,11 @@ def write_file(self, extension, contents):
     varfile.write(str(contents) + '\n')
     varfile.close()
 
+port = count(16714)
 def setUp(self):
     ''' Initializes class variables for test cases.'''
     self.set_verbosity(0)
+    self.game_options['port'] = port.next()
     Configuration._cache.update(self.game_options)
     variant = variants[self.variant_name]
     self.manager = ThreadManager()
@@ -127,6 +130,8 @@ def init_state(self, season, year, unit_list):
         '-mtl=3',
         '-rtl=3',
         '-btl=3',
+        '-port=' + str(Configuration._cache['port']),
+        '-kill=1',
     ]
     process = Popen(program, cwd=server_directory)
     #print dir(process)
@@ -134,7 +139,16 @@ def init_state(self, season, year, unit_list):
     sleep(2)
     for country in self.map.powers:
         #print "Starting %s..." % country
-        client = self.manager.add_client(FakePlayer)
+        tries = 4
+        while True:
+            try:
+                client = self.manager.add_client(FakePlayer)
+            except:
+                if not tries: raise
+                tries -= 1
+                sleep(2)
+            else:
+                break
         if not client: raise UserWarning('Thread failed to start!')
         if not client.player: self.manager.process(0.1)
         self.players.append(client.player)
@@ -143,7 +157,7 @@ def init_state(self, season, year, unit_list):
         raise UserWarning('Incorrectly configured server!')
 def wait_now(self):
     #print "Waiting for NOW..."
-    player = self.players[-1]
+    player = [p for p in self.players if not p.closed][-1]
     tries = 0
     while tries < 30 and not player.has_NOW:
         tries += 1
