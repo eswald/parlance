@@ -637,6 +637,21 @@ class Judge_Loose(DiplomacyAdjudicatorTestCase):
     # (unit) SUP (unit) MTO province
     # (unit) SUP (unit) MTO (province coast)
     # (unit) SUP (unit) CTO province
+    def test_convoy_pathless(self):
+        self.judge.datc.datc_4a6 = 'b'
+        self.init_state(SPR, 1901, [
+            [ENG, AMY, EDI],
+            [ENG, FLT, NWG],
+        ])
+        self.legalOrder(ENG, [(ENG, AMY, EDI), CTO, NWY])
+        self.legalOrder(ENG, [(ENG, FLT, NWG), CVY, (ENG, AMY, EDI), CTO, NWY])
+        self.assertMapState([
+            [ENG, AMY, NWY],
+            [ENG, FLT, NWG],
+        ])
+        self.assertOrdered(ORD (SPR, 1901)
+            ([ENG, AMY, EDI], CTO, NWY, VIA, [NWG]) (SUC))
+    
     # (unit) SUP (unit) CTO province VIA (province province ...)
     # (unit) CVY (unit) CTO province VIA (province province ...)
     
