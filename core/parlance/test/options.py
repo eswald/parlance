@@ -1385,11 +1385,6 @@ class DATC_4_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, AMY, TRI), MTO, VEN])
         self.legalOrder(GER, [(GER, AMY, TYR), SUP, (ITA, AMY, VEN)])
         
-        # Disconnect Italy
-        for player in self.players:
-            if player.power == ITA:
-                player.close()
-        
         self.assertMapState([
             [AUS, FLT, ADR],
             [AUS, AMY, VEN],
@@ -1409,11 +1404,6 @@ class DATC_4_D(DiplomacyAdjudicatorTestCase):
         self.legalOrder(AUS, [(AUS, FLT, ADR), SUP, (AUS, AMY, TRI), MTO, VEN])
         self.legalOrder(AUS, [(AUS, AMY, TRI), MTO, VEN])
         self.legalOrder(GER, [(GER, AMY, TYR), SUP, (ITA, AMY, VEN)])
-        
-        # Disconnect Italy
-        for player in self.players:
-            if player.power == ITA:
-                player.close()
         
         self.assertMapState(start_state)
 
