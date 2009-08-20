@@ -1,5 +1,5 @@
 r'''Non-DATC test cases for the Parlance judge
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module tests basic judge functionality, including DAIDE requirements
     and implementation-specific details, beyond the adjudication.
@@ -166,6 +166,28 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         
         self.legalOrder(FRA, [(FRA, FLT, BRE), MTO, ECH])
         self.legalOrder(FRA, [(FRA, FLT, MAO), SUP, (FRA, FLT, BRE), MTO, ECH])
+        self.assertMapState(steady_state)
+    def test_dptg_bug(self):
+        ''' Listed in the DAIDE introduction as a required bugfix.
+            The DPTG algorithm apparently gets this wrong.
+        '''#'''
+        steady_state = [
+            [ENG, FLT, DEN],
+            [ENG, FLT, SKA],
+            [RUS, FLT, SWE],
+            [RUS, FLT, BAL],
+            [GER, FLT, KIE],
+            [GER, FLT, HEL],
+        ]
+        self.init_state(SPR, 1901, steady_state)
+        self.legalOrder(ENG, [(ENG, FLT, DEN), MTO, KIE])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), SUP, (RUS, FLT, SWE), MTO, DEN])
+        
+        self.legalOrder(RUS, [(RUS, FLT, SWE), MTO, DEN])
+        self.legalOrder(RUS, [(RUS, FLT, BAL), SUP, (RUS, FLT, SWE), MTO, DEN])
+        
+        self.legalOrder(GER, [(GER, FLT, KIE), MTO, DEN])
+        self.legalOrder(GER, [(GER, FLT, HEL), SUP, (GER, FLT, KIE), MTO, DEN])
         self.assertMapState(steady_state)
 
 class Judge_Convoys(DiplomacyAdjudicatorTestCase):
