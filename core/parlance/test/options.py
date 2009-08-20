@@ -1370,9 +1370,52 @@ class DATC_4_D(DiplomacyAdjudicatorTestCase):
     def _test_4D8_(self):
         '4.D.8.  REMOVING A UNIT IN CIVIL DISORDER'
         self.judge.datc.datc_4d8 = 'abcde'
-    def _test_4D9_(self):
-        '4.D.9.  RECEIVING HOLD SUPPORT IN CIVIL DISORDER'
-        self.judge.datc.datc_4d9 = 'ab'
+    @fails
+    def test_4D9_disallow(self):
+        '4.D.9.a  RECEIVING HOLD SUPPORT IN CIVIL DISORDER'
+        self.judge.datc.datc_4d9 = 'a'
+        start_state = [
+            [AUS, FLT, ADR],
+            [AUS, AMY, TRI],
+            [ITA, AMY, VEN],
+            [GER, AMY, TYR],
+        ]
+        self.init_state(SPR, 1901, start_state)
+        self.legalOrder(AUS, [(AUS, FLT, ADR), SUP, (AUS, AMY, TRI), MTO, VEN])
+        self.legalOrder(AUS, [(AUS, AMY, TRI), MTO, VEN])
+        self.legalOrder(GER, [(GER, AMY, TYR), SUP, (ITA, AMY, VEN)])
+        
+        # Disconnect Italy
+        for player in self.players:
+            if player.power == ITA:
+                player.close()
+        
+        self.assertMapState([
+            [AUS, FLT, ADR],
+            [AUS, AMY, VEN],
+            [ITA, AMY, VEN, MRT],
+            [GER, AMY, TYR],
+        ])
+    def test_4D9_allow(self):
+        '4.D.9.b  RECEIVING HOLD SUPPORT IN CIVIL DISORDER'
+        self.judge.datc.datc_4d9 = 'b'
+        start_state = [
+            [AUS, FLT, ADR],
+            [AUS, AMY, TRI],
+            [ITA, AMY, VEN],
+            [GER, AMY, TYR],
+        ]
+        self.init_state(SPR, 1901, start_state)
+        self.legalOrder(AUS, [(AUS, FLT, ADR), SUP, (AUS, AMY, TRI), MTO, VEN])
+        self.legalOrder(AUS, [(AUS, AMY, TRI), MTO, VEN])
+        self.legalOrder(GER, [(GER, AMY, TYR), SUP, (ITA, AMY, VEN)])
+        
+        # Disconnect Italy
+        for player in self.players:
+            if player.power == ITA:
+                player.close()
+        
+        self.assertMapState(start_state)
 
 class DATC_4_E(DiplomacyAdjudicatorTestCase):
     ''' 4.E.  MISCELLANEOUS ISSUES'''

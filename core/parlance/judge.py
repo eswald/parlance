@@ -1,5 +1,5 @@
 r'''Parlance adjudication system
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module implements a decision-making judge for the standard Diplomacy
     rules.  Several of the disputable rules ambiguities are configurable.
@@ -252,7 +252,7 @@ class DatcOptions(Configuration):
             '4.D.9.  RECEIVING HOLD SUPPORT IN CIVIL DISORDER',
             'a: Units in civil disorder cannot receive support.',
             'b: Units in civil disorder can receive support.',
-            'DATC: b; DPTG: ?; DAIDE: ?'),
+            'DATC: b; DPTG: ?; DAIDE: b'),
         
         # Miscellaneous issues
         ('datc_4e1', datc('abcd', 'abcd'), 'd',
