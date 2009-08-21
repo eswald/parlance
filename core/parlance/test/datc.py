@@ -4855,6 +4855,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
     def test_6H11_blocked(self):
         "6.H.11.a  RETREAT WHEN DISLODGED BY ADJACENT CONVOY"
         # 4.A.3, 4.A.5
+        self.judge.datc.datc_4a5 = 'a'
         steady_state = [
             [FRA, AMY, BUR],
             [FRA, FLT, MAO],
@@ -4879,10 +4880,10 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
         self.assertMapState(steady_state + [
             [FRA, AMY, MAR],
         ])
-    @fails
     def test_6H11_retreat(self):
         "6.H.11.b  RETREAT WHEN DISLODGED BY ADJACENT CONVOY"
         # 4.A.3, 4.A.5
+        self.judge.datc.datc_4a5 = 'b'
         steady_state = [
             [FRA, AMY, BUR],
             [FRA, FLT, MAO],
@@ -4911,6 +4912,7 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
     def test_6H12_blocked(self):
         "6.H.12.a  RETREAT WHEN DISLODGED BY ADJACENT CONVOY WHILE TRYING TO DO THE SAME"
         # 4.A.3, 4.A.5
+        self.judge.datc.datc_4a5 = 'a'
         steady_state = [
             [ENG, AMY, BUR],
             [ENG, FLT, IRI],
@@ -4947,10 +4949,10 @@ class DATC_6_H(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [RUS, AMY, LVP],
         ])
-    @fails
     def test_6H12_retreat(self):
         "6.H.12.b  RETREAT WHEN DISLODGED BY ADJACENT CONVOY WHILE TRYING TO DO THE SAME"
         # 4.A.3, 4.A.5
+        self.judge.datc.datc_4a5 = 'b'
         steady_state = [
             [ENG, AMY, BUR],
             [ENG, FLT, IRI],

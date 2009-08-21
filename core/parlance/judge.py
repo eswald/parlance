@@ -76,12 +76,12 @@ class DatcOptions(Configuration):
             'a: Support is not cut.',
             'b: Support is cut.',
             'DATC: a; DPTG: b; DAIDE: b'),
-        ('datc_4a5', datc('ab', 'a'), 'b', # Todo: b
+        ('datc_4a5', datc('ab', 'ab'), 'b',
             'retreat when dislodged by convoy',
             '4.A.5.  RETREAT WHEN DISLODGED BY CONVOY',
             'a: Dislodged units may not retreat to the starting place of any attacker.',
             'b: Dislodged units may retreat to the starting place of a convoyed attacker.',
-            'DATC: b; DPTG: b; DAIDE: a'),
+            'DATC: b; DPTG: b; DAIDE: a(b)'),
         ('datc_4a6', datc('abc', 'abc'), 'b',
             'convoy path specification',
             '4.A.6.  CONVOY PATH SPECIFICATION',
@@ -1068,7 +1068,11 @@ class Judge(JudgeInterface):
                 [self.map.coasts[key] for key in unit.coast.borders_out]
                 if self.valid_retreat(coast, unit.dislodger)]
     def valid_retreat(self, retreat, dislodger):
-        if retreat.province == dislodger: return False
+        prov, path = dislodger
+        if retreat.province == prov:
+            if self.datc.datc_4a5 == 'a' or not path:
+                return False
+        
         for unit in retreat.province.units:
             order = unit.current_order
             if not (order.is_moving() and order.unit.decisions[Decision.MOVE].passed):
@@ -1195,7 +1199,7 @@ class Move_Decision(Tristate_Decision):
         self.failed = attack.max_value <= min_oppose
         if self.passed:
             for unit in self.order.destination.province.units:
-                unit.dislodger = self.order.unit.coast.province
+                unit.dislodger = self.order.unit.coast.province, self.order.path
         return self.decided()
 class Support_Decision(Tristate_Decision):
     __slots__ = ()

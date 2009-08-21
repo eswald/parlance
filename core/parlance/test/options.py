@@ -730,7 +730,6 @@ class DATC_4_A(DiplomacyAdjudicatorTestCase):
             [FRA, FLT, ECH],
             [RUS, AMY, LVP],
         ])
-    @fails
     def test_4A5_retreat(self):
         '4.A.5.b  RETREAT WHEN DISLODGED BY CONVOY'
         # Test 6.H.12
