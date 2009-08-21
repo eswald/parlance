@@ -213,7 +213,7 @@ class Message(list):
             Traceback (most recent call last):
                 ...
             KeyError: "unknown token 'name'"
-            >>> m.append([3])
+            >>> m.append([3])   #doctest: +IGNORE_EXCEPTION_DETAIL
             Traceback (most recent call last):
                 ...
             TypeError: list objects are unhashable
@@ -294,7 +294,7 @@ class Message(list):
             NOT ( DRW 42
             >>> m[3]
             IntegerToken(42)
-            >>> m[-2] = [YES, KET]
+            >>> m[-2] = [YES, KET]  #doctest: +IGNORE_EXCEPTION_DETAIL
             Traceback (most recent call last):
                 ...
             TypeError: list objects are unhashable
@@ -306,7 +306,7 @@ class Message(list):
             >>> m.insert(2, ERR)
             >>> str(m)
             'HUH ( ERR WHT )'
-            >>> m.insert(3, [Token('ENG', 0x4101), Token('FRA', 0x4102)])
+            >>> m.insert(3, [Token('ENG', 0x4101), Token('FRA', 0x4102)])   #doctest: +IGNORE_EXCEPTION_DETAIL
             Traceback (most recent call last):
                 ...
             TypeError: list objects are unhashable
