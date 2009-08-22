@@ -449,7 +449,8 @@ class Map(VerboseObject):
             elif token.is_coastline(): coastline = token
             elif token.is_unit_type(): unit_type = token
         if not province:
-            raise ValueError, 'Missing province in unit spec: %s' % Message(unit_spec)
+            raise ValueError('Missing province in unit spec: %s' %
+                Message(unit_spec))
         
         # Try to match all specs, but without ambiguity
         unit = None

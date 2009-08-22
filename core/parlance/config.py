@@ -423,11 +423,11 @@ def read_representation_file(stream):
             name = line[5:8]
             uname = name.upper()
             if protocol.base_rep.has_key(uname):
-                raise ValueError, 'Conflict with token ' + uname
+                raise ValueError('Conflict with token ' + uname)
             rep[number] = uname
             num_tokens -= 1
         if num_tokens == 0: return Representation(rep, protocol.base_rep)
-        else: raise ValueError, 'Wrong number of lines in representation file'
+        else: raise ValueError('Wrong number of lines in representation file')
     else: return protocol.default_rep
 
 

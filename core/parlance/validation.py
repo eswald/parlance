@@ -346,7 +346,7 @@ class Validator(VerboseObject):
                             else: check = lambda x: x.category == num
                         elif opt == 'Token':
                             check = lambda x: x not in (BRA, KET, ERR)
-                        else: raise ValueError, 'unknown category "%s"' % opt
+                        else: raise ValueError('unknown category "%s"' % opt)
                         result = count_valid(msg[index:], check, repeat)
                         if result: index += result
                         else: break
@@ -365,7 +365,7 @@ class Validator(VerboseObject):
                 repeat = False
                 if result: index += result
                 else: break
-            else: raise UserWarning, 'Invalid State'
+            else: raise UserWarning('Invalid State')
         else: return index, True
         return option or (index, False)
     

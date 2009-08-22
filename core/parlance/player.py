@@ -211,7 +211,7 @@ class Observer(VerboseObject):
                 self.accept(MAP(self.map.name))
                 if self.power: self.send_list([HLO, SCO, NOW])
             else: self.reject(MAP(self.map.name))
-        else: raise ValueError, 'MDF before MAP'
+        else: raise ValueError('MDF before MAP')
     def process_map(self):
         ''' Performs any supplemental processing on the map.
             The map will be loaded and valid by this point.

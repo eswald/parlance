@@ -268,7 +268,8 @@ class Network_Basics(NetworkTestCase):
                 elif message[0] is REJ and message[2] is NME:
                     self.send(IAM(self.power)(self.passcode))
                 elif message[0] is ADM: pass
-                else: raise AssertionError, 'Unexpected message: ' + str(message)
+                else:
+                    raise AssertionError('Unexpected message: ' + str(message))
         class Fake_Restarter(self.Disconnector):
             ''' A false player, who starts Fake_Takeover after receiving HLO.'''
             sleep_time = 3

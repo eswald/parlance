@@ -72,12 +72,13 @@ class Message(list):
             ValueError: unbalanced parentheses in folded Message
         '''#'''
         complaint = 'unbalanced parentheses in folded Message'
-        if self.count(BRA) != self.count(KET): raise ValueError, complaint
+        if self.count(BRA) != self.count(KET):
+            raise ValueError(complaint)
         series = self.convert()
         while BRA in series:
             k = series.index(KET)
             try: b = rindex(series[:k], BRA)
-            except ValueError: raise ValueError, complaint
+            except ValueError: raise ValueError(complaint)
             series[b:k+1] = [series[b+1:k]]
         return series
     def convert(self):
@@ -188,7 +189,7 @@ class Message(list):
         elif wrap: return Message.wrap(value)
         else:
             try: return sum([Message.to_tokens(item, True) for item in value], [])
-            except TypeError: raise TypeError, 'Cannot tokenize ' + str(value)
+            except TypeError: raise TypeError('Cannot tokenize ' + str(value))
     @staticmethod
     def wrap(value):
         ''' Tokenizes the list and wraps it in a pair of brackets.
@@ -281,7 +282,9 @@ class Message(list):
             'NOT YES 34 "na" REJ'
         '''#'''
         try: list.__setslice__(self, from_index, to_index, self.to_tokens(value))
-        except TypeError: raise TypeError, 'must assign list (not "%s") to slice' % type(value).__name__
+        except TypeError:
+            raise TypeError('must assign list (not "%s") to slice' %
+                type(value).__name__)
     def __setitem__(self, index, value):
         ''' Replaces a single Token of the Message with another Token.
             >>> m = NOT(GOF)
@@ -629,7 +632,8 @@ class StringToken(Token):
         if result is None:
             charnum = ord(char)
             if charnum > 0xFF:
-                raise OverflowError, '%s too large to convert to %s' % (type(char), klass.__name__)
+                raise OverflowError('%s too large to convert to %s' %
+                    (type(char), klass.__name__))
             else:
                 result = Token.__new__(klass, char, protocol.quot_prefix + charnum)
             StringToken.cache[char] = result
@@ -673,15 +677,15 @@ class IntegerToken(Token):
         result = IntegerToken.cache.get(key)
         if result is None:
             if number < -pos:
-                raise OverflowError, '%s too large to convert to %s' % (
-                        type(number).__name__, klass.__name__)
+                raise OverflowError('%s too large to convert to %s' %
+                    (type(number).__name__, klass.__name__))
             elif number < pos:
                 name = str(number)
             elif number < neg:
                 name = str(number - neg)
             else:
-                raise OverflowError, '%s too large to convert to %s' % (
-                        type(number).__name__, klass.__name__)
+                raise OverflowError('%s too large to convert to %s' %
+                    (type(number).__name__, klass.__name__))
             result = Token.__new__(klass, name, key)
             IntegerToken.cache[key] = result
         return result
@@ -786,7 +790,7 @@ class Representation(Configurable):
         result = self.get(key)
         if result is None:
             if isinstance(key, int): key = '0x%04X' % key
-            raise KeyError, 'unknown token %r' % (key,)
+            raise KeyError('unknown token %r' % (key,))
         return result
     def get(self, key, default=None):
         ''' Returns a Token from its name or number.
@@ -903,7 +907,8 @@ class Representation(Configurable):
             else:       addmsg(normal(fragments[-1]))
         
         # Complain if the message wasn't finished
-        if in_text: raise ValueError, 'unterminated string in Diplomacy message'
+        if in_text:
+            raise ValueError('unterminated string in Diplomacy message')
         else: return Message(message)
     
     def translate_backslashed(self, text):
@@ -952,7 +957,7 @@ class Representation(Configurable):
         
         # Complain if the message wasn't finished
         if saved or not in_text:
-            raise ValueError, 'unterminated string in Diplomacy message'
+            raise ValueError('unterminated string in Diplomacy message')
         else: return Message(message)
     
     def tokenize_quote(self, text):

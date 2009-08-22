@@ -733,7 +733,7 @@ class OrderSet(defaultdict):
                 builds = self.builds_remaining(power)
                 if builds > 0: self.waive(builds, power)
                 elif builds < 0: self.default_removes(-builds, power, board)
-        else: raise UserWarning, 'Unknown phase %d' % phase
+        else: raise UserWarning('Unknown phase %d' % phase)
     def default_removes(self, surplus, power, board):
         units = power.farthest_units(board.distance)
         while surplus > 0 and units:

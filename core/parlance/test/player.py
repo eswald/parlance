@@ -102,7 +102,7 @@ class Player_Tests(PlayerTestCase):
         def handle_press_THK(self, sender, press):
             self.send_press(sender, WHY(press))
         def handle_press_SUG(self, *args):
-            raise NotImplementedError, 'Intentionally raising an error.'
+            raise NotImplementedError('Intentionally raising an error.')
         def generate_orders(self): pass
     def test_press_response(self):
         self.connect_player(self.Test_Player)
