@@ -27,9 +27,10 @@ def variant_list():
     from os import listdir, path
     entries = []
     for filename in listdir(path.join("parterre", "data")):
-        name = path.splitext(filename)[0]
-        entry_point = "%s = parterre.loader:loader.%s" % (name, name)
-        entries.append(entry_point)
+        name, extension = path.splitext(filename)
+        if extension.endswith("cfg"):
+            entry_point = "%s = parterre.loader:loader.%s" % (name, name)
+            entries.append(entry_point)
     return entries
 
 setup(
