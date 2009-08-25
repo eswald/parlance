@@ -50,4 +50,5 @@ Parang 1.4.1 -- Not yet released
 - Bugfix: BlabberBot no longer tries to send press in single-player games.
 - Now checks for help flags in the main console scripts.
 - Cleaned out a few unused import statements.
+- New TeddyBot, with a TDD philosophy.
 

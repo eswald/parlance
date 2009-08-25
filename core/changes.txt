@@ -193,4 +193,10 @@ Parlance 1.4.1 -- Not yet released
 - Variants loaded from a file now switch to an auto-generated Representation.
 - Cleaned out a few unused import statements.
 - Bugfix: The ThreadManager queue was slightly broken.
+- Bugfix: Automatic waives were ordered incorrectly.
+- New density() function on variants, for no particular reason.
+- New, but slightly buggy, cache system.
+- The configuration system can now handle dotted module names.
+- The list of bots reported by the server is now sorted alphabetically.
+- Tokens can now be pickled and unpickled.
 

@@ -218,8 +218,9 @@
       currently, game logging simply fails and the game stays in memory.</p>
     
     <h2>Unit Testing</h2>
-    <p>The remaining doctests should probably be refactored into proper
-      unittest modules, or combined into a unittest suite.</p>
+    <p>Just give up on unittest, and switch to nose.  This would allow
+      generative tests, particularly for checking every combination of DATC
+      options.  Skipping would also be nice, in certain cases.</p>
     <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
     <p>The network tests could use better assertions for some tests.</p>
     <p>THX order notes could use more testing.</p>
