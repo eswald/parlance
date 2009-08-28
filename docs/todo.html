@@ -161,7 +161,11 @@
       through or the user gets bored.  Maybe.</p>
     <p>Disconnecting a client when its network buffer clogs up is probably not
       the best way to go about it.  Then again, it might have received a
-      chopped message anyway, and should be processing messages faster.</p>
+      chopped message anyway, and should be processing messages faster.
+      Instead, we should be buffering input, like Twisted does.</p>
+    <p>A JSON-based HTTP interface with long polling would be nice.  The
+      Server should see something that looks like a Service, while the client
+      should be sending and receiving DPP-like JSON objects, if possible.</p>
     
     <h2>Human-oriented Options</h2>
     <p>Players would like the ability to connect and disconnect throughout the
