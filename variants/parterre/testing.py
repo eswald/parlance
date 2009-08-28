@@ -10,6 +10,7 @@ r'''Parterre variant test cases
 
 import unittest
 
+from parlance.functions import fails
 from parlance.test.gameboard import StandardVariantTests
 
 # Each variant is listed explicitly,
@@ -56,6 +57,15 @@ class Hundred32VariantTests(StandardVariantTests):
 class IberianVariantTests(StandardVariantTests):
     "Tests for the iberian2 map variant"
     variant = "iberian2"
+    
+    @fails
+    def test_gascony_encoding(self):
+        # This is currently the only non-ascii character in a province name.
+        # It should probably be Unicode, but that's too much work for now.
+        key = "GAS"
+        name = self.var().provinces[key]
+        self.failUnlessEqual(type(name), unicode)
+        self.failUnlessEqual(name, u"Gascu\xF1a")
 
 class ModernVariantTests(StandardVariantTests):
     "Tests for the modern map variant"
