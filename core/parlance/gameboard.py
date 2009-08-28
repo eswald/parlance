@@ -150,7 +150,6 @@ class Variant(object):
     
     def density(self):
         # Calculates the graph density of the map
-        from tokens import BRA
         edges = 0
         for name in self.borders:
             adjacencies = self.borders[name]

@@ -1001,8 +1001,8 @@ class StandardVariantTests(unittest.TestCase):
         # I don't particularly care whether this is correct,
         # just that it's a float in the proper range.
         density = self.var().density()
-        #print self.variant + ": " + repr(density)
         self.failUnless(0 <= density <= 1, density)
+        #print "%s: %0.1f%%" % (self.variant, density * 100)
 
 class Map_Bugfix(unittest.TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
