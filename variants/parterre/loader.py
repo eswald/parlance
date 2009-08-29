@@ -1,5 +1,5 @@
 r'''Parterre variant loader
-    Copyright (C) 2008  Eric Wald
+    Copyright (C) 2008-2009  Eric Wald
     
     This module provides the entry point for exporting variants to Parlance.
     

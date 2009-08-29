@@ -1,5 +1,5 @@
 r'''Parterre Diplomacy variants
-    Copyright (C) 1990-2008  Eric Wald, David Norman, and many others
+    Copyright (C) 1990-2009  Eric Wald, David Norman, and many others
     
     Parterre is a set of variant maps for the Diplomacy board game,
     formatted for use by the Parlance framework.

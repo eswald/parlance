@@ -1,5 +1,5 @@
 r'''Parlance Diplomacy framework
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This package is a framework for playing the Diplomacy board game over
     a network, using the client-server protocol and message syntax of the
