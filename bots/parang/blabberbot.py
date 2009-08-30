@@ -135,8 +135,3 @@ class BlabberBot(DumbBot):
             result = self.random_category(choice(['Provinces',
                 'Powers', 'Phases', 'Integers', 'Coasts', 'Text']))
         return result
-
-
-def run():
-    from parlance.main import run_player
-    run_player(BlabberBot)

@@ -247,13 +247,3 @@ else:
                 win.refresh()
             self.output('Supply Centres %s: %s',
                     self.map.current_turn, '; '.join(owners))
-
-
-def run():
-    r'''Run a console client.
-        If possible, run the client that displays a map in the top half of the
-        screen, using the curses library; otherwise, run a purely line-based
-        console client.
-    '''#'''
-    from parlance.main import run_player
-    run_player(MapChat, False, False)

@@ -398,8 +398,3 @@ class Neurotic(Player):
                     self.learned[last_turn], self.map)
             del self.inputs[last_turn]
             del self.learned[last_turn]
-
-
-def run():
-    from main import run_player
-    run_player(Neurotic)

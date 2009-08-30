@@ -18,6 +18,7 @@ from functions  import defaultdict, expand_list, \
         instances, num2name, s, timestamp, version_string
 from gameboard  import Turn
 from language   import Message, Time, protocol
+from main       import ServerProgram
 from tokens     import *
 from validation import Validator
 
@@ -50,7 +51,7 @@ class DelayedAction(object):
     def call(self):
         if self.callback: self.callback(*self.args)
 
-class Server(VerboseObject):
+class Server(ServerProgram):
     ''' Coordinates messages between clients and the games,
         administering socket connections and game creation.
     '''#'''
@@ -1416,12 +1417,3 @@ class Game(Historian):
         Command(r'start (an? |\d+ )?(\w+)()', start_bot,
             '  start <number> <bot> - Invites <number> copies of <bot> into the game'),
     ]
-
-
-def run():
-    r'''Run a game server.
-        Takes options from the command line, including number of games and the
-        default map.
-    '''#'''
-    from main import run_server
-    run_server(Server, 7)

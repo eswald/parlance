@@ -593,9 +593,11 @@ class ConfigPrinter(Configuration):
         for section in sorted(self.modules.keys()):
             header = ('Options for the %s module.' % section,)
             if section not in self.headers: self.print_section(section, header)
-
-def run():
-    r'''Print out a configuration file template.
-        Includes lines to reproduce the currently selected options.
-    '''#'''
-    ConfigPrinter().walk(__name__.rsplit(".", 1)[0])
+    
+    @classmethod
+    def main(cls):
+        r'''Print out a configuration file template.
+            Includes lines to reproduce the currently selected options.
+        '''#'''
+        # Todo: Find packages for the exported bots and variants, too
+        cls().walk(__name__.rsplit(".", 1)[0])

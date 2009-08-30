@@ -44,9 +44,10 @@ setup(
     packages = ["parang"],
     entry_points = {
         "console_scripts": [
-            "%s = parang.%s:run" % (bot.lower(), bots[bot]) for bot in bots
+            "%s = parang.%s:%s.main" % (bot.lower(), bots[bot], bot) for bot in bots
         ] + [
-            "chatty = parang.chatty:run",
+            "parang-chatty = parang.chatty:Chatty.main",
+            "parang-mapchat = parang.chatty:MapChat.main",
         ],
         "gui_scripts": [
         ],
@@ -67,7 +68,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Environment :: Console :: Curses",
-        "Environment :: No Input/Output (Daemon)",
+        "Environment :: Plugins",
         "License :: Free for non-commercial use",
         "Natural Language :: English",
         "Operating System :: OS Independent",
@@ -79,7 +80,7 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parang.testing",
-    install_requires = ["Parlance == " + __version__],
+    #install_requires = ["Parlance == " + __version__],
     package_data = {
         "parang": ["maps/*.tty"],
     },

@@ -486,8 +486,3 @@ class ComboSet(object):
     #success_prob = Memoize(success_prob)
     #destroy_prob = Memoize(destroy_prob)
     #dislodge_prob = Memoize(dislodge_prob)
-
-
-def run():
-    from main import run_player
-    run_player(ComboBot)

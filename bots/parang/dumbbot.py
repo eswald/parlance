@@ -799,8 +799,3 @@ class DumbBot(Player):
     
     # Hooks for mutation
     def get_values(self): return self.vals
-
-
-def run():
-    from parlance.main import run_player
-    run_player(DumbBot)

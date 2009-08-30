@@ -104,8 +104,3 @@ class EvilBot(DumbBot):
     def handle_OFF(self, message):
         if self.power: self.shared.friends.remove(self.power.key)
         self.__super.handle_OFF(message)
-
-
-def run():
-    from parlance.main import run_player
-    run_player(EvilBot)

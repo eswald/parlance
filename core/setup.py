@@ -31,11 +31,11 @@ setup(
     packages = ["parlance"],
     entry_points = {
         "console_scripts": [
-            "parlance-server = parlance.server:run",
-            "parlance-holdbot = parlance.player:run",
-            "parlance-config = parlance.config:run",
-            "parlance-raw-client = parlance.main:run",
-            "parlance-raw-server = parlance.network:run",
+            "parlance-server = parlance.server:Server.main",
+            "parlance-holdbot = parlance.player:HoldBot.main",
+            "parlance-config = parlance.config:ConfigPrinter.main",
+            "parlance-raw-client = parlance.main:RawClient.main",
+            "parlance-raw-server = parlance.main:RawServer.main",
         ],
         "gui_scripts": [
         ],

@@ -108,8 +108,3 @@ class TeddyBot(Player):
             closeness[source] = sum(2 ** -distance[source, sink]
                 for sink in spaces if sink.is_supply())
         return closeness
-
-
-def run():
-    from parlance.main import run_player
-    run_player(TeddyBot)

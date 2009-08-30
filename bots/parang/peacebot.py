@@ -89,8 +89,3 @@ class PeaceBot(DumbBot):
         while ERR in flattened: flattened.pop(flattened.index(ERR))
         folded = flattened.fold()
         self.handle_press_REJ(sender, folded)
-
-
-def run():
-    from parlance.main import run_player
-    run_player(PeaceBot)

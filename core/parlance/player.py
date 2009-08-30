@@ -23,12 +23,12 @@ from config     import GameOptions, VerboseObject, variants
 from functions  import s, version_string
 from gameboard  import Map, Turn, Variant
 from language   import Message, Time, Token
-from main       import ThreadManager, run_player
+from main       import ThreadManager, ClientProgram
 from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
 from tokens     import *
 from validation import Validator
 
-class Observer(VerboseObject):
+class Observer(ClientProgram):
     ''' Generic Diplomacy client.
         This class contains methods useful for all clients,
         but is designed to be subclassed.
@@ -270,6 +270,9 @@ class Player(Observer):
             'Whether to send admin messages reporting that orders have been sent.',
             'Useful for testing, but should *not* be on for human games.'),
     )
+    
+    allow_multiple = True
+    allow_country = True
     
     def __init__(self, power=None, passcode=None, **kwargs):
         ''' Initializes the instance variables.'''
@@ -621,11 +624,3 @@ class Echo(AutoObserver):
     def handle_message(self, message):
         self.log_debug(1, '>> ' + str(message))
         self.__super.handle_message(message)
-
-
-def run():
-    r'''Run one or more HoldBots.
-        Takes options from the command line, including special syntax for
-        host, port, number of bots, and passcodes.
-    '''#'''
-    run_player(HoldBot, True, True)

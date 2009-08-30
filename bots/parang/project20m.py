@@ -1138,8 +1138,3 @@ def target(order):
     if isinstance(order, (ConvoyingOrder, SupportOrder)):
         return order.supported.coast.province
     return order.destination.province
-
-
-def run():
-    from parlance.main import run_player
-    run_player(Project20M)

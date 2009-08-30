@@ -143,11 +143,8 @@
       entire test suite on an old machine.</p>
     
     <h2>User Interface</h2>
-    <p>The run_player function would probably be better as a class method of
-      the Observer class.  That would require some refactoring of RawClient,
-      but would make it easier to export scripts for the various observers.
-    </p>
     <p>Output might be better run through the <code>logger</code> package.</p>
+    <p>Warnings should be run through the <code>warnings</code> package.</p>
     <p>Bot developers are requesting a real-time display of all press in the
       game, which would have to be done server-side.</p>
     <p>The standard input loop needs to be tested on Windows, where select()

@@ -21,13 +21,15 @@ except ImportError:
     from dummy_threading import Lock
 
 from config    import Configuration, VerboseObject, variants
+from language  import protocol
 from network   import Client, ServerSocket
 from functions import any
 
 __all__ = [
     'ThreadManager',
-    'run_player',
-    'run_server',
+    'Program',
+    'ClientProgram',
+    'ServerProgram',
 ]
 
 class ThreadManager(VerboseObject):
@@ -400,85 +402,124 @@ class ThreadManager(VerboseObject):
                 self.log_debug(11, 'Removing queued client: %s', client.prefix)
             else: self.attempt(client)
 
-def help_requested():
-    signals = "--help", "-h", "-?", "/?", "/h"
-    return any(flag in argv for flag in signals)
+class Program(VerboseObject):
+    r'''A command-line program that can also be instantiated other ways.
+        Accepts configuration options as arguments.
+    '''#"""#'''
+    
+    @staticmethod
+    def help_requested():
+        signals = "--help", "-h", "-?", "/?", "/h"
+        return any(flag in argv for flag in signals)
+    
+    @staticmethod
+    def progname():
+        return basename(argv[0])
+    
+    @classmethod
+    def usage(cls):
+        raise NotImplementedError
+    
+    @classmethod
+    def main(cls):
+        raise NotImplementedError
 
-def progname():
-    return basename(argv[0])
-
-def run_player(player_class, allow_multiple=True, allow_country=True):
-    name = player_class.__name__
-    num = None
-    countries = {}
+class ClientProgram(Program):
+    # Command-line program
+    allow_multiple = False
+    allow_country = False
     
-    def usage(problem=None, *args):
-        if allow_multiple:
-            print ('Usage: %s [host][:port] [number]%s [-v<level>]' %
-                (progname(), allow_country and ' [power=passcode] ...' or ''))
-            print 'Connects <number> copies of %s to <host>:<port>' % name
-        else:
-            print 'Usage: %s [host][:port]%s -v<level>' % (progname(),
-                    allow_country and ' [power=passcode]' or '')
-            print 'Connects a copy of %s to <host>:<port>' % name
-        if problem: print str(problem) % args
-        exit(1)
-    
-    if help_requested(): usage()
-    remainder = Configuration.arguments
-    #try: remainder = Configuration.parse_argument_list(argv[1:])
-    #except Exception, err: usage(err)
-    host = Configuration._args.get('host')
-    for arg in remainder:
-        if arg.isdigit():
-            if not allow_multiple:
-                usage('%s does not support multiple copies.', name)
-            elif num is None: num = int(arg)
-            else: usage()       # Only one number specification allowed
-        elif len(arg) > 3 and arg[3] == '=':
-            if allow_country: countries[arg[:3].upper()] = int(arg[4:])
-            else: usage('%s does not accept country codes.', name)
-        elif host is None: Configuration.set_globally('host', arg)
-        else: usage()           # Only one host specification allowed
-    if num is None: num = 1
-    
-    manager = ThreadManager()
-    while num > 0 or countries:
-        num -= 1
-        if countries:
-            nation, pcode = countries.popitem()
-            result = manager.add_client(player_class,
-                    power=nation, passcode=pcode)
-        else: result = manager.add_client(player_class)
-        if not result: manager.log_debug(1, 'Failed to start %s.  Sorry.', name)
-    manager.run()
-
-def run_server(server_class, default_verbosity):
-    def usage(problem=None, *args):
-        print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % progname()
-        print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
-        if problem: print str(problem) % args
-        exit(1)
-    if help_requested(): usage()
-    
-    Configuration._args.setdefault('verbosity', default_verbosity)
-    opts = {}
-    remainder = Configuration.arguments
-    #try: remainder = Configuration.parse_argument_list(argv[1:])
-    #except: usage()
-    if remainder:
-        if remainder[0] in variants:
-            Configuration.set_globally('variant', remainder[0])
-        else: usage('Unknown variant %r', remainder[0])
-    manager = ThreadManager()
-    server = ServerSocket(server_class, manager)
-    if server.open():
-        manager.add_polled(server)
+    @classmethod
+    def main(cls):
+        r'''Run one or more Parlance clients.
+            Takes options from the command line, including special syntax for
+            host, port, number of bots, and passcodes.
+        '''#'''
+        name = cls.__name__
+        num = None
+        countries = {}
+        
+        def usage(problem=None, *args):
+            if cls.allow_multiple:
+                print ('Usage: %s [host][:port] [number]%s [-v<level>]' %
+                    (cls.progname(), cls.allow_country and ' [power=passcode] ...' or ''))
+                print 'Connects <number> copies of %s to <host>:<port>' % name
+            else:
+                print 'Usage: %s [host][:port]%s -v<level>' % (cls.progname(),
+                        cls.allow_country and ' [power=passcode]' or '')
+                print 'Connects a copy of %s to <host>:<port>' % name
+            if problem: print str(problem) % args
+            exit(1)
+        
+        if cls.help_requested(): usage()
+        remainder = Configuration.arguments
+        
+        host = Configuration._args.get('host')
+        for arg in remainder:
+            if arg.isdigit():
+                if not cls.allow_multiple:
+                    usage('%s does not support multiple copies.', name)
+                elif num is None:
+                    num = int(arg)
+                else: usage()       # Only one number specification allowed
+            elif len(arg) > 3 and arg[3] == '=':
+                if cls.allow_country:
+                    countries[arg[:3].upper()] = int(arg[4:])
+                else: usage('%s does not accept country codes.', name)
+            elif host is None:
+                Configuration.set_globally('host', arg)
+            else: usage()           # Only one host specification allowed
+        if num is None: num = 1
+        
+        manager = ThreadManager()
+        while num > 0 or countries:
+            num -= 1
+            if countries:
+                nation, pcode = countries.popitem()
+                result = manager.add_client(cls,
+                        power=nation, passcode=pcode)
+            else: result = manager.add_client(cls)
+            if not result:
+                manager.log_debug(1, 'Failed to start %s.  Sorry.', name)
         manager.run()
-    else: server.log_debug(1, 'Failed to open the server.')
+    
+class ServerProgram(Program):
+    default_verbosity = 7
+    
+    @classmethod
+    def main(cls):
+        r'''Run a game server.
+            Takes options from the command line, including number of games and the
+            default map.
+        '''#'''
+        def usage(problem=None, *args):
+            print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % cls.progname()
+            print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
+            if problem: print str(problem) % args
+            exit(1)
+        if cls.help_requested(): usage()
+        
+        Configuration._args.setdefault('verbosity', cls.default_verbosity)
+        opts = {}
+        remainder = Configuration.arguments
+        if remainder:
+            if remainder[0] in variants:
+                Configuration.set_globally('variant', remainder[0])
+            else: usage('Unknown variant %r', remainder[0])
+        manager = ThreadManager()
+        server = ServerSocket(cls, manager)
+        if server.open():
+            manager.add_polled(server)
+            manager.run()
+        else: server.log_debug(1, 'Failed to open the server.')
 
-class RawClient(object):
-    ''' Simple client to translate DM to and from text.'''
+class RawClient(ClientProgram):
+    r'''Simple client to translate DM to and from text.
+        The client will take messages in token syntax from standard input and
+        send them to the server, printing any received messages to standard
+        output in the same syntax.
+    '''#'''
+    
     prefix = 'RawClient'
     def __init__(self, send_method, representation, manager):
         self.send_out  = send_method      # A function that accepts messages
@@ -503,10 +544,48 @@ class RawClient(object):
     def send(self, message):
         if not self.closed: self.send_out(message)
 
-def run():
-    r'''Run a raw token client.
-        The client will take messages in token syntax from standard input and
-        send them to the server, printing any received messages to standard
-        output in the same syntax.
+class RawServer(ServerProgram):
+    r'''Simple server to translate DM to and from text.
+        The server will take messages in token syntax from standard input and
+        send them to each connected client, printing any received messages to
+        standard output in the same syntax.  The server will close when the
+        last client disconnects.
     '''#'''
-    run_player(RawClient, False, False)
+    default_verbosity = 7
+    
+    class FakeGame(object):
+        def __init__(self, server):
+            self.variant = server
+            self.game_id = 'ID'
+        def disconnect(self, client):
+            print 'Client #%d has disconnected.' % client.client_id
+    def __init__(self, thread_manager):
+        self.closed = False
+        self.manager = thread_manager
+        self.clients = {}
+        self.rep = protocol.default_rep
+        self.game = self.FakeGame(self)
+        thread_manager.add_input(self.handle_input, self.close)
+        print 'Waiting for connections...'
+    def handle_message(self, client, message):
+        ''' Process a new message from the client.'''
+        print '#%d >> %s' % (client.client_id, message)
+    def close(self):
+        ''' Informs the user that the connection has closed.'''
+        self.closed = True
+        if not self.manager.closed: self.manager.close()
+    def add_client(self, client):
+        self.clients[client.client_id] = client
+    def disconnect(self, client):
+        del self.clients[client.client_id]
+        if not self.clients: self.close()
+    def handle_input(self, line):
+        try:
+            message = self.rep.translate(line)
+        except Exception, err:
+            print str(err) or '??'
+        else:
+            for client in self.clients.values():
+                client.write(message)
+    def broadcast_admin(self, text): pass
+    def default_game(self): return self.game
