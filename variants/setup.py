@@ -54,9 +54,7 @@ setup(
     platforms = "Any",
     classifiers = [
         "Development Status :: 4 - Beta",
-        "Environment :: Console",
-        "Environment :: Console :: Curses",
-        "Environment :: No Input/Output (Daemon)",
+        "Environment :: Plugins",
         "License :: Free for non-commercial use",
         "Natural Language :: English",
         "Operating System :: OS Independent",
