@@ -10,6 +10,8 @@ r'''Parang setup script
     commercial purposes without permission from the authors is prohibited.
 '''#'''
 
+__version__ = "1.5.0"
+
 try:
     from setuptools import setup
 except ImportError:
@@ -38,7 +40,7 @@ bots = {
 setup(
     # Provided items
     name = "Parang",
-    version = "1.4.1",
+    version = __version__,
     packages = ["parang"],
     entry_points = {
         "console_scripts": [
@@ -77,7 +79,7 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parang.testing",
-    install_requires = ["Parlance==1.4.1"],
+    install_requires = ["Parlance == " + __version__],
     package_data = {
         "parang": ["maps/*.tty"],
     },

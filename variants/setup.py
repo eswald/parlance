@@ -10,6 +10,8 @@ r'''Parterre setup script
     commercial purposes without permission from the authors is prohibited.
 '''#'''
 
+__version__ = "1.5.0"
+
 try:
     from setuptools import setup
 except ImportError:
@@ -36,7 +38,7 @@ def variant_list():
 setup(
     # Provided items
     name = "Parterre",
-    version = "1.4.1",
+    version = __version__,
     packages = ["parterre"],
     entry_points = {
         "parlance.variants": variant_list(),
@@ -66,7 +68,7 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parterre.testing",
-    install_requires = ["Parlance>=1.4.1"],
+    install_requires = ["Parlance == " + __version__],
     package_data = {
         "parterre": ["data/*.cfg"],
     },

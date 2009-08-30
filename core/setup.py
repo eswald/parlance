@@ -9,6 +9,8 @@ r'''Parlance setup script
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+__version__ = "1.5.0"
+
 try:
     from setuptools import setup
 except ImportError:
@@ -25,7 +27,7 @@ except:
 setup(
     # Provided items
     name = "Parlance",
-    version = "1.4.1",
+    version = __version__,
     packages = ["parlance"],
     entry_points = {
         "console_scripts": [
@@ -73,8 +75,8 @@ setup(
     zip_safe = True,
     test_suite = "parlance.test",
     extras_require = {
-        'bots': ["Parang==1.4.1"],
-        'maps': ["Parterre==1.4.1"],
+        'bots': ["Parang == " + __version__],
+        'maps': ["Parterre == " + __version__],
     },
     package_data = {
         "parlance": ["data/*.html", "data/*.cfg"],
