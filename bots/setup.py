@@ -77,6 +77,7 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parang.testing",
+    install_requires = ["Parlance==1.4.1"],
     package_data = {
         "parang": ["maps/*.tty"],
     },
