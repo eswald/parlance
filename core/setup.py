@@ -72,6 +72,10 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parlance.test",
+    extras_require = {
+        'bots': ["Parang==1.4.1"],
+        'maps': ["Parterre==1.4.1"],
+    },
     package_data = {
         "parlance": ["data/*.html", "data/*.cfg"],
     },

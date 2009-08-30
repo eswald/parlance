@@ -1,0 +1,2 @@
+include parlance/data/*.html
+include parlance/data/*.cfg
