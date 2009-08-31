@@ -121,7 +121,7 @@ class Server(ServerProgram):
                     # Remove saved games from memory
                     del self.games[game_id]
             else: open_games = True
-        if not open_games:
+        if not (open_games or self.closed):
             # Check whether the server itself should close
             if 0 < self.options.games <= self.started_games:
                 self.log_debug(11, 'Completed all requested games')
