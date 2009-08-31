@@ -1135,5 +1135,16 @@ class Server_Bugfix(ServerTestCase):
                 power=player.power, passcode=player.pcode)
         self.wait_for_actions()
         self.failIf(game.paused)
-    
+    def test_exit_assertion(self):
+        # The server was attempting to start a new game when it closed.
+        self.connect_server()
+        self.set_option('games', 2)
+        game = self.start_game()
+        game.close()
+        
+        def start_game_fail(client=None, match=None):
+            self.fail("Started a game inappropriately")
+        self.server.start_game = start_game_fail
+        self.server.close()
+
 if __name__ == '__main__': unittest.main()
