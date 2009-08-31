@@ -347,7 +347,7 @@ class Historian(VerboseObject):
     class HistoricalJudge(object):
         def __init__(self, historian, last_turn, result):
             self.history = historian
-            self.turn = last_turn
+            self.turn = lambda: last_turn
             self.game_result = result
         
         def handle_MAP(self, client, message):
@@ -357,11 +357,11 @@ class Historian(VerboseObject):
         def handle_MDF(self, client, message):
             client.send(self.history.messages[MDF])
         def handle_NOW(self, client, message):
-            client.send(self.history.history[self.turn][NOW])
+            client.send(self.history.history[self.turn()][NOW])
         def handle_SCO(self, client, message):
-            client.send(self.history.history[self.turn][SCO])
+            client.send(self.history.history[self.turn()][SCO])
         def handle_ORD(self, client, message):
-            client.send_list(self.history.history[self.turn][ORD])
+            client.send_list(self.history.history[self.turn()][ORD])
         
         def handle_SUB(self, client, message): client.reject(message)
         def handle_DRW(self, client, message): client.reject(message)
