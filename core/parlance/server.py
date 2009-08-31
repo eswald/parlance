@@ -1096,7 +1096,7 @@ class Game(Historian):
                 if self.closed:
                     msg = self.judge.game_result
                     if msg: client.send(msg)
-                    if self.started: client.send(self.summarize())
+                    client.send(self.summarize())
                 client.send(self.judge.map.create_NOW())
             else: self.check_start()
         else: client.reject(message); self.disconnect(client)
