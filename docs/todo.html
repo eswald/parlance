@@ -130,6 +130,8 @@
       argument, a series.  For that matter, calling a token on a series should
       be revised; try HLO(ENG)(1234)((LVL, 20)), for example.  Finally,
       consider changing __repr__() to use token-calling conventions.</p>
+    <p>Judge.turn should be a property, and should return a new Turn instance
+      instead of the Map's mutable one.</p>
     
     <h2>Robustness</h2>
     <p>The validator's greedy checking seems to cause problems with PRN
@@ -154,6 +156,8 @@
     <p>Consider a <a href="http://jtauber.com/blog/2008/11/07/voronoi_diagrams/">Voronoi diagram</a>
       to check correctness of a point-based map.</p>
     <p>Give users a way to name their new game.</p>
+    <p>The time limit admin command could use a better help line, and maybe a
+      better interface.  Perhaps a "time limits" command should show all.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
@@ -161,7 +165,8 @@
     <p>Disconnecting a client when its network buffer clogs up is probably not
       the best way to go about it.  Then again, it might have received a
       chopped message anyway, and should be processing messages faster.
-      Instead, we should be buffering input, like Twisted does.</p>
+      Instead, we should be buffering input, like Twisted does.  Consider
+      using <a href="http://eli.thegreenplace.net/2009/08/29/co-routines-as-an-alternative-to-state-machines/">co-routines</a>.</p>
     <p>A JSON-based HTTP interface with long polling would be nice.  The
       Server should see something that looks like a Service, while the client
       should be sending and receiving DPP-like JSON objects, if possible.</p>
