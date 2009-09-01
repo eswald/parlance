@@ -7,8 +7,9 @@ import re
 from warnings import warn
 
 from parlance.config import Configuration
+from parlance.functions import expand_list
 from parlance.player import Observer
-from parlance.tokens import SEL
+from parlance.tokens import DRW, SEL, SLO
 
 def email(value):
     # Verifies that the value looks like an email address
@@ -73,14 +74,37 @@ class Announcer(Observer):
             if self.game_id:
                 subject += " for " + str(self.game_id)
             
-            # Todo: Humanize these messages
-            body = "\n".join([
-                "Result: " + str(self.result),
-                "Summary: " + str(message),
-            ])
-            
+            body = self.summary_text(self.result, message)
             self.send_mail(self.options.result_address, subject, body)
         self.close()
+    def summary_text(self, result, summary):
+        # Mostly like the results from the AiServer, but with "and" in the lists.
+        year = summary[3]
+        players = summary.fold()[2:]
+        
+        if not result:
+            result_line = "Game finished in %s." % (year,)
+        elif result[0] is SLO:
+            winner = result[2]
+            result_line = "Solo Declared in %s. Winner is %s." % (year, winner)
+        elif result == +DRW:
+            winners = expand_list(p[0] for p in players if not p[4:])
+            result_line = "DIAS Draw Declared in %s. Powers in the draw are %s." % (year, winners)
+        elif result[0] is DRW:
+            winners = expand_list(result.fold()[1])
+            result_line = "Partial Declared in %s. Powers in the draw are %s." % (year, winners)
+            
+        lines = [
+            result_line,
+            "",
+            "The Powers were :",
+        ]
+        
+        for player in players:
+            lines.append("%s    %s   %s   %s" %
+                (player[0], player[1][0], player[2][0], player[-1]))
+        
+        return "\n".join(lines)
     
     def send_mail(self, address, subject, body):
         assert address
