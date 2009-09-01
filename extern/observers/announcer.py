@@ -20,7 +20,7 @@ def email(value):
     return value
 
 class Announcer(Observer):
-    have_need = re.compile("Have (\d+) player.*Need (\d+) to start")
+    have_need = re.compile("Human.* has connected\. Have (\d+) player.*Need (\d+) to start")
     
     __section__ = "announcer"
     __options__ = (
@@ -36,7 +36,7 @@ class Announcer(Observer):
         self.__super.__init__(**kwargs)
         self.quit = False
         self.result = None
-        self.announced = 0
+        self.announced = 1
         self.host = Configuration.get("socket.host", "")
         if self.host:
             port = Configuration.get("socket.port")
@@ -51,7 +51,7 @@ class Announcer(Observer):
             match = self.have_need.search(line)
             if match:
                 have, need = map(int, match.groups())
-                if have != self.announced:
+                if have > self.announced:
                     self.recruit(have, need)
                     self.announced = have
     def recruit(self, have, need):
@@ -70,12 +70,16 @@ class Announcer(Observer):
     
     def handle_SMR(self, message):
         if self.options.result_address:
-            subject = "Results"
-            if self.game_id:
-                subject += " for " + str(self.game_id)
-            
-            body = self.summary_text(self.result, message)
-            self.send_mail(self.options.result_address, subject, body)
+            players = [p[1][0] + p[2][0] for p in message.fold()[2:]]
+            humans = set(name for name in players if "Human" in name)
+            print message, players, humans
+            if len(humans) >= 2:
+                subject = "Results"
+                if self.game_id:
+                    subject += " for " + str(self.game_id)
+                
+                body = self.summary_text(self.result, message)
+                self.send_mail(self.options.result_address, subject, body)
         self.close()
     def summary_text(self, result, summary):
         # Mostly like the results from the AiServer, but with "and" in the lists.
