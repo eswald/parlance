@@ -31,12 +31,11 @@ def number(value):
     except ValueError:
         raise ValueError('Unrecognized numeric value')
 def integer(value):
-    # Todo: Recognize a leading zero as indicating an octal value.
-    try: result = int(value)
+    # Recognize an integer in any supported base, particularly with 0x prefix.
+    try:
+        result = int(value, 0)
     except ValueError:
-        try: result = int(value, 16)
-        except ValueError:
-            raise ValueError('Unrecognized integer value')
+        raise ValueError('Unrecognized integer value')
     return result
 def string(value):
     return value
