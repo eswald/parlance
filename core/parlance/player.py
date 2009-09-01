@@ -182,6 +182,8 @@ class Observer(ClientProgram):
         if self.quit: self.close()
     def handle_HLO(self, message):
         self.game_opts.parse_message(message)
+    def handle_SEL(self, message):
+        self.game_id = message.fold()[1][0]
     
     # Automatic map handling
     def handle_MAP(self, message):

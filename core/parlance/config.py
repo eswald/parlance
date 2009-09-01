@@ -215,6 +215,12 @@ class Configuration(object):
             if hasattr(self, key):
                 setattr(self, key, option_dict[key])
     
+    @classmethod
+    def get(cls, name, default=None):
+        section, field = name.split(".")
+        # Todo: Look up in the configurations if not found
+        return cls._cache.get(name)
+    
     _validators = {
         bool: boolean,
         float: number,
