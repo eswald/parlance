@@ -793,6 +793,12 @@ class Server_Admin_Press(Server_Admin):
         self.assertPressHuhd(offer, sender, recipient, 5)
 
 class Server_Admin_Eject(Server_Admin):
+    class Fake_Observer(ServerTestCase.Fake_Player):
+        name = 'Fake Observer'
+        def __init__(self, *args, **kwargs):
+            kwargs["observe"] = True
+            self.__super.__init__(*args, **kwargs)
+    
     def test_eject_player_unstarted(self):
         ''' Players can be ejected from a forming game.'''
         self.assertAdminVetoable(self.master, 'eject Fake Player',
@@ -865,6 +871,17 @@ class Server_Admin_Eject(Server_Admin):
         self.assertAdminResponse(self.master, None,
                 'Fake Player (Fake_Player) has disconnected. '
                 'Have 2 players and 0 observers. Need 5 to start.')
+    
+    @fails
+    def test_eject_observer_unstarted(self):
+        ''' Observers can be ejected from a forming game.'''
+        self.connect_player(self.Fake_Observer)
+        self.assertAdminVetoable(self.master, 'eject Fake Observer',
+                'Fake Human Player (Fake_Master) is ejecting Fake Observer from the game.')
+        self.wait_for_actions()
+        self.assertAdminResponse(self.master, None,
+            'Fake Observer (Fake_Observer) has disconnected. '
+            'Have 2 players and 0 observers. Need 5 to start.')
 
 class Server_Admin_Other(Server_Admin):
     ''' Other administrative messages handled by the server'''
