@@ -4,6 +4,7 @@ r'''Announcer - A Parlance observer to advertise games to a mailing list.
 '''#"""#'''
 
 import re
+from smtplib import SMTP
 from warnings import warn
 
 from parlance.config import Configuration
@@ -29,6 +30,10 @@ class Announcer(Observer):
             "Leave blank to not send them."),
         ("result_address", email, None, None,
             "Where to send results."),
+        ("sender_address", email, "announcer@localhost", "sender",
+            "Account that the announcer should appear to be sending from."),
+        ("mail_server", str, "localhost", None,
+            "SMTP server through which to send the mail."),
     )
     
     def __init__(self, **kwargs):
@@ -111,14 +116,28 @@ class Announcer(Observer):
         return "\n".join(lines)
     
     def send_mail(self, address, subject, body):
+        host = self.options.mail_server
+        sender = self.options.sender_address
+        
+        assert host
+        assert sender
         assert address
         assert subject
         assert body
         
-        print "To: " + address
-        print "Subject: " + subject
-        print
-        print body
+        msg = "\r\n".join([
+            "From: " + sender,
+            "To: " + address,
+            "Subject: " + subject,
+            "",
+            body,
+        ])
+        
+        server = SMTP()
+        #server.set_debuglevel(1)
+        server.connect(host)
+        server.sendmail(sender, [address], msg)
+        server.quit()
 
 if __name__ == "__main__":
     Announcer.main()
