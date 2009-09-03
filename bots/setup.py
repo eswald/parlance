@@ -62,7 +62,7 @@ setup(
     description = "A set of clients for the Parlance Diplomacy Framework.",
     long_description = readme,
     license = "Non-commercial",
-    keywords = "daide diplomacy board game server",
+    keywords = "daide diplomacy board game AI bots",
     platforms = "Any",
     classifiers = [
         "Development Status :: 4 - Beta",
