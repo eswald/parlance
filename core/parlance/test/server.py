@@ -53,6 +53,9 @@ class Fake_Service(Service):
         self.player.register()
         for msg in self.queue: self.handle_message(msg)
     def write(self, message):
+        #check = self.game.validator.validate_server_message(message)
+        #if check:
+        #    raise Exception("Invalid server message: " + str(message))
         self.player.handle_message(message)
         if self.player.closed: self.close()
     def close(self):
@@ -532,6 +535,27 @@ class Server_Press(ServerTestCase):
         self.sender.send(msg)
         self.assertContains(YES(msg), self.sender.queue)
         self.assertPressReceived(press)
+    def test_send_current_turn(self):
+        ''' If press is sent with the current turn, it gets sent.'''
+        press = PRP(PCE(self.sender.power, self.recipient.power))
+        turn = self.game.judge.turn()
+        msg = SND(turn)(self.recipient.power)(press)
+        self.sender.queue = []
+        self.recipient.queue = []
+        self.sender.send(msg)
+        self.assertContains(YES(msg), self.sender.queue)
+        self.assertPressReceived(press)
+    def test_send_expired_turn(self):
+        ''' If press is sent with a different turn, it gets rejected.'''
+        press = PRP(PCE(self.sender.power, self.recipient.power))
+        turn = self.game.judge.turn()
+        msg = SND(turn)(self.recipient.power)(press)
+        self.game.run_judge()
+        self.sender.queue = []
+        self.recipient.queue = []
+        self.sender.send(msg)
+        self.assertContains(REJ(msg), self.sender.queue)
+        self.assertPressNotReceived(press)
 
 class Server_Admin(ServerTestCase):
     ''' Administrative messages handled by the server'''

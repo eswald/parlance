@@ -1000,6 +1000,12 @@ class Game(Historian):
         if country and self.press_allowed and country not in eliminated:
             folded = message.fold()
             offset = len(folded) > 3
+            if offset and len(folded[1]) == 2:
+                # Check for a specific turn
+                if self.judge.turn() != Turn(*folded[1]):
+                    client.reject(message)
+                    return
+            
             recips = folded[1 + offset]
             for nation in recips:
                 if not self.players[nation].client:

@@ -1188,8 +1188,8 @@ listing all surviving powers.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
-<h4><a name="SND">client_command = SND</a> (power power ...) (press_message)</h4>
-<h4>client_command = SND (power power ...) (reply)</h4>
+<h4><a name="SND">client_command = SND</a> [(turn)] (power power ...) (press_message)</h4>
+<h4>client_command = SND [(turn)] (power power ...) (reply)</h4>
 <!-- Obsolete commands, kept for compatibility with Mapper 0.34
 <h4>client_command = SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...]</h4>
 <h4>client_command = SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...</h4>
@@ -1204,8 +1204,8 @@ otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
 
-<h4>server_message = CCD (power) (SND (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
-<!-- <h4>server_message = CCD (power) (SND (power power ...) (reply))</h4> -->
+<h4>server_message = CCD (power) (SND [(turn)] (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
+<!-- <h4>server_message = CCD (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
@@ -1214,8 +1214,8 @@ multiple powers are listed in the <b>SND</b> command, and the server sends
 a <b>CCD</b> reply, then the message has not been sent to anybody
 (including the ones that are not in civil disorder).</p>
 
-<h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
-<!-- <h4>server_message = OUT (power) (SND (power power ...) (reply))</h4> -->
+<h4><a name="OUT">server_message = OUT</a> (power) (SND [(turn)] (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
+<!-- <h4>server_message = OUT (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
@@ -1224,7 +1224,7 @@ powers are listed in the <b>SND</b> command, and the server sends a
 <b>OUT</b> reply, then the message has not been sent to anybody
 (including the ones that have not been eliminated).</p>
 
-<h4>server_message = HUH (SND (power power ...) (press_message))</h4>
+<h4>server_message = HUH (SND [(turn)] (power power ...) (press_message))</h4>
 
 <p>Syntax of the <b>SND</b> message is illegal. This may be a genuine
 syntax error, or it may be because <b>press_message</b> contains a token which
@@ -1232,15 +1232,15 @@ is not allowed at the language level of the game. <b>ERR</b> is inserted
 immediately before the first token to cause an error.
 <a href="#HUH">See <b>HUH</b></a> in Level 0 for details.</p>
 
-<h4>server_message = REJ (SND (power power ...) (press_message))</h4>
+<h4>server_message = REJ (SND [(turn)] (power power ...) (press_message))</h4>
 
 <p>Either the game has not started, or it is a retreat phase in a
 <b>NPR</b> variant game or a build phase in a <b>NPB</b> variant game,
 or the press deadline has already passed in a <b>PTL</b> variant
 game,<sup><a href="#press_note">*</a></sup> or the sending power has
-been eliminated.</p>
+been eliminated, or the turn specified is not the current turn.</p>
 
-<h4>server_message = YES (SND (power power ...) (press_message))</h4>
+<h4>server_message = YES (SND [(turn)] (power power ...) (press_message))</h4>
 
 <p>The message was sent successfully.</p>
 
