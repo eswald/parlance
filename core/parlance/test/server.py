@@ -121,10 +121,14 @@ class ServerTestCase(unittest.TestCase):
             times = [Time(*msg.fold()[1])
                     for msg in self.queue if msg[0] is TME]
             return times and int(times[0]) or None
-        def hold_all(self):
+        def hold_all(self, turn=None):
             self.send(+MIS)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
-            self.send(SUB % [[unit, HLD] for unit in units])
+            message = SUB
+            if turn: message = message (turn)
+            message %= [[unit, HLD] for unit in units]
+            self.send(message)
+            return message
     class Fake_Master(Fake_Player):
         name = 'Fake Human Player'
     
@@ -264,6 +268,25 @@ class Server_Basics(ServerTestCase):
         self.failIf(player.power in sum([msg
             for msg in player.queue if msg[0] is CCD], []),
             '%s reported in civil disorder' % (player.power,))
+    def test_submit_current_turn(self):
+        ''' The server accepts submissions labelled with the current turn.'''
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        game = self.start_game()
+        player.queue = []
+        message = player.hold_all(game.judge.turn())
+        for order in message.fold()[2:]:
+            self.assertContains(THX (order) (MBV), player.queue)
+    def test_submit_expired_turn(self):
+        ''' The server rejects submissions labelled with the wrong turn.'''
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        game = self.start_game()
+        turn = game.judge.turn()
+        game.run_judge()
+        player.queue = []
+        message = player.hold_all(turn)
+        self.assertContains(REJ (message), player.queue)
     def test_historian(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)

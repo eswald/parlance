@@ -14,7 +14,7 @@ from itertools import chain
 
 from config import Configuration, VerboseObject
 from functions import Infinity, all, any, defaultdict, s
-from gameboard import Map
+from gameboard import Map, Turn
 from orders import DisbandOrder, HoldOrder, OrderSet, \
         RemoveOrder, WaiveOrder, createUnitOrder
 from tokens import *
@@ -448,7 +448,14 @@ class Judge(JudgeInterface):
         phase = self.phase  # Needed to avoid thread problems
         if country and phase:
             orders = self.next_orders
-            for tlist in message.fold()[1:]:
+            params = message.fold()[1:]
+            if message[2].is_season():
+                turn = Turn(*params.pop(0))
+                if turn != self.turn():
+                    client.reject(message)
+                    return
+            
+            for tlist in params:
                 power = self.map.powers[country]
                 order = createUnitOrder(tlist, power, self.map, self.datc)
                 note = order.order_note(power, phase, orders)

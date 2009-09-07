@@ -653,11 +653,13 @@ recalculated.  If the server does not support this, it will send
 
 <h3>(iii) Submitting orders</h3>
 
-<h4><a name="SUB">player_request = SUB</a> (order) (order) ...</h4>
-<!-- <h4>player_request = SUB (loose_order) (loose_order) ...</h4> -->
+<h4><a name="SUB">player_request = SUB</a> [(turn)] (order) (order) ...</h4>
+<!-- <h4>player_request = SUB [(turn)] (loose_order) (loose_order) ...</h4> -->
 
 <p>This is sent from the player to the server, to submit orders for the
-next turn. <b>order</b> can take the following form:</p>
+next turn. <b>turn</b> should be the current turn; it can be used to
+prevent orders from getting applied to the next turn if the client
+misses a deadline. <b>order</b> can take the following form:</p>
 <ul>
 	<li>Movement phase orders:<ul>
 		<!-- <h4>loose_order = ordered_unit HLD</h4> -->
@@ -756,8 +758,8 @@ the format:</p>
 	<li><b>note = NRS</b> &mdash; Not the right season</li>
 </ul>
 
-<p>Alternatively, it will reply with <b>REJ (SUB (order) (order) ...)</b>
-if the game has not started.</p>
+<p>Alternatively, it will reply with <b>REJ (SUB [(turn)] (order) (order) ...)</b>
+if the game has not started, or if the specified turn is not the current turn.</p>
 
 <p>Any order which receives a note other than <b>MBV</b> has been
 rejected by the server, and a corrected order should be submitted in its

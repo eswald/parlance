@@ -543,6 +543,14 @@ class Token(_integer_Token):
             False
         '''#'''
         return protocol.max_pos_int <= self.number < protocol.max_neg_int
+    def is_season(self):
+        ''' Whether the token represents a season or phase.
+            >>> SPR.is_season()
+            True
+            >>> YES.is_season()
+            False
+        '''#'''
+        return self.category == protocol.token_cats['Phases']
     
     # Conversions
     def __hex__(self):
