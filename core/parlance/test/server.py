@@ -247,6 +247,15 @@ class Server_Basics(ServerTestCase):
         sender.queue = []
         sender.send(+MIS)
         self.assertContains(+MIS, sender.queue)
+    def test_NOT_DRW(self):
+        ''' Clients are allowed to cancel draws that haven't been requested.'''
+        self.connect_server()
+        sender = self.connect_player(self.Fake_Player)
+        self.start_game()
+        sender.hold_all()
+        sender.queue = []
+        sender.send(NOT (DRW))
+        self.assertContains(YES (NOT (DRW)), sender.queue)
     def test_missing_orders_CCD(self):
         ''' Failing to submit orders on time results in a CCD message.'''
         self.set_option('MTL', 5)

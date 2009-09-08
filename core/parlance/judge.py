@@ -509,9 +509,12 @@ class Judge(JudgeInterface):
         ''' Cancels draw requests submitted by a power.'''
         country = client.country
         if country and self.phase and not self.eliminated(country):
-            try: self.draws[self.get_draw_parties(message[2:-1])].remove(country)
-            except KeyError: client.reject(message)
-            else: client.accept(message)
+            try:
+                self.draws[self.get_draw_parties(message[2:-1])].remove(country)
+            except KeyError:
+                # The client is being silly, but don't reject.
+                pass
+            client.accept(message)
         else: client.reject(message)
     def handle_MIS(self, client, message):
         ''' Tells a power which or how many orders have yet to be submitted.'''
