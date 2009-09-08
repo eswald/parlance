@@ -939,7 +939,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         self.init_state(SPR, 1902, [ [GER, AMY, RUH], ])
         client = self.Fake_Service(GER)
         self.judge.handle_NOT_SUB(client, NOT(SUB([GER, AMY, RUH], MTO, BEL)))
-    def test_void_convoying_order_result(self):
+    def test_void_convoying_order_result_success(self):
         ''' CVY orders always had NSO results, even for successful convoys.'''
         steady_state = [
             [ENG, FLT, NTH],
@@ -954,6 +954,49 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         ])
         self.assertContains(self.results, ORD(FAL, 1901)
             ([ENG, FLT, NTH], CVY, [ENG, AMY, YOR], CTO, NWY) (SUC))
+    def test_void_convoying_order_result_bounce(self):
+        ''' CVY orders shouldn't get BNC results, even if the convoy bounces.'''
+        steady_state = [
+            [RUS, FLT, GOB],
+            [RUS, AMY, STP],
+            [GER, AMY, DEN],
+        ]
+        self.init_state(SPR, 1902, steady_state)
+        self.legalOrder(RUS, [(RUS, FLT, GOB), CVY, (RUS, AMY, STP), CTO, SWE])
+        self.legalOrder(RUS, [(RUS, AMY, STP), CTO, SWE, VIA, [GOB]])
+        self.legalOrder(GER, [(GER, AMY, DEN), MTO, SWE])
+        self.assertMapState(steady_state)
+        self.assertContains(self.results, ORD(SPR, 1902)
+            ([RUS, FLT, GOB], CVY, [RUS, AMY, STP], CTO, SWE) (SUC))
+        self.assertContains(self.results, ORD(SPR, 1902)
+            ([RUS, AMY, STP], CTO, SWE, VIA, [GOB]) (BNC))
+    def test_void_convoying_order_result_retreat(self):
+        ''' CVY orders shouldn't get DSR results, even if disrupted.'''
+        self.init_state(SPR, 1902, [
+            [ENG, FLT, NTH],
+            [ENG, FLT, SKA],
+            [ENG, AMY, YOR],
+            [FRA, FLT, BEL],
+            [FRA, FLT, HOL],
+        ])
+        self.legalOrder(ENG, [(ENG, FLT, NTH), CVY, (ENG, AMY, YOR), CTO, SWE])
+        self.legalOrder(ENG, [(ENG, FLT, SKA), CVY, (ENG, AMY, YOR), CTO, SWE])
+        self.legalOrder(ENG, [(ENG, AMY, YOR), CTO, SWE, VIA, [NTH, SKA]])
+        self.legalOrder(FRA, [(FRA, FLT, BEL), MTO, NTH])
+        self.legalOrder(FRA, [(FRA, FLT, HOL), SUP, (FRA, FLT, BEL), MTO, NTH])
+        self.assertMapState([
+            [ENG, FLT, NTH, MRT],
+            [ENG, FLT, SKA],
+            [ENG, AMY, YOR],
+            [FRA, FLT, NTH],
+            [FRA, FLT, HOL],
+        ])
+        self.assertContains(self.results, ORD(SPR, 1902)
+            ([ENG, FLT, NTH], CVY, [ENG, AMY, YOR], CTO, SWE) (RET))
+        self.assertContains(self.results, ORD(SPR, 1902)
+            ([ENG, FLT, SKA], CVY, [ENG, AMY, YOR], CTO, SWE) (SUC))
+        self.assertContains(self.results, ORD(SPR, 1902)
+            ((ENG, AMY, YOR), CTO, SWE, VIA, [NTH, SKA]) (DSR))
 
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''

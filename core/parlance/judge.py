@@ -1034,15 +1034,16 @@ class Judge(JudgeInterface):
             False Move    -> BNC (Unless DSR)
             True Move     -> SUC
             True Support  -> SUC
-            Convoys and Holds: The document is unclear, so:
             Convoy -> NSO if the convoy didn't pass through it
-                      Otherwise, same as convoyed unit
-                      In either case, plus RET if must retreat
+                      RET if it must retreat
+                      SUC otherwise
             Hold   -> RET if must retreat, SUC otherwise
         '''#'''
         order = unit.current_order
         result = order.__result
         self.log_debug(13, 'Processing %s; %s', order, result)
+        dislodged = unit.decisions[Decision.DISLODGE].passed
+        
         if not result:
             for choice in unit.decisions.itervalues():
                 self.log_debug(14, '- ' + str(choice))
@@ -1059,15 +1060,14 @@ class Judge(JudgeInterface):
             elif order.is_supporting():
                 if unit.decisions[Decision.SUPPORT].passed: result = SUC
                 else: result = CUT
-            elif order.is_convoying():
+            elif order.is_convoying() and not dislodged:
                 routes = order.supported.decisions[Decision.PATH].routes
                 if routes and unit.decisions[Decision.DISLODGE] in routes[0]:
-                    self.process_results(order.supported)
-                    result = order.supported.current_order.__result
+                    result = SUC
                 else: result = NSO
             order.__result = result
             self.log_debug(14, 'Final result: %s', result)
-        if unit.decisions[Decision.DISLODGE].passed:
+        if dislodged:
             if not unit.dislodged: unit.retreat(self.collect_retreats(unit))
             if result: return (result, RET)
             else: return RET
