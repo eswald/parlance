@@ -246,9 +246,17 @@ class Server(ServerProgram):
             client.change_game(new_game)
         return result
     def start_game(self, client=None, match=None):
-        if match and match.lastindex:
-            var_name = match.group(2)
-        else: var_name = self.options.variant
+        if match:
+            var_name = match.group(2) or self.options.variant
+            game_id = match.group(3).strip().upper()
+            
+            # Todo: Check archived games, too
+            if game_id and self.games.has_key(game_id):
+                client.admin('Game "%s" already exists', game_id)
+                return None
+        else:
+            var_name = self.options.variant
+            game_id = None
         
         try:
             variant = variants[var_name]
@@ -258,7 +266,9 @@ class Server(ServerProgram):
             else:
                 raise ValueError('Unknown variant "%s"' % var_name)
         else:
-            game_id = timestamp()
+            if not game_id:
+                game_id = timestamp()
+            
             self.started_games += 1
             if client: client.admin('New game started, with id %s.', game_id)
             game = Game(self, game_id, variant)
@@ -322,9 +332,9 @@ class Server(ServerProgram):
     commands = [
         Command(r'help', list_help,
             '  help - Lists admin commands recognized by the server'),
-        Command(r'new game', start_game,
+        Command(r'(new)() game( \w+|)', start_game,
             '  new game - Starts a new game of Standard Diplomacy'),
-        Command(r'(new|start) (\w+) game', start_game,
+        Command(r'(new|start) (\w+) game( \w+|)', start_game,
             '  new <variant> game - Starts a new game, with the <variant> map'),
         #Command(r'select game (\w+)', select_game,
         #    '  select game <id> - Switches to game <id>, if it exists'),

@@ -1074,6 +1074,22 @@ class Server_Multigame(ServerTestCase):
     def test_start_game(self):
         self.master.admin('Server: start standard game')
         self.failUnlessEqual(len(self.server.games), 2)
+    def test_new_game_name_upper(self):
+        name = "TEST_GAME_%d_UPPER" % (time(),)
+        self.master.admin('Server: new game %s', name)
+        self.failUnlessEqual(len(self.server.games), 2)
+        self.assertContains(name, self.server.games)
+    @fails
+    def test_new_game_name_mixed(self):
+        name = "Test_Game_%d_Mixed" % (time(),)
+        self.master.admin('Server: new game %s', name)
+        self.failUnlessEqual(len(self.server.games), 2)
+        self.assertContains(name, self.server.games)
+    def test_new_game_conflict(self):
+        name = self.game.game_id
+        response = self.master.admin('Server: new game %s', name)
+        self.assertContains('Game "%s" already exists' % name, response)
+        self.failUnlessEqual(len(self.server.games), 1)
     def test_second_connection(self):
         self.new_game()
         self.failUnlessEqual(len(self.server.games), 2)
