@@ -162,6 +162,9 @@
     <p>Give users a way to name their new game.</p>
     <p>The time limit admin command could use a better help line, and maybe a
       better interface.  Perhaps a "time limits" command should show all.</p>
+    <p>A game-switching admin command might be in order.  Unfortunately, it
+      would need to be subject to various limits, particularly with RM
+      switches and NME preservation.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
@@ -174,6 +177,8 @@
     <p>A JSON-based HTTP interface with long polling would be nice.  The
       Server should see something that looks like a Service, while the client
       should be sending and receiving DPP-like JSON objects, if possible.</p>
+    <p>Each game should listen on its own port somehow.  Probably configured
+      with max/min port options.</p>
     
     <h2>Human-oriented Options</h2>
     <p>Players would like the ability to connect and disconnect throughout the
