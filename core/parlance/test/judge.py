@@ -788,6 +788,8 @@ class Judge_Doctests(unittest.TestCase):
 
 class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
     ''' Test cases to reproduce bugs that have been fixed.'''
+    game_options = {'send_ORD': True}
+    
     def test_orderless_convoyee(self):
         'Error when convoying an army without an order'
         self.judge.datc.datc_4a3 = 'f'

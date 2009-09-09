@@ -1,5 +1,5 @@
 r'''Parterre variant test cases
-    Copyright (C) 2008  Eric Wald
+    Copyright (C) 2008-2009  Eric Wald
     
     This module runs tests for each variant in the module.
     
@@ -58,7 +58,6 @@ class IberianVariantTests(StandardVariantTests):
     "Tests for the iberian2 map variant"
     variant = "iberian2"
     
-    @fails
     def test_gascony_encoding(self):
         # This is currently the only non-ascii character in a province name.
         # It should probably be Unicode, but that's too much work for now.

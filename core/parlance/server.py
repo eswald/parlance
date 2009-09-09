@@ -1,5 +1,5 @@
 r'''Parlance game server
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module contains the main server, which serves any number of games
     over the network.
@@ -1292,7 +1292,7 @@ class Game(Historian):
                 value = getattr(self.game_options, attribute)
                 client.admin('The %s time limit is %d seconds.', phase, value)
         else:
-            client.admin('Unknown phase %r; '
+            client.admin('Unknown phase "%s"; '
                 'try move, build, retreat, or press.', phase)
     def stop_time(self, client, match):
         if self.paused: client.admin('The game is already paused.')

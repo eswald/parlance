@@ -1,5 +1,5 @@
 r'''Parlance message validation
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes a syntax checker for messages in Pythonic form.
     When used between a network layer and the message interpreter, it provides
@@ -24,13 +24,17 @@ class Validator(VerboseObject):
         elevating to a higher syntax level (maybe)
         when the game starts.
     '''#'''
-    syntax = {'string': [(0, ['repeat', 'cat', 'Text'])]}
+    syntax = {}
     press_levels = {}
     trimmed = {}
     __section__ = 'syntax'
     __options__ = (
         ('syntax_file', file, 'parlance://data/syntax.html', 'syntax file',
             'Document specifying syntax rules and level names.'),
+        ('encoding', str, 'utf-8', None,
+            'Encoding to use for incoming messages.',
+            'Anything not decodable with that encoding will generate HUH.',
+            'Leave blank to disable encoding checks.'),
     )
     
     def __init__(self, syntax_level=0):
@@ -331,6 +335,10 @@ class Validator(VerboseObject):
                 elif opt == 'cat':      in_cat = True
                 elif opt == 'repeat':   repeat = True
                 elif opt == 'optional': option = (index, True)
+                elif opt == 'string':
+                    result = self.count_string(msg[index:])
+                    if result: index += result
+                    else: break
                 else:
                     if in_sub:
                         # Wrapped subexpression
@@ -408,6 +416,25 @@ class Validator(VerboseObject):
                 if result: return index + result, valid
             return index, True
         else: return index - 1, False
+    
+    def count_string(self, msg):
+        # Count the number of tokens valid for the encoding.
+        if not self.options.encoding:
+            return count_valid(msg, Token.is_text, True)
+        
+        length = len(msg)
+        index = 0
+        while index < length and msg[index].is_text():
+            index += 1
+        while index:
+            text = "".join(t.text for t in msg[:index])
+            try:
+                text.decode(self.options.encoding)
+            except UnicodeDecodeError:
+                index -= 1
+            else:
+                break
+        return index
 
 def count_valid(msg, func, repeat):
     ''' Counts the number of tokens for which the given function returns True.

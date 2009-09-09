@@ -1,5 +1,5 @@
 r'''Parlance client/server communications
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes classes to send and receive network messages, using
     the Pythonic messages for the interface to other parts of the program.
@@ -374,7 +374,8 @@ class Service(Connection):
         for msg in message_list: self.send(msg)
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
-    def admin(self, line, *args): self.send(ADM('Server')(str(line) % args))
+    def admin(self, line, *args):
+        self.send(ADM('Server')(unicode(line) % args))
 
 class ServerSocket(SocketWrapper):
     def __init__(self, server_class, thread_manager):

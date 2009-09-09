@@ -1,5 +1,5 @@
 r'''Test cases for the Parlance server
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module tests the server's response to client activity, and other
     functionality not specifically related to adjudication or the judge.
@@ -1055,7 +1055,7 @@ class Server_Admin_Other(Server_Admin):
                 'The move time limit is 60 seconds.')
     def test_time_limit_phase(self):
         self.assertAdminResponse(self.master, 'SPR time limit',
-                "Unknown phase 'spr'; try move, build, retreat, or press.")
+                'Unknown phase "spr"; try move, build, retreat, or press.')
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):

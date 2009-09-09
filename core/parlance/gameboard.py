@@ -1,5 +1,5 @@
 r'''Parlance gameboard classes
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module defines classes to represent parts of the Diplomacy game.
     These are intended to be general-purpose; in particular, they should not
@@ -214,7 +214,7 @@ class Variant(object):
             self.powers[key] = (value, value)
     
     def parse_provinces(self, key, value):
-        self.provinces[key] = value or key
+        self.provinces[key] = value.decode("utf-8") or key
     
     def parse_homes(self, key, value):
         self.homes[key] = [s.strip() for s in value.split(',') if s.strip()]

@@ -1,5 +1,5 @@
 r'''Parlance language classes
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module contains classes to convert messages between a Pythonic
     representation, the DAIDE message syntax, and the network protocol.
@@ -59,7 +59,7 @@ class Message(list):
             >>> Message().fold()
             []
             >>> NME('name')(-3).fold()
-            [NME, ['name'], [-3]]
+            [NME, [u'name'], [-3]]
             >>> base_rep.translate('(()(()()))()').fold()
             [[[], [[], []]], []]
             >>> base_rep.translate('(()()))()(()').fold()
@@ -86,15 +86,23 @@ class Message(list):
             with embedded strings and tokens converted into Python values.
             
             >>> NME('version')(-3).convert()
-            [NME, BRA, 'version', KET, BRA, -3, KET]
+            [NME, BRA, u'version', KET, BRA, -3, KET]
         '''#'''
         result = []
-        text = ''
+        text = []
         append = result.append
         for token in self:
-            if token.is_text(): text += token.text
+            if token.is_text():
+                text.append(token)
             else:
-                if text: append(text); text = ''
+                if text:
+                    try:
+                        string = "".join(t.text for t in text).decode("utf-8")
+                    except UnicodeDecodeError:
+                        result.extend(text)
+                    else:
+                        append(string)
+                    text = []
                 if token.is_integer(): append(token.value())
                 else: append(token)
         if text: append(text)
@@ -184,6 +192,8 @@ class Message(list):
                 raise TypeError('tokenize for %s returned non-list (type %s)' %
                         (value, result.__class__.__name__))
         elif isinstance(value, (int, float, long)): return [IntegerToken(value)]
+        elif isinstance(value, unicode):
+            return [StringToken(c) for c in value.encode("utf-8")]
         elif isinstance(value, str):
             return [StringToken(c) for c in value]
         elif wrap: return Message.wrap(value)
