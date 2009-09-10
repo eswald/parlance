@@ -11,6 +11,7 @@ r'''Parlance client/server communications
 '''#'''
 
 import socket
+from itertools import count
 from struct    import pack, unpack
 from time      import sleep
 
@@ -302,7 +303,7 @@ class Service(Connection):
         def close(self):
             self.closed = True
     
-    def __init__(self, client_id, connection, address, server):
+    def __init__(self, client_id, connection, address, server, game_id=None):
         self.__super.__init__()
         self.sock      = connection
         self.client_id = client_id
@@ -315,7 +316,7 @@ class Service(Connection):
         self.booted    = False
         self.server    = server
         self.errors    = 0
-        self.game      = server.default_game()
+        self.game      = server.default_game(game_id)
         self.rep       = self.game.variant.rep
         self.prefix    = 'Service #%d (%s)' % (client_id, self.game.game_id)
         
@@ -378,53 +379,88 @@ class Service(Connection):
         self.send(ADM('Server')(unicode(line) % args))
 
 class ServerSocket(SocketWrapper):
-    def __init__(self, server_class, thread_manager):
+    __options__ = (
+        ('game_port_min', int, None, None,
+            'Minimum port for game-specific connections.',
+            'If blank, no game-specific ports will be opened.'),
+        ('game_port_max', int, None, None,
+            'Maximum port for game-specific connections.',
+            'If blank, no game-specific ports will be opened.'),
+    )
+    
+    next_id = count(0)
+    
+    def __init__(self, server_class, thread_manager, game=None):
         self.__super.__init__()
-        self.server = None
+        self.server = game and game.server
+        self.game_id = game and game.game_id
         self.server_class = server_class
         self.manager = thread_manager
-        self.next_id = 0
+        if game: self.prefix += " %s" % (game.game_id)
     def open(self):
         ''' Start listening for clients on the specified address.
             May throw exceptions for bad host/port combinations.
         '''#'''
         # Initialize a new socket
-        wait_time = .125
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        addr = (self.options.host, self.options.port)
-        while True:
-            try: sock.bind(addr)
-            except socket.error, e:
-                if e.args[0] == 98:
-                    self.log_debug(1, 'Waiting for port %s:%d' % addr)
-                    sleep(wait_time)
-                    wait_time *= 2
-                else: raise e
-            else: break
+        if self.game_id:
+            if not (self.options.game_port_min and self.options.game_port_max):
+                return False
+            self.log_debug(11, "Checking ports %d-%d",
+                self.options.game_port_min, self.options.game_port_max)
+            self.port = self.options.game_port_min
+            while self.port <= self.options.game_port_max:
+                addr = (self.options.host, self.port)
+                try:
+                    sock.bind(addr)
+                except socket.error, e:
+                    if e.args[0] == 98:
+                        self.log_debug(7, 'Port %s:%d already in use' % addr)
+                        self.port += 1
+                    else: raise e
+                else: break
+            else: return False
+        else:
+            wait_time = .125
+            addr = (self.options.host, self.options.port)
+            while True:
+                try: sock.bind(addr)
+                except socket.error, e:
+                    if e.args[0] == 98:
+                        self.log_debug(1, 'Waiting for port %s:%d' % addr)
+                        sleep(wait_time)
+                        wait_time *= 2
+                    else: raise e
+                else: break
+        
         self.log_debug(6, 'Listening on port %s:%d' % addr)
         sock.setblocking(False)
         sock.listen(7)
         self.sock = sock
-        self.server = self.server_class(self.manager)
+        if not self.server:
+            self.server = self.server_class(self.manager)
         return bool(sock and self.server)
     def close(self):
         self.closed = True
-        if self.server and not self.server.closed: self.server.close()
-        if not self.manager.closed: self.manager.close()
+        if not self.game_id:
+            if self.server and not self.server.closed:
+                self.server.close()
+            if not self.manager.closed:
+                self.manager.close()
         self.__super.close()
     def run(self):
         ''' Attempts to connect one new network player'''
         try: conn, addr = self.sock.accept()
         except socket.error: pass
         else:
+            next_id = self.next_id.next()
             self.log_debug(6, 'Connection from %s as client #%d',
-                    addr, self.next_id)
+                    addr, next_id)
             
             # Required by the DCSP document
             try: conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             except: self.log_debug(7, 'Could not set SO_KEEPALIVE')
             conn.setblocking(False)
-            service = Service(self.next_id, conn, addr[0], self.server)
+            service = Service(next_id, conn, addr[0], self.server, self.game_id)
             service.start_timer(self.manager)
             self.manager.add_polled(service)
-            self.next_id += 1

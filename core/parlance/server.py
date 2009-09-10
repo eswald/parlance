@@ -19,6 +19,7 @@ from functions  import defaultdict, expand_list, \
 from gameboard  import Turn
 from language   import Message, Time, protocol
 from main       import ServerProgram
+from network    import ServerSocket
 from tokens     import *
 from validation import Validator
 
@@ -214,20 +215,22 @@ class Server(ServerProgram):
                 client.send(game.listing())
             client.accept(message)
     
-    def default_game(self):
+    def default_game(self, game_id=None):
+        if game_id:
+            game = self.find_game(game_id)
+            if game:
+                return game
+        
         while self.default:
             game = self.default[-1]
             if game.closed: self.default.pop()
             else: return game
         else: return self.start_game()
-    def join_game(self, client, game_id):
-        new_game = None
-        result = False
+    def find_game(self, game_id):
+        game = None
         
-        if client.game.game_id == game_id: result = True
-        elif self.games.has_key(game_id):
-            new_game = self.games[game_id]
-            result = True
+        if self.games.has_key(game_id):
+            game = self.games[game_id]
         elif self.options.log_games:
             # Resuscitate an archived game as a Historian
             new_game = Historian(self, game_id)
@@ -240,11 +243,22 @@ class Server(ServerProgram):
                 self.log_debug(1,
                         'Exception while loading a saved game: %s %s',
                         e.__class__.__name__, e.args)
-            if result: self.games[game_id] = new_game
+            else:
+                if result:
+                    self.games[game_id] = new_game
+                    game = new_game
         
-        if result and new_game:
+        return game
+    def join_game(self, client, game_id):
+        if client.game.game_id == game_id:
+            return True
+        
+        new_game = self.find_game(game_id)
+        if new_game:
             client.change_game(new_game)
-        return result
+            return True
+        
+        return False
     def start_game(self, client=None, match=None):
         if match:
             var_name = match.group(2) or self.options.variant
@@ -674,6 +688,13 @@ class Game(Historian):
         for country in powers:
             self.players[country] = self.Player_Struct(
                     self.judge.player_name(country))
+        
+        # Game-specific port
+        port = ServerSocket(None, server.manager, self)
+        if port.open():
+            server.manager.add_polled(port)
+            self.port = port
+        else: self.port = None
     
     def set_limits(self):
         game = self.game_options
@@ -778,6 +799,7 @@ class Game(Historian):
                 self.messages[SMR] = summary
                 self.messages[LST] = self.listing()
                 self.server.archive(self)
+        # Todo: Will it kill connected clients to close self.port?
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}

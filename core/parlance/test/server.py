@@ -92,7 +92,11 @@ class ServerTestCase(unittest.TestCase):
             if observe: self.player_type = OBS
             else: self.player_type = NME
         def register(self):
-            if self.game_id is not None: self.send(SEL(self.game_id))
+            if self.game_id is None:
+                self.send(+SEL)
+            else:
+                self.send(SEL(self.game_id))
+            
             if self.power and self.pcode:
                 self.send(IAM (self.power) (self.pcode))
             else:
@@ -111,6 +115,8 @@ class ServerTestCase(unittest.TestCase):
                 self.game_opts.parse_message(message)
             elif message[0] in (MAP, SVE, LOD): self.send(YES(message))
             elif message[0] is OFF: self.close()
+            elif message[0] is SEL:
+                self.game_id = message.fold()[1][0]
         def admin(self, line, *args):
             self.queue = []
             self.send(ADM(self.name)(str(line) % args))

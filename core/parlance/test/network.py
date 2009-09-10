@@ -1,5 +1,5 @@
 r'''Test cases for Parlance network activity
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes functional (end-to-end) test cases to verify that the
     whole system works together; unfortunately, many of them can take quite
@@ -303,6 +303,24 @@ class Network_Basics(NetworkTestCase):
         unpacked = c.unpack_message(pack('!HHHH', *msg))
         self.failUnlessEqual(repr(unpacked),
             "Message([HLO, [Token('Sth', 0x4101)]])")
+    def test_game_port(self):
+        # Each game can be accessed on its own port, if so configured.
+        self.connect_server([])
+        
+        game_port = self.port.next()
+        self.set_option('game_port_min', game_port)
+        self.set_option('game_port_max', game_port)
+        middle = self.server.start_game()
+        
+        self.set_option('game_port_min', None)
+        self.set_option('game_port_max', None)
+        default = self.server.start_game()
+        player = self.connect_player(self.Fake_Player)
+        self.failUnlessEqual(player.game_id, default.game_id)
+        
+        self.set_option('port', game_port)
+        player = self.connect_player(self.Fake_Player)
+        self.failUnlessEqual(player.game_id, middle.game_id)
 
 class Network_Full_Games(NetworkTestCase):
     def test_holdbots(self):
