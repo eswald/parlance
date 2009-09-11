@@ -1,5 +1,5 @@
 r'''Parlance configuration management
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module harfs files for constants and other information.
     The main configuration files are parlance.cfg in the current working
@@ -34,6 +34,8 @@ def integer(value):
     # Recognize an integer in any supported base, particularly with 0x prefix.
     try:
         result = int(value, 0)
+    except TypeError:
+        result = int(value)
     except ValueError:
         raise ValueError('Unrecognized integer value')
     return result
