@@ -21,6 +21,7 @@ from parlance.tokens    import *
 from parlance.xtended   import *
         
 from parlance.test.datc import DiplomacyAdjudicatorTestCase
+from parlance.test.gameboard import load_variant
 
 SWI = Token('SWI', 0x504B)
 
@@ -361,6 +362,59 @@ class Judge_Convoys(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrdered(ORD (SPR, 1901)
             ([TUR, AMY, APU], CTO, ROM, VIA, [ION, TYS]) (SUC))
+    def test_oneway_convoy_paths(self):
+        # Every step of the convoy by the army must be a move
+        # that is allowed for fleets moving in that direction.
+        #
+        # The following examples are all one-way trips:
+        # AAA  -> SSS <-> YYY <-> BBB
+        # AAA <-> TTT  -> YYY <-> BBB
+        # AAA <-> TTT <-> ZZZ  -> BBB
+        
+        variant = load_variant('''
+            [homes]
+            ONE=AAA
+            TWO=BBB
+            TRE=CCC
+            
+            [borders]
+            AAA=AMY CCC, FLT SSS TTT
+            BBB=AMY CCC, FLT YYY
+            CCC=AMY AAA BBB
+            SSS=FLT YYY
+            TTT=FLT AAA YYY ZZZ
+            YYY=FLT BBB SSS
+            ZZZ=FLT BBB TTT
+        ''')
+        
+        rep = variant.rep
+        ONE = rep["ONE"]
+        TWO = rep["TWO"]
+        TRE = rep["TRE"]
+        AAA = rep["AAA"]
+        BBB = rep["BBB"]
+        SSS = rep["SSS"]
+        TTT = rep["TTT"]
+        YYY = rep["YYY"]
+        ZZZ = rep["ZZZ"]
+        
+        self.judge = variant.new_judge(GameOptions())
+        self.judge.start()
+        self.init_state(SPR, 1901, [
+            [ONE, AMY, AAA],
+            [TWO, AMY, BBB],
+            [TRE, FLT, SSS],
+            [TRE, FLT, TTT],
+            [TRE, FLT, YYY],
+            [TRE, FLT, ZZZ],
+        ])
+        
+        self.legalOrder(ONE, [(ONE, AMY, AAA), CTO, BBB, VIA, [SSS, YYY]])
+        self.legalOrder(ONE, [(ONE, AMY, AAA), CTO, BBB, VIA, [TTT, YYY]])
+        self.legalOrder(ONE, [(ONE, AMY, AAA), CTO, BBB, VIA, [TTT, ZZZ]])
+        self.illegalOrder(TWO, [(TWO, AMY, BBB), CTO, AAA, VIA, [YYY, SSS]])
+        self.illegalOrder(TWO, [(TWO, AMY, BBB), CTO, AAA, VIA, [YYY, TTT]])
+        self.illegalOrder(TWO, [(TWO, AMY, BBB), CTO, AAA, VIA, [ZZZ, TTT]])
 
 class Judge_Basics(DiplomacyAdjudicatorTestCase):
     ''' Basic Judge Functionality'''
