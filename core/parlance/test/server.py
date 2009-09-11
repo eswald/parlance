@@ -414,7 +414,7 @@ class Server_Basics(ServerTestCase):
             MAP (self.game.judge.map_name),
             VAR (self.game.judge.variant_name),
             self.game.variant.mdf(),
-            HLO (OBS) (0) (self.game.game_options),
+            HLO (UNO) (0) (self.game.game_options),
             sco,
             now,
         ] + sorted([
@@ -1128,6 +1128,26 @@ class Server_Multigame(ServerTestCase):
         self.new_game('sailho')
         newbie = self.connect_player(self.Fake_Player, game_id=old_id)
         self.failUnlessEqual(newbie.rep, old_rep)
+    def test_admin_select(self):
+        game = self.new_game()
+        self.master.admin('Server: select game %s', game.game_id)
+        self.failUnless(game.players[game.p_order[0]].ready)
+        self.assertContains(ADM ("Server") ("Joined game %s as a player." %
+                game.game_id), self.master.queue)
+    def test_select_running(self):
+        game = self.new_game()
+        started = self.start_game()
+        self.failUnlessEqual(game, started)
+        self.master.admin('Server: select game %s', game.game_id)
+        self.assertContains(ADM ("Server") ("Joined game %s as an observer." %
+                game.game_id), self.master.queue)
+        self.assertContains(game.messages[HLO], self.master.queue)
+    def test_select_unknown(self):
+        game = self.new_game()
+        game_id = game.game_id * 2
+        self.master.admin('Server: select game %s', game_id)
+        self.assertContains(ADM ("Server") ("Unknown game %s." %
+                game_id), self.master.queue)
     
     def test_SEL_reply(self):
         self.master.queue = []

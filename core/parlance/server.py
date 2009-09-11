@@ -293,10 +293,30 @@ class Server(ServerProgram):
             return game
         return None
     def select_game(self, client, match):
-        game_id = match.group(1)
-        if self.join_game(client, game_id):
-            client.admin('Joined game %s.', game_id)
-        else: client.admin('Unknown game %s.', game_id)
+        # Select a new game via admin command.
+        # Must be careful here, because the client is less capable.
+        game_id = match.group(1).upper()
+        if game_id == client.game.game_id:
+            client.admin('Already in %s.', game_id)
+            return
+        
+        game = self.find_game(game_id)
+        if not game:
+            client.admin('Unknown game %s.', game_id)
+            return
+        
+        if game.variant.mapname != client.game.variant.mapname:
+            client.admin("Cannot select game %s, " +
+                "because it uses a different map.", game_id)
+            return
+        
+        playing = client.country and not game.started
+        client.change_game(game)
+        if playing:
+            playing = game.offer_open(client)
+        client.admin('Joined game %s as %s.', game_id,
+            playing and "a player" or "an observer")
+        game.map_accepted(client)
     
     def list_variants(self, client, match):
         names = expand_list(sorted(variants))
@@ -350,8 +370,8 @@ class Server(ServerProgram):
             '  new game - Starts a new game of Standard Diplomacy'),
         Command(r'(new|start) (\w+) game( \w+|)', start_game,
             '  new <variant> game - Starts a new game, with the <variant> map'),
-        #Command(r'select game (\w+)', select_game,
-        #    '  select game <id> - Switches to game <id>, if it exists'),
+        Command(r'select game (\w+)', select_game,
+            '  select game <id> - Switches to game <id>, if the map is compatible'),
         Command(r'list variants', list_variants,
             '  list variants - Lists known map variants'),
         Command(r'list bots', list_bots,
@@ -746,6 +766,20 @@ class Game(Historian):
         client.version = msg[2][0]
         self.players[country].new_client(client)
         client.send_list([YES(message), MAP(self.judge.map_name)])
+    def offer_open(self, client):
+        ''' Sets the client as the player of the first open power.
+            Assumes that the NME message has already been accepted.
+            Returns the country if successful, False if no power is available.
+        '''#'''
+        for country in self.p_order:
+            player = self.players[country]
+            if not player.client:
+                self.log_debug(6, 'Offering %s to client #%d',
+                    country, client.client_id)
+                client.country = country
+                player.new_client(client)
+                return country
+        return False
     def players_unready(self):
         ''' A list of disconnected or unready players.'''
         return [country
@@ -848,7 +882,7 @@ class Game(Historian):
             self.log_debug(9, 'Starting the game')
             self.validator.syntax_level = self.game_options.LVL
             self.messages[LST] = self.listing(OFF)
-            self.messages[HLO] = HLO(OBS)(0)(self.game_options)
+            self.messages[HLO] = HLO(UNO)(0)(self.game_options)
             for user in self.clients: self.send_hello(user)
             for user, message in self.limbo.iteritems():
                 user.reject(message)
@@ -1112,32 +1146,34 @@ class Game(Historian):
     def handle_YES_MAP(self, client, message):
         if message.fold()[1][1][0].lower() == self.judge.map_name:
             if client in self.clients: return # Ignore duplicate messages
-            self.clients.append(client)
             if self.server.options.admin_cmd:
                 client.admin('Welcome.  This server accepts admin commands; '
                         'send "Server: help" for details.')
-            name = client.full_name()
-            obs = ''
-            if client.country:
-                self.players[client.country].ready = True
-            else:
-                if client.name: obs = ' as an observer'
-                if self.started and not self.closed:
-                    self.reveal_passcodes(client)
-            self.admin('%s has connected%s. %s', name, obs, self.has_need())
-            
-            if self.started:
-                self.send_hello(client)
-                # This should probably be farmed out to the judge,
-                # but it works for now.
-                client.send(self.judge.map.create_SCO())
-                if self.closed:
-                    msg = self.judge.game_result
-                    if msg: client.send(msg)
-                    client.send(self.summarize())
-                client.send(self.judge.map.create_NOW())
-            else: self.check_start()
+            self.map_accepted(client)
         else: client.reject(message); self.disconnect(client)
+    def map_accepted(self, client):
+        self.clients.append(client)
+        name = client.full_name()
+        obs = ''
+        if client.country:
+            self.players[client.country].ready = True
+        else:
+            if client.name: obs = ' as an observer'
+            if self.started and not self.closed:
+                self.reveal_passcodes(client)
+        self.admin('%s has connected%s. %s', name, obs, self.has_need())
+        
+        if self.started:
+            self.send_hello(client)
+            # This should probably be farmed out to the judge,
+            # but it works for now.
+            client.send(self.judge.map.create_SCO())
+            if self.closed:
+                msg = self.judge.game_result
+                if msg: client.send(msg)
+                client.send(self.summarize())
+            client.send(self.judge.map.create_NOW())
+        else: self.check_start()
     
     # Identity messages
     def handle_NME(self, client, message):
