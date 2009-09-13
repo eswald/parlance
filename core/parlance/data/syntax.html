@@ -14,10 +14,10 @@
 <body>
 <h1>Parlance Message Syntax</h1>
 
-<p><a href="#appC">Modified</a> from version 0.14 of the
+<p><a href="#appC">Modified</a> from version 0.16 of the
 <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">Diplomacy
 AI Development Environment Message Syntax</a>, which was last updated on
-2 April 2006.</p>
+8 September 2009.</p>
 
 <p>The following document defines the language which will be used for
 communications between a client and server, and for negotiation between
@@ -296,8 +296,12 @@ resent on reconnection.</p>
 
 <p>Until a successful <b>NME</b>, <b>OBS</b> or <b>IAM</b> message has
 been received, the client will be treated the same as an observer,
-except that if the game is in progress, no results messages (<b>ORD</b>,
-<b>NOW</b> and <b>SCO</b>) will be sent.</p>
+except that messages will not be sent to the client except in response
+to messages from the client; for example, <b>ORD</b>, <b>NOW</b> and
+<b>SCO</b> messages will not be sent.  The one exception to this is
+<a href="#OFF"><b>OFF</b></a>, which may be sent to a client before a
+successful <b>NME</b>, <b>OBS</b> or <b>IAM</b> message has been
+received.</p>
 
 <h4><a name="MAP">server_command = MAP</a> ('name')</h4>
 
@@ -448,8 +452,7 @@ before sending <b>YES (MAP ('name'))</b>.</p>
 
 <p>The client can send the <a href="#NOW"><b>NOW</b></a> and
 <a href="#SCO"><b>SCO</b></a> commands to the server to determine the
-supply centre ownership and starting positions for the variant.<sup><a
-href="#position_note" name="position">*</a></sup></p>
+supply centre ownership and starting positions for the variant.</p>
 
 <p>The client must not assume that the supply centre ownership and
 starting positions will be the same as for the other games which use the
@@ -548,7 +551,9 @@ any options for the game. For example:</p>
 	orders which match the syntax for an order will be accepted,
 	whether they are legal or not. If not specified, then only
 	orders which could be valid will be accepted.<sup><a
-	href="#foreign_note">*</a></sup></li>
+	href="#foreign_note">*</a></sup>  In an AOA game, any token which
+	would normally be given as a THX note can instead be used as an ORD
+	result.</li>
 </ul>
 
 <!-- <h4>variant_option != Parameters any_token_sequence</h4> -->
@@ -583,7 +588,7 @@ the start of the game:</p>
 <!-- <h4>client_request = SCO</h4> -->
 <p>The client can send the command <b>SCO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
-the latest <b>SCO</b> message, or the starting <b>SCO</b> message if the
+the latest <b>SCO</b> message, or the starting supply center ownership if the
 game hasn't started.</p>
 
 <h4><a name="NOW">server_message = NOW</a> (turn) (unit) (unit) ...</h4>
@@ -628,7 +633,7 @@ multi-coastal province. For example,</p>
 <!-- <h4>client_request = NOW</h4> -->
 <p>The client can send the command <b>NOW</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
-the latest <b>NOW</b> message, or the starting <b>NOW</b> message if the
+the latest <b>NOW</b> message, or the starting position if the
 game hasn't started.</p>
 
 <h4><a name="HST">client_request = HST</a> (turn)</h4>
@@ -653,13 +658,16 @@ recalculated.  If the server does not support this, it will send
 
 <h3>(iii) Submitting orders</h3>
 
-<h4><a name="SUB">player_request = SUB</a> [(turn)] (order) (order) ...</h4>
+<h4><a name="SUB">player_request = SUB</a> (order) (order) ...</h4>
+<h4>player_request = SUB (turn) (order) (order) ...</h4>
 <!-- <h4>player_request = SUB [(turn)] (loose_order) (loose_order) ...</h4> -->
 
 <p>This is sent from the player to the server, to submit orders for the
-next turn. <b>turn</b> should be the current turn; it can be used to
-prevent orders from getting applied to the next turn if the client
-misses a deadline. <b>order</b> can take the following form:</p>
+next turn. The second form will check that the turn stated is the
+current turn (that is, the turn sent in the most recent
+<a href="#NOW"><b>NOW</b></a> message); if this is not the case, the
+server will reply with <b>REJ (SUB (turn) (order) (order) ...)</b>.
+<b>order</b> can take the following form:</p>
 <ul>
 	<li>Movement phase orders:<ul>
 		<!-- <h4>loose_order = ordered_unit HLD</h4> -->
@@ -705,7 +713,10 @@ misses a deadline. <b>order</b> can take the following form:</p>
 <!-- <h4>ordered_unit = (unit_type loose_province)</h4> -->
 <p><b>unit</b> is a unit, and must be in the form as given by
 <a href="#NOW">the <b>NOW</b> command</a> &mdash; that is,
-<b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.</p>
+<b>(power type province)</b> &mdash; for example, <b>(ENG FLT LON)</b>.
+Where the unit is a fleet in a multi-coasted province, the coast must
+be specified.</p>
+
 <p><b>province</b> is any province. For a fleet moving to a province
 with multiple coasts (Spain, St. Petersburg, or Bulgaria on the Standard
 map), it must be of the form <b>(province coast)</b>.</p>
@@ -860,13 +871,11 @@ orders will use a more rigorous format-->.</p>
 <p><b>result</b> is the result of the order. It can be one of the following:</p>
 <ul>
 	<!-- <h4>result = order_result</h4> -->
-	<li><b>order_result = SUC</b> &mdash; Order succeeded</li>
-	<li><b>order_result = BNC</b> &mdash; Move bounced</li>
-	<li><b>order_result = CUT</b> &mdash; Support cut</li>
-	<li><b>order_result = DSR</b> &mdash; Move via convoy failed due
-	to dislodged convoying fleet</li>
-	<li><b>order_result = NSO</b> &mdash; No such order (for a
-	support, convoying fleet, or convoyed army)</li>
+	<li><b>order_result = SUC</b> &mdash; Order succeeded (can apply to any order)</li>
+	<li><b>order_result = BNC</b> &mdash; Move bounced (only for MTO, CTO or RTO orders)</li>
+	<li><b>order_result = CUT</b> &mdash; Support cut (only for SUP orders)</li>
+	<li><b>order_result = DSR</b> &mdash; Move via convoy failed due to dislodged convoying fleet (only for CTO orders)</li>
+	<li><b>order_result = NSO</b> &mdash; No such order (only for SUP, CVY or CTO orders)</li>
 	<!-- <h4>{AOA} order_result = note</h4> -->
 </ul>
 
@@ -1097,7 +1106,8 @@ sent after the <b>SCO</b> message and before the <b>NOW</b> message.</p>
 <p>This command is sent by the player to the server, to indicate that
 the player would accept a DIAS draw at this point. The server responds
 with <b>YES (DRW)</b>, or <b>REJ (DRW)</b> if the game has not
-started.</p>
+started or has ended, or the message is received from an eliminated
+power or an observer.</p>
 
 <!-- <h4>server_message = DRW</h4> -->
 <!-- <h4>server_message != DRW (power power power ...)</h4> -->
@@ -1190,8 +1200,10 @@ listing all surviving powers.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
-<h4><a name="SND">client_command = SND</a> [(turn)] (power power ...) (press_message)</h4>
-<h4>client_command = SND [(turn)] (power power ...) (reply)</h4>
+<h4><a name="SND">client_command = SND</a> (power power ...) (press_message)</h4>
+<h4>client_command = SND (power power ...) (reply)</h4>
+<h4>client_command = SND (turn) (power power ...) (press_message)</h4>
+<h4>client_command = SND (turn) (power power ...) (reply)</h4>
 <!-- Obsolete commands, kept for compatibility with Mapper 0.34
 <h4>client_command = SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...]</h4>
 <h4>client_command = SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...</h4>
@@ -1200,8 +1212,15 @@ listing all surviving powers.</p>
 
 <p>These are sent by the player to the server, to send
 <b>press_message</b> to the list of <b>power</b>s given. The recipient
-list should not include the sending power.
-The message sent applies to the current turn, unless
+list should not include the sending power.</p>
+
+<p>For the third and fourth forms, the server will check that
+<b>turn</b> is the current turn (that is, the turn sent in the most
+recent <a href="#NOW"><b>NOW</b></a> message), and will reply with
+<b>REJ (SND (turn) (power power ...) (press_message) )</b> or <b>REJ
+(SND (turn) (power power ...) (reply) )</b> if this is not the case.
+
+<p>The message sent applies to the current turn, unless
 otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
@@ -1240,7 +1259,8 @@ immediately before the first token to cause an error.
 <b>NPR</b> variant game or a build phase in a <b>NPB</b> variant game,
 or the press deadline has already passed in a <b>PTL</b> variant
 game,<sup><a href="#press_note">*</a></sup> or the sending power has
-been eliminated, or the turn specified is not the current turn.</p>
+been eliminated or is in the recipients list, or the <b>turn</b>
+specified is not the current turn.</p>
 
 <h4>server_message = YES (SND [(turn)] (power power ...) (press_message))</h4>
 
@@ -1265,7 +1285,9 @@ of <b>press_message</b> and <b>reply</b>.</p>
 <h4><a name="PRP">press_message = PRP</a> (offer)</h4>
 
 <p>This indicates that the sending power is proposing an offer.
-<b>offer</b> can be in one of three forms:</p>
+Some offers represent specific actions, while others (like <b>PCE</b>)
+represent concepts, and as such, only have a vague definition.
+<b>offer</b> can be in one of these forms:</p>
 
 <h4><a name="PCE">offer = PCE</a> (power power ...)</h4>
 
@@ -1295,7 +1317,7 @@ Eliminated powers must not be included in the power list.</p>
 <h4><a name="SLO_press">offer = SLO (power)</a></h4>
 
 <p>Propose a Solo to the specified power.  Note that a player can't
-actually order a solo &mdash; but it may be able to move its units in a way
+actually order a solo &mdash; but it may be able to order units in a way
 that causes one to occur.</p>
 
 <h4><a name="NOT_press">offer = NOT (offer)</a></h4>
@@ -1681,6 +1703,11 @@ command is added:</p>
 <b>start_turn</b> to <b>end_turn</b> inclusive, <b>offer</b> applies.
 <b>turn</b> is of the form <b>phase year</b>.  The timing specified by
 <b>FOR</b> overrides any timing indicated by <b>offer</b>.</p>
+
+<p>The offer parameter of the <b>FOR</b> must not include a further
+<b>FOR</b>, unless the offer contains a <b>press_message</b> (for
+example, in <b>SND</b>), and the further <b>FOR</b> is inside that
+<b>press_message</b>.</p>
 
 <h2><a name="level100">Level 100</a> : Conditionals</h2>
 <!-- <h4>press_token += IFF</h4> -->
@@ -2253,13 +2280,6 @@ official DAIDE syntax document</a>:
 	<b>HLO</b> message contains variant rule information, as well as
 	power and passcode assignments, observers might desire an extra
 	copy.</li>
-
-	<li><a href="#SCO" name="position_note"><b>SCO</b></a> and <a
-	href="#NOW"><b>NOW</b></a> commands sent by clients before the game
-	starts are specified to return copies of the starting messages, in
-	accordance with a statement under the <a href="#position"><b>MDF</b>
-	specification</a>.  The official document also allows the server to
-	send <b>REJ (SCO)</b> or <b>REJ (NOW)</b> in this case.</li>
 
 	<li><a href="#CCD" name="disorder_note">The <b>CCD</b> message</a> has
 	been divided into three distinct message types:  One for a
