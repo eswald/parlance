@@ -139,8 +139,7 @@
       argument, a series.  For that matter, calling a token on a series should
       be revised; try HLO(ENG)(1234)((LVL, 20)), for example.  Finally,
       consider changing __repr__() to use token-calling conventions.</p>
-    <p>Judge.turn should be a property, and should return a new Turn instance
-      instead of the Map's mutable one.</p>
+    <p>Judge.turn should be a property.</p>
     
     <h2>Robustness</h2>
     <p>The validator's greedy checking seems to cause problems with PRN
@@ -169,7 +168,6 @@
     <p>Improve the game naming algorithm.  Would lower-case be better?</p>
     <p>The time limit admin command could use a better help line, and maybe a
       better interface.  Perhaps a "time limits" command should show all.</p>
-    <p>The port part of the command-line interface seems to have broken.</p>
     
     <h2>Network Interface</h2>
     <p>It might be nice if a client kept trying to connect until it gets
@@ -178,12 +176,11 @@
       the best way to go about it.  Then again, it might have received a
       chopped message anyway, and should be processing messages faster.
       Instead, we should be buffering input, like Twisted does.  Consider
-      using <a href="http://eli.thegreenplace.net/2009/08/29/co-routines-as-an-alternative-to-state-machines/">co-routines</a>.</p>
+      using <a href="http://eli.thegreenplace.net/2009/08/29/co-routines-as-an-alternative-to-state-machines/">co-routines</a>.
+      Buffer output, too.</p>
     <p>A JSON-based HTTP interface with long polling would be nice.  The
       Server should see something that looks like a Service, while the client
       should be sending and receiving DPP-like JSON objects, if possible.</p>
-    <p>Each game should listen on its own port somehow.  Probably configured
-      with max/min port options.</p>
     
     <h2>Human-oriented Options</h2>
     <p>Players would like the ability to connect and disconnect throughout the
@@ -248,7 +245,7 @@
       options.  Skipping would also be nice, in certain cases.</p>
     <p>The DATC options in 4.D and 4.E could use some actual tests.</p>
     <p>The network tests could use better assertions for some tests.</p>
-    <p>THX order notes could use more testing.</p>
+    <p>THX order notes and ORD results could use more testing.</p>
     <p>Test the ability to serve variants with a different map name.</p>
     <p>Bot and variant test suites could be fleshed out some more.
       For example, HoldBot's actual orders could be tested.
