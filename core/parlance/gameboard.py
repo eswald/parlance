@@ -57,23 +57,40 @@ class Variant(object):
             parse_file(filename, self.parse)
     
     def mdf(self):
-        centers = []
         powers = []
-        seen = []
-        for name in self.homes:
+        ownership = defaultdict(list)
+        for name in sorted(self.homes):
             power = self.rep[name]
             if power is not UNO:
                 powers.append(power)
             
-            homes = [self.rep[prov] for prov in self.homes[name]]
-            centers.append([power] + homes)
-            seen.extend(homes)
+            for prov in self.homes[name]:
+                ownership[self.rep[prov]].append(power)
+        
+        neutrals = []
+        homes = defaultdict(list)
+        for prov in sorted(ownership):
+            owners = ownership[prov]
+            if owners == [UNO]:
+                neutrals.append(prov)
+            elif UNO in owners:
+                raise ValueError("Supply centers cannot be both home and neutral")
+            elif len(owners) == 1:
+                homes[owners[0]].append(prov)
+            else:
+                homes[tuple(owners)].append(prov)
+        
+        centers = []
+        for owners in sorted(homes):
+            centers.append([owners] + homes[owners])
+        if neutrals:
+            centers.append([UNO] + neutrals)
         
         provs = []
         borders = []
         for name in sorted(self.borders):
             prov = self.rep[name]
-            if prov not in seen:
+            if prov not in ownership:
                 provs.append(prov)
             
             boundaries = [prov]
@@ -282,19 +299,19 @@ class Map(VerboseObject):
         
         (mdf, powers, provinces, adjacencies) = message.fold()
         (centres, non_centres) = provinces
-        pow_homes = {}
+        pow_homes = dict((p, []) for p in powers)
         prov_homes = {}
         for dist in centres:
             pow_list = dist.pop(0)
             if pow_list == UNO:
                 for prov in dist:
-                    if prov_homes.has_key(prov):
+                    if prov in prov_homes:
                         return 'Supply center %s listed as both owned and unowned' % str(prov)
                     prov_homes[prov] = []
             else:
                 if not isinstance(pow_list, list): pow_list = [pow_list]
                 for country in pow_list:
-                    pow_homes.setdefault(country, []).extend(dist)
+                    pow_homes[country].extend(dist)
                 for prov in dist:
                     prov_homes.setdefault(prov, []).extend(pow_list)
         

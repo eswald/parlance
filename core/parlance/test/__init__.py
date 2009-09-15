@@ -8,6 +8,8 @@ r'''Parlance test cases
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+import unittest
+
 from parlance.fallbacks import wraps
 
 def todo(test):
@@ -90,3 +92,9 @@ def failing(exception):
             else: test_case.fail('Test unexpectedly passed')
         return test_wrapper
     return decorator
+
+class TestCase(unittest.TestCase):
+    '''Extended test case, with functions I always end up using.'''
+    def assertContains(self, container, item):
+        if item not in container:
+            raise self.failureException, '%s not in %s' % (item, container)

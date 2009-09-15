@@ -9,14 +9,13 @@ r'''Test cases for the Parlance gameboard and unit orders
 '''#'''
 
 import time
-import unittest
 
 from parlance.config     import variants
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Representation, protocol
 from parlance.orders     import OrderSet, createUnitOrder
-from parlance.test       import fails
+from parlance.test       import TestCase, fails
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
@@ -26,11 +25,8 @@ def load_variant(information):
     variant.parse(line.strip() for line in information.splitlines())
     return variant
 
-class VariantFileTests(unittest.TestCase):
+class VariantFileTests(TestCase):
     "Tests for loading information from a variant file"
-    def assertContains(self, container, item):
-        if item not in container:
-            raise self.failureException, '%s not in %s' % (item, container)
     
     def test_parse_empty(self):
         # Variant.parse() must be able to handle an empty stream
@@ -587,12 +583,13 @@ class VariantFileTests(unittest.TestCase):
         powers = variant.mdf().fold()[1]
         self.failUnlessEqual([ONE], powers)
     def test_mdf_neutral_empty(self):
+        # This may or may not produce an empty list of neutrals.
         variant = load_variant('''
             [homes]
             UNO=
         ''')
         centers = variant.mdf().fold()[2][0]
-        self.failUnlessEqual([[UNO]], centers)
+        self.assertContains(([], [[UNO]]), centers)
     def test_mdf_neutral_center(self):
         variant = load_variant('''
             [homes]
@@ -616,13 +613,14 @@ class VariantFileTests(unittest.TestCase):
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[UNO, ONE, TWO]], centers)
     def test_mdf_homes_empty(self):
+        # This may or may not produce an empty center list.
         variant = load_variant('''
             [homes]
             ONE=
         ''')
         ONE = variant.rep["ONE"]
         centers = variant.mdf().fold()[2][0]
-        self.failUnlessEqual([[ONE]], centers)
+        self.assertContains([[], [[ONE]]], centers)
     def test_mdf_homes_center(self):
         variant = load_variant('''
             [homes]
@@ -647,6 +645,55 @@ class VariantFileTests(unittest.TestCase):
         TRE = variant.rep["TRE"]
         centers = variant.mdf().fold()[2][0]
         self.failUnlessEqual([[TRE, ONE, TWO]], centers)
+    def test_mdf_homes_shared(self):
+        variant = load_variant('''
+            [homes]
+            TRE=ONE,TWO
+            FUR=ONE,TWO
+            [borders]
+            ONE=AMY TWO
+            TWO=AMY ONE
+        ''')
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        FUR = variant.rep["FUR"]
+        centers = variant.mdf().fold()[2][0]
+        self.failUnlessEqual([[[FUR, TRE], ONE, TWO]], centers)
+    def test_mdf_homes_rotated(self):
+        # Todo: Which minimization is more important?
+        variant = load_variant('''
+            [homes]
+            ONE=AAA,BBB
+            TWO=BBB,CCC
+            TRE=AAA,CCC
+            [borders]
+            AAA=AMY BBB CCC DDD
+            BBB=AMY AAA CCC DDD
+            CCC=AMY AAA BBB DDD
+            DDD=AMY AAA BBB CCC
+        ''')
+        
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        AAA = variant.rep["AAA"]
+        BBB = variant.rep["BBB"]
+        CCC = variant.rep["CCC"]
+        
+        centers = variant.mdf().fold()[2][0]
+        single_provs = [
+            [[ONE, TRE], AAA],
+            [[ONE, TWO], BBB],
+            [[TRE, TWO], CCC],
+        ]
+        single_pows = [
+            [ONE, AAA, BBB],
+            [TRE, AAA, CCC],
+            [TWO, BBB, CCC],
+        ]
+        
+        self.assertContains([single_provs, single_pows], centers)
     def test_mdf_prov(self):
         variant = load_variant('''
             [borders]
@@ -983,7 +1030,7 @@ class VariantFileTests(unittest.TestCase):
         ''')
         self.failUnlessEqual(variant.borders, standard.borders)
 
-class StandardVariantTests(unittest.TestCase):
+class StandardVariantTests(TestCase):
     "Tests for the standard map variant"
     variant = "standard"
     def failUnlessValid(self, message):
@@ -1004,100 +1051,153 @@ class StandardVariantTests(unittest.TestCase):
         self.failUnless(0 <= density <= 1, density)
         #print "%s: %0.1f%%" % (self.variant, density * 100)
 
-class Map_Bugfix(unittest.TestCase):
+class Map_Bugfix(TestCase):
     ''' Tests to reproduce bugs related to the Map class'''
+    def test_empty_homes(self):
+        # Map can define maps with an empty home center entry.
+        variant = load_variant('''
+            [homes]
+            ONE=AAA
+            TWO=BBB
+            TRE=
+            UNO=CCC
+            [borders]
+            AAA=AMY BBB CCC DDD
+            BBB=AMY AAA CCC DDD
+            CCC=AMY AAA BBB DDD
+            DDD=AMY AAA BBB CCC
+        ''')
+        
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        AAA = variant.rep["AAA"]
+        BBB = variant.rep["BBB"]
+        CCC = variant.rep["CCC"]
+        DDD = variant.rep["DDD"]
+        mdf = MDF (ONE, TWO, TRE) ((
+                [ONE, AAA],
+                [TWO, BBB],
+                [TRE],
+                [UNO, CCC],
+                ), [DDD]) (
+            (AAA, [AMY, BBB, CCC, DDD]),
+            (BBB, [AMY, AAA, CCC, DDD]),
+            (CCC, [AMY, AAA, BBB, DDD]),
+            (DDD, [AMY, AAA, BBB, CCC]),
+        )
+        
+        game_map = Map(variant)
+        msg = game_map.define(mdf)
+        self.failIf(msg, msg)
+        self.assertContains(game_map.powers, TRE)
+        self.failUnlessEqual(game_map.powers[TRE].homes, [])
+    def test_missing_homes(self):
+        # Map can define maps with no home center entry for one of the powers.
+        variant = load_variant('''
+            [homes]
+            ONE=AAA
+            TWO=BBB
+            TRE=
+            UNO=CCC
+            [borders]
+            AAA=AMY BBB CCC DDD
+            BBB=AMY AAA CCC DDD
+            CCC=AMY AAA BBB DDD
+            DDD=AMY AAA BBB CCC
+        ''')
+        
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        AAA = variant.rep["AAA"]
+        BBB = variant.rep["BBB"]
+        CCC = variant.rep["CCC"]
+        DDD = variant.rep["DDD"]
+        mdf = MDF (ONE, TWO, TRE) ((
+                [ONE, AAA],
+                [TWO, BBB],
+                [UNO, CCC],
+                ), [DDD]) (
+            (AAA, [AMY, BBB, CCC, DDD]),
+            (BBB, [AMY, AAA, CCC, DDD]),
+            (CCC, [AMY, AAA, BBB, DDD]),
+            (DDD, [AMY, AAA, BBB, CCC]),
+        )
+        
+        game_map = Map(variant)
+        msg = game_map.define(mdf)
+        self.failIf(msg, msg)
+        self.assertContains(game_map.powers, TRE)
+        self.failUnlessEqual(game_map.powers[TRE].homes, [])
     def test_empty_UNO(self):
-        ''' Test whether Map can define maps with no non-home supply centers.'''
-        # Almost Standard...
-        mdf = '''
-            MDF (AUS ENG FRA GER ITA RUS TUR)
-            (((AUS bud tri vie)(ENG edi lon lvp)(FRA bre mar par)
-              (GER ber kie mun)(ITA nap rom ven)(RUS mos sev stp war)
-              (TUR ank con smy bel bul den gre hol nwy por rum ser spa swe tun)
-              (UNO))
-             (alb apu arm boh bur cly fin gal gas lvn naf pic pie pru ruh sil syr
-              tus tyr ukr wal yor adr aeg bal bar bla gob eas ech hel ion iri gol
-              mao nao nth nwg ska tys wes))
-            ((adr(FLT alb apu ven tri ion))
-             (aeg(FLT gre (bul scs) con smy eas ion))
-             (alb(AMY tri gre ser)(FLT adr tri gre ion))
-             (ank(AMY arm con smy)(FLT bla arm con))
-             (apu(AMY ven nap rom)(FLT ven adr ion nap))
-             (arm(AMY smy syr ank sev)(FLT ank sev bla))
-             (bal(FLT lvn pru ber kie den swe gob))
-             (bar(FLT nwg (stp ncs) nwy))
-             (bel(AMY hol pic ruh bur)(FLT ech nth hol pic))
-             (ber(AMY kie pru sil mun)(FLT kie bal pru))
-             (bla(FLT rum sev arm ank con (bul ecs)))
-             (boh(AMY mun sil gal vie tyr))
-             (gob(FLT swe fin (stp scs) lvn bal))
-             (bre(AMY pic gas par)(FLT mao ech pic gas))
-             (bud(AMY vie gal rum ser tri))
-             (bul((FLT ECS) con bla rum)(AMY gre con ser rum)((FLT SCS) gre aeg con))
-             (bur(AMY mar gas par pic bel ruh mun))
-             (cly(AMY edi lvp)(FLT edi lvp nao nwg))
-             (con(AMY bul ank smy)(FLT (bul scs) (bul ecs) bla ank smy aeg))
-             (den(AMY swe kie)(FLT hel nth swe bal kie ska))
-             (eas(FLT syr smy aeg ion))
-             (edi(AMY lvp yor cly)(FLT nth nwg cly yor))
-             (ech(FLT mao iri wal lon nth bel pic bre))
-             (fin(AMY swe stp nwy)(FLT swe (stp scs) gob))
-             (gal(AMY war ukr rum bud vie boh sil))
-             (gas(AMY par bur mar spa bre)(FLT (spa ncs) mao bre))
-             (gre(AMY bul alb ser)(FLT (bul scs) aeg ion alb))
-             (hel(FLT nth den kie hol))
-             (hol(AMY bel kie ruh)(FLT bel nth hel kie))
-             (ion(FLT tun tys nap apu adr alb gre aeg eas))
-             (iri(FLT nao lvp wal ech mao))
-             (kie(AMY hol den ber mun ruh)(FLT hol hel den bal ber))
-             (lon(AMY yor wal)(FLT yor nth ech wal))
-             (lvn(AMY pru stp mos war)(FLT pru bal gob (stp scs)))
-             (lvp(AMY wal edi yor cly)(FLT wal iri nao cly))
-             (gol(FLT (spa scs) mar pie tus tys wes))
-             (mao(FLT nao iri ech bre gas (spa ncs) por (spa scs) naf wes))
-             (mar(AMY spa pie gas bur)(FLT (spa scs) gol pie))
-             (mos(AMY stp lvn war ukr sev))
-             (mun(AMY bur ruh kie ber sil boh tyr))
-             (naf(AMY tun)(FLT mao wes tun))
-             (nao(FLT nwg lvp iri mao cly))
-             (nap(AMY rom apu)(FLT rom tys ion apu))
-             (nwy(AMY fin stp swe)(FLT ska nth nwg bar (stp ncs) swe))
-             (nth(FLT yor edi nwg nwy ska den hel hol bel ech lon))
-             (nwg(FLT nao bar nwy nth cly edi))
-             (par(AMY bre pic bur gas))
-             (pic(AMY bur par bre bel)(FLT bre ech bel))
-             (pie(AMY mar tus ven tyr)(FLT mar gol tus))
-             (por(AMY spa)(FLT mao (spa ncs) (spa scs)))
-             (pru(AMY war sil ber lvn)(FLT ber bal lvn))
-             (rom(AMY tus nap ven apu)(FLT tus tys nap))
-             (ruh(AMY bur bel hol kie mun))
-             (rum(AMY ser bud gal ukr sev bul)(FLT sev bla (bul ecs)))
-             (ser(AMY tri bud rum bul gre alb))
-             (sev(AMY ukr mos rum arm)(FLT rum bla arm))
-             (sil(AMY mun ber pru war gal boh))
-             (ska(FLT nth nwy den swe))
-             (smy(AMY syr con ank arm)(FLT syr eas aeg con))
-             (spa(AMY gas por mar)((FLT NCS) gas mao por)((FLT SCS) por wes gol mar mao))
-             (stp(AMY fin lvn nwy mos)((FLT NCS) bar nwy)((FLT SCS) fin lvn gob))
-             (swe(AMY fin den nwy)(FLT fin gob bal den ska nwy))
-             (syr(AMY smy arm)(FLT eas smy))
-             (tri(AMY tyr vie bud ser alb ven)(FLT alb adr ven))
-             (tun(AMY naf)(FLT naf wes tys ion))
-             (tus(AMY rom pie ven)(FLT rom tys gol pie))
-             (tyr(AMY mun boh vie tri ven pie))
-             (tys(FLT wes gol tus rom nap ion tun))
-             (ukr(AMY rum gal war mos sev))
-             (ven(AMY tyr tus rom pie apu tri)(FLT apu adr tri))
-             (vie(AMY tyr boh gal bud tri))
-             (wal(AMY lvp lon yor)(FLT lvp iri ech lon))
-             (war(AMY sil pru lvn mos ukr gal))
-             (wes(FLT mao (spa scs) gol tys tun naf))
-             (yor(AMY edi lon lvp wal)(FLT edi nth lon))
-            )
-        '''#'''
-        options = Variant("testing")
-        mdf = options.rep.translate(mdf)
-        game_map = Map(options)
+        # Map can define maps with an empty non-home center clause in the MDF.
+        variant = load_variant('''
+            [homes]
+            ONE=AAA
+            TWO=BBB
+            TRE=CCC
+            [borders]
+            AAA=AMY BBB CCC DDD
+            BBB=AMY AAA CCC DDD
+            CCC=AMY AAA BBB DDD
+            DDD=AMY AAA BBB CCC
+        ''')
+        
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        AAA = variant.rep["AAA"]
+        BBB = variant.rep["BBB"]
+        CCC = variant.rep["CCC"]
+        DDD = variant.rep["DDD"]
+        mdf = MDF (ONE, TWO, TRE) ((
+                [ONE, AAA],
+                [TWO, BBB],
+                [TRE, CCC],
+                [UNO]), [DDD]) (
+            (AAA, [AMY, BBB, CCC, DDD]),
+            (BBB, [AMY, AAA, CCC, DDD]),
+            (CCC, [AMY, AAA, BBB, DDD]),
+            (DDD, [AMY, AAA, BBB, CCC]),
+        )
+        
+        game_map = Map(variant)
+        msg = game_map.define(mdf)
+        self.failIf(msg, msg)
+    def test_missing_UNO(self):
+        # Map can define maps with no non-home center clause in the MDF.
+        variant = load_variant('''
+            [homes]
+            ONE=AAA
+            TWO=BBB
+            TRE=CCC
+            [borders]
+            AAA=AMY BBB CCC DDD
+            BBB=AMY AAA CCC DDD
+            CCC=AMY AAA BBB DDD
+            DDD=AMY AAA BBB CCC
+        ''')
+        
+        ONE = variant.rep["ONE"]
+        TWO = variant.rep["TWO"]
+        TRE = variant.rep["TRE"]
+        AAA = variant.rep["AAA"]
+        BBB = variant.rep["BBB"]
+        CCC = variant.rep["CCC"]
+        DDD = variant.rep["DDD"]
+        mdf = MDF (ONE, TWO, TRE) ((
+                [ONE, AAA],
+                [TWO, BBB],
+                [TRE, CCC],
+                ), [DDD]) (
+            (AAA, [AMY, BBB, CCC, DDD]),
+            (BBB, [AMY, AAA, CCC, DDD]),
+            (CCC, [AMY, AAA, BBB, DDD]),
+            (DDD, [AMY, AAA, BBB, CCC]),
+        )
+        
+        game_map = Map(variant)
         msg = game_map.define(mdf)
         self.failIf(msg, msg)
     def test_island_Pale(self):
@@ -1151,7 +1251,7 @@ class Map_Bugfix(unittest.TestCase):
         province = board.spaces[variant.rep["TWO"]]
         self.failUnlessEqual(province.name, "Somewhere")
 
-class Coast_Bugfix(unittest.TestCase):
+class Coast_Bugfix(TestCase):
     ''' Tests to reproduce bugs related to the Coast class'''
     def test_infinite_convoy(self):
         # Originally notices in the Americas4 variant.
@@ -1226,7 +1326,7 @@ class Coast_Bugfix(unittest.TestCase):
         self.failUnlessEqual(results, [])
         self.failUnless(finish - start < 1, "convoy_routes() took too long.")
 
-class Order_Strings(unittest.TestCase):
+class Order_Strings(TestCase):
     def check_order(self, order, result):
         order = createUnitOrder(order, standard_map.powers[FRA],
                 standard_map, DatcOptions())
@@ -1299,7 +1399,7 @@ class Order_Strings(unittest.TestCase):
         self.check_order([GER, WVE],
                 'Waives a German build')
 
-class Gameboard_Doctests(unittest.TestCase):
+class Gameboard_Doctests(TestCase):
     ''' Tests that were once doctests, but no longer work as such.'''
     def test_map_define(self):
         ''' Test the creation of a new map from a simple MDF.'''
@@ -1347,7 +1447,7 @@ class Gameboard_Doctests(unittest.TestCase):
         t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
 
-class OrderSetTestCase(unittest.TestCase):
+class OrderSetTestCase(TestCase):
     def test_complete_waives(self):
         board = Map(standard)
         board.handle_NOW(NOW (WIN, 1901) (RUS, AMY, MOS))
@@ -1355,4 +1455,6 @@ class OrderSetTestCase(unittest.TestCase):
         orders.complete_set(board)
         self.failUnlessEqual(len(orders), 21)
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    import unittest
+    unittest.main()
