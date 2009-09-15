@@ -9,11 +9,11 @@ r'''Test cases for Parang bots
 import unittest
 
 from parlance.config       import variants
-from parlance.functions    import Infinity
 from parlance.gameboard    import Variant
 from parlance.language     import protocol
 from parlance.tokens       import *
 from parlance.player       import HoldBot
+from parlance.util         import Infinity
 from parlance.xtended      import *
 from parlance.test.player  import BotTestCase
 from parlance.test.network import NetworkTestCase

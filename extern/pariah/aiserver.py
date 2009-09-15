@@ -16,11 +16,11 @@ from subprocess import Popen
 from sys        import argv, modules
 from time       import sleep
 
-from parlance import functions
+import parlance.test
 
 # Disable normal failure notices.
 def fails(function): return function
-functions.fails = fails
+parlance.test.fails = fails
 
 from parlance.test       import datc, options
 from parlance.config     import Configuration, variants

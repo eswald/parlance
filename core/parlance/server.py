@@ -14,13 +14,14 @@ from random     import randint, shuffle
 from time       import time
 
 from config     import GameOptions, VerboseObject, bots, variants
-from functions  import defaultdict, expand_list, \
-        instances, num2name, s, timestamp, version_string
+from fallbacks  import defaultdict
 from gameboard  import Turn
 from language   import Message, Time, protocol
 from main       import ServerProgram
 from network    import ServerSocket
 from tokens     import *
+from util       import expand_list, instances, \
+        num2name, s, timestamp, version_string
 from validation import Validator
 
 class Command(object):

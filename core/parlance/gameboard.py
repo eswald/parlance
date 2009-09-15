@@ -13,9 +13,10 @@ from itertools import chain, count
 from pkg_resources import split_sections
 
 from config import Configuration, VerboseObject, judges, parse_file, variants
-from functions import Comparable, Immutable, Infinity, all, any, defaultdict
+from fallbacks import all, any, defaultdict
 from language import Message, Representation, Token, protocol
 from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
+from util import Comparable, Immutable, Infinity
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)

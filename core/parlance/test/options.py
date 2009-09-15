@@ -11,7 +11,7 @@ r'''DATC option compliance test cases for the Parlance judge
 
 import unittest
 
-from parlance.functions import fails
+from parlance.test      import fails
 from parlance.tokens    import *
 from parlance.xtended   import *
 

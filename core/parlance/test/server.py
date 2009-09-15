@@ -12,7 +12,6 @@ import unittest
 from time       import sleep, time
 
 from parlance.config     import Configuration, GameOptions, VerboseObject
-from parlance.functions  import num2name, fails, failing
 from parlance.gameboard  import Turn
 from parlance.language   import Time
 from parlance.main       import ThreadManager
@@ -20,6 +19,8 @@ from parlance.network    import Service
 from parlance.player     import Clock, HoldBot
 from parlance.server     import Server
 from parlance.tokens     import *
+from parlance.test       import fails
+from parlance.util       import num2name
 from parlance.xtended    import ITA, LON, PAR
 
 class Fake_Manager(ThreadManager):

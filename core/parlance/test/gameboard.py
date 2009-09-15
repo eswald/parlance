@@ -12,11 +12,11 @@ import time
 import unittest
 
 from parlance.config     import variants
-from parlance.functions  import fails, todo
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Representation, protocol
 from parlance.orders     import OrderSet, createUnitOrder
+from parlance.test       import fails
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *

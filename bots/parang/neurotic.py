@@ -11,7 +11,7 @@ from math    import sqrt
 from time    import ctime
 
 from parlance.config    import VerboseObject
-from parlance.functions import defaultdict
+from parlance.fallbacks import defaultdict
 from parlance.gameboard import Turn, Unit
 from parlance.judge     import DatcOptions
 from parlance.orders    import *

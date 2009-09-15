@@ -12,10 +12,11 @@ r'''Parlance unit orders
 from itertools   import chain
 from operator    import lt, gt
 
-from functions   import Comparable, all, any, autosuper, defaultdict
+from fallbacks   import all, any, defaultdict
 from gameboard   import Coast, Power, Turn, Unit
 from language    import Message
 from tokens      import *
+from util        import Comparable, autosuper
 
 __all__ = [
     'createUnitOrder',

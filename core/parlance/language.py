@@ -11,8 +11,8 @@ r'''Parlance language classes
 import re
 from struct    import pack
 
-from functions import Comparable, rindex
 from config    import Configurable, VerboseObject, parse_file
+from util      import Comparable, rindex
 
 __all__ = [
     'Message',

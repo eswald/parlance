@@ -10,8 +10,8 @@ r'''Test cases for the Parlance server
 
 import unittest
 
-from parlance.functions  import fails
 from parlance.language   import Message, StringToken
+from parlance.test       import fails
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import ENG, FRA, BRE, ECH, EDI, LON, PAR, WAL

@@ -14,7 +14,7 @@ from itertools import chain
 from operator import itemgetter
 from os import path
 from shlex import shlex
-from parlance.functions import defaultdict
+from parlance.fallbacks import defaultdict
 
 def lex(stream):
     # shlex doesn't handle strings well, but is fine for our purposes.

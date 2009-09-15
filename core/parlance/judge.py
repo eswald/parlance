@@ -13,11 +13,12 @@ r'''Parlance adjudication system
 from itertools import chain
 
 from config import Configuration, VerboseObject
-from functions import Infinity, all, any, defaultdict, s
+from fallbacks import all, any, defaultdict
 from gameboard import Map, Turn
 from orders import DisbandOrder, HoldOrder, OrderSet, \
         RemoveOrder, WaiveOrder, createUnitOrder
 from tokens import *
+from util import Infinity, s
 
 
 class DatcOptions(Configuration):

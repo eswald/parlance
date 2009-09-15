@@ -11,11 +11,12 @@ from random import randint, random, shuffle
 from time   import ctime
 
 from parlance.config    import Configuration, stringlist
-from parlance.functions import defaultdict, expand_list
+from parlance.fallbacks import defaultdict
 from parlance.gameboard import Unit
 from parlance.orders    import *
 from parlance.player    import Player
 from parlance.tokens    import AUT, FAL, SPR, SUM, UNO, WIN
+from parlance.util      import expand_list
 
 # The number of values in the proximity weightings
 PROXIMITY_DEPTH = 10

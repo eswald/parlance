@@ -16,7 +16,7 @@ from struct          import pack
 from time            import sleep
 
 from parlance.config    import VerboseObject
-from parlance.functions import any
+from parlance.fallbacks import any
 from parlance.language  import Representation, Token, protocol
 from parlance.main      import ThreadManager
 from parlance.network   import Client, Connection, ServerSocket

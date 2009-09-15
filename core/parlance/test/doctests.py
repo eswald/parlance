@@ -12,20 +12,22 @@ def _test():
     import doctest
     import sys
     
-    from parlance import functions
+    from parlance import fallbacks
     from parlance import gameboard
     from parlance import language
     from parlance import orders
     from parlance import validation
     from parlance import xtended
+    from parlance import util
     
     # List of modules to test
     modules = [
-        functions,
+        fallbacks,
         gameboard,
         language,
         orders,
         validation,
+        util,
     ]
     
     extension = dict((name, getattr(xtended, name)) for name in xtended.__all__)

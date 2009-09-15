@@ -13,7 +13,7 @@ r'''Parlance chat-only console clients
 
 from pkg_resources import resource_string
 
-from parlance.functions import expand_list, version_string
+from parlance.util      import expand_list, version_string
 from parlance.language  import Token
 from parlance.player    import Observer
 from parlance.tokens    import NOW, SCO

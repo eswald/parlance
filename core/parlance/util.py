@@ -1,61 +1,19 @@
-r'''Parlance general utility functions
+r'''Parlance general utility definitions
     Copyright (C) 2004-2008  Eric Wald
     
-    This module includes small functions and classes not specific to the
-    Parlance package.  Several of them were adapted from previous works.
-    New items may be added at any time, so "from functions import *" is
-    discouraged.
+    This module includes generic definitions used by the Parlance package.
+    Several of them were adapted from previous works.  New items may be added
+    at any time, so "from util import *" is discouraged.
     
     Parlance may be used, modified, and/or redistributed under the terms of
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-from itertools import chain, ifilter, ifilterfalse
+from itertools import chain
 from time import gmtime
 
 import parlance
 
-try:
-    from functools import decorator, wraps
-except ImportError:
-    def wraps(function):
-        '''Makes a function wrapper look like the function it wraps.'''
-        def decorator(wrapped):
-            wrapped.__doc__ = function.__doc__
-            wrapped.__name__ = function.__name__
-            return wrapped
-        return decorator
-
-
-def any(sequence):
-    ''' Returns True any item in the sequence is true.
-        Short-circuits, if possible.
-        >>> def print_and_negate(val):
-        ...     print val,; return not val
-        ...
-        >>> any(print_and_negate(x) for x in range(3,-3,-1))
-        3 2 1 0
-        True
-        >>> any([])
-        False
-    '''#'''
-    for unused in ifilter(bool, sequence): return True
-    return False
-
-def all(sequence):
-    ''' Returns whether every item in the sequence is true.
-        Short-circuits, if possible.
-        >>> def print_and_return(val):
-        ...     print val,; return val
-        ...
-        >>> all(print_and_return(x) for x in range(3,-3,-1))
-        3 2 1 0
-        False
-        >>> all([])
-        True
-    '''#'''
-    for unused in ifilterfalse(bool, sequence): return False
-    return True
 
 def rindex(series, value):
     ''' Finds the last index of value in series.
@@ -105,28 +63,6 @@ class autosuper(type):
         assert name not in [base.__name__ for base in bases]
         super(autosuper, cls).__init__(name, bases, dict)
         setattr(cls, "_%s__super" % name, super(cls))
-
-def sublists(series):
-    ''' Returns a list of sublists of the series.
-        The series itself and the empty list are included.
-        Sublists are determined by index, not value;
-        if the series contains duplicates, so will the result.
-        
-        >>> nums = [1, 2, 3]
-        >>> subs = sublists(nums)
-        >>> subs.sort()
-        >>> print subs
-        [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]]
-        
-        >>> nums = [1, 3, 3]
-        >>> subs = sublists(nums)
-        >>> subs.sort()
-        >>> print subs
-        [[], [1], [1, 3], [1, 3], [1, 3, 3], [3], [3], [3, 3]]
-    '''#'''
-    subs = [[]]
-    for tail in series: subs += [head + [tail] for head in subs]
-    return subs
 
 class Comparable(object):
     ''' Defines new-style operators in terms of the old.
@@ -190,39 +126,6 @@ Infinity = float("inf")
 class settable_property(object):
     def __init__(self, fget): self.fget = fget
     def __get__(self, obj, type): return self.fget(obj)
-
-class defaultdict(dict):
-    ''' Shortcut for a self-initializing dictionary;
-        for example, to keep counts of something.
-        Designed to emulate the implemenation in Python 2.5
-        
-        >>> d = defaultdict(lambda: 1)
-        >>> d['hello'] += 1
-        >>> d
-        {'hello': 2}
-        >>> d2 = defaultdict(list)
-        >>> d2[1].append('hello')
-        >>> d2[2].append('world')
-        >>> d2[1].append('there')
-        >>> d2
-        {1: ['hello', 'there'], 2: ['world']}
-        >>> d2.has_key(3)
-        False
-    '''#'''
-    __slots__ = ('default_factory',)
-    def __init__(self, default_factory=None):
-        self.default_factory = default_factory
-    def __getitem__(self, key):
-        try: result = dict.__getitem__(self, key)
-        except KeyError: result = self.__missing__(key)
-        return result
-    def __missing__(self, key):
-        if self.default_factory is None:
-            raise KeyError(key)
-        else:
-            result = self.default_factory()
-            self[key] = result
-            return result
 
 def version_string(extra=None):
     ''' Compute a version string for the NME message.
@@ -309,79 +212,6 @@ def instances(number, name, article=True):
     else: prefix = ''
     return prefix + name
 
-def fails(test_function):
-    ''' Marks a test as failing, notifying the user when it succeeds.
-        >>> class DummyTestCase:
-        ...     failureException = AssertionError
-        ...     def fail(self, line=None):
-        ...         raise self.failureException(line or 'Test case failed!')
-        >>> d = DummyTestCase()
-        >>> def test_failure(self):
-        ...     self.fail('This test should fail silently.')
-        >>> fails(test_failure)(d)
-        >>> def test_failure(self):
-        ...     pass
-        >>> fails(test_failure)(d)
-        Traceback (most recent call last):
-            ...
-        AssertionError: Test unexpectedly passed
-        >>> def test_failure(self):
-        ...     raise ValueError('Errors propogate through.')
-        >>> fails(test_failure)(d)
-        Traceback (most recent call last):
-            ...
-        ValueError: Errors propogate through.
-    '''#'''
-    @wraps(test_function)
-    def test_wrapper(test_case):
-        try: test_function(test_case)
-        except test_case.failureException: pass
-        else: test_case.fail('Test unexpectedly passed')
-    return test_wrapper
-
-def failing(exception):
-    ''' Marks a test as failing, notifying the user when it succeeds.
-        >>> class DummyTestCase:
-        ...     failureException = AssertionError
-        ...     def fail(self, line=None):
-        ...         raise self.failureException(line or 'Test case failed!')
-        ...     @failing(ValueError)
-        ...     def test_failure(self):
-        ...         self.fail()
-        ...     @failing(ValueError)
-        ...     def test_passing(self):
-        ...         pass
-        ...     @failing(ValueError)
-        ...     def test_expected(self):
-        ...         raise ValueError('This error should be silenced.')
-        ...     @failing(ValueError)
-        ...     def test_error(self):
-        ...         raise UserWarning('Other errors propogate through.')
-        ...
-        >>> d = DummyTestCase()
-        >>> d.test_failure()
-        Traceback (most recent call last):
-            ...
-        AssertionError: Test case failed!
-        >>> d.test_passing()
-        Traceback (most recent call last):
-            ...
-        AssertionError: Test unexpectedly passed
-        >>> d.test_expected()
-        >>> d.test_error()
-        Traceback (most recent call last):
-            ...
-        UserWarning: Other errors propogate through.
-    '''#'''
-    def decorator(test_function):
-        @wraps(test_function)
-        def test_wrapper(test_case):
-            try: test_function(test_case)
-            except exception: pass
-            else: test_case.fail('Test unexpectedly passed')
-        return test_wrapper
-    return decorator
-
 def static(**kwargs):
     r'''Initializes static variables of a function.
         Such variables can then be accessed as attributes of
@@ -464,54 +294,4 @@ def timestamp(seconds=None):
         timestamp.base = result
         timestamp.appendix = 0
     return '%s%02d' % (result, timestamp.appendix)
-
-def todo(test):
-    '''Makes a test always fail, with an appropriate note.'''
-    @wraps(test)
-    def wrapper(self):
-        self.fail("Unwritten test")
-    return wrapper
-
-@static(data=None)
-def cache(key, factory, *args, **kwargs):
-    r'''Simple cache system.
-        If the key exists in the cache, its value is returned.
-        Otherwise, the factory function is called with any supplied arguments,
-        and its value is stored in the cache as the new value.
-        Ideally, the factory should be idempotent;
-        cache items may be stored indefinitely, or discarded at any time.
-        
-        >>> def f(value):
-        ...     print "Storing " + repr(value)
-        ...     return value
-        ...
-        >>> cache('a', f, 'b')
-        Storing 'b'
-        'b'
-        >>> cache('a', f, 'b')
-        'b'
-        >>> cache('b', f, value='c')
-        Storing 'c'
-        'c'
-        
-        # Cleanup to make the tests work next time; not part of the API
-        >>> del cache.data['a']
-        >>> del cache.data['b']
-    '''#"""#'''
-    
-    # Todo: "expires" keyword argument?
-    # Todo: Make the filename configurable.
-    # Todo: Clean up the complaints from Python 2.5.2
-    
-    if cache.data is None:
-        import shelve
-        cache.data = shelve.open("datastore")
-    
-    if key in cache.data:
-        value = cache.data[key]
-    else:
-        value = factory(*args, **kwargs)
-        cache.data[key] = value
-        cache.data.sync()
-    return value
 

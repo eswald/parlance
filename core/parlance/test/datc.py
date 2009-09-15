@@ -11,7 +11,7 @@ r'''DATC test cases for the Parlance judge
 import unittest
 
 from parlance.config    import Configuration, GameOptions, variants
-from parlance.functions import fails
+from parlance.test      import fails
 from parlance.tokens    import *
 from parlance.xtended   import *
 

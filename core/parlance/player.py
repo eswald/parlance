@@ -20,12 +20,12 @@ from random     import shuffle
 from time       import ctime
 
 from config     import GameOptions, VerboseObject, variants
-from functions  import s, version_string
 from gameboard  import Map, Turn, Variant
 from language   import Message, Time, Token
 from main       import ThreadManager, ClientProgram
 from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
 from tokens     import *
+from util       import s, version_string
 from validation import Validator
 
 class Observer(ClientProgram):

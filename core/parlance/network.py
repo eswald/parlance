@@ -16,7 +16,7 @@ from struct    import pack, unpack
 from time      import sleep
 
 from config    import VerboseObject
-from functions import any
+from fallbacks import any
 from language  import Message, Representation, protocol
 from tokens    import ADM, MDF, OFF, REJ, YES
 

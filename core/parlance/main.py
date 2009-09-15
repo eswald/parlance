@@ -21,9 +21,9 @@ except ImportError:
     from dummy_threading import Lock
 
 from config    import Configuration, VerboseObject, variants
+from fallbacks import any
 from language  import protocol
 from network   import Client, ServerSocket
-from functions import any
 
 __all__ = [
     'ThreadManager',

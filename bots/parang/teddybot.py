@@ -6,10 +6,11 @@ r'''TeddyBot - A Diplomacy bot that attempts to choose targets.
     commercial purposes without permission from the authors is prohibited.
 '''#"""#'''
 
-from parlance.functions import Infinity, cache
+from parang.util import cache
 from parlance.gameboard import Unit
 from parlance.orders import OrderSet, BuildOrder, MoveOrder
 from parlance.player import Player
+from parlance.util import Infinity
 
 class TeddyBot(Player):
     r'''A bot that attempts to choose targets carefully.
@@ -58,9 +59,9 @@ class TeddyBot(Player):
             For TeddyBot, this involves distance and centrality calculations.
             Returns whether to accept the MAP message.
         '''#"""#'''
-        self.distance = cache('Teddy.distance.' + self.map.name,
+        self.distance = cache('Teddy.distance.' + str(self.map.name),
             self.calc_distances)
-        self.centrality = cache('Teddy.centrality.' + self.map.name,
+        self.centrality = cache('Teddy.centrality.' + str(self.map.name),
             self.calc_centrality, self.distance)
         return True
     

@@ -8,7 +8,7 @@ from smtplib import SMTP
 from warnings import warn
 
 from parlance.config import Configuration
-from parlance.functions import expand_list
+from parlance.util import expand_list
 from parlance.player import Observer
 from parlance.tokens import DRW, SEL, SLO
 

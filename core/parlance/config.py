@@ -15,8 +15,8 @@ from pkg_resources import iter_entry_points, resource_stream
 from sys          import argv
 from weakref      import WeakValueDictionary
 
-from functions import any, autosuper, defaultdict, expand_list, \
-        s, settable_property
+from fallbacks import any, defaultdict
+from util import autosuper, expand_list, s, settable_property
 
 # Parsers for standard option types
 def boolean(value):
