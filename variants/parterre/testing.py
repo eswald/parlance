@@ -65,6 +65,10 @@ class IberianVariantTests(StandardVariantTests):
         self.failUnlessEqual(type(name), unicode)
         self.failUnlessEqual(name, u"Gascu\xF1a")
 
+class MicroVariantTests(StandardVariantTests):
+    "Tests for the micro map variant"
+    variant = "micro"
+
 class ModernVariantTests(StandardVariantTests):
     "Tests for the modern map variant"
     variant = "modern"
