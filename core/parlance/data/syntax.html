@@ -14,10 +14,10 @@
 <body>
 <h1>Parlance Message Syntax</h1>
 
-<p><a href="#appC">Modified</a> from version 0.16 of the
-<a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">Diplomacy
+<p><a href="#appC">Modified</a> from version 0.17 of the
+<a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.pdf">Diplomacy
 AI Development Environment Message Syntax</a>, which was last updated on
-8 September 2009.</p>
+11 September 2009.</p>
 
 <p>The following document defines the language which will be used for
 communications between a client and server, and for negotiation between
@@ -33,9 +33,9 @@ includes all previous levels. The levels are:</p>
 <tr><td><a href="#level0">Level   0</a></td><td>No Press</td></tr>
 <tr><td>Level  10</td><td><a href="#level10">Peace and Alliances</a></td></tr>
 <tr><td><a href="#level20">Level  20</a></td><td>Order proposals</td></tr>
-<tr><td>Level  30</td><td><a href="#level30">Multipart Offers</a></td></tr>
+<tr><td>Level  30</td><td><a href="#level30">Multipart Arrangements</a></td></tr>
 <tr><td><a href="#level40">Level  40</a></td><td>Sharing out the Supply Centres</td></tr>
-<tr><td>Level  50</td><td><a href="#level50">Nested Multipart Offers</a></td></tr>
+<tr><td>Level  50</td><td><a href="#level50">Nested Multipart Arrangements</a></td></tr>
 <tr><td><a href="#level60">Level  60</a></td><td>Queries and Insistences</td></tr>
 <tr><td>Level  70</td><td><a href="#level70">Requests for suggestions</a></td></tr>
 <tr><td><a href="#level80">Level  80</a></td><td>Accusations</td></tr>
@@ -555,6 +555,8 @@ any options for the game. For example:</p>
 	would normally be given as a THX note can instead be used as an ORD
 	result.</li>
 </ul>
+
+<p>Further variant options are added in <a href="#level10">Level 10</a>.</p>
 
 <!-- <h4>variant_option != Parameters any_token_sequence</h4> -->
 <p>The variant options will always be specified in the order they appear
@@ -1120,11 +1122,15 @@ accept a draw at that point.</p>
 server, then the command is ignored. The player must resend the command
 each turn if it continues to want a draw.</p>
 
-<!-- <h4>player_command = NOT (DRW)</h4> -->
-<p>If the player changes its mind, it can clear its request for a draw
-with <b>NOT (DRW)</b>. The server will respond with
-<b>YES (NOT (DRW))</b>, or <b>REJ (NOT (DRW))</b> if the game has not
-started.</p>
+<p>The <b>DRW</b> command is extended in <a href="#level10">Level 10</a>.</p>
+
+<h4>player_command = NOT (DRW)</h4>
+
+<p>This command cancels any <b>DRW</b> message which has been sent
+previously by this player. The server will respond with <b>YES (NOT
+(DRW))</b>, except if the game has not started, the game has finished,
+the player is eliminated, or the client is an observer in the game, when
+it will respond with <b>REJ (NOT (DRW))</b>.</p>
 
 <h4><a name="SMR">server_message = SMR</a> (turn) (power ('name') ('version') centres [year_of_elimination]) (power ('name') ('version') centres [year_of_elimination]) ...</h4>
 <!-- <h4>centres = number</h4> -->
@@ -1196,7 +1202,9 @@ listing all surviving powers.</p>
 
 <!-- <h4>{PDA} player_command = NOT (DRW (power power power ...))</h4> -->
 <p>The player can cancel a partial draw request with
-<b>NOT (DRW (power power power ...))</b>.</p>
+<b>NOT (DRW (power power power ...))</b>. Sending <b>NOT (DRW)</b>
+cancels a <b>DRW</b> sent with no parameters, but does not cancel a
+<b>DRW</b> sent with a list of powers.</p>
 
 <h3>(iii) Sending and Receiving Press</h3>
 
@@ -1225,7 +1233,8 @@ otherwise specified by its contents.</p>
 
 <p>The server will reply with one of the following:</p>
 
-<h4>server_message = CCD (power) (SND [(turn)] (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
+<h4>server_message = CCD (power) (SND (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
+<h4>server_message = CCD (power) (SND (turn) (power power ...) (press_message))</h4>
 <!-- <h4>server_message = CCD (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
@@ -1235,7 +1244,8 @@ multiple powers are listed in the <b>SND</b> command, and the server sends
 a <b>CCD</b> reply, then the message has not been sent to anybody
 (including the ones that are not in civil disorder).</p>
 
-<h4><a name="OUT">server_message = OUT</a> (power) (SND [(turn)] (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
+<h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
+<h4><a name="OUT">server_message = OUT</a> (power) (SND (turn) (power power ...) (press_message))</h4>
 <!-- <h4>server_message = OUT (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
@@ -1245,7 +1255,8 @@ powers are listed in the <b>SND</b> command, and the server sends a
 <b>OUT</b> reply, then the message has not been sent to anybody
 (including the ones that have not been eliminated).</p>
 
-<h4>server_message = HUH (SND [(turn)] (power power ...) (press_message))</h4>
+<h4>server_message = HUH (SND (power power ...) (press_message))</h4>
+<h4>server_message = HUH (SND (turn) (power power ...) (press_message))</h4>
 
 <p>Syntax of the <b>SND</b> message is illegal. This may be a genuine
 syntax error, or it may be because <b>press_message</b> contains a token which
@@ -1258,7 +1269,7 @@ immediately before the first token to cause an error.
 <p>Either the game has not started, or it is a retreat phase in a
 <b>NPR</b> variant game or a build phase in a <b>NPB</b> variant game,
 or the press deadline has already passed in a <b>PTL</b> variant
-game,<sup><a href="#press_note">*</a></sup> or the sending power has
+game, or the sending power has
 been eliminated or is in the recipients list, or the <b>turn</b>
 specified is not the current turn.</p>
 
@@ -1274,7 +1285,9 @@ receive the message in one of the following forms:</p>
 
 <p>The first <b>power</b> is the power which sent the message. The
 <b>power</b> list and the <b>press_message</b> are as in the
-<b>SND</b> command.</p>
+<b>SND</b> command. Note that if the <b>SND</b> message contained a
+<b>turn</b> parameter, this isn't included in the <b>FRM</b>
+message.</p>
 
 <p>We have now covered every command in the Diplomacy AI Development
 Environment syntax. The remainder of this document covers the contents
@@ -1282,60 +1295,56 @@ of <b>press_message</b> and <b>reply</b>.</p>
 
 <h3>(iv) Proposing an Offer</h3>
 
-<h4><a name="PRP">press_message = PRP</a> (offer)</h4>
+<h4><a name="PRP">press_message = PRP</a> (arrangement)</h4>
 
-<p>This indicates that the sending power is proposing an offer.
-Some offers represent specific actions, while others (like <b>PCE</b>)
+<p>This indicates that the sending power is proposing an arrangement.
+Some arrangements represent specific actions, while others (like <b>PCE</b>)
 represent concepts, and as such, only have a vague definition.
-<b>offer</b> can be in one of these forms:</p>
+<b>arrangement</b> can be in one of the following forms:</p>
 
-<h4><a name="PCE">offer = PCE</a> (power power ...)</h4>
+<h4><a name="PCE">arrangement = PCE</a> (power power ...)</h4>
 
-<p>Propose Peace between the listed powers. The list of powers
-should include the power or powers receiving the message. Eliminated
-powers must not be included in the power list.  This offer is
+<p>Arrange Peace between the listed powers. Eliminated
+powers must not be included in the power list.  This arrangement is
 continuous; that is, not just for the current turn.</p>
 
-<h4><a name="ALY">offer = ALY</a> (power power ...) VSS (power power ...)</h4>
+<h4><a name="ALY">arrangement = ALY</a> (power power ...) VSS (power power ...)</h4>
 
-<p>Propose an Alliance between the powers in the first list. The list
-of powers should include the power or powers receiving the
-message. The second list is the powers to ally against. Eliminated
-powers must not be included in either power list.  This offer is
-continuous.</p>
+<p>Arrange an Alliance between the powers in the first list. The second
+list is the powers to ally against. Eliminated powers must not be
+included in either power list.  This arrangement is continuous.</p>
 
-<h4><a name="DRW_press">offer = DRW</a></h4>
-<!-- <h4>{PDA} offer = DRW (power power power ...)</h4> -->
+<h4><a name="DRW_press">arrangement = DRW</a></h4>
+<!-- <h4>{PDA} arrangement = DRW (power power power ...)</h4> -->
 
-<p>Propose a Draw. In the case of a <b>PDA</b> game, this may also be
-<b>DRW (power power power ...)</b>. The list of powers does
-<em>not</em> need to include the powers receiving the message.
+<p>Arrange a Draw. In the case of a <b>PDA</b> game, this may also be
+<b>DRW (power power power ...)</b>.
 The list of powers must include at least two powers.
 Eliminated powers must not be included in the power list.</p>
 
 
-<h4><a name="SLO_press">offer = SLO (power)</a></h4>
+<h4><a name="SLO_press">arrangement = SLO (power)</a></h4>
 
-<p>Propose a Solo to the specified power.  Note that a player can't
+<p>Arrange a Solo to the specified power.  Note that a player can't
 actually order a solo &mdash; but it may be able to order units in a way
 that causes one to occur.</p>
 
-<h4><a name="NOT_press">offer = NOT (offer)</a></h4>
+<h4><a name="NOT_press">arrangement = NOT (arrangement)</a></h4>
 
-<p>All of the available offers can have <b>NOT</b> placed in front of
+<p>All of the available arrangements can have <b>NOT</b> placed in front of
 them to mean the opposite. Double negatives should not be used!</p>
 
-<h3>(v) Responding to an offer</h3>
+<h3>(v) Responding to a message</h3>
 
 <p>To respond to a message, one of the following can be sent:</p>
 
 <h4><a name="YES_press">reply = YES</a> (press_message)</h4>
 
-<p>Accept the offer</p>
+<p>Accept the arrangement</p>
 
 <h4><a name="REJ_press">reply = REJ</a> (press_message)</h4>
 
-<p>Reject the offer</p>
+<p>Reject the arrangement</p>
 
 <h4><a name="BWX">reply = BWX</a> (press_message)</h4>
 
@@ -1417,50 +1426,49 @@ may also reorder the tokens.</p>
 <!-- <h4>press_token += XDO</h4> -->
 <!-- <h4>press_token += DMZ</h4> -->
 
-<p>In level 20, we add two new forms for <b>offer</b>.</p>
+<p>In level 20, we add two new forms for <b>arrangement</b>.</p>
 
-<h4><a name="XDO">offer = XDO</a> (order)</h4>
+<h4><a name="XDO">arrangement = XDO</a> (order)</h4>
 
-<p>This is a proposal that the given order be ordered.  The order should be
-for either the sending power or a receiving power.  <b>order</b> uses the
-same format as in the <b>SUB</b> command.</p>
+<p>This is an arrangement for the given order to be ordered.
+<b>order</b> uses the same format as in <a href="#SUB">the <b>SUB</b>
+command</a>.</p>
 
-<h4><a name="DMZ">offer = DMZ</a> (power power ...) (province province ...)</h4>
+<h4><a name="DMZ">arrangement = DMZ</a> (power power ...) (province province ...)</h4>
 
-<p>This is a proposal that the listed powers remove all units from,
+<p>This is an arrangement for the listed powers to remove all units from,
 not build any units in, and not order any units to move, retreat, or
-support or convoy a move to any of the listed provinces.  The powers
-involved in the <b>DMZ</b> should all be recipients of the message.
-Eliminated powers must not be included in the power list.  This offer is
-continuous.</p>
+support or convoy a move to any of the listed provinces.
+Eliminated powers must not be included in the power list.
+This arrangement is continuous.</p>
 
 <p>Both of these are responded to using the responses in level 10.</p>
 
-<h2><a name="level30">Level 30</a> : Multipart Offers</h2>
+<h2><a name="level30">Level 30</a> : Multipart Arrangements</h2>
 <!-- <h4>press_token += AND</h4> -->
 <!-- <h4>press_token += ORR</h4> -->
 
-<!-- <h4>press_message = PRP (multipart_offer)</h4> -->
-<p>Level 30 adds the ability to offer multiple things in one offer.</p>
+<!-- <h4>press_message = PRP (multipart_arrangement)</h4> -->
+<p>Level 30 adds the ability to combine multiple arrangements.</p>
 
-<h4><a name="AND">multipart_offer = AND</a> (offer) (offer) (offer) ...</h4>
+<h4><a name="AND">multipart_arrangement = AND</a> (arrangement) (arrangement) (arrangement) ...</h4>
 
-<p>These offers are made as a group, and should be accepted or rejected
-as a group. This is usually used for offers such as &ldquo;I
+<p>These arrangements are grouped, and should be accepted or rejected
+as a group. This is usually used for arrangements such as &ldquo;I
 support you and you support me.&rdquo;</p>
 
-<h4><a name="ORR">multipart_offer = ORR</a> (offer) (offer) (offer) ...</h4>
+<h4><a name="ORR">multipart_arrangement = ORR</a> (arrangement) (arrangement) (arrangement) ...</h4>
 
-<p>These alternative offers are made. The player should accept or reject them as
+<p>These alternative arrangements are grouped. The player should accept or reject them as
 a group, and then use further press (if necessary) to decide which part
-of the offer is to actually occur. This is usually used for offers such
+of the arrangement is to actually occur. This is usually used for offers such
 as &ldquo;I will make one of the following moves.&rdquo;</p>
 
 <p>At level 30, <b>AND</b> and <b>ORR</b> must not be nested; that is,
 they must not both appear in the same message, and neither is allowed to
-appear more than once.  All <b>AND</b> and <b>ORR</b> offers must
-include at least two sub-offers.  That is, <b>AND (offer)</b> is not
-allowed.</p>
+appear more than once.  All <b>AND</b> and <b>ORR</b> arrangements must
+include at least two sub-arrangements.  That is, <b>AND
+(arrangement)</b> is not allowed.</p>
 
 <h2><a name="level40">Level 40</a> : Sharing out the Supply Centres</h2>
 <!-- <h4>press_token += SCD</h4> -->
@@ -1469,47 +1477,47 @@ allowed.</p>
 <p>Level 40 adds the ability to discuss who will gain which supply
 centres and provinces.</p>
 
-<h4><a name="SCD">offer = SCD</a> (power centre centre ...) (power centre centre ...) ...</h4>
+<h4><a name="SCD">arrangement = SCD</a> (power centre centre ...) (power centre centre ...) ...</h4>
 
-<p>The given supply centre distribution is offered. This is typically
+<p>The given supply centre distribution is arranged. This is typically
 used when an alliance is sharing out the centres of the powers they
 are allied against. Any <b>centre</b>s not listed are not part of the
-proposed division. Eliminated powers must not be included in the
-distribution of centres.  This offer is a long-term plan, and doesn't
+division. Eliminated powers must not be included in the
+distribution of centres.  This arrangement is a long-term plan, and doesn't
 necessarily indicate that the centres will be taken this turn.</p>
 
-<h4><a name="OCC">offer = OCC</a> (unit) (unit) ...</h4>
-<!-- <h4>offer = OCC (occ_unit) (occ_unit) ...</h4> -->
+<h4><a name="OCC">arrangement = OCC</a> (unit) (unit) ...</h4>
+<!-- <h4>arrangement = OCC (occ_unit) (occ_unit) ...</h4> -->
 <!-- <h4>occ_unit = unit</h4> -->
 <!-- <h4>occ_unit = power UNT province</h4> -->
 
-<p>This is a suggestion that a power place a particular unit in a
+<p>This is an arrangement for a power place a particular unit in a
 particular location. <b>unit</b> is in the same format as for
 <b>NOW</b>; for instance, <b>PRP (OCC (ENG FLT BEL))</b>.  Alternatively,
 the token <b>UNT</b> may be used to represent any unit type. For
-example, <b>PRP (OCC (ENG UNT BEL))</b>.  This offer is a long-term plan,
+example, <b>PRP (OCC (ENG UNT BEL))</b>.  This arrangement is a long-term plan,
 and doesn't necessarily indicate that the units will be placed there
 this turn.</p>
 
 
-<h2><a name="level50">Level 50</a> : Nested Multipart Offers</h2>
+<h2><a name="level50">Level 50</a> : Nested Multipart Arrangements</h2>
 <!-- <h4>press_token += CHO</h4> -->
 
-<!-- <h4>offer = multipart_offer</h4> -->
+<!-- <h4>arrangement = multipart_arrangement</h4> -->
 <p>Level 50 allows <b>AND</b> and <b>ORR</b> to be
 nested. For example:</p>
 
 <p><b>PRP (ORR ((FRA AMY PAR) MTO PIC) (AND ((FRA AMY PAR) MTO BUR)
 ((GER AMY MUN) MTO BUR)))</b></p>
 
-<p>It also adds a new multi-part offer.</p>
+<p>It also adds a new multipart arrangement.</p>
 
-<h4><a name="CHO">offer = CHO</a> (minimum maximum) (offer) (offer) (offer) ...</h4>
+<h4><a name="CHO">arrangement = CHO</a> (minimum maximum) (arrangement) (arrangement) (arrangement) ...</h4>
 <!-- <h4>minimum = number</h4> -->
 <!-- <h4>maximum = number</h4> -->
 
-<p><b>minimum</b> and <b>maximum</b> are integers.  This is an offer to
-accept between <b>minimum</b> and <b>maximum</b> of the listed offers.
+<p>This is an arrangement for any number from <b>minimum</b> to
+<b>maximum</b> of the listed arrangements.
 <b>minimum</b> and <b>maximum</b> may be the same, in which case it
 means to choose exactly that many.  For example:</p>
 
@@ -1525,84 +1533,79 @@ means to choose exactly that many.  For example:</p>
 <!-- <h4>press_token += IDK</h4> -->
 <!-- <h4>press_token += SUG</h4> -->
 
-<p>In Level 60, we add the ability to insist on a proposal, and to ask
+<p>In Level 60, we add the ability to insist on an arrangement, and to ask
 questions.</p>
 
-<h4><a name="INS">press_message = INS</a> (offer)</h4>
+<h4><a name="INS">press_message = INS</a> (arrangement)</h4>
 
 <p>The syntax for <b>INS</b> is exactly the same as for <b>PRP</b>, and
 the available replies are also exactly the same. The only difference is
 that <b>PRP</b> should be seen as a suggestion, where as <b>INS</b> is
 much more forceful, and implies that relations between the two powers
-will be worsened if the <b>offer</b> is not accepted. If <b>offer</b> is
+will be worsened if the <b>arrangement</b> is not accepted. If <b>arrangement</b> is
 something that the sending power can enforce on the board (for
-example, an order for one of his own units), then the receiving power
+example, an order for one of its own units), then the receiving power
 should expect it to happen whether it likes it or not.</p>
 
-<h4><a name="QRY">press_message = QRY</a> (offer)</h4>
+<h4><a name="QRY">press_message = QRY</a> (arrangement)</h4>
 
 <p>The syntax for <b>QRY</b> is the same as for <b>PRP</b> and
-<b>INS</b>, except that where a power list is included, there is no
-requirement for it to include the sending or receiving powers.
+<b>INS</b>.
 <b>QRY</b> is asking a question (for example, &ldquo;Is there an
-alliance?&rdquo;), rather then proposing &mdash; (for example,
+alliance?&rdquo;), rather then proposing (for example,
 &ldquo;How about an alliance?&rdquo;).  <b>QRY</b> can be responded to
 in exactly the same way as <b>PRP</b> and <b>INS</b>; however, the
 following extra responses are also available for <b>QRY</b>:</p>
 
-<h4><a name="THK">reply = THK</a> (QRY (offer))</h4>
+<h4><a name="THK">reply = THK</a> (QRY (arrangement))</h4>
 
-<p>I think that <b>offer</b> is true.</p>
+<p>I think that <b>arrangement</b> is true.</p>
 
-<h4>reply = THK (NOT (QRY (offer)))</b></h4>
+<h4>reply = THK (NOT (QRY (arrangement)))</b></h4>
 
-<p>I think that <b>offer</b> is not true.</p>
+<p>I think that <b>arrangement</b> is not true.</p>
 
-<h4><a name="FCT">reply = FCT</a> (QRY (offer))</b></h4>
+<h4><a name="FCT">reply = FCT</a> (QRY (arrangement))</b></h4>
 
-<p><b>offer</b> is true.</p>
+<p><b>arrangement</b> is true.</p>
 
-<h4>reply = FCT (NOT (QRY (offer)))</b></h4>
+<h4>reply = FCT (NOT (QRY (arrangement)))</b></h4>
 
-<p><b>offer</b> is not true.</p>
+<p><b>arrangement</b> is not true.</p>
 
-<h4><a name="IDK">reply = IDK</a> (QRY (offer))</h4>
+<h4><a name="IDK">reply = IDK</a> (QRY (arrangement))</h4>
 
 <p>I don't know.</p>
 
-<p>Note that for <b>QRY</b>, <b>offer</b> is not really an offer at all,
-it is a request for information.</p>
+<h4><a name="SUG">press_message = SUG</a> (arrangement)</h4>
 
-<h4><a name="SUG">press_message = SUG</a> (offer)</h4>
-
-<p>The syntax for <b>SUG</b> is the same as for <b>QRY</b>, and once
-again, where a power list is included, there is no requirement for it
-to include the sending or receiving powers. <b>SUG</b> is suggesting
+<p>The syntax for <b>SUG</b> is the same as for <b>QRY</b>.
+<b>SUG</b> is suggesting
 that something is in the mutual interest of the sender and all
 recipients, but is not something they can directly
 influence. For instance, Italy may want to say to Austria that it is in
 their mutual interest for Russia to order to the Black Sea. Replies to
 <b>SUG</b> are the same as for <b>PRP</b>; however, the response is an
 indication of agreement or disagreement, rather than an indication as to
-whether <b>offer</b> will actually happen.</p>
+whether <b>arrangement</b> will actually happen.</p>
 
 <p><b>THK</b> and <b>FCT</b> can also be used as a message in their own
 right, to pass information without first being queried for it.</p>
 
-<h4>press_message = THK (offer)</h4>
+<h4>press_message = THK (arrangement)</h4>
 
-<p>I think <b>offer</b> is true.</p>
+<p>I think <b>arrangement</b> is true.</p>
 
-<h4>press_message = FCT (offer)</h4>
+<h4>press_message = FCT (arrangement)</h4>
 
-<p><b>offer</b> is true.</p>
+<p><b>arrangement</b> is true.</p>
 
 <p>No reply is expected to either of these.</p>
 
-<p>Note that <b>THK (QRY (offer))</b> and <b>THK (offer)</b> have
+<p>Note that <b>THK (QRY (arrangement))</b> and <b>THK (arrangement)</b> have
 exactly the same meaning, except that the former is the response to a
 query whereas the latter is volunteered without being asked.  The same
-applies to <b>FCT (QRY (offer))</b> and <b>FCT (offer)</b>.</p>
+applies to <b>FCT (QRY (arrangement))</b> and <b>FCT (arrangement)</b>.</p>
 
 
 <h2><a name="level70">Level 70</a> : Requests for suggestions</h2>
@@ -1694,37 +1697,44 @@ common for the next message to be <b>INS (NOT (PCE (power power ...))</b>.</p>
 <p>Level 90 adds the ability to talk about the future. To do this, one
 command is added:</p>
 
-<h4><a name="FOR">offer = FOR</a> (turn) (offer)</h4>
-<h4>offer = FOR ((start_turn) (end_turn)) (offer)</h4>
+<h4><a name="FOR">arrangement = FOR</a> (turn) (arrangement)</h4>
+<h4>arrangement = FOR ((start_turn) (end_turn)) (arrangement)</h4>
 <!-- <h4>start_turn = turn</h4> -->
 <!-- <h4>end_turn = turn</h4> -->
 
 <p>For the <b>turn</b> specified, or for all turns from
-<b>start_turn</b> to <b>end_turn</b> inclusive, <b>offer</b> applies.
+<b>start_turn</b> to <b>end_turn</b> inclusive, <b>arrangement</b> applies.
 <b>turn</b> is of the form <b>phase year</b>.  The timing specified by
-<b>FOR</b> overrides any timing indicated by <b>offer</b>.</p>
+<b>FOR</b> overrides any timing indicated by <b>arrangement</b>.</p>
 
-<p>The offer parameter of the <b>FOR</b> must not include a further
-<b>FOR</b>, unless the offer contains a <b>press_message</b> (for
+<p>The <b>arrangement</b> parameter of the <b>FOR</b> must not include a further
+<b>FOR</b>, unless the arrangement contains a <b>press_message</b> (for
 example, in <b>SND</b>), and the further <b>FOR</b> is inside that
 <b>press_message</b>.</p>
+
+<p>Note that <b>FOR</b> and <b>NOT</b> must be ordered correctly to get
+the right meaning. <b>FOR ((start_turn) (end_turn)) (NOT
+(arrangement))</b> means that arrangement is not true for any of the
+turns indicated, while <b>NOT (FOR ((start_turn) (end_turn))
+(arrangement))</b> means that arrangement is not true for at least one
+of the turns indicated.</p>
 
 <h2><a name="level100">Level 100</a> : Conditionals</h2>
 <!-- <h4>press_token += IFF</h4> -->
 <!-- <h4>press_token += THN</h4> -->
 <!-- <h4>press_token += ELS</h4> -->
 
-<p>Level 100 adds the ability to make a conditional offer.</p>
+<p>Level 100 adds the ability to use conditional operators.</p>
 
 <h4><a name="IFF">press_message = IFF</a> (condition) THN (press_message) [ELS (press_message)]</h4>
 <!-- <h4>reply = IFF (condition) THN (reply) [ELS (reply)]</h4> -->
-<!-- <h4>offer != IFF (condition) THN (offer) [ELS (offer)]</h4> -->
+<!-- <h4>arrangement != IFF (condition) THN (arrangement) [ELS (arrangement)]</h4> -->
 
 <p>If the <b>condition</b> is met, then the <b>THN</b> applies;
 otherwise, the <b>ELS</b> part (if any) applies.</p>
 
-<!-- <h4>condition = offer</h4> -->
-<p>A <b>condition</b> takes the same format as an <b>offer</b>.</p>
+<!-- <h4>condition = arrangement</h4> -->
+<p>A <b>condition</b> takes the same format as an <b>arrangement</b>.</p>
 
 <p><b>IFF</b> can often be used in conjunction with <b>FOR</b>.
 For example:</p>
@@ -1748,26 +1758,26 @@ part.</p>
 puppet of another power.</p>
 
 <!-- Removed: Specific cases of X owes Y.
-<h4><a name="IOU">offer != IOU</a></h4>
+<h4><a name="IOU">arrangement != IOU</a></h4>
 
 <p>I owe you.</p>
 
-<h4><a name="UOM">offer != UOM</a></h4>
+<h4><a name="UOM">arrangement != UOM</a></h4>
 
 <p>You owe me.</p>
 -->
 
-<h4><a name="XOY">offer = XOY</a> (power) (power)</h4>
+<h4><a name="XOY">arrangement = XOY</a> (power) (power)</h4>
 
 <p>Power X owes power Y. The powers listed must not be eliminated.</p>
 
 <p>The amount owed is indicated by the context.  For instance, a player
-may ask for "You support me to X, and I owe you."  The amount it owes is
+may ask for "You support me to X, and I owe you."  The amount owed is
 the value of the support.  This is for when a player is asking for
 something now, and offering to return the favour later, not yet knowing
 how it will reciprocate.</p>
 
-<h4><a name="YDO">offer = YDO</a> (power) (unit) (unit) ...</h4>
+<h4><a name="YDO">arrangement = YDO</a> (power) (unit) (unit) ...</h4>
 
 <p>Control of the listed <b>unit</b>s is given to <b>power</b>.  If
 the owner of the units is the sending power, then it is allowing the
@@ -1777,7 +1787,7 @@ entered by the owning power. The power must not be an eliminated
 power.</p>
 
 <!-- PPT: Puppet, from Daniel Loeb's original document.
-<h4><a name="PPT">offer != PPT</a> (power) (power) [(promise promise ...)]</h4>
+<h4><a name="PPT">arrangement != PPT</a> (power) (power) [(promise promise ...)]</h4>
 
 <p>The first listed <b>power</b> becomes a puppet of the second.
 <b>promise</b> is a power granted by the puppet, and may be one of:</p>
@@ -1793,7 +1803,7 @@ power.</p>
 </ul>
 
 <p>Conditions on the puppetship may be placed in <b>FOR</b> or
-<b>IFF</b> offers.  For example:</p>
+<b>IFF</b> arrangements.  For example:</p>
 <p><b>IFF (SCD (AUS VIE BUD TRI)) THN (FOR ((SPR 1904) (WIN 1908)) (PPT
 (AUS TUR) (XDO FRM SND)))</b><p>
 
@@ -1820,46 +1830,39 @@ power.</p>
 <p>Level 120 adds the ability to forward press from one power to
 another. This adds three extra commands to the message syntax:</p>
 
-<h4><a name="SND_press">offer = SND</a> (power) (power power ...) (press_message)</h4>
-<h4>offer = SND (power) (power power ...) (reply)</h4>
+<h4><a name="SND_press">arrangement = SND</a> (power) (power power ...) (press_message)</h4>
+<h4>arrangement = SND (power) (power power ...) (reply)</h4>
 
 <p>This is a request for the first <b>power</b> to send the message
-given. The sending power (the first parameter) must be a recipient of
-the message, although there may be other recipients of the request too
-(who should not act on it or reply to it). Eliminated powers must not
+given. Eliminated powers must not
 be included in any part of the message.</p>
 
-<h4><a name="FWD">offer = FWD</a> (power power ...) (power) (power)</h4>
+<h4><a name="FWD">arrangement = FWD</a> (power power ...) (power) (power)</h4>
 
-<p>This is either a request or an offer for any messages received from
+<p>This is an arrangement for any messages received from
 any of the powers in the first parameter to the power in the second
 parameter to be forwarded to the power in the third parameter.
-Eliminated powers must not be included in any part of the message. Powers
-should not appear more than once in the message.  For <b>PRP</b> and
-<b>INS</b> messages, the second and third parameters should be the
-sending and receiving powers of the <b>FWD</b> message. If the second
-parameter is the sending power, then this is an offer to forward. If the
-third parameter is the sending power, then it is a request to forward.
-The <b>FWD</b> message may be sent to several powers, in which case only
-the power which appears in the second or third parameters should act on
-the message.  This offer is continuous.</p>
+Eliminated powers must not be included in any part of the message.
+Powers should not appear more than once in the message.
+This arrangement is continuous.</p>
 
-<h4><a name="BCC">offer = BCC</a> (power) (power power ...) (power)</h4>
+<h4><a name="BCC">arrangement = BCC</a> (power) (power power ...) (power)</h4>
 
 <p>This is exactly the same as <b>FWD</b>, except that the sending and
 receiving powers are now the first and third parameters. This is an
-offer or request to forward everything sent, rather than everything
+arrangement to forward everything sent, rather than everything
 received.</p>
 
-<h4>offer = NOT (FWD (power power ...) (power) (power))</h4>
-<h4>offer = NOT (BCC (power) (power power ...) (power))</h4>
+<h4>arrangement = NOT (FWD (power power ...) (power) (power))</h4>
+<h4>arrangement = NOT (BCC (power) (power power ...) (power))</h4>
 
-<p>This is an offer/request to cancel a previously agreed <b>FWD</b> or <b>BCC</b>.</p>
+<p>This is an arrangement to cancel a previously agreed <b>FWD</b> or
+<b>BCC</b> arrangement.</p>
 
 <h4><a name="FRM_press">press_message = FRM</a> (power) (power power ...) (press_message)</h4>
 <h4>press_message = FRM (power) (power power ...) (reply)</h4>
 
-<p>This is a message to inform a power of a message the player has sent
+<p>This is a message to inform a power of a message that has been sent
 or received.  No response is required. Eliminated powers must not be
 included in any part of the message. There is of course no guarantee
 that the forwarded message is genuine.</p>
@@ -1875,41 +1878,41 @@ should not forward a message that already contains the segment
 <p>Level 130 adds the ability to ask why a power thinks something. In
 response to a <b>THK</b> or <b>FCT</b> message, the player can reply with:</p>
 
-<h4><a name="WHY">reply = WHY</a> (THK (offer))</h4>
-<h4>reply = WHY (FCT (offer))</h4>
+<h4><a name="WHY">reply = WHY</a> (THK (arrangement))</h4>
+<h4>reply = WHY (FCT (arrangement))</h4>
 
 <p>This is a request for an explanation as to the reason why the sender
-thinks the offer in the <b>THK</b> or <b>FCT</b> message is true.
-Available replies are <b>BWX</b> if the player don't want to tell,
+thinks the <b>arrangement</b> in the <b>THK</b> or <b>FCT</b> message is true.
+Available replies are <b>BWX</b> if the player doesn't want to tell,
 <b>REJ</b> if it wants to deny knowledge of the <b>THK</b> or <b>FCT</b>
 message, or another <b>THK</b> or <b>FCT</b> message to give further
 information.  Additionally, the player can also give any other message
-which gives further information (most notably, a <b>FRM</b> message if it
-was heard from another player).  Finally, there is one new response
+which gives further information (most notably, a <b>FRM</b> message
+received from another player).  Finally, there is one new response
 available:</p>
 
-<h4><a name="POB">reply = POB</a> (WHY (THK (offer)))</h4>
-<h4>reply = POB (WHY (FCT (offer)))</h4>
+<h4><a name="POB">reply = POB</a> (WHY (THK (arrangement)))</h4>
+<h4>reply = POB (WHY (FCT (arrangement)))</h4>
 
 <p>The position on the board, or the previous moves, suggests or implies it.</p>
 
 <p><b>WHY</b> can also be used in other contexts:</p>
 
-<h4>reply = WHY (SUG (offer))</h4>
+<h4>reply = WHY (SUG (arrangement))</h4>
 <p>Why do you think that would be good for us?</p>
 
-<h4>reply = WHY (PRP (offer))</h4>
-<h4>reply = WHY (INS (offer))</h4>
+<h4>reply = WHY (PRP (arrangement))</h4>
+<h4>reply = WHY (INS (arrangement))</h4>
 <p>Why are you proposing that?</p>
 
 <p>This level also adds some additional uses of <b>IDK</b>:</p>
 
-<h4>reply = IDK (PRP (offer))</h4>
-<h4>reply = IDK (INS (offer))</h4>
+<h4>reply = IDK (PRP (arrangement))</h4>
+<h4>reply = IDK (INS (arrangement))</h4>
 <p>I don't know whether I'll accept that.  Throw in something else to
 make it worthwhile.</p>
 
-<h4>reply = IDK (SUG (offer))</h4>
+<h4>reply = IDK (SUG (arrangement))</h4>
 <p>I don't really know whether I desire that.</p>
 
 <!--
@@ -1919,22 +1922,22 @@ make it worthwhile.</p>
 <p>Level 140 adds the ability to estimate the probability of a
 situation.  In response to a <a href="#QRY"><b>QRY</b></a> message,
 the player can reply with:</p>
-<h4><a name="PRB">press_message != PRB</a> (percentage) (QRY (offer))</h4>
+<h4><a name="PRB">press_message != PRB</a> (percentage) (QRY (arrangement))</h4>
 <!- - <h4>percentage != number</h4> - ->
 
 <p><b>percentage</b> is an integer indicating the percentage chance that
-<b>offer</b> is true, and should be between 0 and 100, inclusive.</p>
+<b>arrangement</b> is true, and should be between 0 and 100, inclusive.</p>
 
 <p><b>PRB</b> can also be used as a message in its own right, to pass
 information without first being queried for it.</p>
 
-<h4>press_message != PRB (percentage) (offer)</h4>
-<p>I think <b>offer</b> has a <b>percentage</b> chance of being true.</p>
+<h4>press_message != PRB (percentage) (arrangement)</h4>
+<p>I think <b>arrangement</b> has a <b>percentage</b> chance of being true.</p>
 
 <p>As for a <b>THK</b> or <b>FCT</b> message, no reply is expected, but
 <b>WHY</b> can be used to ask for an explanation.</p>
 
-<h4>reply != WHY (PRB (percentage) (offer))</h4>
+<h4>reply != WHY (PRB (percentage) (arrangement))</h4>
 <p>Why do you think that?</p>
 -->
 
@@ -2227,12 +2230,9 @@ document and <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.rtf">the
 official DAIDE syntax document</a>:
 
 <ul>
-	<li><a name="AI_note">All instances of "AI"</a>, except those
-	occurring in the phrase "Diplomacy AI Development Environment", have
-	been changed to either "client" or "player", as appropriate.  After
-	all, the most frequently-used client is not, in fact, an AI.  Many
-	of the second-person pronouns have also been changed, in favor of
-	phrases like "the client" or "the player".</li>
+	<li><a name="AI_note">Many instances of "client" or "power"</a> have
+	been changed to "player", where appropriate.  This makes a clearer
+	distinction between players and observers.</li>
 
 	<li><a name="grammar_note">Several minor grammar changes</a> have
 	been made.  These don't affect the semantics, but make it sound
@@ -2308,11 +2308,7 @@ official DAIDE syntax document</a>:
 	clients of a different name and/or version; however, that behavior
 	has not yet been included in this syntax document.</li>
 
-	<li>The <a href="#PTL" name="press_note"><b>PTL</b> variant</a> has
-	been listed as a reason for rejecting a <a href="#PTL"><b>SND</b>
-	command</a>.</li>
-
-	<li><a href="#appA" name="token_note">Appendix A</a> is much more
+	<li><a href="#appA" name="token_note">Appendix A</a> is more
 	complete, including obsolete tokens and token numbers.</li>
 
 	<li><a href="#appB" name="bnf_note">Appendix B</a> describes how
