@@ -90,7 +90,8 @@ class Variant(object):
         for name in sorted(self.ownership):
             power = self.rep[name]
             centers = [self.rep[prov] for prov in self.ownership[name]]
-            msg = msg(power, *centers)
+            if centers:
+                msg = msg(power, *centers)
         return msg
     
     def now(self):

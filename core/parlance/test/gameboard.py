@@ -842,7 +842,7 @@ class VariantFileTests(unittest.TestCase):
         TWO = variant.rep["TWO"]
         TRE = variant.rep["TRE"]
         FUR = variant.rep["FUR"]
-        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR) (UNO))
+        self.failUnlessEqual(variant.sco(), SCO (ONE, TWO) (TRE, FUR))
     def test_sco_position_neutral(self):
         variant = load_variant('''
             [homes]
@@ -860,7 +860,7 @@ class VariantFileTests(unittest.TestCase):
         TWO = variant.rep["TWO"]
         TRE = variant.rep["TRE"]
         FIV = variant.rep["FIV"]
-        self.failUnlessEqual(variant.sco(), SCO (ONE) (TRE) (UNO, TWO))
+        self.failUnlessEqual(variant.sco(), SCO (UNO, TWO))
     
     def test_now_empty(self):
         variant = load_variant("")
