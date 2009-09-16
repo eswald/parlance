@@ -511,6 +511,8 @@ class Judge(JudgeInterface):
         country = client.country
         if country and self.phase and not self.eliminated(country):
             try:
+                # Yes, this is different from handle_DRW:
+                # the [2:-1] removes the NOT() wrapper.
                 self.draws[self.get_draw_parties(message[2:-1])].remove(country)
             except KeyError:
                 # The client is being silly, but don't reject.

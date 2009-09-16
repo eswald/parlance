@@ -437,10 +437,14 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
                 self.failUnlessEqual(winners, set(msg[2:-1]))
                 break
         else: raise self.failureException, 'No draw message in %s' % (messages,)
+    def assertNotDrawn(self):
+        messages = self.judge.run()
+        for msg in messages:
+            if msg[0] is DRW:
+                raise self.fail(msg)
     
     def test_disordered_draws(self):
         ''' Draws with different order still the same'''
-        #self.judge.verbosity = 20
         self.judge.game_opts.PDA = True
         self.init_state(SPR, 1901, [
             [RUS, AMY, MOS],
@@ -459,6 +463,29 @@ class Judge_Basics(DiplomacyAdjudicatorTestCase):
         self.acceptable(TUR, DRW(ENG, FRA, RUS))
         self.acceptable(AUS, DRW(FRA, RUS, ENG))
         self.assertDrawn(FRA, ENG, RUS)
+    def test_draw_cancellation(self):
+        # Clients can cancel a specific draw request
+        self.judge.game_opts.PDA = True
+        self.init_state(SPR, 1901, [
+            [RUS, AMY, MOS],
+            [ENG, FLT, LON],
+            [FRA, AMY, PAR],
+            [GER, AMY, BER],
+            [ITA, AMY, ROM],
+            [TUR, FLT, CON],
+            [AUS, AMY, VIE],
+        ])
+        
+        msg = DRW(ENG, FRA, RUS)
+        self.acceptable(RUS, msg)
+        self.acceptable(ENG, msg)
+        self.acceptable(FRA, msg)
+        self.acceptable(GER, msg)
+        self.acceptable(ITA, msg)
+        self.acceptable(ENG, NOT(msg))
+        self.acceptable(TUR, msg)
+        self.acceptable(AUS, msg)
+        self.assertNotDrawn()
     def test_retreat_coasts(self):
         ''' Fleets retreat to specific coasts'''
         self.init_state(SPR, 1901, [
