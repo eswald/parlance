@@ -367,7 +367,7 @@ class Service(Connection):
     
     def send(self, message):
         if message[0] is MDF: text = 'MDF [...]'
-        else: text = str(message)
+        else: text = unicode(message)
         self.log_debug(3, '%3s << %s', self.power_name(), text)
         self.write(message)
     def send_list(self, message_list):

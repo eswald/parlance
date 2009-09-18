@@ -146,7 +146,7 @@ class Message(list):
                 result.append(token.text)
         if in_text: result.append(quot)
         
-        return str.join('', result)
+        return str.join('', result).decode("UTF-8")
     def __repr__(self):
         ''' Returns a string which can be used to reproduce the message.
             Note: Can get long, if used improperly.
