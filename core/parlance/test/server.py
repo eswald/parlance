@@ -167,15 +167,12 @@ class ServerTestCase(unittest.TestCase):
             'block_exceptions': False,
         }
         
-        self.set_verbosity(0)
         Configuration._cache.update(self.game_options)
         self.manager = None
         self.server = None
     def tearDown(self):
         if self.server and not self.server.closed: self.server.close()
         if self.manager and not self.manager.closed: self.manager.close()
-    def set_verbosity(self, verbosity):
-        self.set_option('verbosity', verbosity)
     def set_option(self, option, value):
         self.game_options[option] = value
         Configuration.set_globally(option, value)

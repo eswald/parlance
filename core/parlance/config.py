@@ -9,10 +9,16 @@ r'''Parlance configuration management
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+import logging
+try:
+    import codecs
+except ImportError:
+    codecs = None
+
 from ConfigParser import RawConfigParser
 from os           import linesep, path
 from pkg_resources import iter_entry_points, resource_stream
-from sys          import argv
+from sys          import argv, stdout
 from weakref      import WeakValueDictionary
 
 from fallbacks import any, defaultdict
@@ -44,7 +50,18 @@ def string(value):
 def stringlist(value):
     result = [r for r in [s.strip() for s in value.split(',')] if r]
     return result
+def log_level(value):
+    levels = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+        "critical": logging.CRITICAL,
+    }
     
+    result = levels[value] if value in levels else integer(value)
+    return result
+
 # Various option classes.
 class Configuration(object):
     ''' Container for various configurable settings and constants.
@@ -363,6 +380,19 @@ class Configurable(object):
         self.options = Configuration()
         self.options.parse_options(self.__class__)
 
+class PrefixFormatter(logging.Formatter):
+    def __init__(self, item):
+        logging.Formatter.__init__(self)
+        self.watched = item
+    def format(self, record):
+        try:
+            line = logging.Formatter.format(self, record)
+        except:
+            # Something probably went wrong with a __str__ method.
+            record.msg = record.msg.replace("%s", "%r")
+            line = logging.Formatter.format(self, record)
+        return self.watched.prefix + ": " + line
+
 class VerboseObject(Configurable):
     ''' Basic logging system.
         Provides one function, log_debug, to print lines either to stdout
@@ -370,28 +400,38 @@ class VerboseObject(Configurable):
         Classes or instances may override prefix to set the label on each
         line written by that item.
     '''#'''
-    __files = {}
+    __stream = None
     __section__ = 'main'
     __options__ = (
-        ('verbosity', int, 1, 'v',
-            'How much debug or logging information to display.'),
+        ('verbosity', log_level, logging.WARNING, 'v',
+            'How much logging information to display.',
+            "Takes the standard logging levels (debug, info, warning, error, critical)",
+            "or a non-negative integer (higher is less verbose)."),
         ('log_file', file, '', None,
             'File in which to log output lines, instead of printing them.'),
     )
     
+    def __init__(self):
+        self.__super.__init__()
+        path = self.__class__.__module__ + "." + self.__class__.__name__
+        self.log = logging.Logger(path, self.options.verbosity)
+        
+        if not self.__stream:
+            stream = stdout
+            if self.options.log_file:
+                if codecs is None:
+                    stream = open(self.options.log_file, "a")
+                else:
+                    stream = codecs.open(self.options.log_file, "a", "utf-8")
+            VerboseObject.__stream = stream
+        handler = logging.StreamHandler(self.__stream)
+        handler.setFormatter(PrefixFormatter(self))
+        self.log.addHandler(handler)
     def log_debug(self, level, line, *args):
-        if level <= self.options.verbosity:
-            line = self.prefix + ': ' + str(line) % args
-            filename = self.options.log_file
-            if filename:
-                output = self.__files.get(filename)
-                if not output:
-                    output = file(filename, 'a')
-                    self.__files[filename] = output
-                output.write(line + linesep)
-            else:
-                try: print line + '\n',
-                except IOError: self.verbosity = 0 # Ignore broken pipes
+        '''Deprecated: Use self.log.debug() instead.'''
+        # The old log_debug() had level semantics reversed.
+        # It never used more than 20, though.
+        self.log.log(25 - level, line, *args)
     @settable_property
     def prefix(self): return self.__class__.__name__
 

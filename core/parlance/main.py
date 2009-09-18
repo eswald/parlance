@@ -484,8 +484,6 @@ class ClientProgram(Program):
         manager.run()
     
 class ServerProgram(Program):
-    default_verbosity = 7
-    
     @classmethod
     def main(cls):
         r'''Run a game server.
@@ -499,7 +497,6 @@ class ServerProgram(Program):
             exit(1)
         if cls.help_requested(): usage()
         
-        Configuration._args.setdefault('verbosity', cls.default_verbosity)
         opts = {}
         remainder = Configuration.arguments
         if remainder:
@@ -551,7 +548,6 @@ class RawServer(ServerProgram):
         standard output in the same syntax.  The server will close when the
         last client disconnects.
     '''#'''
-    default_verbosity = 7
     
     class FakeGame(object):
         def __init__(self, server):

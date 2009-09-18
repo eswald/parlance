@@ -69,7 +69,6 @@ class NetworkTestCase(ServerTestCase):
     
     def setUp(self):
         ServerTestCase.setUp(self)
-        self.set_verbosity(0)
         self.manager = ThreadManager()
         self.manager.wait_time = 10
         self.manager.pass_exceptions = True

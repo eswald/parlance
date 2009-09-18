@@ -46,7 +46,6 @@ class PlayerTestCase(unittest.TestCase):
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
-        self.set_verbosity(0)
         Configuration._cache.update(self.game_options)
         self.variant = standard
         opts = GameOptions()
@@ -62,8 +61,6 @@ class PlayerTestCase(unittest.TestCase):
         self.replies.append(message)
     def tearDown(self):
         if self.player: self.send(+OFF)
-    def set_verbosity(self, verbosity):
-        Configuration.set_globally('verbosity', verbosity)
     def send(self, message): self.player.handle_message(message)
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
@@ -191,7 +188,6 @@ class Player_Tests(PlayerTestCase):
         ''' A client should deal with HUH response to its HUH message.'''
         Configuration.set_globally('validate', True)
         Configuration.set_globally('response', 'complain')
-        #self.set_verbosity(7)
         self.connect_player(self.Test_Player)
         while self.replies:
             msg = self.replies.pop(0)

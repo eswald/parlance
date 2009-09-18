@@ -103,7 +103,6 @@ class Judge_Movement(DiplomacyAdjudicatorTestCase):
         self.assertMapState(start_state)
     def test_convoy(self):
         ''' Basic convoy'''
-        #self.judge.verbosity = 20
         self.init_state(SPR, 1901, [
             [ENG, FLT, ECH],
             [ENG, AMY, LON],
@@ -803,8 +802,6 @@ class Judge_Loose(DiplomacyAdjudicatorTestCase):
 
 class Judge_Doctests(unittest.TestCase):
     ''' Tests that were once in doctest format.'''
-    def setUp(self):
-        Configuration.set_globally('verbosity', 0)
     
     def test_startup(self):
         variant = variants['standard']
