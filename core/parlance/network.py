@@ -332,8 +332,7 @@ class Service(Connection):
             self.log_debug(4, '%3s >> %s', self.power_name(), msg)
             try: self.server.handle_message(self, msg)
             except Exception, e:
-                self.log_debug(1, '%s handling "%s": %s',
-                        e.__class__.__name__, msg, e)
+                self.log.exception('Error while handling "%s":', msg)
                 self.server.broadcast_admin('An error has occurred.  '
                         'The server may be unreliable until it is restarted.')
                 self.errors += 1
