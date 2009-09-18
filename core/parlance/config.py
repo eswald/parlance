@@ -52,6 +52,7 @@ def stringlist(value):
     return result
 def log_level(value):
     levels = {
+        "all": logging.NOTSET,
         "debug": logging.DEBUG,
         "info": logging.INFO,
         "warning": logging.WARNING,
