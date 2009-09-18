@@ -169,7 +169,7 @@ class Server(ServerProgram):
                 client.client_id, message)
     def handle_ADM(self, client, message):
         line = message.fold()[2][0]
-        text = line.lower()
+        text = line.lower().strip()
         if text[0:7] == 'server:':
             if self.options.admin_cmd: self.seek_command(client, text[7:])
             else: client.admin('Admin commands have been disabled.')
