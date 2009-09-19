@@ -417,11 +417,19 @@ class Program(VerboseObject):
         return basename(argv[0])
     
     @classmethod
-    def usage(cls):
-        raise NotImplementedError
+    def usage(cls, problem=None, *args):
+        print "Usage: %s [OPTIONS]" % cls.progname()
+        if problem: print str(problem) % args
+        exit(1)
     
     @classmethod
     def main(cls):
+        if cls.help_requested():
+            self.usage()
+        cls.run_program(Configuration.arguments)
+    
+    @classmethod
+    def run_program(cls, args):
         raise NotImplementedError
 
 class ClientProgram(Program):
@@ -430,7 +438,21 @@ class ClientProgram(Program):
     allow_country = False
     
     @classmethod
-    def main(cls):
+    def usage(cls, problem=None, *args):
+        name = cls.__name__
+        if cls.allow_multiple:
+            print ('Usage: %s [host][:port] [number]%s [-v<level>]' %
+                (cls.progname(), cls.allow_country and ' [power=passcode] ...' or ''))
+            print 'Connects <number> copies of %s to <host>:<port>' % name
+        else:
+            print 'Usage: %s [host][:port]%s -v<level>' % (cls.progname(),
+                    cls.allow_country and ' [power=passcode]' or '')
+            print 'Connects a copy of %s to <host>:<port>' % name
+        if problem: print str(problem) % args
+        exit(1)
+    
+    @classmethod
+    def run_program(cls, args):
         r'''Run one or more Parlance clients.
             Takes options from the command line, including special syntax for
             host, port, number of bots, and passcodes.
@@ -439,36 +461,21 @@ class ClientProgram(Program):
         num = None
         countries = {}
         
-        def usage(problem=None, *args):
-            if cls.allow_multiple:
-                print ('Usage: %s [host][:port] [number]%s [-v<level>]' %
-                    (cls.progname(), cls.allow_country and ' [power=passcode] ...' or ''))
-                print 'Connects <number> copies of %s to <host>:<port>' % name
-            else:
-                print 'Usage: %s [host][:port]%s -v<level>' % (cls.progname(),
-                        cls.allow_country and ' [power=passcode]' or '')
-                print 'Connects a copy of %s to <host>:<port>' % name
-            if problem: print str(problem) % args
-            exit(1)
-        
-        if cls.help_requested(): usage()
-        remainder = Configuration.arguments
-        
         host = Configuration._args.get('host')
-        for arg in remainder:
+        for arg in args:
             if arg.isdigit():
                 if not cls.allow_multiple:
-                    usage('%s does not support multiple copies.', name)
+                    self.usage('%s does not support multiple copies.', name)
                 elif num is None:
                     num = int(arg)
-                else: usage()       # Only one number specification allowed
+                else: self.usage()       # Only one number specification allowed
             elif len(arg) > 3 and arg[3] == '=':
                 if cls.allow_country:
                     countries[arg[:3].upper()] = int(arg[4:])
-                else: usage('%s does not accept country codes.', name)
+                else: self.usage('%s does not accept country codes.', name)
             elif host is None:
                 Configuration.set_globally('host', arg)
-            else: usage()           # Only one host specification allowed
+            else: self.usage()           # Only one host specification allowed
         if num is None: num = 1
         
         manager = ThreadManager()
@@ -476,8 +483,7 @@ class ClientProgram(Program):
             num -= 1
             if countries:
                 nation, pcode = countries.popitem()
-                result = manager.add_client(cls,
-                        power=nation, passcode=pcode)
+                result = manager.add_client(cls, power=nation, passcode=pcode)
             else: result = manager.add_client(cls)
             if not result:
                 manager.log_debug(1, 'Failed to start %s.  Sorry.', name)
@@ -485,24 +491,24 @@ class ClientProgram(Program):
     
 class ServerProgram(Program):
     @classmethod
-    def main(cls):
+    def usage(cls, problem=None, *args):
+        print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % cls.progname()
+        print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
+        if problem: print str(problem) % args
+        exit(1)
+    
+    @classmethod
+    def run_program(cls, args):
         r'''Run a game server.
             Takes options from the command line, including number of games and the
             default map.
         '''#'''
-        def usage(problem=None, *args):
-            print 'Usage: %s [-gGAMES] [-vLEVEL] [VARIANT]' % cls.progname()
-            print 'Serves GAMES games of VARIANT, with output verbosity LEVEL'
-            if problem: print str(problem) % args
-            exit(1)
-        if cls.help_requested(): usage()
-        
         opts = {}
-        remainder = Configuration.arguments
-        if remainder:
-            if remainder[0] in variants:
-                Configuration.set_globally('variant', remainder[0])
-            else: usage('Unknown variant %r', remainder[0])
+        if args:
+            if args[0] in variants:
+                Configuration.set_globally('variant', args[0])
+            else: self.usage('Unknown variant %r', args[0])
+        
         manager = ThreadManager()
         server = ServerSocket(cls, manager)
         if server.open():
