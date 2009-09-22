@@ -414,8 +414,12 @@ class VerboseObject(Configurable):
     
     def __init__(self):
         self.__super.__init__()
-        path = self.__class__.__module__ + "." + self.__class__.__name__
-        self.log = logging.Logger(path, self.options.verbosity)
+        self.log = logging.getLogger(".".join([
+            # Attempt a reasonable logging hierarchy
+            self.__class__.__module__,
+            self.__class__.__name__,
+            hex(id(self)),
+        ]))
         
         if not self.__stream:
             stream = stdout
@@ -427,6 +431,7 @@ class VerboseObject(Configurable):
             VerboseObject.__stream = stream
         handler = logging.StreamHandler(self.__stream)
         handler.setFormatter(PrefixFormatter(self))
+        handler.setLevel(self.options.verbosity)
         self.log.addHandler(handler)
     def log_debug(self, level, line, *args):
         '''Deprecated: Use self.log.debug() instead.'''
