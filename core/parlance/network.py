@@ -209,6 +209,7 @@ class Connection(SocketWrapper):
             or to rely on the default for the Standard map.
         '''#'''
         if self.options.null_rm and self.rep == self.proto.default_rep:
+            self.log.debug("Sending empty RM")
             data = ''
         else:
             data = str.join('', (pack('!H3sx', token.number, name)

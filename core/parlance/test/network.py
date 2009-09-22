@@ -95,6 +95,7 @@ class NetworkTestCase(ServerTestCase):
                 manager.process()
             while any(not p.closed for p in players):
                 manager.process(23)
+        return sock
     def fake_client(self, player_class):
         name = player_class and player_class.__name__ or str(player_class)
         client = self.FakeClient(player_class)
@@ -228,6 +229,24 @@ class Network_Errors(NetworkTestCase):
         self.failUnlessEqual(client.error_code, protocol.IllegalToken)
 
 class Network_Basics(NetworkTestCase):
+    def test_RM_unpacking(self):
+        rep = Representation({
+            0x4100: "ONE",
+            0x4101: "TWO",
+            0x4102: "TRE",
+            0x5100: "AAA",
+            0x5101: "BBB",
+            0x5102: "CCC",
+            0x5003: "DDD",
+        }, protocol.base_rep)
+        self.connect_server([])
+        self.server.default_game().variant.rep = rep
+        
+        client = self.fake_client(None)
+        client.send_dcsp(client.IM,
+            pack('!HH', protocol.version, protocol.magic))
+        self.manager.process()
+        self.failUnlessEqual(client.rep, rep)
     def test_full_connection(self):
         ''' Seven fake players, polling if possible'''
         self.connect_server([self.Disconnector] * 7)
