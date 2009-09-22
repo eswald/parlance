@@ -159,10 +159,10 @@ class Connection(SocketWrapper):
         '''#'''
         if data:
             rep = {}
-            while len(data) >= 6:
-                num, name = unpack('!H3sx', data[:6])
+            fieldlen = 6
+            for i in xrange(0, len(data), fieldlen):
+                num, name = unpack('!H3sx', data[i:i+fieldlen])
                 rep[num] = name
-                data = data[6:]
             self.rep = Representation(rep, self.proto.base_rep)
         else: self.rep = self.proto.default_rep
     def unpack_message(self, data):
