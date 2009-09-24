@@ -255,7 +255,7 @@ class Validator(VerboseObject):
             >>> def validate_expression(msg, sub, level):
             ...     return Validator(level).validate_expression(msg, sub) 
             >>> Eng = Token('ENG', 0x4101)
-            >>> validate_expression([ORR, BRA, DRW, KET, BRA, SLO, BRA, Eng, KET, KET], 'multipart_offer', 200)
+            >>> validate_expression([ORR, BRA, DRW, KET, BRA, SLO, BRA, Eng, KET, KET], 'multipart_arrangement', 200)
             (10, True)
             
             # Serious boundary case: Empty sub-expression valid in TRY, but nowhere else.
@@ -318,10 +318,10 @@ class Validator(VerboseObject):
             (5, True)
             >>> Eng = Token('ENG', 0x4101)
             >>> validate_option([BRA, DRW, KET, BRA, PCE, BRA, Eng, KET, KET, KET],
-            ...     ['repeat', 'sub', 'offer'], 200)
+            ...     ['repeat', 'sub', 'arrangement'], 200)
             (9, True)
             >>> validate_option([BRA, DRW, KET, UNO, KET],
-            ...     ['repeat', 'sub', 'offer', 'sco_power'], 200)
+            ...     ['repeat', 'sub', 'arrangement', 'sco_power'], 200)
             (4, True)
         '''#'''
         index = 0
@@ -391,9 +391,9 @@ class Validator(VerboseObject):
             ...     BRA, XOY, BRA, Fra, KET, BRA, Eng, KET, KET,
             ... KET ]
             ... 
-            >>> count_subs(msg, 'offer', True, 40)
+            >>> count_subs(msg, 'arrangement', True, 40)
             (4, False)
-            >>> count_subs(msg, 'offer', True, 120)
+            >>> count_subs(msg, 'arrangement', True, 120)
             (12, True)
         '''#'''
         # Check for the start of a subexpression
