@@ -8,6 +8,7 @@ r'''Parlance web framework
 '''#'''
 
 from twisted.protocols.stateful import StatefulProtocol
+from twisted.web.error import NoResource
 from twisted.web.http import HTTPChannel
 from twisted.web.server import Site
 from twisted.web.resource import Resource
@@ -260,6 +261,7 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
         print msg
 
 class YearPage(Resource):
+    r'''From Jean-Paul Calderone's "Twisted Web in 60 seconds" tutorial.'''
     def __init__(self, year):
         Resource.__init__(self)
         self.year = year
@@ -269,7 +271,12 @@ class YearPage(Resource):
 
 class Calendar(Resource):
     def getChild(self, name, request):
-        return YearPage(int(name))
+        try:
+            year = int(name)
+        except ValueError:
+            return NoResource()
+        else:
+            return YearPage(year)
 
 root = Calendar()
 factory = Site(root)
