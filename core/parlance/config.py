@@ -60,7 +60,10 @@ def log_level(value):
         "critical": logging.CRITICAL,
     }
     
-    result = levels[value] if value in levels else integer(value)
+    if value in levels:
+        result = levels[value]
+    else:
+        result = integer(value)
     return result
 
 # Various option classes.
