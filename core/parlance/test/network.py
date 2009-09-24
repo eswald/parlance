@@ -17,6 +17,7 @@ from time            import sleep
 
 from parlance.config    import VerboseObject
 from parlance.fallbacks import any
+from parlance.gameboard import Variant
 from parlance.language  import Representation, Token, protocol
 from parlance.main      import ThreadManager
 from parlance.network   import Client, Connection, ServerSocket
@@ -240,7 +241,7 @@ class Network_Basics(NetworkTestCase):
             0x5003: "DDD",
         }, protocol.base_rep)
         self.connect_server([])
-        self.server.default_game().variant.rep = rep
+        self.server.default_game().variant = Variant("testing", rep)
         
         client = self.fake_client(None)
         client.send_dcsp(client.IM,
