@@ -1,5 +1,5 @@
 r'''Parlance command-line interface
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes functions to run players or the server based on
     command-line arguments.  It also includes the threading engine used by the

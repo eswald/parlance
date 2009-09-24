@@ -1,5 +1,5 @@
 r'''Parlance client framework and simple clients
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes base classes for players and observers, including
     most of the functionality they need for connecting to a server.  Also

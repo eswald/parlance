@@ -1,5 +1,5 @@
 r'''Parlance variant migrator
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module harfs variant files as distributed with David's server,
     creating configuration files readable by Parlance software.

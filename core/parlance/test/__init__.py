@@ -1,5 +1,5 @@
 r'''Parlance test cases
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This package tests Parlance functionality.  The tests are by no means
     complete, but offer some confidence in the framework.

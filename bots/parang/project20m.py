@@ -1,5 +1,5 @@
 r'''Project20M - A Python version of Project20M
-    Copyright (C) 2004-2008  Andrew Huff, Vincent Chan, Laurence Tondelier,
+    Copyright (C) 2004-2009  Andrew Huff, Vincent Chan, Laurence Tondelier,
     Damian Bundred, Colm Egan, and Eric Wald
     
     This software may be reused for non-commercial purposes without charge,

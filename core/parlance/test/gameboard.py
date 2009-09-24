@@ -1,5 +1,5 @@
 r'''Test cases for the Parlance gameboard and unit orders
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     A few of these tests currently fail, because the features they test are
     only allowed under AOA or certain rule variants.

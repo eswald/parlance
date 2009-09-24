@@ -1,5 +1,5 @@
 r'''Docstring test cases for Parlance modules
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module runs docstring tests in selected Parlance modules.
     It should import them into the unittest framework for setuptools.

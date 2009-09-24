@@ -1,5 +1,5 @@
 ''' DumberBot - A Python version of David Norman's DumbBot
-    Copyright (C) 2003-2008  David Norman and Eric Wald
+    Copyright (C) 2003-2009  David Norman and Eric Wald
     
     This software may be reused for non-commercial purposes without charge,
     and without notifying the authors.  Use of any part of this software for

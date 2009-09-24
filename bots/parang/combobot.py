@@ -1,5 +1,5 @@
 ''' ComboBot - A PyDip bot that evaluates unit combinations
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This software may be reused for non-commercial purposes without charge,
     and without notifying the authors.  Use of any part of this software for

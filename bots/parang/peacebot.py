@@ -1,5 +1,5 @@
 ''' PeaceBot - An overly trusting diplomacy bot.
-    Copyright (C) 2006-2008  Eric Wald
+    Copyright (C) 2006-2009  Eric Wald
     
     This software may be reused for non-commercial purposes without charge,
     and without notifying the authors.  Use of any part of this software for

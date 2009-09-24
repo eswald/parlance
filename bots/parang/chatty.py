@@ -1,5 +1,5 @@
 r'''Parlance chat-only console clients
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes clients for human interaction with a network
     Diplomacy game, using a console interface.  These clients are simple

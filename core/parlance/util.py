@@ -1,5 +1,5 @@
 r'''Parlance general utility definitions
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module includes generic definitions used by the Parlance package.
     Several of them were adapted from previous works.  New items may be added

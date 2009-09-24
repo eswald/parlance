@@ -1,5 +1,5 @@
 r'''DAIDE compatibility testing for Parlance
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module runs Parlance test cases on David's server, to check whether
     and under what conditions the two servers act the same.  Many of these

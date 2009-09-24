@@ -1,5 +1,5 @@
 r'''Test cases for Parlance clients
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module tests the basic client classes of the framework, as well as
     the HoldBot player based on them.  Other bots should have their own test

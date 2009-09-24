@@ -1,6 +1,6 @@
 #!/bin/env python
 r'''Parterre setup script
-    Copyright (C) 2008  Eric Wald
+    Copyright (C) 2008-2009  Eric Wald
     
     This distribution script uses setuptools, by Phillip J. Eby.
     To use it, enter "python setup.py install" at a command line.

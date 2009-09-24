@@ -1,5 +1,5 @@
 r'''Parlance unit orders
-    Copyright (C) 2004-2008  Eric Wald
+    Copyright (C) 2004-2009  Eric Wald
     
     This module contains representations of the types of orders that can be
     sent by a player.  Note that these classes actually contain quite a bit of

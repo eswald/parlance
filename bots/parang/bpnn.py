@@ -1,5 +1,5 @@
 r'''Back-Propagation Neural Networks
-    Copyright (C) 2007-2008  Neil Schemenauer and Eric Wald
+    Copyright (C) 2007-2009  Neil Schemenauer and Eric Wald
     
     This software may be reused for non-commercial purposes without charge,
     and without notifying the authors.  Use of any part of this software for

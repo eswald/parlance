@@ -1,5 +1,5 @@
 r'''DATC option compliance test cases for the Parlance judge
-    Copyright (C) 2001-2008  Lucas B. Kruijswijk and Eric Wald
+    Copyright (C) 2001-2009  Lucas B. Kruijswijk and Eric Wald
     
     This module tests each option of each disputable item listed in the
     DATC document, using collections of test cases from that document.
