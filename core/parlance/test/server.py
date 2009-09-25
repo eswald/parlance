@@ -1060,6 +1060,28 @@ class Server_Admin_Other(Server_Admin):
     def test_time_limit_phase(self):
         self.assertAdminResponse(self.master, 'SPR time limit',
                 'Unknown phase "spr"; try move, build, retreat, or press.')
+    
+    def test_replay(self, append="", rate=1):
+        game = self.start_game()
+        game.run_judge()
+        game.run_judge()
+        game.run_judge()
+        turns = sorted(game.history)
+        
+        self.master.queue = []
+        self.master.admin("Server: replay" + append)
+        
+        for turn in turns:
+            self.assertEqual(self.master.queue,
+                game.get_history(turn, False))
+            self.master.queue = []
+            sleep(rate)
+            game.run()
+        
+        self.assertEqual(self.master.queue, [])
+        self.assertEqual(game.actions, [])
+    def test_replay_seconds(self):
+        self.test_replay(" 3", 3)
 
 class Server_Multigame(ServerTestCase):
     def setUp(self):

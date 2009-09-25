@@ -437,6 +437,7 @@ class Historian(VerboseObject):
         self.messages = {}
         self.history = {}
         self.validator = Validator()
+        self.actions = []
     
     def save(self, stream):
         if not self.started:
@@ -589,7 +590,56 @@ class Historian(VerboseObject):
             client.send(self.messages[SMR])
         else: client.reject(message)
     
-    commands = []
+    # History replay via admin command
+    def time_left(self, now):
+        ''' Returns the number of seconds before the next event.
+            May return None if there is no next event scheduled.
+        '''#'''
+        result = None
+        if self.actions:
+            next_action = min([a.when for a in self.actions])
+            result = next_action - now
+        return result
+    def run(self):
+        r'''Runs any queued actions.
+        '''#'''
+        now = time()
+        for act in list(self.actions):
+            if act.when <= now:
+                act.call()
+                self.actions.remove(act)
+    def replay(self, client, match):
+        r'''Replay each turn, at a rate of one second per turn.
+            There's no way to stop it, but at least it doesn't block everyone else.
+        '''#"""#'''
+        if not self.started:
+            client.admin("This game has not yet started.")
+            return
+        
+        # Todo: Don't send normal turns during this time.
+        turn = min(self.history)
+        request = match.groups()[0].strip()
+        if request:
+            rate = int(request)
+        else:
+            rate = 1
+        self.replay_step(client, rate, turn)
+    def replay_step(self, client, rate, turn):
+        self.log.debug("Replaying %s for %s", turn, client.prefix)
+        result = self.get_history(turn, False)
+        if result:
+            client.send_list(result)
+            
+            # Queue the next turn's results
+            now = self.history[turn][NOW]
+            next = Turn(now[2], now[3])
+            self.actions.append(DelayedAction(self.replay_step,
+                    None, None, [], rate, client, rate, next))
+    
+    commands = [
+        Command(r'replay( \d+|)', replay,
+            '  replay [seconds] - Replay the game history, at a rate of (by default) one turn per second'),
+    ]
 
 class Game(Historian):
     ''' Coordinates messages between Players and the Judge,
@@ -694,7 +744,6 @@ class Game(Historian):
         self.press_deadline = 0
         self.time_checked   = None
         self.time_stopped   = None
-        self.actions        = []
         
         self.set_limits()
         
@@ -1470,7 +1519,7 @@ class Game(Historian):
                 word and ('No %s commands' % word) or 'Nothing',
                 match.group(1))
     
-    commands = [
+    commands = Historian.commands + [
         Command(r'who|list players', list_players,
             '  list players - Lists the player names (but not power assignments)'),
         Command(r'(veto|cancel|reject) *(\w*)', veto_admin,
