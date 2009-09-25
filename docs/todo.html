@@ -125,7 +125,7 @@
     
     <h2>Refactoring</h2>
     <p>The validation and startup code should probably be optimized a bit
-      more, particularly near regular expressions.</p>
+      more, particularly near regular expressions.  tokenize module?</p>
     <p>Project20M also needs some refactoring for thread-safety, option
       configuration, and global variable reduction.</p>
     <p>StringToken and IntegerToken seem half-complete right now, because
@@ -239,7 +239,12 @@
     <p>Everything that interacts with files should be wrapped in try...finally
       blocks (or 2.5 with blocks) to close the file properly.</p>
     <p>I might want to create the game log directory before writing into it;
-      currently, game logging simply fails and the game stays in memory.</p>
+      currently, game logging simply fails and the game stays in memory.
+      On the other hand, logging to a database would be even better.</p>
+    <p>When the server shuts down, it should save a list of bots to restart.
+      SAV/LOD may be helpful for state, but it would probably be better to
+      give them the game name, power, and passcode, letting them load any
+      saved state on their own.  OFF is plenty of warning, right?</p>
     
     <h2>Unit Testing</h2>
     <p>Just give up on unittest, and switch to nose.  This would allow
