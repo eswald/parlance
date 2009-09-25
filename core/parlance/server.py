@@ -248,6 +248,9 @@ class Server(ServerProgram):
                 if result:
                     self.games[game_id] = new_game
                     game = new_game
+                    
+                    # Allow timed commands
+                    self.manager.add_dynamic(game)
         
         return game
     def join_game(self, client, game_id):
@@ -420,7 +423,8 @@ class Historian(VerboseObject):
             - game_id          The unique identification for this game
             - game_options     The GameOptions instance for this game
             - started          Whether the game has started yet
-            - closed           Whether the server is trying to shut down
+            - finished         Whether the game has completed
+            - closed           Whether the game is trying to unload
             - clients          List of Clients that have accepted the map
         '''#'''
         self.__super.__init__()
@@ -430,7 +434,8 @@ class Historian(VerboseObject):
         self.prefix = 'Historian %s' % game_id
         self.judge = None
         self.saved = False
-        self.closed = True
+        self.finished = True
+        self.closed = False
         self.started = True
         self.variant = None
         self.clients = []
@@ -456,7 +461,7 @@ class Historian(VerboseObject):
                 write_message(message)
         if self.judge.game_result: write_message(self.judge.game_result)
         if self.started:
-            if self.closed: write(SMR)
+            if self.finished: write(SMR)
             else:
                 for country, player in self.players:
                     write_message(IAM (country) (player.pcode))
@@ -560,7 +565,7 @@ class Historian(VerboseObject):
         client.send(self.messages[HLO])
         client.send(self.messages[SCO])
         if self.judge.game_result: client.send(self.judge.game_result)
-        if self.started and self.closed: client.send(self.messages[SMR])
+        if self.started and self.finished: client.send(self.messages[SMR])
         client.send(self.messages[NOW])
     
     # History
@@ -585,7 +590,7 @@ class Historian(VerboseObject):
             result.append(turn[NOW])
         return result
     def handle_SMR(self, client, message):
-        if self.started and self.closed:
+        if self.started and self.finished:
             if self.judge.game_result: client.send(self.judge.game_result)
             client.send(self.messages[SMR])
         else: client.reject(message)
@@ -729,7 +734,7 @@ class Game(Historian):
         # Override certain Historian variables
         self.prefix         = 'Game %s' % game_id
         self.started        = False
-        self.closed         = False
+        self.finished       = False
         self.variant        = variant
         self.judge          = variant.new_judge(self.game_options)
         self.messages[MAP]  = MAP(variant.mapname)
@@ -796,7 +801,8 @@ class Game(Historian):
         player = self.players[country]
         player.client = None
         player.ready = True
-        if self.closed: pass
+        if self.finished:
+            pass
         elif self.judge.phase:
             self.broadcast(CCD(country))
             pcode = 'Passcode for %s: %d' % (player.pname, player.passcode)
@@ -842,7 +848,7 @@ class Game(Historian):
         opening = None
         if client in self.clients:
             self.clients.remove(client)
-            need = self.closed and ' ' or self.has_need()
+            need = self.finished and ' ' or self.has_need()
             name = client.full_name()
             if client.booted:
                 player = self.players[client.booted]
@@ -853,7 +859,7 @@ class Game(Historian):
                 self.admin('%s has been %s. %s', name, reason, need)
             elif client.country:
                 player = self.players[client.country]
-                if self.closed or not self.started:
+                if self.finished or not self.started:
                     self.admin('%s has disconnected. %s', name, need)
                 opening = client.country
                 client.country = None
@@ -865,25 +871,34 @@ class Game(Historian):
         elif self.limbo.has_key(client): del self.limbo[client]
         
         # For testing purposes: stop the game if a player quits
-        if opening and not self.closed:
+        if opening and not self.finished:
             quitting = self.options.quit
             self.log_debug(11, 'Deciding whether to quit (%s)', quitting)
             if quitting: self.close()
             else: self.open_position(opening)
-    def close(self):
-        self.log_debug(10, 'Closing')
+    def finish(self):
+        self.log_debug(10, 'Game complete')
         self.pause()
         self.judge.phase = None
         self.press_allowed = False
-        if not self.closed:
-            self.closed = True
+        if not self.finished:
+            self.finished = True
             if self.started:
                 summary = self.summarize()
                 if not self.saved: self.broadcast(summary)
                 self.messages[SMR] = summary
                 self.messages[LST] = self.listing()
                 self.server.archive(self)
+    def close(self):
+        self.log_debug(10, 'Closing')
+        self.closed = True
+        if not self.finished:
+            self.finish()
+        
         # Todo: Will it kill connected clients to close self.port?
+        if self.port:
+            self.port.close()
+            self.port = None
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}
@@ -918,7 +933,7 @@ class Game(Historian):
         if not self.started:
             if needed: need = 'Need %d to start.' % needed
             else: need = 'Game on!'
-        elif needed and not self.closed:
+        elif needed and not self.finished:
             need = '%d player%s disconnected.' % (needed, s(needed))
         return 'Have %d player%s and %d observer%s. %s' % (
                 have, s(have), observing, s(observing), need)
@@ -967,7 +982,7 @@ class Game(Historian):
             self.time_checked = seconds
         self.deadline = self.time_stopped = None
         self.press_deadline = 0
-        if seconds and not self.closed:
+        if seconds and not self.finished:
             message = TME(Time(seconds))
             if self.paused:
                 self.time_stopped = seconds
@@ -1074,7 +1089,7 @@ class Game(Historian):
     
     # Press and administration
     def listing(self, result=None):
-        need = (not self.closed) and self.players_needed() or 0
+        need = (not self.finished) and self.players_needed() or 0
         return (LST(self.game_id)(need, result or self.status())
                 (self.variant.name)(self.game_options))
     def status(self):
@@ -1085,7 +1100,7 @@ class Game(Historian):
                 if not player.client: disconnected = True
                 elif player.robotic: robotic = True
         
-        if self.closed:
+        if self.finished:
             if self.judge.game_result:
                 result = self.judge.game_result[0]
             else: result = OFF
@@ -1209,7 +1224,7 @@ class Game(Historian):
             self.players[client.country].ready = True
         else:
             if client.name: obs = ' as an observer'
-            if self.started and not self.closed:
+            if self.started and not self.finished:
                 self.reveal_passcodes(client)
         self.admin('%s has connected%s. %s', name, obs, self.has_need())
         
@@ -1218,7 +1233,7 @@ class Game(Historian):
             # This should probably be farmed out to the judge,
             # but it works for now.
             client.send(self.judge.map.create_SCO())
-            if self.closed:
+            if self.finished:
                 msg = self.judge.game_result
                 if msg: client.send(msg)
                 client.send(self.summarize())
@@ -1504,7 +1519,8 @@ class Game(Historian):
                     client.full_name(), new_level,
                     self.validator.press_levels[new_level])
     def end_game(self, client, match):
-        if self.closed: client.admin('The game is already over.')
+        if self.finished:
+            client.admin('The game is already over.')
         else:
             self.queue_action(client, self.close, 'ending the game.',
                     None, 'ending the game.', ('end', 'close'))
