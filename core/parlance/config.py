@@ -52,7 +52,7 @@ def stringlist(value):
     return result
 def log_level(value):
     levels = {
-        "all": logging.NOTSET,
+        "all": 1,
         "debug": logging.DEBUG,
         "info": logging.INFO,
         "warning": logging.WARNING,
@@ -432,10 +432,12 @@ class VerboseObject(Configurable):
                 else:
                     stream = codecs.open(self.options.log_file, "a", "utf-8")
             VerboseObject.__stream = stream
+        
         handler = logging.StreamHandler(self.__stream)
         handler.setFormatter(PrefixFormatter(self))
         handler.setLevel(self.options.verbosity)
         self.log.addHandler(handler)
+        self.log.setLevel(1)
     def log_debug(self, level, line, *args):
         '''Deprecated: Use self.log.debug() instead.'''
         # The old log_debug() had level semantics reversed.
