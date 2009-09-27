@@ -643,7 +643,7 @@ class Historian(VerboseObject):
     
     commands = [
         Command(r'replay( \d+|)', replay,
-            '  replay [seconds] - Replay the game history, at a rate of (by default) one turn per second'),
+            '  replay [<seconds>] - Replay the game history, at a rate of (by default) one turn per second'),
     ]
 
 class Game(Historian):
@@ -1051,7 +1051,7 @@ class Game(Historian):
             self.set_deadlines()
             for player in self.players.itervalues():
                 if player.client: player.ready = True
-        else: self.close()
+        else: self.finish()
     def queue_action(self, client, action_callback, action_line,
             veto_callback, veto_line, veto_terms, *args):
         delay = self.options.veto_time
@@ -1522,8 +1522,8 @@ class Game(Historian):
         if self.finished:
             client.admin('The game is already over.')
         else:
-            self.queue_action(client, self.close, 'ending the game.',
-                    None, 'ending the game.', ('end', 'close'))
+            self.queue_action(client, self.finish, 'ending the game.',
+                None, 'ending the game.', ('end', 'close', 'finish'))
     def veto_admin(self, client, match):
         word = match.group(2)
         if word: actions = [a for a in self.actions if word in a.terms]
