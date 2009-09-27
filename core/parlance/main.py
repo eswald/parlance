@@ -276,8 +276,8 @@ class ThreadManager(VerboseObject):
                 for client in self.dynamic if not client.closed)
                 if t is not None]
         when = [t for t,c in self.timed if not c.closed]
-        if when: times.append(max(0, 0.005 + min(when) - now))
-        if times: result = min(times)
+        if when: times.append(0.005 + min(when) - now)
+        if times: result = max(0, min(times))
         else: result = None
         return result
     def check_timed(self):
