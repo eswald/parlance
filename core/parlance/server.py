@@ -99,6 +99,7 @@ class Server(ServerProgram):
         self.games     = {}
         self.default   = []
         self.closed    = False
+        self.quitting  = False
         self.started_games = 0
         if not self.start_game():
             self.log_debug(1, 'Unable to start default variant')
@@ -116,6 +117,14 @@ class Server(ServerProgram):
         ''' Closes the server if all requested games have been completed.
             Meant to be called when the last client disconnects.
         '''#'''
+        if self.quitting:
+            # An admin asked the server to shut down when convenient.
+            self.log.info("Closing politely, by request.")
+            for game in self.games.itervalues():
+                if not game.saved:
+                    self.archive(game)
+            self.close()
+        
         open_games = False
         for game_id, game in self.games.items():
             if game.closed:
@@ -234,6 +243,7 @@ class Server(ServerProgram):
             game = self.games[game_id]
         elif self.options.log_games:
             # Resuscitate an archived game as a Historian
+            # Todo: What if the game hadn't finished before the server closed?
             new_game = Historian(self, game_id)
             try:
                 saved = open(self.filename(game_id), 'rU')
@@ -352,7 +362,7 @@ class Server(ServerProgram):
                         player.passcode, player.full_name(),
                         player.client.address)
             else: client.admin('%s (%d): None', player.pname, player.passcode)
-    def close(self, client=None, match=None):
+    def close(self):
         ''' Tells clients to exit, and closes the server's sockets.'''
         if not self.closed:
             self.broadcast_admin('The server is shutting down.  Good-bye.')
@@ -366,6 +376,13 @@ class Server(ServerProgram):
             if not self.manager.closed: self.manager.close()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
+    def shutdown(self, client, match):
+        now = match.group(1).strip()
+        if now:
+            self.close()
+        else:
+            self.quitting = True
+            client.admin("The server will shut down when all clients have disconnected.")
     
     commands = [
         Command(r'help', list_help,
@@ -384,8 +401,8 @@ class Server(ServerProgram):
             '  status - Displays the status of each game'),
     ]
     local_commands = [
-        Command(r'shutdown', close,
-            '  shutdown - Stops the server'),
+        Command(r"shutdown( now|)", shutdown,
+            "  shutdown [now] - Stops the server, by default waiting for clients to disconnect"),
         Command(r'powers', list_powers,
             '  powers - Displays the power assignments for this game'),
     ]

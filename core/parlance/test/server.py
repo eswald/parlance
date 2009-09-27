@@ -728,8 +728,20 @@ class Server_Admin_Local(Server_Admin):
         self.assertUnauthorized(self.master, 'shutdown')
         self.failIf(self.server.closed)
     def test_shutdown_local(self):
-        ''' Whether a local connection can shut down the server'''
+        # Local connections can ask the server to shut down politely.
         self.assertAdminResponse(self.backup, 'shutdown',
+            "The server will shut down when all clients have disconnected.")
+        self.failIf(self.server.closed)
+        self.master.close()
+        self.backup.close()
+        self.robot.close()
+        
+        # This shouldn't really be necessary, but the close doesn't work well.
+        self.server.broadcast(+PNG)
+        self.failUnless(self.server.closed)
+    def test_shutdown_now(self):
+        # Local connections can shut down the server immediately.
+        self.assertAdminResponse(self.backup, "shutdown now",
                 'The server is shutting down.  Good-bye.')
         self.failUnless(self.server.closed)
     def test_status_request(self):
