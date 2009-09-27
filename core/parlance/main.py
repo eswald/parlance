@@ -590,4 +590,5 @@ class RawServer(ServerProgram):
             for client in self.clients.values():
                 client.write(message)
     def broadcast_admin(self, text): pass
-    def default_game(self): return self.game
+    def default_game(self, game_id=None):
+        return self.game
