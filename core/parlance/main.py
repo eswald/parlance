@@ -425,7 +425,7 @@ class Program(VerboseObject):
     @classmethod
     def main(cls):
         if cls.help_requested():
-            self.usage()
+            cls.usage()
         cls.run_program(Configuration.arguments)
     
     @classmethod
@@ -465,17 +465,17 @@ class ClientProgram(Program):
         for arg in args:
             if arg.isdigit():
                 if not cls.allow_multiple:
-                    self.usage('%s does not support multiple copies.', name)
+                    cls.usage('%s does not support multiple copies.', name)
                 elif num is None:
                     num = int(arg)
-                else: self.usage()       # Only one number specification allowed
+                else: cls.usage()       # Only one number specification allowed
             elif len(arg) > 3 and arg[3] == '=':
                 if cls.allow_country:
                     countries[arg[:3].upper()] = int(arg[4:])
-                else: self.usage('%s does not accept country codes.', name)
+                else: cls.usage('%s does not accept country codes.', name)
             elif host is None:
                 Configuration.set_globally('host', arg)
-            else: self.usage()           # Only one host specification allowed
+            else: cls.usage()           # Only one host specification allowed
         if num is None: num = 1
         
         manager = ThreadManager()
@@ -507,7 +507,7 @@ class ServerProgram(Program):
         if args:
             if args[0] in variants:
                 Configuration.set_globally('variant', args[0])
-            else: self.usage('Unknown variant %r', args[0])
+            else: cls.usage('Unknown variant %r', args[0])
         
         manager = ThreadManager()
         server = ServerSocket(cls, manager)
