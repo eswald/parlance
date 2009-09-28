@@ -545,11 +545,11 @@ class Clock(AutoObserver):
 
 
 class Echo(AutoObserver):
-    ''' An observer that prints any received message to standard output.'''
+    r'''An observer that logs any messages at info level.'''
     def send(self, message):
-        self.log_debug(1, '<< ' + str(message))
+        self.log.info('<< ' + str(message))
         self.__super.send(message)
     
     def handle_message(self, message):
-        self.log_debug(1, '>> ' + str(message))
+        self.log.info('>> ' + str(message))
         self.__super.handle_message(message)
