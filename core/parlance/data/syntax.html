@@ -257,8 +257,8 @@ multi-game capabilities.</p>
 
 <p>This should be sent by the client to the server as soon as it has
 connected. It contains the name and version of the client. Both
-<b>name</b> and <b>version</b> are text fields. They may only contain
-letters, numbers and underscore. The server will respond with
+<b>name</b> and <b>version</b> are text fields. They may contain
+any printable Unicode character. The server will respond with
 <b>YES (NME ('name') ('version'))</b>, or
 <b>REJ (NME ('name') ('version'))</b> if the game has already started.</p>
 
@@ -1946,7 +1946,7 @@ information without first being queried for it.</p>
 <!-- <h4>press_message = 'string'</h4> -->
 <!-- <h4>reply = 'string'</h4> -->
 <p>This level allows natural language press.  Both <b>press_message</b> and
-<b>reply</b> can be any string of ASCII characters.</p>
+<b>reply</b> can be any string of printable Unicode characters.</p>
 
 
 <h2><a name="appA">Appendix A</a> : Complete List of Tokens<sup><a
