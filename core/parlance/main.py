@@ -80,14 +80,6 @@ class ThreadManager(VerboseObject):
         ('block_exceptions', bool, True, None,
             'Whether to block exceptions seen by the ThreadManager.',
             'When on, the program is more robust, but harder to debug.'),
-        ('autostart', list, [], None,
-            'A list of internal clients to start each game.'),
-        #('external', list, [], None,
-        #    'A list of external programs to start each game.'),
-        #('countries', dict, {}, None,
-        #    'A mapping of country -> passcode as which to start clients.'),
-        #('fill', Player, HoldBot, None,
-        #    'An internal client used to fill empty slots each game'),
     )
     
     def __init__(self):
@@ -355,9 +347,6 @@ class ThreadManager(VerboseObject):
             self.log_debug(10, 'Opened a Client for ' + name)
         else: self.log_debug(7, 'Failed to open a Client for ' + name)
         return result and client
-    def start_clients(self, game_id):
-        for klass in self.options.autostart:
-            self.add_client(klass, game_id=game_id)
     def wait_threads(self):
         for thread, client in self.threaded:
             while thread.isAlive():

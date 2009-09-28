@@ -303,7 +303,6 @@ class Server(ServerProgram):
             self.games[game_id] = game
             self.default.append(game)
             self.manager.add_dynamic(game)
-            self.manager.start_clients(game_id)
             return game
         return None
     def select_game(self, client, match):

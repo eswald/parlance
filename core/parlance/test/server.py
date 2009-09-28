@@ -27,10 +27,8 @@ class Fake_Manager(ThreadManager):
     def __init__(self):
         self.__super.__init__()
         self.pass_exceptions = True
-        self.autostart = ()
         self.next_id = 0
         self.server = Server(self)
-        self.start_clients(self.server.default_game().game_id)
     def add_client(self, player_class, **kwargs):
         service = Fake_Service(self.next_id,
                 self.server, player_class, manager=self, **kwargs)
