@@ -407,7 +407,7 @@ class VerboseObject(Configurable):
     __stream = None
     __section__ = 'main'
     __options__ = (
-        ('verbosity', log_level, logging.WARNING, 'v',
+        ('verbosity', log_level, logging.INFO, 'v',
             'How much logging information to display.',
             "Takes the standard logging levels (debug, info, warning, error, critical)",
             "or a non-negative integer (higher is less verbose)."),
