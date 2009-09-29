@@ -371,6 +371,9 @@ class Service(Connection):
         else: text = unicode(message)
         self.log_debug(3, '%3s << %s', self.power_name(), text)
         self.write(message)
+        for watcher in self.server.watchers:
+            watcher.handle_server_message(message,
+                self.game.game_id, self.client_id)
     def send_list(self, message_list):
         for msg in message_list: self.send(msg)
     def accept(self, message): self.send(YES(message))

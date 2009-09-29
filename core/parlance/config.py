@@ -516,6 +516,7 @@ class EntryPointContainer(object):
 bots = EntryPointContainer("parlance.bots")
 judges = EntryPointContainer("parlance.judges")
 variants = EntryPointContainer("parlance.variants")
+watchers = EntryPointContainer("parlance.watchers")
 
 
 class ConfigPrinter(Configuration):

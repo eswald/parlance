@@ -13,7 +13,7 @@ from os         import path
 from random     import randint, shuffle
 from time       import time
 
-from config     import GameOptions, VerboseObject, bots, variants
+from config     import GameOptions, VerboseObject, bots, variants, watchers
 from fallbacks  import defaultdict
 from gameboard  import Turn
 from language   import Message, Time, protocol
@@ -90,6 +90,7 @@ class Server(ServerProgram):
             - manager       The ThreadManager instance in charge of the program
             - clients       client_id -> Service for all connected clients
             - games         game_id -> Historian for currently hosted games
+            - watchers      A list of Watchers monitoring server traffic
             - default       A list of Games that could be joined automatically
             - started_games The number of games that have been started
         '''#'''
@@ -100,6 +101,7 @@ class Server(ServerProgram):
         self.default   = []
         self.closed    = False
         self.quitting  = False
+        self.watchers = [watchers[key]() for key in watchers]
         self.started_games = 0
         if not self.start_game():
             self.log_debug(1, 'Unable to start default variant')
@@ -153,6 +155,8 @@ class Server(ServerProgram):
     def broadcast(self, message):
         self.log_debug(2, 'ALL << %s', message)
         for client in self.clients.values(): client.write(message)
+        for watcher in self.watchers:
+            watcher.handle_broadcast_message(message, None)
     def broadcast_admin(self, text):
         if self.options.snd_admin: self.broadcast(ADM('Server')(text))
     
@@ -173,6 +177,10 @@ class Server(ServerProgram):
             else:
                 self.log_debug(7, 'Missing message handler: %s', method_name)
                 client.send(HUH(ERR + message))
+        for watcher in self.watchers:
+            watcher.handle_client_message(message,
+                client.game.game_id, client.client_id)
+    
     def handle_HUH(self, client, message):
         self.log_debug(7, 'Client #%d complained about message: %s',
                 client.client_id, message)
@@ -215,6 +223,7 @@ class Server(ServerProgram):
             client.send(reply(message))
         else: client.send(SEL(client.game.game_id))
     def handle_PNG(self, client, message): client.accept(message)
+    def handle_YES_PNG(self, client, message): pass
     def handle_LST(self, client, message):
         if len(message) > 3:
             game = self.games.get(message.fold()[1][0])
@@ -545,6 +554,8 @@ class Historian(VerboseObject):
         ''' Sends a message to each ready client, and notes it in the log.'''
         self.log_debug(2, 'ALL << %s', message)
         for client in self.clients: client.write(message)
+        for watcher in self.server.watchers:
+            watcher.handle_broadcast_message(message, self.game_id)
     def admin(self, line, *args):
         if self.server.options.snd_admin:
             self.broadcast(ADM('Server')(str(line) % args))

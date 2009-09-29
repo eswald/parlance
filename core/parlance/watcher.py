@@ -12,10 +12,11 @@ r'''Parlance game watchers
 from __future__ import division
 
 from cPickle import dump, load
+from os import path
 
+from parlance.config import VerboseObject
+from parlance.tokens import HUH, NOT, REJ, YES
 from parlance.util import s
-
-watchers = EntryPointContainer("parlance.watchers")
 
 class Watcher(VerboseObject):
     r'''Game message watcher.
@@ -24,18 +25,27 @@ class Watcher(VerboseObject):
         worthwhile to several watchers.
     '''#'''
     
-    def handle_server_message(self, message, game, recipients):
-        r'''Process message sent from the server to one or more clients.
-            The game parameter will be a game name.
-            The recipients parameter will be a sequence of client ids.
+    def handle_broadcast_message(self, message, game):
+        r'''Process a message sent from the server to all clients.
+            The game parameter will be either None or a game name.
+            Currently, only OFF and ADM can be broadcast without a game.
         '''#'''
-        self.handle_message("handle_server", message, game, recipients)
+        self.handle_message("handle_broadcast", message, game)
+    
+    def handle_server_message(self, message, game, recipient):
+        r'''Process a message sent from the server to a client.
+            The game parameter will be a game name.
+            The recipient parameter will be a client id.
+        '''#'''
+        self.handle_message("handle_server", message, game, recipient)
+    
     def handle_client_message(self, message, game, sender):
         r'''Process message sent from a client to the server.
             The game parameter will be a game name.
             The sender parameter will be a client id.
         '''#'''
         self.handle_message("handle_client", message, game, sender)
+    
     def handle_message(self, prefix, message, *args):
         r'''Dispatch a message to the appropriate handler.
             Hands it off to a handle_sender_XXX() method, where sender is
@@ -56,8 +66,9 @@ class Watcher(VerboseObject):
         # because the method calls might produce AttributeErrors.
         method = getattr(self, method_name, None)
         if method:
+            self.log.debug("%s(%s, *%s)", method.__name__, message, args)
             try:
-                method(game, sender, recipients, message)
+                method(message, *args)
             except Exception:
                 self.log.exception("Exception handling %s", message)
 
@@ -77,28 +88,24 @@ class Ladder(Watcher):
     
     def __init__(self, **kwargs):
         self.__super.__init__(**kwargs)
+        self.log.debug("Using score file %s", self.options.score_file)
         self.winners = {}
     
-    def handle_server_DRW(self, message, game, recipients):
-        # Don't count messages sent in response to SMR.
-        if len(recipients) > 1:
-            if len(message) > 3:
-                self.winners[game] = set(message[2:-1])
-            else:
-                self.winners[game] = set()
-    def handle_server_SLO(self, message, game, recipients):
-        # Don't count messages sent in response to SMR.
-        if len(recipients) > 1:
-            self.winners[game] = set([message[2]])
+    def handle_broadcast_DRW(self, message, game):
+        if len(message) > 3:
+            self.winners[game] = set(message[2:-1])
+        else:
+            self.winners[game] = set()
+    def handle_broadcast_SLO(self, message, game):
+        self.winners[game] = set([message[2]])
     
-    def handle_server_SMR(self, message, game, recipients):
-        # Don't count messages sent in response to SMR,
-        # or games that ended without a conclusion.
-        if len(recipients) > 1 and self.winners.get(game) is not None:
-            players, winners = self.collect_stats(message)
+    def handle_broadcast_SMR(self, message, game):
+        # Don't count games that ended without a conclusion.
+        if self.winners.get(game) is not None:
+            players, winners = self.collect_stats(message, game)
             if winners:
-                self.record_stats(winners, losers)
-    def collect_stats(self, message):
+                self.record_stats(players, winners)
+    def collect_stats(self, message, game):
         # Todo: Account for replacements properly.
         # That requires the starting year, unfortunately.
         seen = set()
@@ -107,7 +114,7 @@ class Ladder(Watcher):
         for row in message.fold()[2:]:
             power, name, version = row[:3]
             if power not in seen:
-                players.append(power, name[0], version[0], 1)
+                players.append((power, name[0], version[0], 1))
                 seen.add(power)
             
             if not row[4:]:
@@ -115,7 +122,7 @@ class Ladder(Watcher):
                 survivors.add(power)
         
         winners = self.winners[game] or survivors
-        del winners[game]   # Avoid leaking memory
+        del self.winners[game]  # Avoid leaking memory
         return players, winners
     
     def record_stats(self, players, winners):
@@ -124,21 +131,17 @@ class Ladder(Watcher):
         loss_points = -1
         
         scores = self.read_scores()
-        self.log.debug("Initial scores:", scores)
+        self.log.debug("Initial scores: %r", dict(scores))
         
         # Scoring loop
-        for power in players:
-            name, version, factor = players[power]
+        for power, name, version, factor in players:
             key = (name, version)
             
             if power in winners:
                 diff = win_points
             else: diff = loss_points
             diff *= factor
-            
-            if key in scores:
-                scores[key] += diff
-            else: scores[key] = diff
+            scores[key] = scores.get(key, 0) + diff
             
             if diff < 0:
                 gain = 'loses'
@@ -151,6 +154,7 @@ class Ladder(Watcher):
         self.store_scores(scores)
     
     # Score storage system
+    # Todo: Switch to a real database
     def read_scores(self):
         try:
             stream = open(self.options.score_file)

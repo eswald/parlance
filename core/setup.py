@@ -48,6 +48,9 @@ setup(
         "parlance.variants": [
             "standard = parlance.xtended:standard",
         ],
+        "parlance.watchers": [
+            "ladder = parlance.watcher:Ladder",
+        ],
     },
     
     # Project metadata
@@ -74,6 +77,9 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parlance.test",
+    tests_require = [
+        "mock >= 0.6.0",
+    ],
     extras_require = {
         'bots': ["Parang == " + __version__],
         'maps': ["Parterre == " + __version__],
