@@ -35,9 +35,6 @@
       it with timestamps.  This should be more robust, particularly in the
       face of crashes, than the current log-on-exit idea.  Alternatively,
       log straight to a database, defaulting to sqlite in memory.</p>
-    <p>A <code>playback</code> admin command could be in order, sending one
-      turn per second.  That could also be done client-side, but the Mapper
-      doesn't have such a function yet.</p>
 
     <h2>Delayed Order Processing</h2>
     <p>The <a href='http://www.floc.net/dpjudge/?page=About'>DPjudge</a>
@@ -59,17 +56,16 @@
     <p>Can I automatically import other nJudge maps somehow?</p>
     
     <h2>External clients</h2>
-    <p>I would like the ability to call external commands as bots.  This could
-      use an <code>[external]</code> section of the config file, but even
-      better would be a new bot class catering specifically to each known bot.
+    <p>I would like the ability to call external commands as bots.  This
+      should use a new bot class catering specifically to each known bot.
       Such a class could be smart about using the power, passcode, and game_id
       arguments.  Python 2.4's <code>subprocess</code> module would probably
       be helpful here.</p>
     
     <h2>Internal clients</h2>
-    <p>Bots started from the server could be optimized a bit.  This would
-      probably start with the socket.socketpair() call, new in Python 2.4,
-      but may extend to avoiding the network layer altogether.</p>
+    <p>Internal bots really should be new processes.  The
+      <a href="http://codespeak.net/py/dist/execnet.html">py.execnet</a>
+      module may be useful for this.</p>
     <p>Players should be allowed to start bots to replace themselves.</p>
     <p>Bots should probably use the same database as the game server, instead
       of logging to files or relying on memory.</p>
@@ -227,6 +223,8 @@
       <em>starting</em> position, not the <em>current</em> position.</p>
     <p>Draws should be checked sooner.  Probably not while NOT (GOF) is set,
       but sooner than the end of the phase.</p>
+    <p>I should be rejecting non-printable characters in strings from the
+      client.</p>
     
     <h2>Premature Draws</h2>
     <p>The Judge can declare a draw after a certain number of static
