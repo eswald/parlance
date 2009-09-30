@@ -123,7 +123,7 @@ class Server(ServerProgram):
             # An admin asked the server to shut down when convenient.
             self.log.info("Closing politely, by request.")
             for game in self.games.itervalues():
-                if not game.saved:
+                if game.started and not game.saved:
                     self.archive(game)
             self.close()
         
@@ -133,7 +133,8 @@ class Server(ServerProgram):
                 if game.saved:
                     # Remove saved games from memory
                     del self.games[game_id]
-            else: open_games = True
+            elif not game.finished:
+                open_games = True
         if not (open_games or self.closed):
             # Check whether the server itself should close
             if 0 < self.options.games <= self.started_games:
