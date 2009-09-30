@@ -1013,7 +1013,7 @@ class Server_Admin_Other(Server_Admin):
         self.assertAdminVetoable(new_master, 'end game',
                 'Fake Human Player (Fake_Master) is ending the game.')
         self.wait_for_actions()
-        self.failUnless(game.closed)
+        self.failUnless(game.finished)
     def test_end_veto_end(self):
         ''' An end game command can be vetoed with "veto end game".'''
         game = self.start_game()
