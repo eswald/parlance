@@ -33,8 +33,7 @@ __all__ = [
 ]
 
 class ThreadManager(VerboseObject):
-    ''' Manages five types of clients: polled, timed, threaded, dynamic,
-        and queued.
+    r'''Manages four types of clients: polled, timed, threaded, and dynamic.
         
         Each type of client must have a close() method and corresponding
         closed property.  A client will be removed if it closes itself;
@@ -94,13 +93,10 @@ class ThreadManager(VerboseObject):
         self.timed = []         # (time, client)
         self.threaded = []      # (thread, client)
         self.dynamic = []       # client
-        self.queue = []         # client
-        self.queue_lock = Lock()
-        self.queueing = False
         self.closed = False
     def clients(self):
         return [item[1] for item in chain(self.polled.iteritems(),
-                self.timed, self.threaded)] + self.dynamic + self.queue
+                self.timed, self.threaded)] + self.dynamic
     
     def run(self):
         ''' The main loop; never returns until the manager closes.'''
@@ -161,7 +157,6 @@ class ThreadManager(VerboseObject):
         for client in self.clients():
             if not client.closed: client.close()
         self.wait_threads()
-        self.run_queue()
     
     # Polled client handling
     class InputWaiter(VerboseObject):
@@ -357,39 +352,6 @@ class ThreadManager(VerboseObject):
     def clean_threaded(self):
         self.log_debug(14, 'Checking threaded clients')
         self.threaded = [item for item in self.threaded if item[0].isAlive()]
-    
-    # Queue management
-    def enqueue(self, target, *args, **kwargs):
-        self.add_queued(self.ThreadClient(target, args, kwargs))
-    def add_queued(self, client):
-        assert not self.closed
-        self.queue_lock.acquire()
-        self.queue.append(client)
-        run_queue = not self.queueing
-        if run_queue: self.queueing = True
-        self.queue_lock.release()
-        if run_queue: self.new_thread(self.check_queue)
-    def check_queue(self):
-        while True:
-            try:
-                self.queue_lock.acquire()
-                if self.queue:
-                    client = self.queue.pop(0)
-                else:
-                    self.queueing = False
-                    break
-            finally: self.queue_lock.release()
-            if client.closed:
-                self.log_debug(11, 'Removing queued client: %s', client.prefix)
-            else: self.attempt(client)
-    def run_queue(self):
-        # Called after all threads are done,
-        # so we shouldn't have to worry about the lock.
-        if self.queue: self.log_debug(11, 'Checking all queued clients')
-        for client in self.queue:
-            if client.closed:
-                self.log_debug(11, 'Removing queued client: %s', client.prefix)
-            else: self.attempt(client)
 
 class Program(VerboseObject):
     r'''A command-line program that can also be instantiated other ways.
