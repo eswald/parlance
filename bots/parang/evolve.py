@@ -32,7 +32,7 @@ def evolve_logged(player_class, stream):
     
     # Start a new server
     manager = ThreadManager()
-    manager.pass_exceptions = True
+    manager.options.block_exceptions = False
     sock = ServerSocket(Server, manager)
     if sock.open():
         manager.add_polled(sock)

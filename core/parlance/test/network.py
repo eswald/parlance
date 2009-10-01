@@ -71,8 +71,8 @@ class NetworkTestCase(ServerTestCase):
     def setUp(self):
         ServerTestCase.setUp(self)
         self.manager = ThreadManager()
-        self.manager.wait_time = 10
-        self.manager.pass_exceptions = True
+        self.manager.options.wait_time = 10
+        self.manager.options.block_exceptions = False
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         self.set_option('games', games)
         self.set_option('port', self.port.next())

@@ -32,6 +32,21 @@ __all__ = [
     'ServerProgram',
 ]
 
+# Public methods:
+# - add_client(class, **kwargs)             parang.evolve, parlance.test.network, parlance.server, parlance.main, pariah.aiserver
+# - add_dynamic(client)                     parlance.server
+# - add_input(handle_input, handle_close)   parang.chatty, parlance.main
+# - add_polled(client)                      parang.evolve, parlance.test.network, parlance.server, parlance.main, parlance.network
+# - add_timed(function, seconds)            parang.blabberbot, parlance.test.network, parlance.network
+# - add_threaded(client)                    parang.chatty
+# - close()                                 parang.evolve, parlance.server, parlance.main, parlance.network, pariah.aiserver
+# - closed                                  parang.evolve, parlance.test.server, parlance.server, parlance.main, parlance.network
+# - new_thread(target, *args)               parlance.player
+# - process(seconds)                        parang.evolve, parlance.test.server, parlance.test.network, pariah.aiserver
+# - run()                                   parlance.main
+# - options.wait_time                       parlance.test.network
+# - options.block_exceptions                pariah.aiserver, parang.evolve, parlance.test.network
+
 class ThreadManager(VerboseObject):
     r'''Manages four types of clients: polled, timed, threaded, and dynamic.
         
@@ -437,7 +452,7 @@ class ClientProgram(Program):
                 result = manager.add_client(cls, power=nation, passcode=pcode)
             else: result = manager.add_client(cls)
             if not result:
-                manager.log_debug(1, 'Failed to start %s.  Sorry.', name)
+                self.log.critical('Failed to start %s.  Sorry.', name)
         manager.run()
     
 class ServerProgram(Program):
