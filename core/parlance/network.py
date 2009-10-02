@@ -233,16 +233,14 @@ class Connection(SocketWrapper):
 class Client(Connection):
     ''' Connects an internal Player to a server on the network.'''
     is_server = False
-    def __init__(self, player_class, **kwargs):
+    def __init__(self, player):
         'Initializes instance variables'
         self.__super.__init__()
-        self.pclass = player_class
-        self.kwargs = kwargs
-        self.player = None
+        self.player = player
+        self.registered = False
     @property
     def prefix(self):
-        return (self.player and self.player.prefix
-                or self.pclass.__name__) + ' Client'
+        return self.player.prefix + ' Client'
     
     def send(self, msg):
         self.log_debug(5, '>> %s', msg)
@@ -278,14 +276,13 @@ class Client(Connection):
         # Wait for representation message
         if msg and not self.rep:
             self.log_debug(7, 'DM while waiting for RM: ' + str(msg))
-        elif self.rep and not self.player:
+        elif self.rep and not self.registered:
             self.log_debug(9, 'Representation received')
-            self.player = self.pclass(send_method=self.send,
-                    representation=self.rep, **self.kwargs)
-            self.player.register()
-        if self.player:
-            if msg: self.player.handle_message(msg)
-            if self.player.closed: self.close()
+            self.registered = True
+            self.player.register(transport=self.send, representation=self.rep)
+        
+        if msg: self.player.handle_message(msg)
+        if self.player.closed: self.close()
     def close(self):
         if self.player and not self.player.closed: self.player.close()
         self.__super.close()

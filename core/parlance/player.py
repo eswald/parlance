@@ -55,11 +55,11 @@ class Observer(ClientProgram):
             'however, doing so will slow down the game, particularly startup.'),
     )
     
-    def __init__(self, send_method, representation, game_id=None, manager=None):
+    def __init__(self, game_id=None, manager=None):
         ''' Initializes the instance variables.'''
         self.__super.__init__()
-        self.send_out = send_method      # A function that accepts messages
-        self.rep      = representation   # The representation message
+        self.transport = None            # A function that accepts messages
+        self.rep      = None             # The Representation to use
         self.game_id  = game_id          # A specific game to connect to
         self.game_opts= GameOptions()    # Variant options for the current game
         self.closed   = False  # Whether the connection has ended, or should end
@@ -83,19 +83,23 @@ class Observer(ClientProgram):
         
         # A list of message handlers that should be called in parallel.
         self.threaded = []
-    def register(self):
+    def register(self, transport, representation):
         ''' Registers the client with the server.
             Should be called as soon as possible after connection.
             If self.game_id is not None, sends a SEL (game_id) command;
             otherwise, skips straight to the OBS, NME, or IAM message.
         '''#'''
+        
+        self.transport = transport
+        self.rep = representation
         if self.game_id is None: self.send_identity()
         else: self.send(SEL(self.game_id))
     def close(self): self.closed = True
     
     # Sending messages to the Server
     def send(self, message):
-        if not self.closed: self.send_out(Message(message))
+        if self.transport and not self.closed:
+            self.transport(Message(message))
     def send_list(self, message_list):
         'Sends a list of Messages to the server.'
         for msg in message_list: self.send(msg)

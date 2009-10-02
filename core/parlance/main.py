@@ -349,13 +349,18 @@ class ThreadManager(VerboseObject):
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
     def add_client(self, player_class, **kwargs):
-        name = player_class.__name__
-        client = Client(player_class, manager=self, **kwargs)
+        # Now calls player.connect(), in case the player wants to use
+        # a separate process or something.
+        player = player_class(manager=self, **kwargs)
+        return player.connect()
+    def create_connection(self, player):
+        name = player.prefix
+        client = Client(player)
         result = client.open()
         if result:
             self.add_polled(client)
-            self.log_debug(10, 'Opened a Client for ' + name)
-        else: self.log_debug(7, 'Failed to open a Client for ' + name)
+            self.log.debug('Opened a connection for ' + name)
+        else: self.log.warn('Failed to open a connection for ' + name)
         return result and client
     def wait_threads(self):
         for thread, client in self.threaded:
@@ -455,6 +460,10 @@ class ClientProgram(Program):
                 self.log.critical('Failed to start %s.  Sorry.', name)
         manager.run()
     
+    def connect(self):
+        r'''Start a network connection.'''
+        return self.manager.create_connection(self)
+
 class ServerProgram(Program):
     @classmethod
     def usage(cls, problem=None, *args):
@@ -490,13 +499,15 @@ class RawClient(ClientProgram):
     '''#'''
     
     prefix = 'RawClient'
-    def __init__(self, send_method, representation, manager):
-        self.send_out  = send_method      # A function that accepts messages
-        self.rep       = representation   # The representation message
+    def __init__(self, manager):
+        self.transport = None  # A function that accepts messages
+        self.rep       = None  # The representation message
         self.closed    = False # Whether the connection has ended, or should end
         self.manager   = manager
-    def register(self):
+    def register(self, transport, representation):
         print 'Connected.'
+        self.transport = transport
+        self.rep = representation
         self.manager.add_input(self.handle_input, self.close)
     def handle_message(self, message):
         ''' Process a new message from the server.'''
@@ -511,7 +522,8 @@ class RawClient(ClientProgram):
         except Exception, err: print str(err) or '??'
         else: self.send(message)
     def send(self, message):
-        if not self.closed: self.send_out(message)
+        if self.transport and not self.closed:
+            self.transport(message)
 
 class RawServer(ServerProgram):
     r'''Simple server to translate DM to and from text.

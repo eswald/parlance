@@ -47,9 +47,8 @@ class Fake_Service(Service):
         self.queue = []
         self.player = None
         self.__super.__init__(client_id, None, client_id, server)
-        self.player = player_class(send_method=self.handle_message,
-                representation=self.rep, **kwargs)
-        self.player.register()
+        self.player = player_class(**kwargs)
+        self.player.register(self.handle_message, self.rep)
         for msg in self.queue: self.handle_message(msg)
     def write(self, message):
         #check = self.game.validator.validate_server_message(message)
@@ -76,7 +75,7 @@ class ServerTestCase(unittest.TestCase):
             Also useful to learn country passcodes.
         '''#'''
         name = 'Fake Player'
-        def __init__(self, send_method, representation, manager,
+        def __init__(self, manager,
                 power=None, passcode=None, game_id=None, observe=False):
             self.__super.__init__()
             self.log_debug(9, 'Fake player started')
@@ -84,13 +83,18 @@ class ServerTestCase(unittest.TestCase):
             self.power = power
             self.pcode = passcode
             self.queue = []
-            self.send = send_method
-            self.rep = representation
+            self.send = None
+            self.rep = None
             self.manager = manager
             self.game_id = game_id
             if observe: self.player_type = OBS
             else: self.player_type = NME
-        def register(self):
+        def connect(self):
+            return self.manager.create_connection(self)
+        def register(self, transport, representation):
+            self.send = transport
+            self.rep = representation
+            
             if self.game_id is None:
                 self.send(+SEL)
             else:

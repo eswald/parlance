@@ -52,7 +52,7 @@ class NetworkTestCase(ServerTestCase):
             sock.connect((self.options.host or 'localhost', self.options.port))
             sock.settimeout(None)
             
-            if self.pclass:
+            if self.player:
                 # Send initial message
                 self.log_debug(9, 'Sending Initial Message')
                 self.send_dcsp(self.IM, pack('!HH',
@@ -60,7 +60,8 @@ class NetworkTestCase(ServerTestCase):
             
             return True
         def run(self):
-            if self.pclass: self.__super.run()
+            if self.player:
+                self.__super.run()
             else: self.read()
         def send_error(self, code, from_them=False):
             if from_them: self.error_code = code
@@ -98,11 +99,11 @@ class NetworkTestCase(ServerTestCase):
                 manager.process(23)
         return sock
     def fake_client(self, player_class):
-        name = player_class and player_class.__name__ or str(player_class)
-        client = self.FakeClient(player_class)
+        player = player_class and player_class()
+        client = self.FakeClient(player)
         result = client.open()
         if result: self.manager.add_polled(client)
-        else: raise UserWarning('Failed to open a Client for ' + name)
+        else: raise UserWarning('Failed to open a Client for ' + player.prefix)
         return result and client
 
 class Network_Errors(NetworkTestCase):
@@ -217,10 +218,11 @@ class Network_Errors(NetworkTestCase):
     def test_reserved_tokens(self):
         ''' "Reserved for AI use" tokens must never be sent over the wire.'''
         class ReservedSender(object):
-            def __init__(self, send_method, **kwargs):
-                self.send = send_method
+            def __init__(self, **kwargs):
                 self.closed = False
-            def register(self):
+            def register(self, transport, representation):
+                self.send = transport
+                self.rep = representation
                 self.send(Token('HMM', 0x585F)())
             def close(self): self.closed = True
         self.failUnlessEqual(protocol.IllegalToken, 0x0E)
@@ -263,17 +265,19 @@ class Network_Basics(NetworkTestCase):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
             name = 'Impolite Finisher'
-            def __init__(self, send_method, representation,
-                    power, passcode, manager=None):
+            def __init__(self, power, passcode, manager=None):
                 self.__super.__init__()
                 self.log_debug(9, 'Fake player started')
                 self.restarted = False
                 self.closed = False
-                self.send = send_method
-                self.rep = representation
                 self.power = power
                 self.passcode = passcode
-            def register(self):
+                self.manager = manager
+            def connect(self):
+                return self.manager.create_connection(self)
+            def register(self, transport, representation):
+                self.send = transport
+                self.rep = representation
                 self.send(NME(self.power.text)(str(self.passcode)))
             def close(self):
                 self.log_debug(9, 'Closed')
