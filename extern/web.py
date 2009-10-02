@@ -14,7 +14,6 @@ from twisted.web.server import Site
 from twisted.web.resource import Resource
 from twisted.internet import reactor
 
-from calendar import calendar
 from struct import pack, unpack
 from parlance.language import Message, Representation, protocol
 
@@ -260,25 +259,11 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
     def handle_message(self, msg):
         print msg
 
-class YearPage(Resource):
-    r'''From Jean-Paul Calderone's "Twisted Web in 60 seconds" tutorial.'''
-    def __init__(self, year):
-        Resource.__init__(self)
-        self.year = year
-    
-    def render_GET(self, request):
-        return "<html><body><pre>%s</pre></body></html>" % (calendar(self.year),)
-
-class Calendar(Resource):
+class Nothing(Resource):
     def getChild(self, name, request):
-        try:
-            year = int(name)
-        except ValueError:
-            return NoResource()
-        else:
-            return YearPage(year)
+        return NoResource()
 
-root = Calendar()
+root = Nothing()
 factory = Site(root)
 factory.protocol = DaideServerProtocol
 reactor.listenTCP(8880, factory)
