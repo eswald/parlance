@@ -261,6 +261,8 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([Clock] + ([self.Disconnector] * 7))
     def test_takeover(self):
         ''' Takeover ability after game start'''
+        success = []
+        
         class Fake_Takeover(VerboseObject):
             ''' A false player, who takes over a position and then quits.'''
             sleep_time = 7
@@ -285,6 +287,7 @@ class Network_Basics(NetworkTestCase):
             def handle_message(self, message):
                 self.log_debug(5, '<< %s', message)
                 if message[0] is YES and message[2] is IAM:
+                    success.append(self)
                     self.send(ADM(self.power.text)('Takeover successful'))
                     sleep(self.sleep_time)
                     self.close()
@@ -303,6 +306,8 @@ class Network_Basics(NetworkTestCase):
                 self.closed = True
         self.set_option('takeovers', True)
         self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
+        self.assertEqual(len(success), 1)
+        self.assertEqual(success[0].__class__, Fake_Takeover)
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''
         manager = self.manager
