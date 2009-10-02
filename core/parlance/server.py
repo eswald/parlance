@@ -358,7 +358,7 @@ class Server(ServerProgram):
             client.admin('  %s - %s', name, description)
     def list_status(self, client, match):
         for game in self.games.itervalues():
-            if game.closed: message = 'Closed'
+            if game.finished: message = 'Finished'
             elif game.paused: message = 'Paused'
             elif game.started: message = 'In progress'
             else: message = 'Forming'
