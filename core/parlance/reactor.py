@@ -9,6 +9,7 @@ r'''Parlance Twisted reactor core
 
 from twisted.application.reactors import getReactorTypes, installReactor
 from twisted.internet.interfaces import IHalfCloseableProtocol
+from twisted.internet.protocol import ClientFactory
 from twisted.internet.stdio import StandardIO
 from twisted.protocols.basic import LineOnlyReceiver
 from zope.interface import implements
@@ -50,8 +51,14 @@ class AsyncManager(VerboseObject):
     __options__ = (
         ("reactor", str, 'select', None,
             "Which Twisted reactor to install.",
-            "Available reactors: ", expand_list(installer.shortName
-                for installer in getReactorTypes())),
+            "Choose from %s." % expand_list(sorted(installer.shortName
+                for installer in getReactorTypes()), "or")),
+        ('host', str, '', None,
+            'The name or IP address of the server.',
+            'If blank, the server will listen on all possible addresses,',
+            'and clients will connect to localhost.'),
+        ('port', int, 16713, None,
+            'The port that the server listens on.'),
     )
     
     def __init__(self):
@@ -108,17 +115,18 @@ class AsyncManager(VerboseObject):
         else:
             self.log_debug(11, 'Emulating threaded client: %s', client.prefix)
             self.attempt(client)
-    def add_client(self, player_class, **kwargs):
-        name = player_class.__name__
-        client = Client(player_class, manager=self, **kwargs)
-        result = client.open()
-        if result:
-            self.add_polled(client)
-            self.log_debug(10, 'Opened a Client for ' + name)
-        else: self.log_debug(7, 'Failed to open a Client for ' + name)
-        return result and client
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
+    
+    def add_client(self, player_class, **kwargs):
+        # Now calls player.connect(), in case the player wants to use
+        # a separate process or something.
+        player = player_class(manager=self, **kwargs)
+        return player.connect()
+    def create_connection(self, player):
+        host = self.options.host
+        port = self.options.port
+        return self.reactor.connectTCP(host, port, DaideClientFactory())
     
     class InputWaiter(LineOnlyReceiver):
         r'''Protocol to direct stdin lines to the input handler.'''
@@ -159,3 +167,25 @@ class AsyncManager(VerboseObject):
             self.close()
         def close(self):
             self.closed = True
+
+class DaideClientFactory(VerboseObject, ClientFactory):
+    # ReconnectingClientFactory might be useful,
+    # but clients won't always want to reconnect.
+    
+    def __init__(self, player):
+        self.__super.__init__()
+        self.player = player
+    
+    def buildProtocol(self, addr):
+        self.resetDelay()
+        return DaideClientProtocol()
+    
+    def clientConnectionLost(self, connector, reason):
+        self.log.debug("Connection lost: %s", reason)
+        if self.player.reconnect():
+            connector.connect()
+    
+    def clientConnectionFailed(self, connector, reason):
+        self.log.debug("Connection failed: %s", reason)
+        if self.player.reconnect():
+            connector.connect()

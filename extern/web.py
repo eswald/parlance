@@ -190,23 +190,19 @@ class DaideClientProtocol(DaideProtocol):
         self.first = (self.RM, self.proto.NotRMError)
         self.send_dcsp(self.IM, pack('!HH',
             self.proto.version, self.proto.magic))
-        self.player = None
     
     def read_IM(self, data):
         self.send_error(self.proto.ServerIMError)
     
     def read_RM(self, data):
         state = DaideProtocol.read_RM(data)
-        # Todo: Create and register the player
-        #self.player = self.pclass(send_method=self.send,
-        #    representation=self.rep, **self.kwargs)
-        #self.player.register()
-        self.player = self.factory.create_player()
+        self.factory.player.register(self.write_msg, self.rep)
         return state
     
     def handle_message(self, msg):
-        self.player.handle_message(msg)
-        if self.player.closed:
+        player = self.factory.player
+        player.handle_message(msg)
+        if player.closed:
             self.close()
 
 class DaideServerProtocol(DaideProtocol, HTTPChannel):
