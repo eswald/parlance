@@ -102,21 +102,16 @@ class AsyncManager(VerboseObject):
         self.timed.append((deadline, client))
         return deadline
     def add_dynamic(self, client):
-        self.log_debug(11, 'New dynamic client: %s', client.prefix)
+        self.log.debug("New dynamic client: %s", client.prefix)
         assert not self.closed
         self.dynamic.append(client)
+    
     def add_threaded(self, client):
-        if Thread:
-            self.log_debug(11, 'New threaded client: %s', client.prefix)
-            assert not self.closed
-            thread = Thread(target=self.attempt, args=(client,))
-            thread.start()
-            self.threaded.append((thread, client))
-        else:
-            self.log_debug(11, 'Emulating threaded client: %s', client.prefix)
-            self.attempt(client)
+        self.log.debug("New threaded client: %s", client.prefix)
+        assert not self.closed
+        return self.new_thread(client.run)
     def new_thread(self, target, *args, **kwargs):
-        self.add_threaded(self.ThreadClient(target, *args, **kwargs))
+        return self.reactor.callInThread(target, *args, **kwargs)
     
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
@@ -151,22 +146,6 @@ class AsyncManager(VerboseObject):
             r'''Standard output has closed.
                 Nothing important needs to be done here.
             '''#"""#'''
-    class ThreadClient(object):
-        def __init__(self, target, *args, **kwargs):
-            self.target = target
-            self.args = args
-            self.kwargs = kwargs
-            self.closed = False
-            arguments = chain((repr(arg) for arg in args),
-                    ("%s=%r" % (name, value)
-                        for name, value in kwargs.iteritems()))
-            self.prefix = (target.__name__ + '(' +
-                    str.join(', ', arguments) + ')')
-        def run(self):
-            self.target(*self.args, **self.kwargs)
-            self.close()
-        def close(self):
-            self.closed = True
 
 class DaideClientFactory(VerboseObject, ClientFactory):
     # ReconnectingClientFactory might be useful,
