@@ -13,9 +13,9 @@ import time
 from parlance.config     import variants
 from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
-from parlance.language   import Representation, protocol
+from parlance.language   import Message, Representation, protocol
 from parlance.orders     import OrderSet, createUnitOrder
-from parlance.test       import TestCase, fails
+from parlance.test       import TestCase, failing, fails
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
@@ -1051,8 +1051,36 @@ class StandardVariantTests(TestCase):
         self.failUnless(0 <= density <= 1, density)
         #print "%s: %0.1f%%" % (self.variant, density * 100)
 
-class Map_Bugfix(TestCase):
-    ''' Tests to reproduce bugs related to the Map class'''
+class MapTestCase(TestCase):
+    r'''Testing the Map class'''
+    def test_map_define(self):
+        ''' Test the creation of a new map from a simple MDF.'''
+        
+        mdf = MDF (ENG, FRA) ([
+            (ENG, EDI, LON),
+            (FRA, BRE, PAR),
+            ([ENG, FRA], BEL, HOL),
+            (UNO, SPA, NWY),
+        ], [ECH, NTH, PIC]) (
+            (EDI, [AMY, LON], [FLT, NTH]),
+            (LON, [AMY, EDI], [FLT, NTH, ECH]),
+            (BRE, [AMY, PAR, PIC, SPA], [FLT, ECH, PIC, (SPA, NCS)]),
+            (PAR, [AMY, PAR, SPA, PIC]),
+            (BEL, [AMY, PIC, HOL], [FLT, NTH, ECH, PIC, HOL]),
+            (HOL, [AMY, BEL], [FLT, NTH]),
+            (SPA, [AMY, PAR, BRE], [(FLT, NCS), BRE]),
+            (NWY, [AMY], [FLT, NTH]),
+            (ECH, [FLT, NTH, BRE, LON, BEL, PIC]),
+            (NTH, [FLT, ECH, BEL, HOL, LON, NWY, EDI]),
+            (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
+        )
+        
+        self.failIf(Validator().validate_server_message(mdf),
+                'Invalid MDF message')
+        m = Map(Variant('simplified'))
+        self.failIf(m.valid, 'Map valid before MDF')
+        result = m.define(mdf)
+        self.failIf(result, result)
     def test_empty_homes(self):
         # Map can define maps with an empty home center entry.
         variant = load_variant('''
@@ -1399,36 +1427,8 @@ class Order_Strings(TestCase):
         self.check_order([GER, WVE],
                 'Waives a German build')
 
-class Gameboard_Doctests(TestCase):
-    ''' Tests that were once doctests, but no longer work as such.'''
-    def test_map_define(self):
-        ''' Test the creation of a new map from a simple MDF.'''
-        
-        mdf = MDF (ENG, FRA) ([
-            (ENG, EDI, LON),
-            (FRA, BRE, PAR),
-            ([ENG, FRA], BEL, HOL),
-            (UNO, SPA, NWY),
-        ], [ECH, NTH, PIC]) (
-            (EDI, [AMY, LON], [FLT, NTH]),
-            (LON, [AMY, EDI], [FLT, NTH, ECH]),
-            (BRE, [AMY, PAR, PIC, SPA], [FLT, ECH, PIC, (SPA, NCS)]),
-            (PAR, [AMY, PAR, SPA, PIC]),
-            (BEL, [AMY, PIC, HOL], [FLT, NTH, ECH, PIC, HOL]),
-            (HOL, [AMY, BEL], [FLT, NTH]),
-            (SPA, [AMY, PAR, BRE], [(FLT, NCS), BRE]),
-            (NWY, [AMY], [FLT, NTH]),
-            (ECH, [FLT, NTH, BRE, LON, BEL, PIC]),
-            (NTH, [FLT, ECH, BEL, HOL, LON, NWY, EDI]),
-            (PIC, [AMY, BRE, PAR, BEL], [FLT, ECH, BRE, BEL]),
-        )
-        
-        self.failIf(Validator().validate_server_message(mdf),
-                'Invalid MDF message')
-        m = Map(Variant('simplified'))
-        self.failIf(m.valid, 'Map valid before MDF')
-        result = m.define(mdf)
-        self.failIf(result, result)
+class TurnTestCase(TestCase):
+    r'''Testing the Turn class'''
     def test_turn_compare_lt(self):
         spring = Turn(SPR, 1901)
         fall = Turn(FAL, 1901)
@@ -1446,6 +1446,22 @@ class Gameboard_Doctests(TestCase):
     def test_turn_phase_name(self):
         t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
+    @fails
+    def test_end_of_time(self):
+        # What happens when we run out of years?
+        last = Turn(WIN, protocol.max_pos_int - 1,
+            seasons=(SPR, SUM, FAL, AUT, WIN))
+        next = last.next()
+        msg = Message(next)
+        self.assertEqual(msg.fold(), [SPR, protocol.max_pos_int])
+    @failing(OverflowError)
+    def test_max_neg_int(self):
+        # What if we let it overflow the full 15 bits?
+        last = Turn(WIN, protocol.max_neg_int - 1,
+            seasons=(SPR, SUM, FAL, AUT, WIN))
+        next = last.next()
+        msg = Message(next)
+        self.assertEqual(msg.fold(), [SPR, protocol.max_neg_int])
 
 class OrderSetTestCase(TestCase):
     def test_complete_waives(self):
