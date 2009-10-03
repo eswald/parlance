@@ -7,7 +7,6 @@
 '''#'''
 
 from main      import ThreadManager
-from network   import ServerSocket
 from player    import Observer
 from server    import Server
 
@@ -33,11 +32,8 @@ def evolve_logged(player_class, stream):
     # Start a new server
     manager = ThreadManager()
     manager.options.block_exceptions = False
-    sock = ServerSocket(Server, manager)
-    if sock.open():
-        manager.add_polled(sock)
-        server = sock.server
-    else:
+    server = Server(manager)
+    if not manager.add_server(server):
         output('Failed to open the server.')
         return
     

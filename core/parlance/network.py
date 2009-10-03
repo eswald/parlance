@@ -390,13 +390,12 @@ class ServerSocket(SocketWrapper):
     
     next_id = count(0)
     
-    def __init__(self, server_class, thread_manager, game=None):
+    def __init__(self, manager, server, game_id=None):
         self.__super.__init__()
-        self.server = game and game.server
-        self.game_id = game and game.game_id
-        self.server_class = server_class
-        self.manager = thread_manager
-        if game: self.prefix += " %s" % (game.game_id)
+        self.server = server
+        self.game_id = game_id
+        self.manager = manager
+        if game_id: self.prefix += " %s" % (game_id)
     def open(self):
         ''' Start listening for clients on the specified address.
             May throw exceptions for bad host/port combinations.
@@ -437,9 +436,7 @@ class ServerSocket(SocketWrapper):
         sock.setblocking(False)
         sock.listen(7)
         self.sock = sock
-        if not self.server:
-            self.server = self.server_class(self.manager)
-        return bool(sock and self.server)
+        return bool(sock)
     def close(self):
         self.closed = True
         if not self.game_id:

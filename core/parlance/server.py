@@ -18,7 +18,6 @@ from fallbacks  import defaultdict
 from gameboard  import Turn
 from language   import Message, Time, protocol
 from main       import ServerProgram
-from network    import ServerSocket
 from tokens     import *
 from util       import expand_list, instances, \
         num2name, s, timestamp, version_string
@@ -793,11 +792,7 @@ class Game(Historian):
                     self.judge.player_name(country))
         
         # Game-specific port
-        port = ServerSocket(None, server.manager, self)
-        if port.open():
-            server.manager.add_polled(port)
-            self.port = port
-        else: self.port = None
+        self.port = server.manager.add_server(server, self.game_id)
     
     def set_limits(self):
         game = self.game_options

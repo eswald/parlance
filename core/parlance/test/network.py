@@ -20,7 +20,7 @@ from parlance.fallbacks import any
 from parlance.gameboard import Variant
 from parlance.language  import Representation, Token, protocol
 from parlance.main      import ThreadManager
-from parlance.network   import Client, Connection, ServerSocket
+from parlance.network   import Client, Connection
 from parlance.player    import Clock, HoldBot
 from parlance.server    import Server
 from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
@@ -79,13 +79,12 @@ class NetworkTestCase(ServerTestCase):
         self.set_option('port', self.port.next())
         
         manager = self.manager
-        sock = ServerSocket(Server, manager)
-        if not poll: sock.polling = None
-        if sock.open():
-            self.server = server = sock.server
-        else: raise UserWarning('ServerSocket failed to open')
-        if not server: raise UserWarning('ServerSocket lacks a server')
-        manager.add_polled(sock)
+        self.server = server = Server(manager)
+        sock = manager.add_server(server)
+        if not sock:
+            raise UserWarning("ServerSocket failed to open")
+        if not poll: manager.polling = None
+        
         for dummy in range(games):
             if server.closed: raise UserWarning('Server closed early')
             players = []

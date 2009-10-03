@@ -36,7 +36,7 @@ __all__ = [
 # - add_client(class, **kwargs)             parang.evolve, parlance.test.network, parlance.server, parlance.main, pariah.aiserver
 # - add_dynamic(client)                     parlance.server
 # - add_input(handle_input, handle_close)   parang.chatty, parlance.main
-# - add_polled(client)                      parang.evolve, parlance.test.network, parlance.server, parlance.main, parlance.network
+# - add_polled(client)                      parlance.test.network, parlance.main, parlance.network
 # - add_timed(function, seconds)            parang.blabberbot, parlance.test.network, parlance.network
 # - add_threaded(client)                    parang.chatty
 # - close()                                 parang.evolve, parlance.server, parlance.main, parlance.network, pariah.aiserver
@@ -348,6 +348,28 @@ class ThreadManager(VerboseObject):
         self.add_threaded(self.LoopClient(client))
     def new_thread(self, target, *args, **kwargs):
         self.add_threaded(self.ThreadClient(target, *args, **kwargs))
+    def wait_threads(self):
+        for thread, client in self.threaded:
+            while thread.isAlive():
+                try: thread.join(self.options.sleep_time)
+                except KeyboardInterrupt:
+                    if not client.closed: client.close()
+                    print 'Still waiting for threads...'
+    def clean_threaded(self):
+        self.log_debug(14, 'Checking threaded clients')
+        self.threaded = [item for item in self.threaded if item[0].isAlive()]
+    
+    # Help for specific types of clients
+    def add_server(self, server, game=None):
+        # Todo: Merge this with create_connection?
+        name = server.prefix
+        socket = ServerSocket(self, server, game)
+        result = socket.open()
+        if result:
+            self.add_polled(socket)
+            self.log.debug("Opened a connection for %s", name)
+        else: self.log.warn("Failed to open a connection for %s", socket)
+        return result and socket
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
         # a separate process or something.
@@ -362,16 +384,6 @@ class ThreadManager(VerboseObject):
             self.log.debug('Opened a connection for ' + name)
         else: self.log.warn('Failed to open a connection for ' + name)
         return result and client
-    def wait_threads(self):
-        for thread, client in self.threaded:
-            while thread.isAlive():
-                try: thread.join(self.options.sleep_time)
-                except KeyboardInterrupt:
-                    if not client.closed: client.close()
-                    print 'Still waiting for threads...'
-    def clean_threaded(self):
-        self.log_debug(14, 'Checking threaded clients')
-        self.threaded = [item for item in self.threaded if item[0].isAlive()]
 
 class Program(VerboseObject):
     r'''A command-line program that can also be instantiated other ways.
@@ -457,7 +469,7 @@ class ClientProgram(Program):
                 result = manager.add_client(cls, power=nation, passcode=pcode)
             else: result = manager.add_client(cls)
             if not result:
-                self.log.critical('Failed to start %s.  Sorry.', name)
+                manager.log.critical('Failed to start %s.  Sorry.', name)
         manager.run()
     
     def connect(self):
@@ -485,11 +497,10 @@ class ServerProgram(Program):
             else: cls.usage('Unknown variant %r', args[0])
         
         manager = ThreadManager()
-        server = ServerSocket(cls, manager)
-        if server.open():
-            manager.add_polled(server)
+        server = cls(manager)
+        if manager.add_server(server):
             manager.run()
-        else: server.log_debug(1, 'Failed to open the server.')
+        else: manager.log.critical("Failed to open the socket.")
 
 class RawClient(ClientProgram):
     r'''Simple client to translate DM to and from text.
