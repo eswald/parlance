@@ -80,9 +80,6 @@ class Observer(ClientProgram):
         
         # A list of variables to remember across SVE/LOD
         self.remember = ['map']
-        
-        # A list of message handlers that should be called in parallel.
-        self.threaded = []
     def register(self, transport, representation):
         ''' Registers the client with the server.
             Should be called as soon as possible after connection.
@@ -150,9 +147,7 @@ class Observer(ClientProgram):
             # Then call client handlers
             method = getattr(self, method_name, None)
             if method:
-                if method_name in self.threaded:
-                    self.manager.new_thread(self.apply_handler, method, message)
-                else: self.apply_handler(method, message)
+                self.apply_handler(method, message)
         self.log_debug(12, 'Finished %s message', message[0])
     def apply_handler(self, method, message):
         self.log_debug(12, 'Calling %s', method)
@@ -291,7 +286,6 @@ class Player(Observer):
         self.use_map   = True
         self.remember += ['in_game', 'power', 'pcode',
                 'bcc_list', 'fwd_list', 'press', 'draws']
-        self.threaded += ['handle_NOW']
         
         # Usefully sent through keyword arguments
         self.power = power     # The power being played, or None

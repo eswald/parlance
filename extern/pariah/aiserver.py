@@ -46,7 +46,6 @@ class FakePlayer(Player):
             def add(self, order, nation=None): pass
         self.responses = []
         self.__super.__init__(*args, **kwargs)
-        self.threaded = []
         self.orders = FakeOrders()
         self.has_NOW = False
         self.done = False
