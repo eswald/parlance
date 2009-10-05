@@ -7,11 +7,16 @@ r'''Parlance Twisted reactor core
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+from time import time
+
 from twisted.application.reactors import getReactorTypes, installReactor
 from twisted.internet.interfaces import IHalfCloseableProtocol
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.stdio import StandardIO
 from twisted.protocols.basic import LineOnlyReceiver
+from twisted.web.error import NoResource
+from twisted.web.resource import Resource
+from twisted.web.server import Site
 from zope.interface import implements
 
 from parlance.config import VerboseObject
@@ -19,33 +24,7 @@ from parlance.util import expand_list
 
 
 class AsyncManager(VerboseObject):
-    r'''Manages four types of clients: polled, timed, threaded, and dynamic.
-        
-        Each type of client must have a close() method and corresponding
-        closed property.  A client will be removed if it closes itself;
-        otherwise, it will be closed when the ThreadManager closes.
-        
-        Each client must also have a prefix property, which should be a
-        string, and a run() method, which is called as described below.
-        
-        Polled clients have a fileno(), which indicates a file descriptor.
-        The client's run() method is called whenever that file descriptor
-        has input to process.  In addition, the client is closed when its
-        file descriptor runs out of input.  Each file descriptor can only
-        support one polled client.
-        
-        The run() method of a timed client is called after the amount of
-        time specified when it is registered.  The specified delay is a
-        minimum, not an absolute; polled clients take precedence.
-        
-        Dynamic clients are like timed clients, but have a time_left() method
-        to specify when to call the run() method.  The time_left() method is
-        called each time through the polling loop, and should return either
-        a number of seconds (floating point is permissible) or None.
-        
-        The run() method of a threaded client is called immediately in
-        a separate thread.  The manager will wait for all threads started
-        in this way, during its close() method.
+    r'''Thin layer over Twisted's reactor, for historical reasons.
     '''#'''
     
     __options__ = (
@@ -82,12 +61,6 @@ class AsyncManager(VerboseObject):
         self.closed = True
         self.reactor.stop()
     
-    def add_polled(self, client):
-        self.log_debug(11, 'New polled client: %s', client.prefix)
-        assert not self.closed
-        fd = client.fileno()
-        self.polled[fd] = client
-        if self.polling: self.polling.register(fd, self.flags)
     def add_input(self, input_handler, close_handler):
         r'''Adds a client listening to standard input.
             May be extra slow on some platforms.
@@ -96,15 +69,18 @@ class AsyncManager(VerboseObject):
         # Magic: We need to keep a reference to this object.
         self.stdin = StandardIO(self.InputWaiter(input_handler, close_handler))
     def add_timed(self, client, delay):
-        self.log_debug(11, 'New timed client: %s', client.prefix)
+        self.log.debug('New timed client: %s', client.prefix)
         assert not self.closed
-        deadline = time() + delay
-        self.timed.append((deadline, client))
-        return deadline
+        return self.reactor.callLater(delay, client.run)
     def add_dynamic(self, client):
+        # Use add_timed() or something like TimeoutMixin instead.
+        # Call reset() on the result whenever the value changes.
         self.log.debug("New dynamic client: %s", client.prefix)
         assert not self.closed
-        self.dynamic.append(client)
+        now = time()
+        delay = client.time_left()
+        if delay is not None:
+            return self.add_timed(client, delay)
     
     def add_threaded(self, client):
         self.log.debug("New threaded client: %s", client.prefix)
@@ -113,6 +89,21 @@ class AsyncManager(VerboseObject):
     def new_thread(self, target, *args, **kwargs):
         return self.reactor.callInThread(target, *args, **kwargs)
     
+    # Help for specific types of clients
+    def add_server(self, server, game=None):
+        # Todo: Merge this with create_connection?
+        name = server.prefix
+        socket = ServerSocket(self, server, game)
+        result = socket.open()
+        if result:
+            self.add_polled(socket)
+            self.log.debug("Opened a connection for %s", name)
+        else: self.log.warn("Failed to open a connection for %s", socket)
+        return result and socket
+    def add_server(self, server, game=None):
+        factory = DaideServerFactory(server)
+        self.reactor.listenTCP(self.options.port, factory)
+        self.reactor.run()
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
         # a separate process or something.
@@ -168,3 +159,13 @@ class DaideClientFactory(VerboseObject, ClientFactory):
         self.log.debug("Connection failed: %s", reason)
         if self.player.reconnect():
             connector.connect()
+
+class DaideServerFactory(Site):
+    protocol = DaideServerProtocol
+    
+    class Nothing(Resource):
+        def getChild(self, name, request):
+            return NoResource()
+    
+    def __init__(self, server):
+        Site.__init__(self, self.Nothing())
