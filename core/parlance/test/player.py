@@ -65,9 +65,8 @@ class PlayerTestCase(unittest.TestCase):
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
-        self.player = player_class(send_method=self.handle_message,
-                representation=self.variant.rep, **kwargs)
-        self.player.register()
+        self.player = player_class(**kwargs)
+        self.player.register(self.handle_message, self.variant.rep)
         self.player.threaded = []
     def send_hello(self, country=None):
         self.send(HLO(country or ENG)(self.level)(self.params))
@@ -156,14 +155,15 @@ class Player_Tests(PlayerTestCase):
         self.send(FRM(GER)(ENG)(offer))
         self.seek_reply(SND(GER)(HUH(offer ++ ERR)))
     def test_AutoObserver(self):
-        ''' Former doctests of the AutoObserver class.'''
+        # Former doctests of the AutoObserver class.
         result = []
         def handle_message(msg):
             if msg[0] is ADM:
                 result.append(msg)
                 player.handle_ADM(msg)
-        player = AutoObserver(send_method=handle_message,
-                representation=self.variant.rep)
+        
+        player = AutoObserver()
+        player.register(handle_message, self.variant.rep)
         player.handle_ADM(ADM('Server')('An Observer has connected. '
             'Have 5 players and 1 observers. Need 2 to start'))
         player.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
