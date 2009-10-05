@@ -6,9 +6,9 @@
     commercial purposes without permission from the authors is prohibited.
 '''#'''
 
-from main      import ThreadManager
-from player    import Observer
-from server    import Server
+from parlance.main import ThreadManager
+from parlance.player import Observer
+from parlance.server import Server
 
 game_number = 0
 def evolve(player_class, file_name):
@@ -124,5 +124,5 @@ class GeneSplicer(Observer):
 
 
 if __name__ == "__main__":
-    from dumbbot import DumbBot
+    from parang.dumbbot import DumbBot
     evolve(DumbBot, 'log/stats/evolution')
