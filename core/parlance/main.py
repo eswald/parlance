@@ -368,7 +368,7 @@ class ThreadManager(VerboseObject):
         if result:
             self.add_polled(socket)
             self.log.debug("Opened a connection for %s", name)
-        else: self.log.warn("Failed to open a connection for %s", socket)
+        else: self.log.warn("Failed to open a connection for %s", name)
         return result and socket
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
