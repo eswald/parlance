@@ -179,6 +179,8 @@
     <p>A JSON-based HTTP interface with long polling would be nice.  The
       Server should see something that looks like a Service, while the client
       should be sending and receiving DPP-like JSON objects, if possible.</p>
+    <p>Each DCSP message should have a thirty-second timeout, returning
+      LengthError if it doesn't get the full message in time.</p>
     
     <h2>Human-oriented Options</h2>
     <p>Players would like the ability to connect and disconnect throughout the
