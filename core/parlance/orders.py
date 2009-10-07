@@ -109,7 +109,13 @@ class MovementPhaseOrder(UnitOrder):
     @staticmethod
     def convoy_note(convoyed, destination, routes, route_valid=bool):
         result = FAR
-        if not (convoyed.exists() and convoyed.can_be_convoyed()): result = NSA
+        if not convoyed.exists():
+            result = NSA
+        elif not convoyed.can_be_convoyed():
+            # This might be an army on an inland province.
+            # Shortcut to the default FAR in that case.
+            if convoyed.coast.unit_type != AMY:
+                result = NSA
         elif not destination.exists(): result = CST
         elif destination.province.is_coastal():
             if any(route_valid(route) for route in routes): result = MBV

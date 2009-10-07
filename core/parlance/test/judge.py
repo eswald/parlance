@@ -1243,7 +1243,6 @@ class Judge_Notes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, HEL],
         ])
         self.assertOrderNote(GER, [(GER, FLT, HEL), CVY, (GER, AMY, BER), CTO, HOL], FAR)
-    @fails
     def test_far_convoy_from_inland(self):
         r'''FAR for convoying an army from an inland province'''
         self.init_state(SPR, 1901, [
@@ -1258,7 +1257,6 @@ class Judge_Notes(DiplomacyAdjudicatorTestCase):
             [FRA, AMY, BEL],
         ])
         self.assertOrderNote(RUS, [(RUS, FLT, IRI), CVY, (FRA, AMY, BEL), CTO, MUN], FAR)
-    @fails
     def test_far_convoy_inland_to_inland(self):
         r'''FAR for convoying an army from inland to inland'''
         self.init_state(SPR, 1901, [
