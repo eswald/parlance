@@ -19,6 +19,7 @@ from config    import VerboseObject
 from fallbacks import any
 from language  import Message, Representation, protocol
 from tokens    import ADM, MDF, OFF, REJ, YES
+from util      import random_cycle
 
 
 class SocketWrapper(VerboseObject):
@@ -403,21 +404,23 @@ class ServerSocket(SocketWrapper):
         # Initialize a new socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.game_id:
-            if not (self.options.game_port_min and self.options.game_port_max):
+            start = self.options.game_port_min
+            stop = self.options.game_port_max
+            if not (start and stop):
                 return False
-            self.log_debug(11, "Checking ports %d-%d",
-                self.options.game_port_min, self.options.game_port_max)
-            self.port = self.options.game_port_min
-            while self.port <= self.options.game_port_max:
-                addr = (self.options.host, self.port)
+            self.log_debug(11, "Checking ports %d-%d", start, stop)
+            for port in random_cycle(start, stop + 1):
+                # Todo: Check a global set of used ports
+                addr = (self.options.host, port)
                 try:
                     sock.bind(addr)
                 except socket.error, e:
                     if e.args[0] == 98:
                         self.log_debug(7, 'Port %s:%d already in use' % addr)
-                        self.port += 1
                     else: raise e
-                else: break
+                else:
+                    self.port = port
+                    break
             else: return False
         else:
             wait_time = .125
