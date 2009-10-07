@@ -20,6 +20,7 @@ from parlance.orders    import MoveOrder
 from parlance.tokens    import *
 from parlance.xtended   import *
         
+from parlance.test import fails
 from parlance.test.datc import DiplomacyAdjudicatorTestCase
 from parlance.test.gameboard import load_variant
 
@@ -1242,6 +1243,29 @@ class Judge_Notes(DiplomacyAdjudicatorTestCase):
             [GER, FLT, HEL],
         ])
         self.assertOrderNote(GER, [(GER, FLT, HEL), CVY, (GER, AMY, BER), CTO, HOL], FAR)
+    @fails
+    def test_far_convoy_from_inland(self):
+        r'''FAR for convoying an army from an inland province'''
+        self.init_state(SPR, 1901, [
+            [RUS, FLT, IRI],
+            [FRA, AMY, RUH],
+        ])
+        self.assertOrderNote(RUS, [(RUS, FLT, IRI), CVY, (FRA, AMY, RUH), CTO, DEN], FAR)
+    def test_far_convoy_to_inland(self):
+        r'''FAR for convoying an army to an inland province'''
+        self.init_state(SPR, 1901, [
+            [RUS, FLT, IRI],
+            [FRA, AMY, BEL],
+        ])
+        self.assertOrderNote(RUS, [(RUS, FLT, IRI), CVY, (FRA, AMY, BEL), CTO, MUN], FAR)
+    @fails
+    def test_far_convoy_inland_to_inland(self):
+        r'''FAR for convoying an army from inland to inland'''
+        self.init_state(SPR, 1901, [
+            [RUS, FLT, IRI],
+            [FRA, AMY, RUH],
+        ])
+        self.assertOrderNote(RUS, [(RUS, FLT, IRI), CVY, (FRA, AMY, RUH), CTO, MUN], FAR)
     def test_far_convoy_fleetless_convoy(self):
         ''' FAR for convoying an army with a missing convoy fleet'''
         self.init_state(SPR, 1901, [
