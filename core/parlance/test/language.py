@@ -10,7 +10,7 @@ r'''Test cases for the Parlance server
 
 import unittest
 
-from parlance.language   import Message, StringToken
+from parlance.language   import Message, StringToken, protocol
 from parlance.test       import fails
 from parlance.tokens     import *
 from parlance.validation import Validator
@@ -54,5 +54,45 @@ class LanguageTestCase(unittest.TestCase):
             "StringToken('m'), StringToken('\\xe1'), StringToken('s')], " +
             "[u'v1.3']])")
         self.failUnlessEqual(repr(msg), expected)
+
+class NumberTestCase(unittest.TestCase):
+    def check_number_code(self, number, code):
+        msg = TME (number)
+        packed = map(ord, msg.pack())[4:-2]
+        self.assertEqual(packed, code, repr(map(hex, packed)))
+    
+    def test_zero(self):
+        self.check_number_code(0, [0x00, 0x00])
+    def test_one(self):
+        self.check_number_code(1, [0x00, 0x01])
+    def test_negative_one(self):
+        self.check_number_code(-1, [0x3F, 0xFF])
+    def test_largest_positive(self):
+        self.check_number_code(0x1fff, [0x1F, 0xFF])
+    def test_largest_negative(self):
+        self.check_number_code(-0x2000, [0x20, 0x00])
+    
+    def test_bignum_positive(self):
+        # 123456 = 0x01E240
+        self.check_number_code(123456, [0x01, 0xE2, 0x4C, 0x40])
+    def test_bignum_negative(self):
+        # -123456 = ...1110_0001_1101_1100_0000 = 0xFE1DC0
+        self.check_number_code(-123456, [0x3E, 0x1D, 0x4C, 0xC0])
+    def test_barely_bignum(self):
+        self.check_number_code(0x2000, [0x00, 0x20, 0x4C, 0x00])
+    def test_largest_bignum(self):
+        self.check_number_code(0x1fffff, [0x1F, 0xFF, 0x4C, 0xFF])
+    def test_barely_double_bignum(self):
+        self.check_number_code(0x200000, [0x00, 0x20, 0x4C, 0x00, 0x4C, 0x00])
+    def test_barely_bignum_negative(self):
+        self.check_number_code(-0x2001, [0x3F, 0xDF, 0x4C, 0xFF])
+
+class NumberFoldingTestCase(NumberTestCase):
+    def check_number_code(self, number, code):
+        bytes = [0x48, 0x1B, 0x40, 0x00] + code + [0x40, 0x01]
+        packed = "".join(map(chr, bytes))
+        msg = protocol.default_rep.unpack(packed)
+        obtained = msg.fold()[1][0]
+        self.assertEqual(obtained, number, repr(msg))
 
 if __name__ == '__main__': unittest.main()

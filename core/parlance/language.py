@@ -9,7 +9,7 @@ r'''Parlance language classes
 '''#'''
 
 import re
-from struct    import pack
+from struct import pack, unpack
 
 from config    import Configurable, VerboseObject, parse_file
 from util      import Comparable, rindex
@@ -103,7 +103,10 @@ class Message(list):
                     else:
                         append(string)
                     text = []
-                if token.is_integer(): append(token.value())
+                if token.is_integer():
+                    append(token.value())
+                elif token.category_name() == "Bignum":
+                    result[-1] = (result[-1] << 8) + token.value()
                 else: append(token)
         if text: append(text)
         return result
@@ -191,7 +194,19 @@ class Message(list):
             else:
                 raise TypeError('tokenize for %s returned non-list (type %s)' %
                         (value, result.__class__.__name__))
-        elif isinstance(value, (int, float, long)): return [IntegerToken(value)]
+        elif isinstance(value, (int, float, long)):
+            bignum_prefix = protocol.token_cats['Bignum'] << 8
+            result = []
+            while value is not None:
+                try:
+                    token = IntegerToken(value)
+                    value = None
+                except OverflowError:
+                    byte = value & 0xFF
+                    token = Token("+", bignum_prefix + byte)
+                    value >>= 8
+                result.insert(0, token)
+            return result
         elif isinstance(value, unicode):
             return [StringToken(c) for c in value.encode("utf-8")]
         elif isinstance(value, str):
@@ -690,22 +705,19 @@ class IntegerToken(Token):
         pos = protocol.max_pos_int
         neg = protocol.max_neg_int
         number = int(number)
-        if number < 0: key = number + neg
-        else: key = number
-        result = IntegerToken.cache.get(key)
+        result = IntegerToken.cache.get(number)
         if result is None:
-            if number < -pos:
-                raise OverflowError('%s too large to convert to %s' %
-                    (type(number).__name__, klass.__name__))
-            elif number < pos:
+            if -pos <= number < pos:
                 name = str(number)
-            elif number < neg:
-                name = str(number - neg)
             else:
                 raise OverflowError('%s too large to convert to %s' %
                     (type(number).__name__, klass.__name__))
+            
+            if number < 0:
+                key = number + neg
+            else: key = number
             result = Token.__new__(klass, name, key)
-            IntegerToken.cache[key] = result
+            IntegerToken.cache[number] = result
         return result
     def __reduce_ex__(self, proto):
         r'''Ensures that unpickled IntegerTokens work correctly.
@@ -823,8 +835,10 @@ class Representation(Configurable):
                 try: number = int(key)
                 except ValueError: result = default
                 else:
-                    if number < protocol.max_neg_int:
+                    if number < protocol.max_pos_int:
                         result = IntegerToken(number)
+                    elif number < protocol.max_neg_int:
+                        result = IntegerToken(number - protocol.max_neg_int)
                     elif (number & 0xFF00) == protocol.quot_prefix:
                         result = StringToken(chr(number & 0x00FF))
                     elif self.options.ignore_unknown:
@@ -1002,6 +1016,11 @@ class Representation(Configurable):
         
         # Pass items into Token, converting integers if necessary
         return [self[maybe_int(word.upper())] for word in text.split()]
+    
+    def unpack(self, data):
+        result = Message([self[x]
+            for x in unpack('!' + 'H'*(len(data)//2), data)])
+        return result
 
 
 class Protocol(VerboseObject):
@@ -1054,6 +1073,7 @@ class Protocol(VerboseObject):
         
         # Calculated constants needed by the above classes
         self.quot_prefix = self.token_cats['Text'] << 8
+        self.bignum = self.token_cats['Bignum'] << 8
         self.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
         self.max_neg_int = self.max_pos_int << 1
     

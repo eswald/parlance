@@ -171,8 +171,7 @@ class Connection(SocketWrapper):
             Uses values in the representation, if available.
         '''#'''
         try:
-            result = Message([self.rep[x]
-                for x in unpack('!' + 'H'*(len(data)//2), data)])
+            result = self.rep.unpack(data)
         except ValueError:
             # Someone foolishly chose to disconnect over an unknown token.
             self.send_error(self.proto.IllegalToken)

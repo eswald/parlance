@@ -432,7 +432,8 @@ and the token numbers within the category.</p>
 
 <p>The representable range of integers is -8192 to +8191.  They are
 coded as a 14-bit two's-complement value.  The top two bits of the
-category are always zero.</p>
+category are always zero. <!-- For integers larger than 14 bits, see
+<a href="#Bignum">the Bignum category</a>. --></p>
 
 <h3>4.4  <a name="Miscellaneous">Miscellaneous (0x40)</a></h3>
 
@@ -662,7 +663,14 @@ first non-text token is received.</p>
 multiple Text tokens.</p>
 
 <!--
-<h3>4.??  <a name="Parlance">Added by Parlance (0x4E)</a></h3>
+<h3>4.??  <a name="Bignum">Bignum (0x4C)</a></h3>
+
+<p>Tokens in this category may only appear after Integer tokens or other
+Bignum tokens.  They extend the range of the previous number by eight bits.
+The previous number should be left-shifted by eight bits, preserving sign,
+then the value of this token added.</p>
+
+<h3>4.??  <a name="Experimental">Experimental Tokens (0x4E)</a></h3>
 
 <p>These are tokens used and/or documented by Parlance, that have not yet been
 assigned official numbers.  Their numbers are likely to change in future
