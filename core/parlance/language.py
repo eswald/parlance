@@ -203,7 +203,8 @@ class Message(list):
                     value = None
                 except OverflowError:
                     byte = value & 0xFF
-                    token = Token("+", bignum_prefix + byte)
+                    name = "+0x%02X" % byte
+                    token = Token(name, bignum_prefix + byte)
                     value >>= 8
                 result.insert(0, token)
             return result

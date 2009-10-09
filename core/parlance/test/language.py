@@ -65,6 +65,18 @@ class LanguageTestCase(unittest.TestCase):
             "StringToken('m'), StringToken('\\xe1'), StringToken('s')], " +
             "[u'v1.3']])")
         self.failUnlessEqual(repr(msg), expected)
+    def test_bignum_name(self):
+        msg = TME (123456)
+        token = msg[3]
+        self.failUnlessEqual(token.text, "+0x40")
+    def test_bignum_name_cap(self):
+        msg = TME (0xABCD)
+        token = msg[3]
+        self.failUnlessEqual(token.text, "+0xCD")
+    def test_bignum_name_single(self):
+        msg = TME (0x4004)
+        token = msg[3]
+        self.failUnlessEqual(token.text, "+0x04")
 
 class NumberTestCase(unittest.TestCase):
     def check_number_code(self, number, code):
@@ -105,5 +117,12 @@ class NumberFoldingTestCase(NumberTestCase):
         msg = protocol.default_rep.unpack(packed)
         obtained = msg.fold()[1][0]
         self.assertEqual(obtained, number, repr(msg))
+
+class NumberReprTestCase(NumberTestCase):
+    def check_number_code(self, number, code):
+        msg = TME (number)
+        obtained = repr(msg)
+        expected = "Message([TME, [" + repr(number) + "]])"
+        self.assertEqual(obtained, expected)
 
 if __name__ == '__main__': unittest.main()
