@@ -77,6 +77,9 @@ class LanguageTestCase(unittest.TestCase):
         msg = TME (0x4004)
         token = msg[3]
         self.failUnlessEqual(token.text, "+0x04")
+    def test_translate_bignum(self):
+        msg = protocol.default_rep.translate("TME (123456)")
+        self.failUnlessEqual(msg, TME (123456))
 
 class NumberTestCase(unittest.TestCase):
     def check_number_code(self, number, code):

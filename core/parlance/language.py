@@ -195,19 +195,7 @@ class Message(list):
                 raise TypeError('tokenize for %s returned non-list (type %s)' %
                         (value, result.__class__.__name__))
         elif isinstance(value, (int, float, long)):
-            bignum_prefix = protocol.token_cats['Bignum'] << 8
-            result = []
-            while value is not None:
-                try:
-                    token = IntegerToken(value)
-                    value = None
-                except OverflowError:
-                    byte = value & 0xFF
-                    name = "+0x%02X" % byte
-                    token = Token(name, bignum_prefix + byte)
-                    value >>= 8
-                result.insert(0, token)
-            return result
+            return number_tokens(value)
         elif isinstance(value, unicode):
             return [StringToken(c) for c in value.encode("utf-8")]
         elif isinstance(value, str):
@@ -770,15 +758,21 @@ class Time(Comparable):
     def __repr__(self): return 'Time(%s, %s)' % (self.seconds, self.hours)
     def __cmp__(self, other): return cmp(int(self), other)
 
-def maybe_int(word):
-    ''' Converts a string to an int if possible.
-        Returns either the int, or the original string.
-        >>> [(type(x), x) for x in [maybe_int('-3'), maybe_int('three')]]
-        [(<type 'int'>, -3), (<type 'str'>, 'three')]
-    '''#'''
-    try:    n = int(word)
-    except: return word
-    else:   return n
+def number_tokens(number):
+    value = int(number)
+    bignum_prefix = protocol.token_cats['Bignum'] << 8
+    result = []
+    while value is not None:
+        try:
+            token = IntegerToken(value)
+            value = None
+        except OverflowError:
+            byte = value & 0xFF
+            name = "+0x%02X" % byte
+            token = Token(name, bignum_prefix + byte)
+            value >>= 8
+        result.insert(0, token)
+    return result
 
 def character(value):
     ''' Configuration parser for a single-character string.'''
@@ -1016,7 +1010,16 @@ class Representation(Configurable):
         text = text.replace(')', ' KET ')
         
         # Pass items into Token, converting integers if necessary
-        return [self[maybe_int(word.upper())] for word in text.split()]
+        result = []
+        for word in text.split():
+            try:
+                n = int(word)
+            except:
+                token = self[word.upper()]
+                result.append(token)
+            else:
+                result.extend(number_tokens(n))
+        return result
     
     def unpack(self, data):
         result = Message([self[x]
