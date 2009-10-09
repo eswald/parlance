@@ -39,6 +39,17 @@ class ValidatorTestCase(unittest.TestCase):
         message = NME ("Tom\xe1s") ("v1.3")
         reply = self.validator.validate_client_message(message)
         self.failUnlessEqual(reply, HUH (NME ("Tom", ERR, "\xe1s") ("v1.3")))
+    def test_bignum_valid(self):
+        # Bignum tokens are valid number extensions
+        message = IAM (ENG) (123456)
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, False)
+    def test_bignum_invalid(self):
+        # Bignum tokens are not valid where a number is expected
+        bignum = protocol.default_rep[0x4C4C]
+        message = IAM (ENG) (bignum)
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, HUH (IAM (ENG) (ERR, bignum)))
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"

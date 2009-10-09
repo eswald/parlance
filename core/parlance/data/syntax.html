@@ -104,6 +104,11 @@ There are currently no <b>server_request</b> messages.</p>
 but only after the server has assigned that client as a player in its current
 game.  Likewise, a <b>player_command</b> is a command sent only by a player,
 and a <b>player_request</b> is a request sent only by a player.</p>
+
+<h4>number = Integers [Bignum Bignum ...]</h4>
+<p>A <b>number</b> is an integer.  For purposes of this document, each
+integer is a single token; however, the protocol may require that it be
+split up into multiple tokens in order to fit into 16-bit values.</p>
 -->
 
 <p>There are a number of terms which are used by a lot of commands.
@@ -791,7 +796,6 @@ cleared with <b>NOT (SUB)</b>, to which the server will reply with
 <h4><a name="MIS">server_message = MIS</a> (unit) (unit) ...</h4>
 <h4>server_message = MIS (unit MRT (province_list)) (unit MRT (province_list)) ...</h4>
 <h4>server_message = MIS (number)</h4>
-<!-- <h4>number = Integers</h4> -->
 
 <p>This command can be sent by the server immediately after the last
 <b>THX</b> message following a <b>SUB</b> command. If sent, it indicates
