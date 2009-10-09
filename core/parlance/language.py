@@ -779,7 +779,6 @@ class Time(Comparable):
 
 def number_tokens(number):
     value = int(number)
-    bignum_prefix = protocol.token_cats['Bignum'] << 8
     result = []
     while value is not None:
         try:
@@ -787,7 +786,7 @@ def number_tokens(number):
             value = None
         except OverflowError:
             byte = value & 0xFF
-            token = protocol.default_rep[bignum_prefix + byte]
+            token = protocol.default_rep[protocol.bignum + byte]
             value >>= 8
         result.insert(0, token)
     return result
