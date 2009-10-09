@@ -65,21 +65,16 @@ class LanguageTestCase(unittest.TestCase):
             "StringToken('m'), StringToken('\\xe1'), StringToken('s')], " +
             "[u'v1.3']])")
         self.failUnlessEqual(repr(msg), expected)
-    def test_bignum_name(self):
-        msg = TME (123456)
-        token = msg[3]
-        self.failUnlessEqual(token.text, "+0x40")
-    def test_bignum_name_cap(self):
-        msg = TME (0xABCD)
-        token = msg[3]
-        self.failUnlessEqual(token.text, "+0xCD")
-    def test_bignum_name_single(self):
-        msg = TME (0x4004)
-        token = msg[3]
-        self.failUnlessEqual(token.text, "+0x04")
     def test_translate_bignum(self):
         msg = protocol.default_rep.translate("TME (123456)")
         self.failUnlessEqual(msg, TME (123456))
+    def test_bignum_str(self):
+        msg = TME (123456)
+        self.failUnlessEqual(str(msg), "TME ( 123456 )")
+    def test_invalid_bignum_str(self):
+        msg = TME (123456)
+        msg.pop(2)
+        self.failUnlessEqual(str(msg), "TME ( 0x4C40 )")
 
 class NumberTestCase(unittest.TestCase):
     def check_number_code(self, number, code):

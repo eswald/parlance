@@ -105,7 +105,7 @@ class Message(list):
                     text = []
                 if token.is_integer():
                     append(token.value())
-                elif token.category_name() == "Bignum":
+                elif token.is_bignum():
                     result[-1] = (result[-1] << 8) + token.value()
                 else: append(token)
         if text: append(text)
@@ -128,6 +128,7 @@ class Message(list):
         result = []
         in_text = False
         use_space = False
+        last_int = None
         
         for token in self:
             if token.is_text():
@@ -143,10 +144,19 @@ class Message(list):
                 if in_text:
                     result.append(quot)
                     in_text = False
-                if use_space and not (squeeze and token is KET):
-                    result.append(' ')
-                use_space = not (squeeze and token is BRA)
-                result.append(token.text)
+                
+                if token.is_bignum() and last_int is not None:
+                    last_int = (last_int << 8) + token.value()
+                    result[-1] = str(last_int)
+                else:
+                    if use_space and not (squeeze and token is KET):
+                        result.append(' ')
+                    use_space = not (squeeze and token is BRA)
+                    
+                    result.append(token.text)
+                    if token.is_integer():
+                        last_int = token.value()
+                    else: last_int = None
         if in_text: result.append(quot)
         
         return str.join('', result).decode("UTF-8")
@@ -557,6 +567,15 @@ class Token(_integer_Token):
             False
         '''#'''
         return protocol.max_pos_int <= self.number < protocol.max_neg_int
+    def is_bignum(self):
+        ''' Whether the token represents a number.
+            >>> YES.is_bignum()
+            False
+            >>> msg = TME (123456)
+            >>> msg[3].is_bignum()
+            True
+        '''#'''
+        return self.category_name() == "Bignum"
     def is_season(self):
         ''' Whether the token represents a season or phase.
             >>> SPR.is_season()
@@ -768,8 +787,7 @@ def number_tokens(number):
             value = None
         except OverflowError:
             byte = value & 0xFF
-            name = "+0x%02X" % byte
-            token = Token(name, bignum_prefix + byte)
+            token = protocol.default_rep[bignum_prefix + byte]
             value >>= 8
         result.insert(0, token)
     return result
