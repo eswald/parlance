@@ -1446,7 +1446,6 @@ class TurnTestCase(TestCase):
     def test_turn_phase_name(self):
         t = Turn(SUM, 1901)
         self.failUnlessEqual(t.phase(), Turn.retreat_phase)
-    @fails
     def test_end_of_time(self):
         # What happens when we run out of years?
         last = Turn(WIN, protocol.max_pos_int - 1,
@@ -1454,9 +1453,8 @@ class TurnTestCase(TestCase):
         next = last.next()
         msg = Message(next)
         self.assertEqual(msg.fold(), [SPR, protocol.max_pos_int])
-    @failing(OverflowError)
     def test_max_neg_int(self):
-        # What if we let it overflow the full 15 bits?
+        # What if we let it overflow the full 14 bits?
         last = Turn(WIN, protocol.max_neg_int - 1,
             seasons=(SPR, SUM, FAL, AUT, WIN))
         next = last.next()

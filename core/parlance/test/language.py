@@ -107,6 +107,8 @@ class NumberTestCase(unittest.TestCase):
         self.check_number_code(0x200000, [0x00, 0x20, 0x4C, 0x00, 0x4C, 0x00])
     def test_barely_bignum_negative(self):
         self.check_number_code(-0x2001, [0x3F, 0xDF, 0x4C, 0xFF])
+    def test_BRA_conflict(self):
+        self.check_number_code(0x4000, [0x00, 0x40, 0x4C, 0x00])
 
 class NumberFoldingTestCase(NumberTestCase):
     def check_number_code(self, number, code):
@@ -115,6 +117,11 @@ class NumberFoldingTestCase(NumberTestCase):
         msg = protocol.default_rep.unpack(packed)
         obtained = msg.fold()[1][0]
         self.assertEqual(obtained, number, repr(msg))
+
+class SeasonFoldingTestCase(NumberTestCase):
+    def check_number_code(self, number, code):
+        msg = NOW (SPR, number)
+        self.assertEqual(msg.fold(), [NOW, [SPR, number]])
 
 class NumberReprTestCase(NumberTestCase):
     def check_number_code(self, number, code):

@@ -74,41 +74,45 @@ class Message(list):
         complaint = 'unbalanced parentheses in folded Message'
         if self.count(BRA) != self.count(KET):
             raise ValueError(complaint)
-        series = self.convert()
+        series = list(self)
         while BRA in series:
             k = series.index(KET)
             try: b = rindex(series[:k], BRA)
             except ValueError: raise ValueError(complaint)
-            series[b:k+1] = [series[b+1:k]]
-        return series
-    def convert(self):
-        ''' Converts a Message into a list,
-            with embedded strings and tokens converted into Python values.
-            
+            series[b:k+1] = [self.convert(series[b+1:k])]
+        return self.convert(series)
+    @staticmethod
+    def convert(series):
+        r'''Converts embedded strings and integers into Python values.
             >>> NME('version')(-3).convert()
             [NME, BRA, u'version', KET, BRA, -3, KET]
         '''#'''
         result = []
         text = []
         append = result.append
-        for token in self:
-            if token.is_text():
+        def add_text():
+            try:
+                string = "".join(t.text for t in text).decode("utf-8")
+            except UnicodeDecodeError:
+                result.extend(text)
+            else:
+                append(string)
+        
+        for token in series:
+            if not isinstance(token, Token):
+                append(token)
+            elif token.is_text():
                 text.append(token)
             else:
                 if text:
-                    try:
-                        string = "".join(t.text for t in text).decode("utf-8")
-                    except UnicodeDecodeError:
-                        result.extend(text)
-                    else:
-                        append(string)
+                    add_text()
                     text = []
                 if token.is_integer():
                     append(token.value())
                 elif token.is_bignum():
                     result[-1] = (result[-1] << 8) + token.value()
                 else: append(token)
-        if text: append(text)
+        if text: add_text()
         return result
     
     def __str__(self):
