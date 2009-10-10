@@ -19,7 +19,7 @@ from parlance.config    import VerboseObject
 from parlance.fallbacks import any
 from parlance.gameboard import Variant
 from parlance.language  import Representation, Token, protocol
-from parlance.main      import ThreadManager
+from parlance.reactor   import ThreadManager
 from parlance.network   import Client, Connection
 from parlance.player    import Clock, HoldBot
 from parlance.server    import Server

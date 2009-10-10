@@ -18,8 +18,9 @@ from time       import ctime
 from config     import GameOptions, variants
 from gameboard  import Map, Turn, Variant
 from language   import Message, Time, Token
-from main       import ThreadManager, ClientProgram
+from main       import ClientProgram
 from orders     import DisbandOrder, HoldOrder, OrderSet, RemoveOrder
+from reactor    import ThreadManager
 from tokens     import *
 from util       import version_string
 from validation import Validator

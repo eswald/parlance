@@ -14,7 +14,7 @@ from time       import sleep, time
 from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Turn
 from parlance.language   import Time
-from parlance.main       import ThreadManager
+from parlance.reactor    import ThreadManager
 from parlance.network    import Service
 from parlance.player     import Clock, HoldBot
 from parlance.server     import Server
@@ -26,7 +26,7 @@ from parlance.xtended    import ITA, LON, PAR
 class Fake_Manager(ThreadManager):
     def __init__(self):
         self.__super.__init__()
-        self.pass_exceptions = True
+        self.options.block_exceptions = False
         self.next_id = 0
         self.server = Server(self)
     def add_client(self, player_class, **kwargs):
