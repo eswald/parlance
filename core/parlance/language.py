@@ -84,7 +84,7 @@ class Message(list):
     @staticmethod
     def convert(series):
         r'''Converts embedded strings and integers into Python values.
-            >>> NME('version')(-3).convert()
+            >>> Message.convert(NME('version')(-3))
             [NME, BRA, u'version', KET, BRA, -3, KET]
         '''#'''
         result = []
