@@ -489,14 +489,14 @@ class Server_Basics(ServerTestCase):
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP ("testmap"), player.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_variant_name(self):
         ''' The server should answer a VAR command with the variant name.'''
-        # Note: This test may fail if the fleet_rome variant is unavailable.
-        self.set_option('variant', 'fleet_rome')
+        self.set_option("variant", "testing")
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         player.send(+VAR)
-        self.assertContains(VAR ("fleet_rome"), player.queue)
+        self.assertContains(VAR ("testing"), player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
