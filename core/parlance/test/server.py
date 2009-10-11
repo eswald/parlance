@@ -373,11 +373,11 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_historian_var(self):
-        # Note: This test may fail if the fleet_rome variant is unavailable.
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
-        self.set_option('variant', 'fleet_rome')
+        self.set_option('variant', 'testing')
         self.connect_server()
         self.server.options.log_games = True
         game = self.start_game()
@@ -390,7 +390,7 @@ class Server_Basics(ServerTestCase):
                 game_id=game.game_id, observe=True)
         player.queue = []
         player.send(+VAR)
-        self.assertContains(VAR ("fleet_rome"), player.queue)
+        self.assertContains(VAR ("testing"), player.queue)
     def test_historian_sub(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -480,16 +480,15 @@ class Server_Basics(ServerTestCase):
         sleep(12)
         game.run()
         self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
-    @fails
+    @patch("parlance.server.variants", test_variants)
     def test_variant_map_name(self):
         ''' Variants should use the name of the map in MAP messages.
             For example, Fleet Rome should use MAP ("standard").
         '''#'''
-        # Note: This test may fail if the fleet_rome variant is unavailable.
-        self.set_option('variant', 'fleet_rome')
+        self.set_option("variant", "testing")
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
-        self.assertContains(MAP ("standard"), player.queue)
+        self.assertContains(MAP ("testmap"), player.queue)
     def test_variant_name(self):
         ''' The server should answer a VAR command with the variant name.'''
         # Note: This test may fail if the fleet_rome variant is unavailable.
