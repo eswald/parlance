@@ -33,6 +33,19 @@ test_variants = {
         base=standard
         mapname=testmap
     '''),
+    "mini": load_variant(r'''
+        [variant]
+        name=mini
+        [homes]
+        ONE=AAA,BBB
+        TWO=BBB,CCC
+        TRE=AAA,CCC
+        [borders]
+        AAA=AMY BBB,CCC,DDD
+        BBB=AMY AAA,CCC,DDD
+        CCC=AMY AAA,BBB,DDD
+        DDD=AMY AAA,BBB,CCC
+    '''),
 }
 
 class Storage(object):
@@ -1209,11 +1222,14 @@ class Server_Multigame(ServerTestCase):
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
         self.assertContains(MAP("testmap"), player.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_RM_change(self):
         old_rep = self.game.variant.rep
         old_id = self.game.game_id
-        self.new_game('sailho')
-        newbie = self.connect_player(self.Fake_Player, game_id=old_id)
+        self.new_game("mini")
+        newbie = self.connect_player(self.Fake_Player)
+        self.failIfEqual(newbie.rep, old_rep)
+        newbie.send(SEL (old_id))
         self.failUnlessEqual(newbie.rep, old_rep)
     def test_admin_select(self):
         game = self.new_game()
@@ -1248,27 +1264,27 @@ class Server_Multigame(ServerTestCase):
                 LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
         self.assertEqual(YES (LST), self.master.queue[-1])
+    @patch("parlance.server.variants", test_variants)
     def test_multigame_LST_reply(self):
-        # Note: This test may fail if the sailho variant is unavailable.
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
-        game = self.new_game('sailho')
+        game = self.new_game("testing")
         self.master.queue = []
         self.master.send(+LST)
-        sailho_params = game.game_options.get_params()
+        testing_params = game.game_options.get_params()
         self.assertContains(
                 LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue)
         self.assertContains(
-                LST (game.game_id) (4, NME) ('sailho') (sailho_params),
+                LST (game.game_id) (7, NME) ("testing") (testing_params),
                 self.master.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_single_LST_reply(self):
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
-        game = self.new_game('sailho')
+        game = self.new_game("testing")
         self.master.queue = []
         self.master.send(LST(game_id))
-        sailho_params = game.game_options.get_params()
         self.assertEqual(
                 LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue[-1])
