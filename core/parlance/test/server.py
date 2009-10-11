@@ -35,6 +35,43 @@ test_variants = {
     '''),
 }
 
+class Storage(object):
+    r'''Stores saved files in memory,
+        in case the Historian save directory doesn't exist.
+        Designed for use as a replacement for __builtin__.open().
+    '''#"""#'''
+    
+    class Reader(object):
+        def __init__(self, lines):
+            self.lines = lines
+        def __iter__(self):
+            return iter(self.lines)
+        def close(self):
+            self.lines = None
+    
+    class Writer(object):
+        def __init__(self, lines):
+            self.lines = lines
+        def write(self, line):
+            # Not quite perfect, but it will do here.
+            self.lines.append(line)
+        def close(self):
+            self.lines = None
+    
+    def __init__(self):
+        self.files = {}
+        self.open = open
+    def __call__(self, filename, mode):
+        if "r" in mode:
+            if filename in self.files:
+                return self.Reader(self.files[filename])
+            else:
+                return self.open(filename, mode)
+        else:
+            lines = []
+            self.files[filename] = lines
+            return self.Writer(lines)
+
 class Fake_Manager(ThreadManager):
     def __init__(self):
         self.__super.__init__()
@@ -314,6 +351,7 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         message = player.hold_all(turn)
         self.assertContains(REJ (message), player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -357,6 +395,7 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers[player.power]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian_map(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -374,6 +413,7 @@ class Server_Basics(ServerTestCase):
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
     @patch("parlance.server.variants", test_variants)
+    @patch("__builtin__.open", Storage())
     def test_historian_var(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -391,6 +431,7 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         player.send(+VAR)
         self.assertContains(VAR ("testing"), player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian_sub(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -437,6 +478,7 @@ class Server_Basics(ServerTestCase):
             self.game.summarize()
         ]
         self.assertEqual([str(msg) + '\n' for msg in expected], result)
+    @patch("__builtin__.open", Storage())
     def test_archive_game(self):
         self.connect_server()
         self.server.options.log_games = True
