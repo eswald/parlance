@@ -15,15 +15,10 @@ from parlance.gameboard  import Map, Province, Turn, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Message, Representation, protocol
 from parlance.orders     import OrderSet, createUnitOrder
-from parlance.test       import TestCase, failing, fails
+from parlance.test       import TestCase, failing, fails, load_variant
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
-
-def load_variant(information):
-    variant = Variant("testing")
-    variant.parse(line.strip() for line in information.splitlines())
-    return variant
 
 class VariantFileTests(TestCase):
     "Tests for loading information from a variant file"

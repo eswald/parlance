@@ -11,6 +11,7 @@ r'''Parlance test cases
 import unittest
 
 from parlance.fallbacks import wraps
+from parlance.gameboard import Variant
 
 def todo(test):
     '''Makes a test always fail, with an appropriate note.'''
@@ -92,6 +93,11 @@ def failing(exception):
             else: test_case.fail('Test unexpectedly passed')
         return test_wrapper
     return decorator
+
+def load_variant(information):
+    variant = Variant("testing")
+    variant.parse(line.strip() for line in information.splitlines())
+    return variant
 
 class TestCase(unittest.TestCase):
     '''Extended test case, with functions I always end up using.'''

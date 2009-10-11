@@ -11,6 +11,8 @@ r'''Test cases for the Parlance server
 import unittest
 from time       import sleep, time
 
+from mock import patch
+
 from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Turn
 from parlance.language   import Time
@@ -19,9 +21,19 @@ from parlance.network    import Service
 from parlance.player     import Clock, HoldBot
 from parlance.server     import Server
 from parlance.tokens     import *
-from parlance.test       import fails
+from parlance.test       import fails, load_variant
 from parlance.util       import num2name
-from parlance.xtended    import ITA, LON, PAR
+from parlance.xtended    import ITA, LON, PAR, standard
+
+test_variants = {
+    "standard": standard,
+    "testing": load_variant(r'''
+        [variant]
+        name=testing
+        base=standard
+        mapname=testmap
+    '''),
+}
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
@@ -1150,12 +1162,12 @@ class Server_Multigame(ServerTestCase):
         self.master.admin('Server: start holdbot')
         self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
-    def test_sailho_game(self):
-        # Note: This test may fail if the sailho variant is unavailable.
-        self.new_game('sailho')
+    @patch("parlance.server.variants", test_variants)
+    def test_variant_game(self):
+        self.new_game("testing")
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
-        self.assertContains(MAP('sailho'), player.queue)
+        self.assertContains(MAP("testmap"), player.queue)
     def test_RM_change(self):
         old_rep = self.game.variant.rep
         old_id = self.game.game_id
