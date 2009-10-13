@@ -108,9 +108,11 @@ class Message(list):
                     add_text()
                     text = []
                 if token.is_integer():
-                    append(token.value())
-                elif token.is_bignum():
-                    result[-1] = (result[-1] << 8) + token.value()
+                    value = token.value()
+                    while (result and isinstance(result[-1], Token)
+                            and result[-1].is_bignum()):
+                        value = (value << 8) + result.pop().value()
+                    append(value)
                 else: append(token)
         if text: add_text()
         return result
@@ -132,7 +134,7 @@ class Message(list):
         result = []
         in_text = False
         use_space = False
-        last_int = None
+        bignums = []
         
         for token in self:
             if token.is_text():
@@ -144,23 +146,34 @@ class Message(list):
                 
                 if token.text in (escape, quot): result.append(escape)
                 result.append(token.text)
+                continue
+            
+            if in_text:
+                result.append(quot)
+                in_text = False
+            
+            if token.is_bignum():
+                bignums.append(token)
+                continue
+            
+            if token.is_integer():
+                value = token.value()
+                while bignums:
+                    value = (value << 8) + bignums.pop().value()
+                text = str(value)
             else:
-                if in_text:
-                    result.append(quot)
-                    in_text = False
-                
-                if token.is_bignum() and last_int is not None:
-                    last_int = (last_int << 8) + token.value()
-                    result[-1] = str(last_int)
-                else:
-                    if use_space and not (squeeze and token is KET):
+                text = token.text
+                while bignums:
+                    if use_space:
                         result.append(' ')
-                    use_space = not (squeeze and token is BRA)
-                    
-                    result.append(token.text)
-                    if token.is_integer():
-                        last_int = token.value()
-                    else: last_int = None
+                    result.append(bignums.pop().text)
+                    use_space = True
+            
+            if use_space and not (squeeze and token is KET):
+                result.append(' ')
+            use_space = not (squeeze and token is BRA)
+            result.append(text)
+        
         if in_text: result.append(quot)
         
         return str.join('', result).decode("UTF-8")
@@ -792,7 +805,7 @@ def number_tokens(number):
             byte = value & 0xFF
             token = protocol.default_rep[protocol.bignum + byte]
             value >>= 8
-        result.insert(0, token)
+        result.append(token)
     return result
 
 def character(value):

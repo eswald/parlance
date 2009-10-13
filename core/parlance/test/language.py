@@ -49,7 +49,7 @@ class ValidatorTestCase(unittest.TestCase):
         bignum = protocol.default_rep[0x4C4C]
         message = IAM (ENG) (bignum)
         reply = self.validator.validate_client_message(message)
-        self.failUnlessEqual(reply, HUH (IAM (ENG) (ERR, bignum)))
+        self.failUnlessEqual(reply, HUH (IAM (ENG) (bignum, ERR)))
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"
@@ -73,7 +73,7 @@ class LanguageTestCase(unittest.TestCase):
         self.failUnlessEqual(str(msg), "TME ( 123456 )")
     def test_invalid_bignum_str(self):
         msg = TME (123456)
-        msg.pop(2)
+        msg.pop(3)
         self.failUnlessEqual(str(msg), "TME ( 0x4C40 )")
 
 class NumberTestCase(unittest.TestCase):
@@ -95,20 +95,26 @@ class NumberTestCase(unittest.TestCase):
     
     def test_bignum_positive(self):
         # 123456 = 0x01E240
-        self.check_number_code(123456, [0x01, 0xE2, 0x4C, 0x40])
+        self.check_number_code(123456, [0x4C, 0x40, 0x01, 0xE2])
     def test_bignum_negative(self):
         # -123456 = ...1110_0001_1101_1100_0000 = 0xFE1DC0
-        self.check_number_code(-123456, [0x3E, 0x1D, 0x4C, 0xC0])
+        self.check_number_code(-123456, [0x4C, 0xC0, 0x3E, 0x1D])
     def test_barely_bignum(self):
-        self.check_number_code(0x2000, [0x00, 0x20, 0x4C, 0x00])
+        self.check_number_code(0x2000, [0x4C, 0x00, 0x00, 0x20])
     def test_largest_bignum(self):
-        self.check_number_code(0x1fffff, [0x1F, 0xFF, 0x4C, 0xFF])
+        self.check_number_code(0x1fffff, [0x4C, 0xFF, 0x1F, 0xFF])
     def test_barely_double_bignum(self):
-        self.check_number_code(0x200000, [0x00, 0x20, 0x4C, 0x00, 0x4C, 0x00])
+        self.check_number_code(0x200000, [0x4C, 0x00, 0x4C, 0x00, 0x00, 0x20])
+    def test_double_bignum(self):
+        self.check_number_code(0x01234567,
+            [0x4C, 0x67, 0x4C, 0x45, 0x01, 0x23])
+    def test_triple_bignum(self):
+        self.check_number_code(0x0123456789,
+            [0x4C, 0x89, 0x4C, 0x67, 0x4C, 0x45, 0x01, 0x23])
     def test_barely_bignum_negative(self):
-        self.check_number_code(-0x2001, [0x3F, 0xDF, 0x4C, 0xFF])
+        self.check_number_code(-0x2001, [0x4C, 0xFF, 0x3F, 0xDF])
     def test_BRA_conflict(self):
-        self.check_number_code(0x4000, [0x00, 0x40, 0x4C, 0x00])
+        self.check_number_code(0x4000, [0x4C, 0x00, 0x00, 0x40])
 
 class NumberFoldingTestCase(NumberTestCase):
     def check_number_code(self, number, code):
