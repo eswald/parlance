@@ -8,43 +8,77 @@ r'''Docstring test cases for Parlance modules
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-def _test():
-    import doctest
-    import sys
-    
-    from parlance import fallbacks
-    from parlance import gameboard
-    from parlance import language
-    from parlance import orders
-    from parlance import validation
-    from parlance import xtended
-    from parlance import util
-    
-    # List of modules to test
-    modules = [
-        fallbacks,
-        gameboard,
-        language,
-        orders,
-        validation,
-        util,
-    ]
-    
-    extension = dict((name, getattr(xtended, name)) for name in xtended.__all__)
+import doctest
+import sys
+
+from parlance import fallbacks
+from parlance import gameboard
+from parlance import language
+from parlance import orders
+from parlance import test
+from parlance import util
+from parlance import validation
+from parlance import xtended
+
+# List of modules to test
+modules = [
+    fallbacks,
+    gameboard,
+    language,
+    orders,
+    test,
+    util,
+    validation,
+]
+
+def create_extension():
+    extension = dict((name, getattr(xtended, name))
+        for name in xtended.__all__)
     extension.update(language.protocol.base_rep)
+    return extension
+
+def configure():
+    # Configure basic options assumed by docstrings
+    opts = language.protocol.base_rep.options
+    opts.squeeze_parens = False
+    opts.output_escape = '"'
+    opts.quot_char = '"'
+
+def _test():
+    extension = create_extension()
     verbose = "-v" in sys.argv
     
     for mod in modules:
         print 'Testing', mod.__name__
-        # Configure basic options assumed by docstrings
-        opts = language.protocol.base_rep.options
-        opts.squeeze_parens = False
-        opts.output_escape = '"'
-        opts.quot_char = '"'
+        configure()
         
         globs = mod.__dict__
         globs.update(extension)
         doctest.testmod(mod, verbose=verbose, report=0, globs=globs)
     doctest.master.summarize()
 
-if __name__ == "__main__": _test()
+def load_module(module):
+    extension = create_extension()
+    tests = doctest.DocTestSuite(module, extraglobs=extension)
+    return tests
+
+def doctest_runner(case):
+    def wrapper():
+        configure()
+        return case.runTest()
+    
+    # str(case) would be more robust, but this looks better.
+    wrapper.__name__ = "test " + case._dt_test.name
+    return wrapper
+
+def install_suites():
+    this = sys.modules[__name__]
+    for module in modules:
+        for num, case in enumerate(load_module(module)):
+            setattr(this, "test_%s_%d" % (module.__name__, num),
+                doctest_runner(case))
+
+if __name__ == "__main__":
+    _test()
+else:
+    install_suites()
