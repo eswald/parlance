@@ -536,7 +536,8 @@ class Clock(AutoObserver):
         self.__super.handle_HLO(message)
         max_time = max(self.game_opts.BTL, self.game_opts.MTL, self.game_opts.RTL)
         if max_time > 0:
-            for seconds in range(5, max_time, 5): self.send(TME(Time(seconds)))
+            for seconds in xrange(5, max_time, 5):
+                self.send(TME(Time(seconds)))
         else: self.close()
     def handle_TME(self, message):
         seconds = int(Time(*message.fold()[1]))
