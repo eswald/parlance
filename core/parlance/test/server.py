@@ -18,7 +18,7 @@ from parlance.gameboard  import Turn
 from parlance.language   import Time
 from parlance.reactor    import ThreadManager
 from parlance.network    import Service
-from parlance.player     import Clock, HoldBot
+from parlance.player     import HoldBot
 from parlance.server     import Server
 from parlance.tokens     import *
 from parlance.test       import fails
@@ -470,9 +470,13 @@ class Server_Basics(ServerTestCase):
             seconds = int(Time(*message.fold()[1]))
             times.append(seconds)
         
+        # This used to use Clock, but we don't need 3606 TME requests.
         self.connect_server()
-        player = self.connect_player(Clock)
+        player = self.connect_player(HoldBot)
         player.handle_TME = catch_times
+        for seconds in xrange(limit - 20, limit, 5):
+            player.send(TME(Time(seconds)))
+        
         game = self.start_game()
         sleep(12)
         game.run()
