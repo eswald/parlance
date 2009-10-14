@@ -290,13 +290,13 @@ class Validator(VerboseObject):
         length = len(msg)
         for level,sub_list in self.syntax[sub]:
             if level <= self.syntax_level:
-                self.spaces += 1
-                self.log_debug(16, '%sChecking "%s" against %s',
-                        ' ' * self.spaces, msg, sub_list)
+                #self.spaces += 1
+                #self.log_debug(16, '%sChecking "%s" against %s',
+                #        ' ' * self.spaces, msg, sub_list)
                 result, good = self.validate_option(msg, sub_list)
-                self.log_debug(16, '%sResult: %s, %s',
-                        ' ' * self.spaces, result, good)
-                self.spaces -= 1
+                #self.log_debug(16, '%sResult: %s, %s',
+                #        ' ' * self.spaces, result, good)
+                #self.spaces -= 1
                 if good == valid and result > best:
                     best = result
                     if valid and best == length: break
