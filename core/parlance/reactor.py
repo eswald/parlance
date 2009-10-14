@@ -30,12 +30,14 @@ class ThreadManager(VerboseObject):
                 for installer in getReactorTypes()), "or")),
     )
     
-    def __init__(self):
+    def __init__(self, reactor=None):
         self.closed = False
         self.__super.__init__()
+        self.reactor = reactor or self.install()
+    def install(self):
         installReactor(self.options.reactor)
         import twisted.internet.reactor
-        self.reactor = twisted.internet.reactor
+        return twisted.internet.reactor
     
     def run(self):
         ''' The main loop; never returns until the manager closes.'''

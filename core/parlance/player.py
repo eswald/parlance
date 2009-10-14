@@ -97,7 +97,7 @@ class Observer(ClientProgram):
     # Sending messages to the Server
     def send(self, message):
         if self.transport and not self.closed:
-            self.transport(Message(message))
+            self.transport.write(Message(message))
     def send_list(self, message_list):
         'Sends a list of Messages to the server.'
         for msg in message_list: self.send(msg)

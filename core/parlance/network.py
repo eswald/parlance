@@ -106,8 +106,8 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
             (version, magic) = unpack('!HH', data)
             if magic == self.proto.magic:
                 if version == self.proto.version:
-                    self.rep = self.proto.default_rep
-                    self.send_RM()
+                    self.service = Service(self, self.addr,
+                        self.factory.server, self.factory.game)
                     state = (self.read_header, 4)
                 else: state = self.send_error(self.proto.VersionError)
             elif unpack('<HH', data)[1] == self.proto.magic:
@@ -120,16 +120,21 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     def duplicate_IM(self, data):
         self.send_error(self.proto.DuplicateIMError)
     
-    def send_RM(self):
+    def send_RM(self, representation):
         ''' Sends the representation message to the client.
             This implementation can be configured to always sends a full RM,
             or to rely on the default for the Standard map.
         '''#'''
-        if self.options.null_rm and self.rep == self.proto.default_rep:
+        if representation == self.rep:
+            # No need to send again.
+            return
+        
+        self.rep = representation
+        if self.options.null_rm and representation == self.proto.default_rep:
             data = ''
         else:
             data = str.join('', (pack('!H3sx', token.number, name)
-                        for name, token in self.rep.items()))
+                        for name, token in representation.items()))
         self.send_dcsp(self.RM, data)
     def read_RM(self, data):
         # This might check for UnexpectedRM, but that interferes with SEL.
@@ -274,11 +279,6 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
     
     def handle_message(self, msg):
         self.log.debug("Handling %s", msg)
-        if self.service is None:
-            self.log.debug("New Service on %r, %r",
-                self.addr, self.factory.game)
-            self.service = Service(self, self.addr,
-                self.factory.server, self.factory.game)
         self.service.handle_message(msg)
 
 class DaideFactory(VerboseObject):
@@ -393,10 +393,10 @@ class Service(VerboseObject):
         self.server    = server
         self.errors    = 0
         self.game      = server.default_game(game_id)
-        self.rep       = self.game.variant.rep
         self.prefix    = 'Service #%d (%s)' % (self.client_id, game_id)
         
         server.add_client(self)
+        self.sock.send_RM(self.game.variant.rep)
     def power_name(self):
         return self.country and str(self.country) or ('#' + str(self.client_id))
     def full_name(self):
@@ -430,13 +430,10 @@ class Service(VerboseObject):
     def change_game(self, new_game):
         self.game.disconnect(self)
         self.game = new_game
-        representation = new_game.variant.rep
-        if representation != self.rep:
-            self.rep = representation
-            self.send_RM()
+        self.sock.send_RM(new_game.variant.rep)
         self.prefix = 'Service #%d (%s)' % (self.client_id, new_game.game_id)
     
-    def write(self, message):
+    def send_direct(self, message):
         # Skips the logging and watcher steps
         self.sock.write(message)
     def send(self, message):
@@ -444,7 +441,7 @@ class Service(VerboseObject):
             text = 'MDF [...]'
         else: text = unicode(message)
         self.log_debug(3, '%3s << %s', self.power_name(), text)
-        self.write(message)
+        self.send_direct(message)
         for watcher in self.server.watchers:
             watcher.handle_server_message(message,
                 self.game.game_id, self.client_id)

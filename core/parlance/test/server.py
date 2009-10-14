@@ -25,48 +25,43 @@ from parlance.xtended    import ITA, LON, PAR
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
-        self.__super.__init__()
+        from twisted.internet import reactor
+        self.__super.__init__(reactor)
         self.options.block_exceptions = False
-        self.next_id = 0
         self.server = Server(self)
-    def add_client(self, player_class, **kwargs):
-        service = Fake_Service(self.next_id,
-                self.server, player_class, manager=self, **kwargs)
-        self.next_id += 1
-        return service
+    def create_connection(self, player):
+        connection = FakeSocket(self.server, player)
+        return player
     def add_threaded(self, client):
-        self.attempt(client)
+        client.run()
     def add_dynamic(self, client):
         self.log_debug(1, 'Blocking dynamic client: %s', client.prefix)
 
-class Fake_Service(Service):
-    ''' Connects the Server straight to a player.
-        It would probably be a bad idea to mix this with network Services.
+class FakeSocket(VerboseObject):
+    r'''Connects the Server straight to a player, replacing DaideProtocol.
+        Only for use with testing.
     '''#'''
-    def __init__(self, client_id, server, player_class, **kwargs):
-        self.queue = []
-        self.player = None
-        self.__super.__init__(client_id, None, client_id, server)
-        self.player = player_class(**kwargs)
-        self.player.register(self.handle_message, self.rep)
-        for msg in self.queue: self.handle_message(msg)
-    def write(self, message):
+    
+    def __init__(self, server, player):
+        self.__super.__init__()
+        self.server = server
+        self.player = player
+        address = "Elsewhere"
+        self.service = Service(self, address, self.server)
+        player.register(self, self.service.game.variant.rep)
+    def send_direct(self, message):
+        r'''Takes a message from the server to the player.'''
         #check = self.game.validator.validate_server_message(message)
         #if check:
         #    raise Exception("Invalid server message: " + str(message))
         self.player.handle_message(message)
         if self.player.closed: self.close()
-    def close(self):
-        if not self.closed:
-            self.closed = True
-            self.game.disconnect(self)
-            self.server.disconnect(self)
-    def handle_message(self, message):
-        if self.player:
-            self.log_debug(4, '%3s >> %s', self.power_name(), message)
-            self.server.handle_message(self, message)
-        else: self.queue.append(message)
-    def send_RM(self): self.player.rep = self.rep
+    def write(self, message):
+        r'''Takes a message from the player to the server.'''
+        self.log.debug("%3s >> %s", self.player.prefix, message)
+        self.server.handle_message(self.service, message)
+    def send_RM(self, representation):
+        self.player.rep = representation
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''
@@ -83,7 +78,7 @@ class ServerTestCase(unittest.TestCase):
             self.power = power
             self.pcode = passcode
             self.queue = []
-            self.send = None
+            self.transport = None
             self.rep = None
             self.manager = manager
             self.game_id = game_id
@@ -92,7 +87,7 @@ class ServerTestCase(unittest.TestCase):
         def connect(self):
             return self.manager.create_connection(self)
         def register(self, transport, representation):
-            self.send = transport
+            self.transport = transport
             self.rep = representation
             
             if self.game_id is None:
@@ -105,6 +100,8 @@ class ServerTestCase(unittest.TestCase):
             else:
                 self.send(self.player_type (self.name)
                         (self.__class__.__name__))
+        def send(self, message):
+            self.transport.write(message)
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
@@ -184,9 +181,9 @@ class ServerTestCase(unittest.TestCase):
         self.server = manager.server
         self.game = self.server.default_game()
     def connect_player(self, player_class, **kwargs):
-        client = self.manager.add_client(player_class, **kwargs)
+        player = self.manager.add_client(player_class, **kwargs)
         self.manager.process()
-        return client.player
+        return player
     def start_game(self):
         game = self.server.default_game()
         while not game.started: self.connect_player(self.Fake_Player)
