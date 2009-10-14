@@ -57,11 +57,6 @@ def _test():
         doctest.testmod(mod, verbose=verbose, report=0, globs=globs)
     doctest.master.summarize()
 
-def load_module(module):
-    extension = create_extension()
-    tests = doctest.DocTestSuite(module, extraglobs=extension)
-    return tests
-
 def doctest_runner(case):
     def wrapper():
         configure()
@@ -72,9 +67,11 @@ def doctest_runner(case):
     return wrapper
 
 def install_suites():
+    extension = create_extension()
     this = sys.modules[__name__]
     for module in modules:
-        for num, case in enumerate(load_module(module)):
+        suite = doctest.DocTestSuite(module, extraglobs=extension)
+        for num, case in enumerate(suite):
             setattr(this, "test_%s_%d" % (module.__name__, num),
                 doctest_runner(case))
 
