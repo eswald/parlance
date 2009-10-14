@@ -892,7 +892,7 @@ class Server_Admin_Eject(Server_Admin):
                 'Fake Human Player (Fake_Master) is ejecting Fake Player from the game.')
         self.wait_for_actions()
         self.assertAdminResponse(self.master, None,
-                'Fake Player (Fake_Player) has disconnected. '
+                'Fake Player (Fake_Player) has been booted. '
                 'Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_player_started(self):
         ''' A player can be ejected by name after the game starts.'''
@@ -909,7 +909,7 @@ class Server_Admin_Eject(Server_Admin):
                 'Fake Human Player (Fake_Master) is ejecting two instances of Fake Player from the game.')
         self.wait_for_actions()
         self.assertAdminResponse(self.master, None,
-                'Fake Player (Fake_Player) has disconnected. '
+                'Fake Player (Fake_Player) has been booted. '
                 'Have 2 players and 0 observers. Need 5 to start.')
     def test_eject_multiple_started(self):
         ''' Multiple players of the same name cannot be ejected after the game starts.'''
@@ -956,8 +956,25 @@ class Server_Admin_Eject(Server_Admin):
                 "You can't veto your own booting.")
         self.wait_for_actions()
         self.assertAdminResponse(self.master, None,
-                'Fake Player (Fake_Player) has disconnected. '
+                'Fake Player (Fake_Player) has been booted. '
                 'Have 2 players and 0 observers. Need 5 to start.')
+    
+    def test_boot_disconnects(self):
+        # When a player is booted, the server should disconnect it.
+        clients = self.server.clients
+        for key in clients:
+            if clients[key].name == self.robot.name:
+                client_id = key
+                client = clients[key]
+                break
+        else: self.fail("Robot client not found")
+        
+        self.failIfEqual(client_id, None)
+        self.master.admin('Server: boot Fake Player')
+        self.wait_for_actions()
+        self.failUnless(client_id not in clients)
+        self.failUnless(client.closed)
+        self.failUnless(client.sock.closed)
     
     @fails
     def test_eject_observer_unstarted(self):
