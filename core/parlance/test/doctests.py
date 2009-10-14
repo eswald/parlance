@@ -71,9 +71,9 @@ def install_suites():
     this = sys.modules[__name__]
     for module in modules:
         suite = doctest.DocTestSuite(module, extraglobs=extension)
-        for num, case in enumerate(suite):
-            setattr(this, "test_%s_%d" % (module.__name__, num),
-                doctest_runner(case))
+        for case in suite:
+            runner = doctest_runner(case)
+            setattr(this, runner.__name__, runner)
 
 if __name__ == "__main__":
     _test()
