@@ -11,6 +11,8 @@ r'''Test cases for the Parlance server
 import unittest
 from time       import sleep, time
 
+from mock import Mock
+
 from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Turn
 from parlance.language   import Time
@@ -25,8 +27,7 @@ from parlance.xtended    import ITA, LON, PAR
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
-        from twisted.internet import reactor
-        self.__super.__init__(reactor)
+        self.__super.__init__(Mock())
         self.options.block_exceptions = False
         self.server = Server(self)
     def create_connection(self, player):
@@ -42,26 +43,37 @@ class FakeSocket(VerboseObject):
         Only for use with testing.
     '''#'''
     
+    class FakeProtocol(object):
+        def __init__(self, socket):
+            self.socket = socket
+        def write(self, message):
+            self.socket.send(message)
+    
     def __init__(self, server, player):
         self.__super.__init__()
+        self.closed = False
         self.server = server
         self.player = player
         address = "Elsewhere"
         self.service = Service(self, address, self.server)
-        player.register(self, self.service.game.variant.rep)
-    def send_direct(self, message):
+        protocol = self.FakeProtocol(self)
+        player.register(protocol, self.service.game.variant.rep)
+    def write(self, message):
         r'''Takes a message from the server to the player.'''
         #check = self.game.validator.validate_server_message(message)
         #if check:
         #    raise Exception("Invalid server message: " + str(message))
+        self.log.debug("%3s << %s", self.service.power_name(), message)
         self.player.handle_message(message)
         if self.player.closed: self.close()
-    def write(self, message):
+    def send(self, message):
         r'''Takes a message from the player to the server.'''
-        self.log.debug("%3s >> %s", self.player.prefix, message)
+        self.log.debug("%3s >> %s", self.service.power_name(), message)
         self.server.handle_message(self.service, message)
     def send_RM(self, representation):
         self.player.rep = representation
+    def close(self):
+        self.closed = True
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''

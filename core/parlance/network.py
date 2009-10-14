@@ -433,7 +433,7 @@ class Service(VerboseObject):
         self.sock.send_RM(new_game.variant.rep)
         self.prefix = 'Service #%d (%s)' % (self.client_id, new_game.game_id)
     
-    def send_direct(self, message):
+    def write(self, message):
         # Skips the logging and watcher steps
         self.sock.write(message)
     def send(self, message):
@@ -441,7 +441,7 @@ class Service(VerboseObject):
             text = 'MDF [...]'
         else: text = unicode(message)
         self.log_debug(3, '%3s << %s', self.power_name(), text)
-        self.send_direct(message)
+        self.write(message)
         for watcher in self.server.watchers:
             watcher.handle_server_message(message,
                 self.game.game_id, self.client_id)

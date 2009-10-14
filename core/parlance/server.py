@@ -155,7 +155,7 @@ class Server(ServerProgram):
     def broadcast(self, message):
         self.log_debug(2, 'ALL << %s', message)
         for client in self.clients.values():
-            client.send_direct(message)
+            client.write(message)
         for watcher in self.watchers:
             watcher.handle_broadcast_message(message, None)
     def broadcast_admin(self, text):
@@ -555,7 +555,7 @@ class Historian(VerboseObject):
         ''' Sends a message to each ready client, and notes it in the log.'''
         self.log_debug(2, 'ALL << %s', message)
         for client in self.clients:
-            client.send_direct(message)
+            client.write(message)
         for watcher in self.server.watchers:
             watcher.handle_broadcast_message(message, self.game_id)
     def admin(self, line, *args):
