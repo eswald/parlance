@@ -394,6 +394,7 @@ class Service(VerboseObject):
         self.errors    = 0
         self.game      = server.default_game(game_id)
         self.prefix    = 'Service #%d (%s)' % (self.client_id, game_id)
+        self.closed    = False
         
         server.add_client(self)
         self.sock.send_RM(self.game.variant.rep)
@@ -419,7 +420,6 @@ class Service(VerboseObject):
             self.closed = True
             self.game.disconnect(self)
             self.server.disconnect(self)
-            self.__super.close()
     def boot(self):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
         self.log_debug(6, 'Booting client #%d', self.client_id)
