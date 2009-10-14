@@ -589,7 +589,7 @@ class Token(_integer_Token):
             >>> YES.is_bignum()
             False
             >>> msg = TME (123456)
-            >>> msg[3].is_bignum()
+            >>> msg[2].is_bignum()
             True
         '''#'''
         return self.category_name() == "Bignum"
