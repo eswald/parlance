@@ -9,7 +9,8 @@ r'''Test cases for the Parlance server
 '''#'''
 
 import unittest
-from time       import sleep, time
+from itertools import count
+from time import sleep, time
 
 from mock import Mock
 
@@ -30,8 +31,10 @@ class Fake_Manager(ThreadManager):
         self.__super.__init__(Mock())
         self.options.block_exceptions = False
         self.server = Server(self)
+        self.clients = count(1)
     def create_connection(self, player):
-        connection = FakeSocket(self.server, player)
+        address = "10.2.3." + str(self.clients.next())
+        connection = FakeSocket(self.server, player, address)
         return player
     def add_threaded(self, client):
         client.run()
@@ -49,12 +52,11 @@ class FakeSocket(VerboseObject):
         def write(self, message):
             self.socket.send(message)
     
-    def __init__(self, server, player):
+    def __init__(self, server, player, address):
         self.__super.__init__()
         self.closed = False
         self.server = server
         self.player = player
-        address = "Elsewhere"
         self.service = Service(self, address, self.server)
         protocol = self.FakeProtocol(self)
         player.register(protocol, self.service.game.variant.rep)
