@@ -1122,7 +1122,7 @@ class Server_Admin_Other(Server_Admin):
             self.assertEqual(self.master.queue,
                 game.get_history(turn, False))
             self.master.queue = []
-            sleep(rate)
+            sleep(rate + 0.1)
             game.run()
         
         self.assertEqual(self.master.queue, [])
