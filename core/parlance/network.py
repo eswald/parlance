@@ -420,6 +420,7 @@ class Service(VerboseObject):
             self.closed = True
             self.game.disconnect(self)
             self.server.disconnect(self)
+            self.sock.close()
     def boot(self):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
         self.log_debug(6, 'Booting client #%d', self.client_id)

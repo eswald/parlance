@@ -964,13 +964,17 @@ class Server_Admin_Eject(Server_Admin):
     
     def test_boot_disconnects(self):
         # When a player is booted, the server should disconnect it.
+        
+        # Assume that the robot is the third client
+        client_id = 3
         clients = self.server.clients
-        for key in clients:
-            if clients[key].name == self.robot.name:
-                client_id = key
-                client = clients[key]
-                break
-        else: self.fail("Robot client not found")
+        client = clients[client_id]
+        
+        # Verify our assumption
+        assert client.name == self.robot.name
+        
+        # Don't let the robot close the socket for us.
+        self.robot.close = lambda: None
         
         self.failIfEqual(client_id, None)
         self.master.admin('Server: boot Fake Player')
@@ -978,6 +982,7 @@ class Server_Admin_Eject(Server_Admin):
         self.failUnless(client_id not in clients)
         self.failUnless(client.closed)
         self.failUnless(client.sock.closed)
+        self.assertContains(+OFF, self.robot.queue)
     
     @fails
     def test_eject_observer_unstarted(self):
