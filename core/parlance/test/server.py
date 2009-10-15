@@ -76,6 +76,7 @@ class FakeSocket(VerboseObject):
         self.player.rep = representation
     def close(self):
         self.closed = True
+        self.service.close()
 
 class ServerTestCase(unittest.TestCase):
     ''' Base class for Server unit tests'''
