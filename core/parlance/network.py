@@ -423,9 +423,9 @@ class Service(VerboseObject):
     def boot(self):
         ''' Forcibly disconnect a client, for misbehaving or being replaced.'''
         self.log_debug(6, 'Booting client #%d', self.client_id)
-        self.send(+OFF)
         self.booted = self.country
         self.country = None
+        self.send(+OFF)
         self.close()
     def change_game(self, new_game):
         self.game.disconnect(self)
