@@ -384,18 +384,37 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers.values()[0]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
-    def test_history_full(self):
-        self.set_option('MTL', 5)
-        self.set_option('send_ORD', True)
+    def test_history_start(self):
+        # HST without a parameter should return the starting NOW and SCO
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
-        self.start_game()
-        self.game.run_judge()
+        game = self.start_game()
+        game.run_judge()
+        game.run_judge()
+        game.run_judge()
         player.queue = []
         player.send(+HST)
-        power = self.game.judge.map.powers[player.power]
-        self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
-                player.queue)
+        self.assertEqual(player.queue,
+            [game.messages[SCO], game.messages[NOW]])
+    def test_history_message_equivalence(self):
+        # NOW and SCO messages should be equivalent to those of the variant.
+        self.connect_server()
+        game = self.start_game()
+        game.run_judge()
+        self.assertEqual(sorted(game.messages[SCO].fold()),
+            sorted(game.variant.sco().fold()))
+        self.assertEqual((game.messages[NOW].fold()),
+            (game.variant.now().fold()))
+    def test_history_start_early(self):
+        # HST should return the starting NOW and SCO
+        # even before the game starts.  Maybe.
+        self.set_option('MTL', 5)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        player.queue = []
+        player.send(+HST)
+        self.assertContains(player.queue, [[REJ (HST)],
+            [self.game.messages.get(SCO), self.game.messages.get(NOW)]])
     def test_history_turn(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)

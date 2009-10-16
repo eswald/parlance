@@ -603,8 +603,8 @@ class Historian(VerboseObject):
             if result: client.send_list(result)
             else: client.reject(message)
         elif self.history:
-            for turn in sorted(self.history.keys()):
-                client.send_list(self.get_history(turn, False))
+            client.send(self.messages[SCO])
+            client.send(self.messages[NOW])
         else: client.reject(message)
     def get_history(self, key, always_sco):
         result = []

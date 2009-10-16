@@ -457,7 +457,10 @@ before sending <b>YES (MAP ('name'))</b>.</p>
 
 <p>The client can send the <a href="#NOW"><b>NOW</b></a> and
 <a href="#SCO"><b>SCO</b></a> commands to the server to determine the
-supply centre ownership and starting positions for the variant.</p>
+current supply centre ownership and positions, or the starting ownership
+and positions if the game has not yet started.  If the game has started,
+the client can instead send the <a href="#HST"><b>HST</b></a> command to
+determine the starting ownership and positions for the variant.</p>
 
 <p>The client must not assume that the supply centre ownership and
 starting positions will be the same as for the other games which use the
@@ -654,13 +657,13 @@ be sent after every <b>HST</b> command, not just those where supply
 centre ownership changes. <b>REJ (HST (turn))</b> is sent if the
 requested turn doesn't exist.</p>
 
-<!-- <h4>client_request = HST</h4> -->
-<!-- p>The server may optionally support retrieving the results of every
-turn so far, by sending <b>HST</b> with no parameters. It will respond
-with one <b>ORD</b> and one <b>NOW</b> message per turn, plus one
-<b>SCO</b> message after any turn when supply centre ownership was
-recalculated.  If the server does not support this, it will send
-<b>REJ (HST)</b>.</p -->
+<h4>client_request = HST</h4>
+<p>The client may request the starting supply centre ownership and
+positions for the variant by sending <b>HST</b> with no parameters.
+In particular, this should be used to discover the first turn of the
+game, for later <b>HST (turn)</b> commands.  If the game has not yet
+started, the server may instead send <b>REJ (HST)</b>.<sup><a
+href="#history_note">*</a></sup></p>
 
 
 <h3>(iii) Submitting orders</h3>
@@ -2284,6 +2287,13 @@ official DAIDE syntax document</a>:
 	<b>HLO</b> message contains variant rule information, as well as
 	power and passcode assignments, observers might desire an extra
 	copy.</li>
+
+	<li>This document specifies a new interpretation of
+	<a href="#HST" name="history_note"><b>HST</b></a> without an argument.
+	Given that there is no other way to get the starting <b>NOW</b> and
+	<b>SCO</b> messages if you don't already know them for the variant,
+	and that the previous interpretation of a bare <b>HST</b> has been
+	removed, the change seems warranted.</li>
 
 	<li><a href="#CCD" name="disorder_note">The <b>CCD</b> message</a> has
 	been divided into three distinct message types:  One for a
