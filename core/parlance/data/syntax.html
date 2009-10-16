@@ -576,7 +576,7 @@ for each parameter. --> </p>
 <p>The client can send the command <b>HLO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the <b>HLO</b> message, or <b>REJ (HLO)</b> if the game hasn't
-started.</p>
+started.<sup><a href="#hello_note">*</a></sup></p>
 
 <h3>(ii) Current Position</h3>
 
@@ -2248,9 +2248,9 @@ official DAIDE syntax document</a>:
 	even though David almost always uses them correctly.</li>
 
 	<li>The four <a href="#coasts" name="coast_note">alternate
-	coasts</a> defined in <a href="protocol.html#Coasts"
-	name="coasts">the protocol</a> are listed with the four cardinal
-	ones.  Other software may or may not actually accept them; in either
+	coasts</a> defined in <a href="protocol.html#Coasts">the
+	protocol</a> are listed with the four cardinal ones.
+	Other software may or may not actually accept them; in either
 	case, they need to be in the document to avoid having future map
 	writers use their TLAs.</li>
 
@@ -2281,7 +2281,7 @@ official DAIDE syntax document</a>:
 	those for non-existent or foreign units.</li>
 
 	<li>This document specifies that a client, not just a player, may send
-	<a href="#HLO" name="hello"><b>HLO</b></a> without arguments to
+	<a href="#HLO" name="hello_note"><b>HLO</b></a> without arguments to
 	request a new copy of the <b>HLO</b> message.  Appendix B of the
 	official document contradicts itself on that point.  Given that the
 	<b>HLO</b> message contains variant rule information, as well as
