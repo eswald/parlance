@@ -1105,7 +1105,8 @@ class Game(Historian):
                     self.judge.score(country)
                 ]
                 elim = self.judge.eliminated(country)
-                if elim: stats.append(elim)
+                if elim is not False:
+                    stats.append(elim)
                 players.append(stats)
             self.messages[SMR] = result = SMR(self.judge.turn()) % players
         return result

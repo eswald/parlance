@@ -23,7 +23,7 @@ from parlance.server     import Server
 from parlance.tokens     import *
 from parlance.test       import fails, load_variant
 from parlance.util       import num2name
-from parlance.xtended    import ITA, LON, PAR, standard
+from parlance.xtended    import *
 
 test_variants = {
     "standard": standard,
@@ -1364,5 +1364,24 @@ class Server_Bugfix(ServerTestCase):
             self.fail("Started a game inappropriately")
         self.server.start_game = start_game_fail
         self.server.close()
+    def test_zero_summary(self):
+        # A power eliminated in year zero should get the elimination token.
+        self.connect_server()
+        self.game.judge.map.handle_NOW(NOW (FAL, 0)
+            (FRA, AMY, BUD) (FRA, FLT, TRI) (FRA, AMY, VIE)
+            (FRA, FLT, EDI) (FRA, FLT, LON) (FRA, AMY, LVP)
+            (FRA, FLT, BRE) (FRA, AMY, MAR) (FRA, AMY, PAR)
+            (FRA, AMY, BER) (FRA, FLT, KIE) (FRA, AMY, MUN)
+            (FRA, FLT, NAP) (FRA, AMY, ROM) (FRA, AMY, VEN)
+            (RUS, AMY, MOS) (RUS, FLT, SEV) (RUS, AMY, WAR)
+            (FRA, FLT, ANK) (FRA, AMY, CON) (FRA, AMY, SMY))
+        game = self.start_game()
+        self.game.run_judge()
+        summary = self.game.summarize()
+        players = dict((p[0], tuple(p[3:])) for p in summary.fold()[2:])
+        expected = dict.fromkeys([AUS, ENG, GER, ITA, TUR], (0, 0))
+        expected[FRA] = (18,)
+        expected[RUS] = (4,)
+        self.assertEqual(players, expected)
 
 if __name__ == '__main__': unittest.main()
