@@ -30,7 +30,7 @@ from parlance.server    import Server
 from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
 from parlance.xtended   import standard
 
-from parlance.test.server import ServerTestCase
+from parlance.test.server import ServerTestCase, test_variants
 
 class FakeManager(ThreadManager):
     def install(self):
@@ -230,17 +230,9 @@ class Network_Errors(NetworkTestCase):
 
 class Network_Basics(NetworkTestCase):
     def test_RM_unpacking(self):
-        rep = Representation({
-            0x4100: "ONE",
-            0x4101: "TWO",
-            0x4102: "TRE",
-            0x5100: "AAA",
-            0x5101: "BBB",
-            0x5102: "CCC",
-            0x5003: "DDD",
-        }, protocol.base_rep)
+        variant = test_variants["mini"]
         server = Mock()
-        server.default_game().variant = Variant("testing", rep)
+        server.default_game().variant = variant
         self.manager.add_server(server)
         case = self
         
@@ -251,7 +243,7 @@ class Network_Basics(NetworkTestCase):
         
         self.fake_client(TestingProtocol)
         self.manager.process()
-        self.failUnlessEqual(self.client.rep, rep)
+        self.failUnlessEqual(self.client.rep, variant.rep)
     def test_full_connection(self):
         ''' Seven fake players'''
         self.connect_server([self.Disconnector] * 7)
