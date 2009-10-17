@@ -283,6 +283,9 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
     def handle_message(self, msg):
         self.log.debug("Handling %s", msg)
         self.service.handle_message(msg)
+    
+    def timeoutConnection(self):
+        self.send_error(self.proto.Timeout)
 
 class DaideFactory(VerboseObject):
     __options__ = (
