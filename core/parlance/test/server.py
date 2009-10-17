@@ -12,9 +12,7 @@ import unittest
 from itertools import count
 from time import sleep, time
 
-from mock import Mock
-
-from mock import patch
+from mock import Mock, patch
 
 from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Turn
@@ -116,6 +114,7 @@ class FakeSocket(VerboseObject):
     
     def __init__(self, server, player, address):
         self.__super.__init__()
+        player.socket = self
         self.closed = False
         self.server = server
         self.player = player
@@ -1048,14 +1047,9 @@ class Server_Admin_Eject(Server_Admin):
     
     def test_boot_disconnects(self):
         # When a player is booted, the server should disconnect it.
-        
-        # Assume that the robot is the third client
-        client_id = 3
+        client_id = self.robot.socket.service.client_id
         clients = self.server.clients
         client = clients[client_id]
-        
-        # Verify our assumption
-        assert client.name == self.robot.name
         
         # Don't let the robot close the socket for us.
         self.robot.close = lambda: None
