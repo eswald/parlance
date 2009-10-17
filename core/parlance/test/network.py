@@ -16,6 +16,7 @@ from itertools       import count
 from struct          import pack
 from time            import time, sleep
 
+from mock import Mock
 from twisted.internet.protocol import ClientFactory
 
 from parlance.config    import VerboseObject
@@ -110,82 +111,61 @@ class NetworkTestCase(ServerTestCase):
         return factory
 
 class Network_Errors(NetworkTestCase):
-    def assertLocalError(self, error, protocol, time_limit=5):
-        self.connect_server([])
-        self.fake_client(protocol)
+    def assertLocalError(self, error, initial, time_limit=5):
+        self.server = Mock()
+        self.manager.add_server(self.server)
+        
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+                initial(self)
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        
+        self.fake_client(TestingProtocol)
         self.manager.process(time_limit)
         self.failUnlessEqual(self.factory.client.errors, [("Local", error)])
+    
     def test_timeout(self):
         ''' Thirty-second timeout for the Initial Message'''
         self.failUnlessEqual(protocol.Timeout, 0x01)
-        class TestingProtocol(DaideProtocol):
-            def connectionMade(self):
-                self.__super.connectionMade()
-                self.errors = []
-                self.first = (self.RM, self.proto.NotRMError)
-            def log_error(self, faulty, code):
-                self.errors.append((faulty, code))
-        self.assertLocalError(protocol.Timeout, TestingProtocol, 35)
+        def initial(dcsp): pass
+        self.assertLocalError(protocol.Timeout, initial, 35)
     def test_initial(self):
         ''' Client's first message must be Initial Message.'''
         self.failUnlessEqual(protocol.NotIMError, 0x02)
-        class TestingProtocol(DaideProtocol):
-            def connectionMade(self):
-                self.__super.connectionMade()
-                self.errors = []
-                self.first = (self.RM, self.proto.NotRMError)
-                self.send_dcsp(self.DM, '')
-            def log_error(self, faulty, code):
-                self.errors.append((faulty, code))
-        self.assertLocalError(protocol.NotIMError, TestingProtocol)
+        def initial(dcsp): dcsp.send_dcsp(dcsp.DM, '')
+        self.assertLocalError(protocol.NotIMError, initial)
     def test_endian(self):
         ''' Integers must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        class TestingProtocol(DaideProtocol):
-            def connectionMade(self):
-                self.__super.connectionMade()
-                self.errors = []
-                self.first = (self.RM, self.proto.NotRMError)
-                self.send_dcsp(self.IM,
-                    pack('<HH', protocol.version, protocol.magic))
-            def log_error(self, faulty, code):
-                self.errors.append((faulty, code))
-        self.assertLocalError(protocol.EndianError, TestingProtocol)
+        def initial(dcsp):
+            dcsp.send_dcsp(dcsp.IM,
+                pack('<HH', protocol.version, protocol.magic))
+        self.assertLocalError(protocol.EndianError, initial)
     def test_endian_short(self):
         ''' Length must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        class TestingProtocol(DaideProtocol):
-            def connectionMade(self):
-                self.__super.connectionMade()
-                self.errors = []
-                self.first = (self.RM, self.proto.NotRMError)
-                self.transport.write(pack('<BxHHH', self.IM, 4,
-                        protocol.version, protocol.magic))
-            def log_error(self, faulty, code):
-                self.errors.append((faulty, code))
-        self.assertLocalError(protocol.EndianError, TestingProtocol)
+        def initial(dcsp):
+            dcsp.transport.write(pack('<BxHHH', dcsp.IM, 4,
+                    protocol.version, protocol.magic))
+        self.assertLocalError(protocol.EndianError, initial)
     def test_magic(self):
         ''' The magic number must match.'''
         self.failUnlessEqual(protocol.MagicError, 0x04)
-        class TestingProtocol(DaideProtocol):
-            def connectionMade(self):
-                self.__super.connectionMade()
-                self.errors = []
-                self.first = (self.RM, self.proto.NotRMError)
-                self.send_dcsp(self.IM,
-                    pack('<HH', protocol.version, protocol.magic >> 1))
-            def log_error(self, faulty, code):
-                self.errors.append((faulty, code))
-        self.assertLocalError(protocol.MagicError, TestingProtocol)
+        def initial(dcsp):
+            self.send_dcsp(self.IM,
+                pack('!HH', protocol.version, protocol.magic >> 1))
+        self.assertLocalError(protocol.MagicError, initial)
     def test_version(self):
         ''' The server must recognize the protocol version.'''
         self.failUnlessEqual(protocol.VersionError, 0x05)
-        self.connect_server([])
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version + 1, protocol.magic))
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.VersionError)
+        def initial(dcsp):
+            self.send_dcsp(self.IM,
+                pack('!HH', protocol.version + 5, protocol.magic))
+        self.assertLocalError(protocol.VersionError, initial)
     def test_duplicate(self):
         ''' The client must not send more than one Initial Message.'''
         self.failUnlessEqual(protocol.DuplicateIMError, 0x06)
