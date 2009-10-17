@@ -317,7 +317,7 @@ class Network_Basics(NetworkTestCase):
     def test_unpack_message(self):
         rep = Representation({0x4101: 'Sth'}, protocol.base_rep)
         msg = [HLO.number, BRA.number, 0x4101, KET.number]
-        unpacked = rep.unpack_message(pack('!HHHH', *msg))
+        unpacked = rep.unpack(pack('!HHHH', *msg))
         self.failUnlessEqual(repr(unpacked),
             "Message([HLO, [Token('Sth', 0x4101)]])")
     def test_game_port(self):
