@@ -27,6 +27,7 @@ from parlance.config import VerboseObject
 from parlance.fallbacks import any
 from parlance.language import Message, Representation, protocol
 from parlance.tokens import ADM, MDF, OFF, REJ, YES
+from parlance.util import random_cycle
 
 class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
     r'''Base methods for the DAIDE Client-Server Protocol.'''
@@ -194,8 +195,7 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
             Uses values in the representation, if available.
         '''#'''
         try:
-            msg = Message([self.rep[x]
-                for x in unpack('!' + 'H'*(len(data)//2), data)])
+            result = self.rep.unpack(data)
         except ValueError:
             # Someone foolishly chose to disconnect over an unknown token.
             msg = None
@@ -392,7 +392,7 @@ class DaideServerFactory(DaideFactory, Site):
     def openGamePort(self, reactor, start, end):
         if start and end:
             self.log_debug(11, "Checking ports %d-%d", start, end)
-            for possible in xrange(start, end):
+            for possible in random_cycle(start, end + 1):
                 port = self.tryPort(reactor, possible)
                 if port: break
             else: port = None

@@ -9,7 +9,7 @@ r'''Parlance language classes
 '''#'''
 
 import re
-from struct    import pack
+from struct import pack, unpack
 
 from config    import Configurable, VerboseObject, parse_file
 from util      import Comparable, rindex
@@ -74,38 +74,47 @@ class Message(list):
         complaint = 'unbalanced parentheses in folded Message'
         if self.count(BRA) != self.count(KET):
             raise ValueError(complaint)
-        series = self.convert()
+        series = list(self)
         while BRA in series:
             k = series.index(KET)
             try: b = rindex(series[:k], BRA)
             except ValueError: raise ValueError(complaint)
-            series[b:k+1] = [series[b+1:k]]
-        return series
-    def convert(self):
-        ''' Converts a Message into a list,
-            with embedded strings and tokens converted into Python values.
-            
-            >>> NME('version')(-3).convert()
+            series[b:k+1] = [self.convert(series[b+1:k])]
+        return self.convert(series)
+    @staticmethod
+    def convert(series):
+        r'''Converts embedded strings and integers into Python values.
+            >>> Message.convert(NME('version')(-3))
             [NME, BRA, u'version', KET, BRA, -3, KET]
         '''#'''
         result = []
         text = []
         append = result.append
-        for token in self:
-            if token.is_text():
+        def add_text():
+            try:
+                string = "".join(t.text for t in text).decode("utf-8")
+            except UnicodeDecodeError:
+                result.extend(text)
+            else:
+                append(string)
+        
+        for token in series:
+            if not isinstance(token, Token):
+                append(token)
+            elif token.is_text():
                 text.append(token)
             else:
                 if text:
-                    try:
-                        string = "".join(t.text for t in text).decode("utf-8")
-                    except UnicodeDecodeError:
-                        result.extend(text)
-                    else:
-                        append(string)
+                    add_text()
                     text = []
-                if token.is_integer(): append(token.value())
+                if token.is_integer():
+                    value = token.value()
+                    while (result and isinstance(result[-1], Token)
+                            and result[-1].is_bignum()):
+                        value = (value << 8) + result.pop().value()
+                    append(value)
                 else: append(token)
-        if text: append(text)
+        if text: add_text()
         return result
     
     def __str__(self):
@@ -125,6 +134,7 @@ class Message(list):
         result = []
         in_text = False
         use_space = False
+        bignums = []
         
         for token in self:
             if token.is_text():
@@ -136,14 +146,34 @@ class Message(list):
                 
                 if token.text in (escape, quot): result.append(escape)
                 result.append(token.text)
+                continue
+            
+            if in_text:
+                result.append(quot)
+                in_text = False
+            
+            if token.is_bignum():
+                bignums.append(token)
+                continue
+            
+            if token.is_integer():
+                value = token.value()
+                while bignums:
+                    value = (value << 8) + bignums.pop().value()
+                text = str(value)
             else:
-                if in_text:
-                    result.append(quot)
-                    in_text = False
-                if use_space and not (squeeze and token is KET):
-                    result.append(' ')
-                use_space = not (squeeze and token is BRA)
-                result.append(token.text)
+                text = token.text
+                while bignums:
+                    if use_space:
+                        result.append(' ')
+                    result.append(bignums.pop().text)
+                    use_space = True
+            
+            if use_space and not (squeeze and token is KET):
+                result.append(' ')
+            use_space = not (squeeze and token is BRA)
+            result.append(text)
+        
         if in_text: result.append(quot)
         
         return str.join('', result).decode("UTF-8")
@@ -191,7 +221,8 @@ class Message(list):
             else:
                 raise TypeError('tokenize for %s returned non-list (type %s)' %
                         (value, result.__class__.__name__))
-        elif isinstance(value, (int, float, long)): return [IntegerToken(value)]
+        elif isinstance(value, (int, float, long)):
+            return number_tokens(value)
         elif isinstance(value, unicode):
             return [StringToken(c) for c in value.encode("utf-8")]
         elif isinstance(value, str):
@@ -553,6 +584,15 @@ class Token(_integer_Token):
             False
         '''#'''
         return protocol.max_pos_int <= self.number < protocol.max_neg_int
+    def is_bignum(self):
+        ''' Whether the token represents a number.
+            >>> YES.is_bignum()
+            False
+            >>> msg = TME (123456)
+            >>> msg[2].is_bignum()
+            True
+        '''#'''
+        return self.category_name() == "Bignum"
     def is_season(self):
         ''' Whether the token represents a season or phase.
             >>> SPR.is_season()
@@ -690,22 +730,19 @@ class IntegerToken(Token):
         pos = protocol.max_pos_int
         neg = protocol.max_neg_int
         number = int(number)
-        if number < 0: key = number + neg
-        else: key = number
-        result = IntegerToken.cache.get(key)
+        result = IntegerToken.cache.get(number)
         if result is None:
-            if number < -pos:
-                raise OverflowError('%s too large to convert to %s' %
-                    (type(number).__name__, klass.__name__))
-            elif number < pos:
+            if -pos <= number < pos:
                 name = str(number)
-            elif number < neg:
-                name = str(number - neg)
             else:
                 raise OverflowError('%s too large to convert to %s' %
                     (type(number).__name__, klass.__name__))
+            
+            if number < 0:
+                key = number + neg
+            else: key = number
             result = Token.__new__(klass, name, key)
-            IntegerToken.cache[key] = result
+            IntegerToken.cache[number] = result
         return result
     def __reduce_ex__(self, proto):
         r'''Ensures that unpickled IntegerTokens work correctly.
@@ -757,15 +794,19 @@ class Time(Comparable):
     def __repr__(self): return 'Time(%s, %s)' % (self.seconds, self.hours)
     def __cmp__(self, other): return cmp(int(self), other)
 
-def maybe_int(word):
-    ''' Converts a string to an int if possible.
-        Returns either the int, or the original string.
-        >>> [(type(x), x) for x in [maybe_int('-3'), maybe_int('three')]]
-        [(<type 'int'>, -3), (<type 'str'>, 'three')]
-    '''#'''
-    try:    n = int(word)
-    except: return word
-    else:   return n
+def number_tokens(number):
+    value = int(number)
+    result = []
+    while value is not None:
+        try:
+            token = IntegerToken(value)
+            value = None
+        except OverflowError:
+            byte = value & 0xFF
+            token = protocol.default_rep[protocol.bignum + byte]
+            value >>= 8
+        result.append(token)
+    return result
 
 def character(value):
     ''' Configuration parser for a single-character string.'''
@@ -823,8 +864,10 @@ class Representation(Configurable):
                 try: number = int(key)
                 except ValueError: result = default
                 else:
-                    if number < protocol.max_neg_int:
+                    if number < protocol.max_pos_int:
                         result = IntegerToken(number)
+                    elif number < protocol.max_neg_int:
+                        result = IntegerToken(number - protocol.max_neg_int)
                     elif (number & 0xFF00) == protocol.quot_prefix:
                         result = StringToken(chr(number & 0x00FF))
                     elif self.options.ignore_unknown:
@@ -1001,7 +1044,21 @@ class Representation(Configurable):
         text = text.replace(')', ' KET ')
         
         # Pass items into Token, converting integers if necessary
-        return [self[maybe_int(word.upper())] for word in text.split()]
+        result = []
+        for word in text.split():
+            try:
+                n = int(word)
+            except:
+                token = self[word.upper()]
+                result.append(token)
+            else:
+                result.extend(number_tokens(n))
+        return result
+    
+    def unpack(self, data):
+        result = Message([self[x]
+            for x in unpack('!' + 'H'*(len(data)//2), data)])
+        return result
 
 
 class Protocol(VerboseObject):
@@ -1054,6 +1111,7 @@ class Protocol(VerboseObject):
         
         # Calculated constants needed by the above classes
         self.quot_prefix = self.token_cats['Text'] << 8
+        self.bignum = self.token_cats['Bignum'] << 8
         self.max_pos_int = (self.token_cats['Integers'][1] + 1) << 7
         self.max_neg_int = self.max_pos_int << 1
     

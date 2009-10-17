@@ -104,6 +104,11 @@ There are currently no <b>server_request</b> messages.</p>
 but only after the server has assigned that client as a player in its current
 game.  Likewise, a <b>player_command</b> is a command sent only by a player,
 and a <b>player_request</b> is a request sent only by a player.</p>
+
+<h4>number = [Bignum Bignum ...] Integers</h4>
+<p>A <b>number</b> is an integer.  For purposes of this document, each
+integer is a single token; however, the protocol may require that it be
+split up into multiple tokens in order to fit into 16-bit values.</p>
 -->
 
 <p>There are a number of terms which are used by a lot of commands.
@@ -452,7 +457,10 @@ before sending <b>YES (MAP ('name'))</b>.</p>
 
 <p>The client can send the <a href="#NOW"><b>NOW</b></a> and
 <a href="#SCO"><b>SCO</b></a> commands to the server to determine the
-supply centre ownership and starting positions for the variant.</p>
+current supply centre ownership and positions, or the starting ownership
+and positions if the game has not yet started.  If the game has started,
+the client can instead send the <a href="#HST"><b>HST</b></a> command to
+determine the starting ownership and positions for the variant.</p>
 
 <p>The client must not assume that the supply centre ownership and
 starting positions will be the same as for the other games which use the
@@ -568,7 +576,7 @@ for each parameter. --> </p>
 <p>The client can send the command <b>HLO</b> to the server with no
 arguments at any time. The server will reply by sending another copy of
 the <b>HLO</b> message, or <b>REJ (HLO)</b> if the game hasn't
-started.</p>
+started.<sup><a href="#hello_note">*</a></sup></p>
 
 <h3>(ii) Current Position</h3>
 
@@ -649,13 +657,13 @@ be sent after every <b>HST</b> command, not just those where supply
 centre ownership changes. <b>REJ (HST (turn))</b> is sent if the
 requested turn doesn't exist.</p>
 
-<!-- <h4>client_request = HST</h4> -->
-<!-- p>The server may optionally support retrieving the results of every
-turn so far, by sending <b>HST</b> with no parameters. It will respond
-with one <b>ORD</b> and one <b>NOW</b> message per turn, plus one
-<b>SCO</b> message after any turn when supply centre ownership was
-recalculated.  If the server does not support this, it will send
-<b>REJ (HST)</b>.</p -->
+<h4>client_request = HST</h4>
+<p>The client may request the starting supply centre ownership and
+positions for the variant by sending <b>HST</b> with no parameters.
+In particular, this should be used to discover the first turn of the
+game, for later <b>HST (turn)</b> commands.  If the game has not yet
+started, the server may instead send <b>REJ (HST)</b>.<sup><a
+href="#history_note">*</a></sup></p>
 
 
 <h3>(iii) Submitting orders</h3>
@@ -791,7 +799,6 @@ cleared with <b>NOT (SUB)</b>, to which the server will reply with
 <h4><a name="MIS">server_message = MIS</a> (unit) (unit) ...</h4>
 <h4>server_message = MIS (unit MRT (province_list)) (unit MRT (province_list)) ...</h4>
 <h4>server_message = MIS (number)</h4>
-<!-- <h4>number = Integers</h4> -->
 
 <p>This command can be sent by the server immediately after the last
 <b>THX</b> message following a <b>SUB</b> command. If sent, it indicates
@@ -2241,9 +2248,9 @@ official DAIDE syntax document</a>:
 	even though David almost always uses them correctly.</li>
 
 	<li>The four <a href="#coasts" name="coast_note">alternate
-	coasts</a> defined in <a href="protocol.html#Coasts"
-	name="coasts">the protocol</a> are listed with the four cardinal
-	ones.  Other software may or may not actually accept them; in either
+	coasts</a> defined in <a href="protocol.html#Coasts">the
+	protocol</a> are listed with the four cardinal ones.
+	Other software may or may not actually accept them; in either
 	case, they need to be in the document to avoid having future map
 	writers use their TLAs.</li>
 
@@ -2274,12 +2281,19 @@ official DAIDE syntax document</a>:
 	those for non-existent or foreign units.</li>
 
 	<li>This document specifies that a client, not just a player, may send
-	<a href="#HLO" name="hello"><b>HLO</b></a> without arguments to
+	<a href="#HLO" name="hello_note"><b>HLO</b></a> without arguments to
 	request a new copy of the <b>HLO</b> message.  Appendix B of the
 	official document contradicts itself on that point.  Given that the
 	<b>HLO</b> message contains variant rule information, as well as
 	power and passcode assignments, observers might desire an extra
 	copy.</li>
+
+	<li>This document specifies a new interpretation of
+	<a href="#HST" name="history_note"><b>HST</b></a> without an argument.
+	Given that there is no other way to get the starting <b>NOW</b> and
+	<b>SCO</b> messages if you don't already know them for the variant,
+	and that the previous interpretation of a bare <b>HST</b> has been
+	removed, the change seems warranted.</li>
 
 	<li><a href="#CCD" name="disorder_note">The <b>CCD</b> message</a> has
 	been divided into three distinct message types:  One for a

@@ -10,6 +10,7 @@ r'''Parlance general utility definitions
 '''#'''
 
 from itertools import chain
+from random import randrange
 from time import gmtime
 
 import parlance
@@ -211,6 +212,43 @@ def instances(number, name, article=True):
     elif number > 1: prefix = '%s instances of ' % num2name(number)
     else: prefix = ''
     return prefix + name
+
+def random_cycle(start, stop, step=1):
+    r'''Iterate through each value, starting at a random point.
+        Stops when all values have been returned.
+        
+        >>> from parlance.fallbacks import defaultdict
+        >>> print sorted(random_cycle(1, 6))
+        [1, 2, 3, 4, 5]
+        
+        # Accepts an optional step value
+        >>> print sorted(random_cycle(1, 8, 2))
+        [1, 3, 5, 7]
+        
+        # Runs through the sequence in order
+        >>> prev = None
+        >>> counts = defaultdict(int)
+        >>> for val in random_cycle(15, 32):
+        ...     if prev is not None:
+        ...         counts[val - prev] += 1
+        ...     prev = val
+        ...
+        >>> print sorted(counts.items())
+        [(-16, 1), (1, 15)]
+        
+        >>> vals = set()
+        >>> for iteration in range(10):
+        ...     val = random_cycle(0, 10).next()
+        ...     vals.add(val)
+        ...
+        >>> len(vals) > 1
+        True
+    '''#"""#'''
+    first = randrange(start, stop, step)
+    for val in xrange(first, stop, step):
+        yield val
+    for val in xrange(start, first, step):
+        yield val
 
 def static(**kwargs):
     r'''Initializes static variables of a function.

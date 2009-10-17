@@ -25,8 +25,8 @@ class Chatty(Observer):
         self.version = version_string(self.name)
         self.name = raw_input('Name: ')
         self.quit = False
-    def register(self):
-        self.__super.register()
+    def register(self, transport, representation):
+        self.__super.register(transport, representation)
         self.manager.add_input(self.send_admin, self.close)
     def output(self, line, *args): print str(line) % args
     def handle_CCD(self, message):

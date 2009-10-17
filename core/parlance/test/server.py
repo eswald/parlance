@@ -14,6 +14,8 @@ from time import sleep, time
 
 from mock import Mock
 
+from mock import patch
+
 from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Turn
 from parlance.language   import Time
@@ -22,9 +24,69 @@ from parlance.network    import Service
 from parlance.player     import HoldBot
 from parlance.server     import Server
 from parlance.tokens     import *
-from parlance.test       import fails
+from parlance.test       import fails, load_variant
 from parlance.util       import num2name
-from parlance.xtended    import ITA, LON, PAR
+from parlance.xtended    import *
+
+test_variants = {
+    "standard": standard,
+    "testing": load_variant(r'''
+        [variant]
+        name=testing
+        base=standard
+        mapname=testmap
+    '''),
+    "mini": load_variant(r'''
+        [variant]
+        name=mini
+        [homes]
+        ONE=AAA,BBB
+        TWO=BBB,CCC
+        TRE=AAA,CCC
+        [borders]
+        AAA=AMY BBB,CCC,DDD
+        BBB=AMY AAA,CCC,DDD
+        CCC=AMY AAA,BBB,DDD
+        DDD=AMY AAA,BBB,CCC
+    '''),
+}
+
+class Storage(object):
+    r'''Stores saved files in memory,
+        in case the Historian save directory doesn't exist.
+        Designed for use as a replacement for __builtin__.open().
+    '''#"""#'''
+    
+    class Reader(object):
+        def __init__(self, lines):
+            self.lines = lines
+        def __iter__(self):
+            return iter(self.lines)
+        def close(self):
+            self.lines = None
+    
+    class Writer(object):
+        def __init__(self, lines):
+            self.lines = lines
+        def write(self, line):
+            # Not quite perfect, but it will do here.
+            self.lines.append(line)
+        def close(self):
+            self.lines = None
+    
+    def __init__(self):
+        self.files = {}
+        self.open = open
+    def __call__(self, filename, mode):
+        if "r" in mode:
+            if filename in self.files:
+                return self.Reader(self.files[filename])
+            else:
+                return self.open(filename, mode)
+        else:
+            lines = []
+            self.files[filename] = lines
+            return self.Writer(lines)
 
 class Fake_Manager(ThreadManager):
     def __init__(self):
@@ -313,6 +375,7 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         message = player.hold_all(turn)
         self.assertContains(REJ (message), player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -332,18 +395,37 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers.values()[0]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
-    def test_history_full(self):
-        self.set_option('MTL', 5)
-        self.set_option('send_ORD', True)
+    def test_history_start(self):
+        # HST without a parameter should return the starting NOW and SCO
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
-        self.start_game()
-        self.game.run_judge()
+        game = self.start_game()
+        game.run_judge()
+        game.run_judge()
+        game.run_judge()
         player.queue = []
         player.send(+HST)
-        power = self.game.judge.map.powers[player.power]
-        self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
-                player.queue)
+        self.assertEqual(player.queue,
+            [game.messages[SCO], game.messages[NOW]])
+    def test_history_message_equivalence(self):
+        # NOW and SCO messages should be equivalent to those of the variant.
+        self.connect_server()
+        game = self.start_game()
+        game.run_judge()
+        self.assertEqual(sorted(game.messages[SCO].fold()),
+            sorted(game.variant.sco().fold()))
+        self.assertEqual((game.messages[NOW].fold()),
+            (game.variant.now().fold()))
+    def test_history_start_early(self):
+        # HST should return the starting NOW and SCO
+        # even before the game starts.  Maybe.
+        self.set_option('MTL', 5)
+        self.connect_server()
+        player = self.connect_player(self.Fake_Player)
+        player.queue = []
+        player.send(+HST)
+        self.assertContains(player.queue, [[REJ (HST)],
+            [self.game.messages.get(SCO), self.game.messages.get(NOW)]])
     def test_history_turn(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -356,6 +438,7 @@ class Server_Basics(ServerTestCase):
         power = self.game.judge.map.powers[player.power]
         self.assertContains(ORD (SPR, 1901) ([power.units[0]], HLD) (SUC),
                 player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian_map(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -372,11 +455,12 @@ class Server_Basics(ServerTestCase):
         player.queue = []
         player.send(+MAP)
         self.assertContains(MAP (self.game.judge.map_name), player.queue)
+    @patch("parlance.server.variants", test_variants)
+    @patch("__builtin__.open", Storage())
     def test_historian_var(self):
-        # Note: This test may fail if the fleet_rome variant is unavailable.
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
-        self.set_option('variant', 'fleet_rome')
+        self.set_option('variant', 'testing')
         self.connect_server()
         self.server.options.log_games = True
         game = self.start_game()
@@ -389,7 +473,8 @@ class Server_Basics(ServerTestCase):
                 game_id=game.game_id, observe=True)
         player.queue = []
         player.send(+VAR)
-        self.assertContains(VAR ("fleet_rome"), player.queue)
+        self.assertContains(VAR ("testing"), player.queue)
+    @patch("__builtin__.open", Storage())
     def test_historian_sub(self):
         self.set_option('MTL', 5)
         self.set_option('send_ORD', True)
@@ -436,6 +521,7 @@ class Server_Basics(ServerTestCase):
             self.game.summarize()
         ]
         self.assertEqual([str(msg) + '\n' for msg in expected], result)
+    @patch("__builtin__.open", Storage())
     def test_archive_game(self):
         self.connect_server()
         self.server.options.log_games = True
@@ -483,24 +569,23 @@ class Server_Basics(ServerTestCase):
         sleep(12)
         game.run()
         self.failUnlessEqual(times, [limit, limit - 5, limit - 10])
-    @fails
+    @patch("parlance.server.variants", test_variants)
     def test_variant_map_name(self):
         ''' Variants should use the name of the map in MAP messages.
             For example, Fleet Rome should use MAP ("standard").
         '''#'''
-        # Note: This test may fail if the fleet_rome variant is unavailable.
-        self.set_option('variant', 'fleet_rome')
+        self.set_option("variant", "testing")
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
-        self.assertContains(MAP ("standard"), player.queue)
+        self.assertContains(MAP ("testmap"), player.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_variant_name(self):
         ''' The server should answer a VAR command with the variant name.'''
-        # Note: This test may fail if the fleet_rome variant is unavailable.
-        self.set_option('variant', 'fleet_rome')
+        self.set_option("variant", "testing")
         self.connect_server()
         player = self.connect_player(self.Fake_Player)
         player.send(+VAR)
-        self.assertContains(VAR ("fleet_rome"), player.queue)
+        self.assertContains(VAR ("testing"), player.queue)
 
 class Server_Press(ServerTestCase):
     ''' Press-handling tests'''
@@ -1187,17 +1272,20 @@ class Server_Multigame(ServerTestCase):
         self.master.admin('Server: start holdbot')
         self.wait_for_actions(game)
         self.failUnlessEqual(len(game.clients), 3)
-    def test_sailho_game(self):
-        # Note: This test may fail if the sailho variant is unavailable.
-        self.new_game('sailho')
+    @patch("parlance.server.variants", test_variants)
+    def test_variant_game(self):
+        self.new_game("testing")
         self.failUnlessEqual(len(self.server.games), 2)
         player = self.connect_player(self.Fake_Player)
-        self.assertContains(MAP('sailho'), player.queue)
+        self.assertContains(MAP("testmap"), player.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_RM_change(self):
         old_rep = self.game.variant.rep
         old_id = self.game.game_id
-        self.new_game('sailho')
-        newbie = self.connect_player(self.Fake_Player, game_id=old_id)
+        self.new_game("mini")
+        newbie = self.connect_player(self.Fake_Player)
+        self.failIfEqual(newbie.rep, old_rep)
+        newbie.send(SEL (old_id))
         self.failUnlessEqual(newbie.rep, old_rep)
     def test_admin_select(self):
         game = self.new_game()
@@ -1232,27 +1320,27 @@ class Server_Multigame(ServerTestCase):
                 LST (self.game.game_id) (6, NME) ('standard') (params),
                 self.master.queue)
         self.assertEqual(YES (LST), self.master.queue[-1])
+    @patch("parlance.server.variants", test_variants)
     def test_multigame_LST_reply(self):
-        # Note: This test may fail if the sailho variant is unavailable.
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
-        game = self.new_game('sailho')
+        game = self.new_game("testing")
         self.master.queue = []
         self.master.send(+LST)
-        sailho_params = game.game_options.get_params()
+        testing_params = game.game_options.get_params()
         self.assertContains(
                 LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue)
         self.assertContains(
-                LST (game.game_id) (4, NME) ('sailho') (sailho_params),
+                LST (game.game_id) (7, NME) ("testing") (testing_params),
                 self.master.queue)
+    @patch("parlance.server.variants", test_variants)
     def test_single_LST_reply(self):
         std_params = self.game.game_options.get_params()
         game_id = self.game.game_id
-        game = self.new_game('sailho')
+        game = self.new_game("testing")
         self.master.queue = []
         self.master.send(LST(game_id))
-        sailho_params = game.game_options.get_params()
         self.assertEqual(
                 LST (game_id) (6, NME) ('standard') (std_params),
                 self.master.queue[-1])
@@ -1332,5 +1420,24 @@ class Server_Bugfix(ServerTestCase):
             self.fail("Started a game inappropriately")
         self.server.start_game = start_game_fail
         self.server.close()
+    def test_zero_summary(self):
+        # A power eliminated in year zero should get the elimination token.
+        self.connect_server()
+        self.game.judge.map.handle_NOW(NOW (FAL, 0)
+            (FRA, AMY, BUD) (FRA, FLT, TRI) (FRA, AMY, VIE)
+            (FRA, FLT, EDI) (FRA, FLT, LON) (FRA, AMY, LVP)
+            (FRA, FLT, BRE) (FRA, AMY, MAR) (FRA, AMY, PAR)
+            (FRA, AMY, BER) (FRA, FLT, KIE) (FRA, AMY, MUN)
+            (FRA, FLT, NAP) (FRA, AMY, ROM) (FRA, AMY, VEN)
+            (RUS, AMY, MOS) (RUS, FLT, SEV) (RUS, AMY, WAR)
+            (FRA, FLT, ANK) (FRA, AMY, CON) (FRA, AMY, SMY))
+        game = self.start_game()
+        self.game.run_judge()
+        summary = self.game.summarize()
+        players = dict((p[0], tuple(p[3:])) for p in summary.fold()[2:])
+        expected = dict.fromkeys([AUS, ENG, GER, ITA, TUR], (0, 0))
+        expected[FRA] = (18,)
+        expected[RUS] = (4,)
+        self.assertEqual(players, expected)
 
 if __name__ == '__main__': unittest.main()
