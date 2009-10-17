@@ -16,6 +16,7 @@ from time import sleep
 
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.error import CannotListenError
+from twisted.protocols.policies import TimeoutMixin
 from twisted.protocols.stateful import StatefulProtocol
 from twisted.web.error import NoResource
 from twisted.web.http import HTTPChannel
@@ -27,7 +28,7 @@ from parlance.fallbacks import any
 from parlance.language import Message, Representation, protocol
 from parlance.tokens import ADM, MDF, OFF, REJ, YES
 
-class DaideProtocol(VerboseObject, StatefulProtocol):
+class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
     r'''Base methods for the DAIDE Client-Server Protocol.'''
     
     __options__ = (
@@ -43,15 +44,16 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     def connectionMade(self):
         self.configure(protocol)
         self.final_sent = False
+        self.closed = False
     def close(self, notified=False):
+        self.log.debug("Closing")
+        self.closed = True
+        self.setTimeout(None)
         if not self.final_sent:
             if self.options.echo_final or not notified:
                 self.send_dcsp(self.FM, "")
             self.final_sent = True
         self.transport.loseConnection()
-        
-        # State: ignore all incoming messages
-        return (self.read_closed, 4)
     
     def getInitialState(self):
         self.log.debug("Initializing State")
@@ -86,19 +88,38 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     def read_header(self, data):
         msg_type, msg_len = unpack('!BxH', data)
         self.log.debug("Header %d/%d: %r", msg_type, msg_len, data)
+        error = None
         if self.first:
             first, err = self.first
             if msg_type not in (first, self.FM, self.EM):
-                return self.send_error(err)
-            if msg_type == self.IM and msg_len == 0x0400:
-                return self.send_error(self.proto.EndianError)
+                error = err
+            elif msg_type == self.IM and msg_len == 0x0400:
+                error = self.proto.EndianError
             self.first = None
         
-        handler = self.handlers.get(msg_type)
-        if handler:
-            state = (handler, msg_len)
+        if error is None:
+            try:
+                self.__handler = self.handlers[msg_type]
+            except KeyError:
+                error = self.proto.MessageTypeError
+        
+        if error is None:
+            self.setTimeout(30)
+            state = (self.read_body, msg_len)
         else:
-            state = self.send_error(self.proto.MessageTypeError)
+            self.send_error(error)
+            state = (self.read_closed, 4)
+        
+        return state
+    def read_body(self, data):
+        # Handles timeouts and state transitions for the handlers
+        self.log.debug("%s(%r)", self.__handler.__name__, data)
+        self.setTimeout(None)
+        self.__handler(data)
+        if self.closed:
+            state = (self.read_closed, 4)
+        else:
+            state = (self.read_header, 4)
         return state
     def read_closed(self, data):
         return None
@@ -109,17 +130,16 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
             (version, magic) = unpack('!HH', data)
             if magic == self.proto.magic:
                 if version == self.proto.version:
+                    # Success!
                     self.service = Service(self, self.addr,
                         self.factory.server, self.factory.game)
-                    state = (self.read_header, 4)
-                else: state = self.send_error(self.proto.VersionError)
+                else: self.send_error(self.proto.VersionError)
             elif unpack('<HH', data)[1] == self.proto.magic:
-                state = self.send_error(self.proto.EndianError)
-            else: state = self.send_error(self.proto.MagicError)
-        else: state = self.send_error(self.proto.LengthError)
+                self.send_error(self.proto.EndianError)
+            else: self.send_error(self.proto.MagicError)
+        else: self.send_error(self.proto.LengthError)
         
         self.handlers[self.IM] = self.duplicate_IM
-        return state
     def duplicate_IM(self, data):
         self.send_error(self.proto.DuplicateIMError)
     
@@ -142,11 +162,9 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     def read_RM(self, data):
         # This might check for UnexpectedRM, but that interferes with SEL.
         if len(data) % 6:
-            state = self.send_error(self.proto.LengthError)
+            self.send_error(self.proto.LengthError)
         else:
             self.read_representation(data)
-            state = (self.read_header, 4)
-        return state
     def read_representation(self, data):
         ''' Creates a representation dictionary from the RM.
             This dictionary maps names to numbers and vice-versa.
@@ -162,17 +180,15 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     
     def read_DM(self, data):
         if len(data) % 2 or not data:
-            return self.send_error(self.proto.LengthError)
+            self.send_error(self.proto.LengthError)
         elif not self.rep:
-            return self.send_error(self.proto.EarlyDMError)
+            self.send_error(self.proto.EarlyDMError)
         else:
             msg = self.unpack_message(data)
             if msg:
                 self.handle_message(msg)
-                state = (self.read_header, 4)
             else:
-                return self.send_error(self.proto.IllegalToken)
-        return state
+                self.send_error(self.proto.IllegalToken)
     def unpack_message(self, data):
         r'''Produces a Message from a string of token numbers.
             Uses values in the representation, if available.
@@ -195,17 +211,19 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
     def send_error(self, code):
         self.log_error("Foreign", code)
         self.send_dcsp(self.EM, pack('!H', code))
-        return self.close(True)
+        self.close(True)
     def read_EM(self, data):
         code = unpack('!H', data)[0]
         self.log_error("Local", code)
-        return self.close(True)
+        self.close(True)
     def log_error(self, faulty, code):
         text = self.proto.error_strings.get(code, "Unknown")
         self.log.error("%s error 0x%02X (%s)", faulty, code, text)
+    def timeoutConnection(self):
+        self.send_error(self.proto.LengthError)
     
     def read_FM(self, data):
-        return self.close(True)
+        self.close(True)
 
 class DaideClientProtocol(DaideProtocol):
     def connectionMade(self):
@@ -218,9 +236,8 @@ class DaideClientProtocol(DaideProtocol):
         self.send_error(self.proto.ServerIMError)
     
     def read_RM(self, data):
-        state = self.__super.read_RM(data)
+        self.__super.read_RM(data)
         self.factory.player.register(self, self.rep)
-        return state
     
     def handle_message(self, msg):
         player = self.factory.player
@@ -231,9 +248,13 @@ class DaideClientProtocol(DaideProtocol):
 class DaideServerProtocol(DaideProtocol, HTTPChannel):
     # - DaideServerProtocol
     #   - DaideProtocol
+    #     - VerboseObject
+    #       - Configurable
+    #         - object
     #     - StatefulProtocol
     #       - Protocol
     #         - BaseProtocol
+    #     - TimeoutMixin
     #   - HTTPChannel
     #     - LineReceiver
     #       - Protocol
@@ -254,12 +275,15 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
     
     def switchProtocol(self, proto, timeout):
         self.log.debug("Switching to %s", proto)
+        # Do not wait until after connectionMade to reset the timeout,
+        # because it might set a timeout of its own.
+        self.setTimeout(timeout)
         data = self.__buffer
         del self.__buffer
         self.dataReceived = lambda msg: proto.dataReceived(self, msg)
+        self.timeoutConnection = lambda: proto.timeoutConnection(self)
         proto.connectionMade(self)
         self.dataReceived(data)
-        self.setTimeout(timeout)
     
     def dataReceived(self, data):
         r'''Switch to a new protocol as soon as possible.'''
