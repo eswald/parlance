@@ -28,6 +28,7 @@ from parlance.network   import DaideClientProtocol, DaideFactory, DaideProtocol
 from parlance.player    import Clock, HoldBot
 from parlance.server    import Server
 from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
+from parlance.xtended   import standard
 
 from parlance.test.server import ServerTestCase
 
@@ -80,9 +81,9 @@ class NetworkTestCase(ServerTestCase):
         self.manager = FakeManager()
         self.manager.options.wait_time = 10
         self.manager.options.block_exceptions = False
+        self.set_option('port', self.port.next())
     def connect_server(self, clients, games=1, poll=True, **kwargs):
         self.set_option('games', games)
-        self.set_option('port', self.port.next())
         
         manager = self.manager
         self.server = server = Server(manager)
@@ -113,6 +114,7 @@ class NetworkTestCase(ServerTestCase):
 class Network_Errors(NetworkTestCase):
     def assertLocalError(self, error, initial, time_limit=5):
         self.server = Mock()
+        self.server.default_game().variant = standard
         self.manager.add_server(self.server)
         
         class TestingProtocol(DaideProtocol):
@@ -121,6 +123,9 @@ class Network_Errors(NetworkTestCase):
                 self.errors = []
                 self.first = (self.RM, self.proto.NotRMError)
                 initial(self)
+            def send_IM(self):
+                self.send_dcsp(self.IM,
+                    pack('!HH', self.proto.version, self.proto.magic))
             def log_error(self, faulty, code):
                 self.errors.append((faulty, code))
         
@@ -131,52 +136,48 @@ class Network_Errors(NetworkTestCase):
     def test_timeout(self):
         ''' Thirty-second timeout for the Initial Message'''
         self.failUnlessEqual(protocol.Timeout, 0x01)
-        def initial(dcsp): pass
+        def initial(client): pass
         self.assertLocalError(protocol.Timeout, initial, 35)
     def test_initial(self):
         ''' Client's first message must be Initial Message.'''
         self.failUnlessEqual(protocol.NotIMError, 0x02)
-        def initial(dcsp): dcsp.send_dcsp(dcsp.DM, '')
+        def initial(client): client.send_dcsp(client.DM, '')
         self.assertLocalError(protocol.NotIMError, initial)
     def test_endian(self):
         ''' Integers must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        def initial(dcsp):
-            dcsp.send_dcsp(dcsp.IM,
+        def initial(client):
+            client.send_dcsp(client.IM,
                 pack('<HH', protocol.version, protocol.magic))
         self.assertLocalError(protocol.EndianError, initial)
     def test_endian_short(self):
         ''' Length must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        def initial(dcsp):
-            dcsp.transport.write(pack('<BxHHH', dcsp.IM, 4,
+        def initial(client):
+            client.transport.write(pack('<BxHHH', client.IM, 4,
                     protocol.version, protocol.magic))
         self.assertLocalError(protocol.EndianError, initial)
     def test_magic(self):
         ''' The magic number must match.'''
         self.failUnlessEqual(protocol.MagicError, 0x04)
-        def initial(dcsp):
-            self.send_dcsp(self.IM,
+        def initial(client):
+            client.send_dcsp(client.IM,
                 pack('!HH', protocol.version, protocol.magic >> 1))
         self.assertLocalError(protocol.MagicError, initial)
     def test_version(self):
         ''' The server must recognize the protocol version.'''
         self.failUnlessEqual(protocol.VersionError, 0x05)
-        def initial(dcsp):
-            self.send_dcsp(self.IM,
+        def initial(client):
+            client.send_dcsp(client.IM,
                 pack('!HH', protocol.version + 5, protocol.magic))
         self.assertLocalError(protocol.VersionError, initial)
     def test_duplicate(self):
         ''' The client must not send more than one Initial Message.'''
         self.failUnlessEqual(protocol.DuplicateIMError, 0x06)
-        self.connect_server([])
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version, protocol.magic))
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version, protocol.magic))
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.DuplicateIMError)
+        def initial(client):
+            client.send_IM()
+            client.send_IM()
+        self.assertLocalError(protocol.DuplicateIMError, initial)
     def test_server_initial(self):
         ''' The server must not send an Initial Message.'''
         self.failUnlessEqual(protocol.ServerIMError, 0x07)
@@ -184,23 +185,17 @@ class Network_Errors(NetworkTestCase):
     def test_type(self):
         ''' Stick to the defined set of message types.'''
         self.failUnlessEqual(protocol.MessageTypeError, 0x08)
-        self.connect_server([])
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version, protocol.magic))
-        client.send_dcsp(10, '')
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.MessageTypeError)
+        def initial(client):
+            client.send_IM()
+            client.send_dcsp(10, "")
+        self.assertLocalError(protocol.MessageTypeError, initial)
     def test_short(self):
         ''' Detect messages chopped in transit.'''
         self.failUnlessEqual(protocol.LengthError, 0x09)
-        self.connect_server([])
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version, protocol.magic))
-        client.sock.sendall(pack('!BxH', client.DM, 20) + HLO(0).pack())
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.LengthError)
+        def initial(client):
+            client.send_IM()
+            client.transport.write(pack('!BxH', client.DM, 20) + HLO(0).pack())
+        self.assertLocalError(protocol.LengthError, initial, 35)
     def test_quick(self):
         ''' The client should not send a DM before receiving the RM.'''
         self.failUnlessEqual(protocol.EarlyDMError, 0x0A)
@@ -216,29 +211,17 @@ class Network_Errors(NetworkTestCase):
     def test_client_representation(self):
         ''' The client must not send Representation Messages.'''
         self.failUnlessEqual(protocol.ClientRMError, 0x0D)
-        self.connect_server([])
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-                pack('!HH', protocol.version, protocol.magic))
-        self.manager.process()
-        client.send_RM()
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.ClientRMError)
+        def initial(client):
+            client.send_IM()
+            client.send_RM(standard.rep)
+        self.assertLocalError(protocol.ClientRMError, initial)
     def test_reserved_tokens(self):
         ''' "Reserved for AI use" tokens must never be sent over the wire.'''
-        class ReservedSender(object):
-            def __init__(self, **kwargs):
-                self.closed = False
-            def register(self, transport, representation):
-                self.send = transport
-                self.rep = representation
-                self.send(Token('HMM', 0x585F)())
-            def close(self): self.closed = True
         self.failUnlessEqual(protocol.IllegalToken, 0x0E)
-        self.connect_server([])
-        client = self.fake_client(ReservedSender)
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.IllegalToken)
+        def initial(client):
+            client.send_IM()
+            client.write(Token('HMM', 0x585F)())
+        self.assertLocalError(protocol.IllegalToken, initial)
 
 class Network_Basics(NetworkTestCase):
     def test_RM_unpacking(self):

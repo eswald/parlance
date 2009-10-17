@@ -12,6 +12,7 @@ r'''Parlance client/server communications
 
 from itertools import count
 from struct import pack, unpack
+from time import sleep
 
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.error import CannotListenError
