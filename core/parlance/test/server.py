@@ -413,8 +413,8 @@ class Server_Basics(ServerTestCase):
         game.run_judge()
         self.assertEqual(sorted(game.messages[SCO].fold()),
             sorted(game.variant.sco().fold()))
-        self.assertEqual((game.messages[NOW].fold()),
-            (game.variant.now().fold()))
+        self.assertEqual(sorted(game.messages[NOW].fold()),
+            sorted(game.variant.now().fold()))
     def test_history_start_early(self):
         # HST should return the starting NOW and SCO
         # even before the game starts.  Maybe.
