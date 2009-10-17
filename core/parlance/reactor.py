@@ -43,14 +43,6 @@ class ThreadManager(VerboseObject):
         ''' The main loop; never returns until the manager closes.'''
         self.log.debug('Main loop started')
         self.reactor.run()
-    def process(self, wait_time=1):
-        r'''Run a single iteration of the reactor.
-            Meant for testing only; be sure to run close() afterward.
-        '''#"""#'''
-        if not self.reactor.running:
-            # Yes, this is officially discouraged.
-            self.reactor.startRunning()
-        self.reactor.iterate(wait_time)
     def close(self):
         self.closed = True
         self.reactor.stop()

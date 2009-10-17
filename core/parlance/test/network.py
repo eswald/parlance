@@ -10,22 +10,41 @@ r'''Test cases for Parlance network activity
 '''#'''
 
 import socket
+import sys
 import unittest
 from itertools       import count
 from struct          import pack
-from time            import sleep
+from time            import time, sleep
+
+from twisted.internet.protocol import ClientFactory
 
 from parlance.config    import VerboseObject
 from parlance.fallbacks import any
 from parlance.gameboard import Variant
 from parlance.language  import Representation, Token, protocol
 from parlance.reactor   import ThreadManager
-from parlance.network   import Client, Connection
+from parlance.network   import DaideClientProtocol, DaideFactory, DaideProtocol
 from parlance.player    import Clock, HoldBot
 from parlance.server    import Server
 from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
 
 from parlance.test.server import ServerTestCase
+
+class FakeManager(ThreadManager):
+    def install(self):
+        import twisted.internet.reactor
+        return twisted.internet.reactor
+    def process(self, time_limit=5, wait_time=1):
+        r'''Run a single iteration of the reactor.'''
+        if not self.reactor.running:
+            # Yes, this is officially discouraged.
+            self.reactor.startRunning()
+        started = time()
+        while time() - started < time_limit:
+            self.reactor.iterate(wait_time)
+    def close(self):
+        # Don't stop the reactor; it shouldn't be running.
+        self.closed = True
 
 class NetworkTestCase(ServerTestCase):
     class Disconnector(ServerTestCase.Fake_Player):
@@ -40,38 +59,24 @@ class NetworkTestCase(ServerTestCase):
         def run(self):
             self.send(ADM(str(self.power))('Passcode: %d' % self.pcode))
             self.close()
-    class FakeClient(Client):
-        ''' A fake Client to test the server timeout.'''
-        is_server = False
-        prefix = 'Fake Client'
-        error_code = None
+    class FakeFactory(DaideFactory, ClientFactory):
+        r'''A fake ClientFactory to test the netowrk protocols.'''
         
-        def open(self):
-            # Open the socket
-            self.sock = sock = socket.socket()
-            sock.connect((self.options.host or 'localhost', self.options.port))
-            sock.settimeout(None)
-            
-            if self.player:
-                # Send initial message
-                self.log_debug(9, 'Sending Initial Message')
-                self.send_dcsp(self.IM, pack('!HH',
-                    self.proto.version, self.proto.magic))
-            
-            return True
-        def run(self):
-            if self.player:
-                self.__super.run()
-            else: self.read()
-        def send_error(self, code, from_them=False):
-            if from_them: self.error_code = code
-            self.__super.send_error(code, from_them)
+        def __init__(self, protocol):
+            self.protocol = protocol
+            self.client = None
+            self.__super.__init__()
+        
+        def buildProtocol(self, addr):
+            p = self.__super.buildProtocol(addr)
+            self.client = p
+            return p
     
     port = count(16714)
     
     def setUp(self):
         ServerTestCase.setUp(self)
-        self.manager = ThreadManager()
+        self.manager = FakeManager()
         self.manager.options.wait_time = 10
         self.manager.options.block_exceptions = False
     def connect_server(self, clients, games=1, poll=True, **kwargs):
@@ -97,61 +102,86 @@ class NetworkTestCase(ServerTestCase):
             while any(not p.closed for p in players):
                 manager.process(23)
         return sock
-    def fake_client(self, player_class):
-        player = player_class and player_class()
-        client = self.FakeClient(player)
-        result = client.open()
-        if result: self.manager.add_polled(client)
-        else: raise UserWarning('Failed to open a Client for ' + player.prefix)
-        return result and client
+    def fake_client(self, protocol=DaideClientProtocol):
+        self.factory = factory = self.FakeFactory(protocol)
+        host = "localhost"
+        port = factory.options.port
+        self.manager.reactor.connectTCP(host, port, factory)
+        return factory
 
 class Network_Errors(NetworkTestCase):
+    def assertLocalError(self, error, protocol, time_limit=5):
+        self.connect_server([])
+        self.fake_client(protocol)
+        self.manager.process(time_limit)
+        self.failUnlessEqual(self.factory.client.errors, [("Local", error)])
     def test_timeout(self):
         ''' Thirty-second timeout for the Initial Message'''
         self.failUnlessEqual(protocol.Timeout, 0x01)
-        self.connect_server([])
-        client = self.fake_client(None)
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.Timeout)
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        self.assertLocalError(protocol.Timeout, TestingProtocol, 35)
     def test_initial(self):
         ''' Client's first message must be Initial Message.'''
         self.failUnlessEqual(protocol.NotIMError, 0x02)
-        self.connect_server([])
-        client = self.fake_client(None)
-        client.send_dcsp(client.DM, '')
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.NotIMError)
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+                self.send_dcsp(self.DM, '')
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        self.assertLocalError(protocol.NotIMError, TestingProtocol)
     def test_endian(self):
         ''' Integers must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        self.connect_server([])
-        client = self.fake_client(None)
-        client.send_dcsp(client.IM,
-                pack('<HH', protocol.version, protocol.magic))
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.EndianError)
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+                self.send_dcsp(self.IM,
+                    pack('<HH', protocol.version, protocol.magic))
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        self.assertLocalError(protocol.EndianError, TestingProtocol)
     def test_endian_short(self):
         ''' Length must be sent in network byte order.'''
         self.failUnlessEqual(protocol.EndianError, 0x03)
-        self.connect_server([])
-        client = self.fake_client(None)
-        client.sock.sendall(pack('<BxHHH', client.IM, 4,
-            protocol.version, protocol.magic))
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.EndianError)
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+                self.transport.write(pack('<BxHHH', self.IM, 4,
+                        protocol.version, protocol.magic))
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        self.assertLocalError(protocol.EndianError, TestingProtocol)
     def test_magic(self):
         ''' The magic number must match.'''
         self.failUnlessEqual(protocol.MagicError, 0x04)
-        self.connect_server([])
-        client = self.fake_client(None)
-        client.send_dcsp(client.IM, 'None')
-        self.manager.process()
-        self.failUnlessEqual(client.error_code, protocol.MagicError)
+        class TestingProtocol(DaideProtocol):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.errors = []
+                self.first = (self.RM, self.proto.NotRMError)
+                self.send_dcsp(self.IM,
+                    pack('<HH', protocol.version, protocol.magic >> 1))
+            def log_error(self, faulty, code):
+                self.errors.append((faulty, code))
+        self.assertLocalError(protocol.MagicError, TestingProtocol)
     def test_version(self):
         ''' The server must recognize the protocol version.'''
         self.failUnlessEqual(protocol.VersionError, 0x05)
         self.connect_server([])
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
                 pack('!HH', protocol.version + 1, protocol.magic))
         self.manager.process()
@@ -160,7 +190,7 @@ class Network_Errors(NetworkTestCase):
         ''' The client must not send more than one Initial Message.'''
         self.failUnlessEqual(protocol.DuplicateIMError, 0x06)
         self.connect_server([])
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
                 pack('!HH', protocol.version, protocol.magic))
         client.send_dcsp(client.IM,
@@ -175,7 +205,7 @@ class Network_Errors(NetworkTestCase):
         ''' Stick to the defined set of message types.'''
         self.failUnlessEqual(protocol.MessageTypeError, 0x08)
         self.connect_server([])
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
                 pack('!HH', protocol.version, protocol.magic))
         client.send_dcsp(10, '')
@@ -185,7 +215,7 @@ class Network_Errors(NetworkTestCase):
         ''' Detect messages chopped in transit.'''
         self.failUnlessEqual(protocol.LengthError, 0x09)
         self.connect_server([])
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
                 pack('!HH', protocol.version, protocol.magic))
         client.sock.sendall(pack('!BxH', client.DM, 20) + HLO(0).pack())
@@ -207,7 +237,7 @@ class Network_Errors(NetworkTestCase):
         ''' The client must not send Representation Messages.'''
         self.failUnlessEqual(protocol.ClientRMError, 0x0D)
         self.connect_server([])
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
                 pack('!HH', protocol.version, protocol.magic))
         self.manager.process()
@@ -244,7 +274,7 @@ class Network_Basics(NetworkTestCase):
         self.connect_server([])
         self.server.default_game().variant = Variant("testing", rep)
         
-        client = self.fake_client(None)
+        client = self.fake_client()
         client.send_dcsp(client.IM,
             pack('!HH', protocol.version, protocol.magic))
         self.manager.process()
@@ -323,11 +353,9 @@ class Network_Basics(NetworkTestCase):
         self.assertContains('Recruit more players first, or use your own bots.',
                 master.admin('Server: start holdbot'))
     def test_unpack_message(self):
-        ''' Former docstring tests from Connection.unpack_message().'''
-        c = Connection()
-        c.rep = Representation({0x4101: 'Sth'}, c.proto.base_rep)
+        rep = Representation({0x4101: 'Sth'}, protocol.base_rep)
         msg = [HLO.number, BRA.number, 0x4101, KET.number]
-        unpacked = c.unpack_message(pack('!HHHH', *msg))
+        unpacked = rep.unpack_message(pack('!HHHH', *msg))
         self.failUnlessEqual(repr(unpacked),
             "Message([HLO, [Token('Sth', 0x4101)]])")
     def test_game_port(self):

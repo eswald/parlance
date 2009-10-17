@@ -89,6 +89,8 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
             first, err = self.first
             if msg_type not in (first, self.FM, self.EM):
                 return self.send_error(err)
+            if msg_type == self.IM and msg_len == 0x0400:
+                return self.send_error(self.proto.EndianError)
             self.first = None
         
         handler = self.handlers.get(msg_type)
@@ -190,16 +192,16 @@ class DaideProtocol(VerboseObject, StatefulProtocol):
         raise NotImplementedError
     
     def send_error(self, code):
-        self.log_error("Client", code)
+        self.log_error("Foreign", code)
         self.send_dcsp(self.EM, pack('!H', code))
         return self.close(True)
     def read_EM(self, data):
         code = unpack('!H', data)[0]
-        self.log_error("Server", code)
+        self.log_error("Local", code)
         return self.close(True)
     def log_error(self, faulty, code):
         text = self.proto.error_strings.get(code, "Unknown")
-        #self.log_debug(8, '%s error 0x%02X (%s)', faulty, code, text)
+        self.log.error("%s error 0x%02X (%s)", faulty, code, text)
     
     def read_FM(self, data):
         return self.close(True)

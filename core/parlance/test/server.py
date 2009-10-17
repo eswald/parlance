@@ -36,10 +36,10 @@ class Fake_Manager(ThreadManager):
         address = "10.2.3." + str(self.clients.next())
         connection = FakeSocket(self.server, player, address)
         return player
-    def add_threaded(self, client):
-        client.run()
     def add_dynamic(self, client):
-        self.log_debug(1, 'Blocking dynamic client: %s', client.prefix)
+        self.log.warn('Blocking dynamic client: %s', client.prefix)
+    def close(self):
+        self.closed = True
 
 class FakeSocket(VerboseObject):
     r'''Connects the Server straight to a player, replacing DaideProtocol.
@@ -197,7 +197,6 @@ class ServerTestCase(unittest.TestCase):
         self.game = self.server.default_game()
     def connect_player(self, player_class, **kwargs):
         player = self.manager.add_client(player_class, **kwargs)
-        self.manager.process()
         return player
     def start_game(self):
         game = self.server.default_game()
