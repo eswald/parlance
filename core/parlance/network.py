@@ -195,7 +195,7 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
             Uses values in the representation, if available.
         '''#'''
         try:
-            result = self.rep.unpack(data)
+            msg = self.rep.unpack(data)
         except ValueError:
             # Someone foolishly chose to disconnect over an unknown token.
             msg = None
