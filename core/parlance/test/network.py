@@ -35,9 +35,14 @@ from parlance.test.server import ServerTestCase
 class FakeManager(ThreadManager):
     def install(self):
         import twisted.internet.reactor
+        from twisted.python import log
+        def err(*args, **kwargs):
+            # Let Nose know about any errors that occur.
+            raise
+        log.err = err
         return twisted.internet.reactor
     def process(self, time_limit=5, wait_time=1):
-        r'''Run a single iteration of the reactor.'''
+        r'''Run the reactor for a limited time.'''
         if not self.reactor.running:
             # Yes, this is officially discouraged.
             self.reactor.startRunning()
@@ -67,6 +72,7 @@ class NetworkTestCase(ServerTestCase):
         def __init__(self, protocol):
             self.protocol = protocol
             self.client = None
+            self.player = Mock()
             self.__super.__init__()
         
         def buildProtocol(self, addr):
@@ -82,7 +88,7 @@ class NetworkTestCase(ServerTestCase):
         self.manager.options.wait_time = 10
         self.manager.options.block_exceptions = False
         self.set_option('port', self.port.next())
-    def connect_server(self, clients, games=1, poll=True, **kwargs):
+    def connect_server(self, clients, games=1, **kwargs):
         self.set_option('games', games)
         
         manager = self.manager
@@ -90,7 +96,6 @@ class NetworkTestCase(ServerTestCase):
         sock = manager.add_server(server)
         if not sock:
             raise UserWarning("ServerSocket failed to open")
-        if not poll: manager.polling = None
         
         for dummy in range(games):
             if server.closed: raise UserWarning('Server closed early')
@@ -234,20 +239,22 @@ class Network_Basics(NetworkTestCase):
             0x5102: "CCC",
             0x5003: "DDD",
         }, protocol.base_rep)
-        self.connect_server([])
-        self.server.default_game().variant = Variant("testing", rep)
+        server = Mock()
+        server.default_game().variant = Variant("testing", rep)
+        self.manager.add_server(server)
+        case = self
         
-        client = self.fake_client()
-        client.send_dcsp(client.IM,
-            pack('!HH', protocol.version, protocol.magic))
+        class TestingProtocol(DaideClientProtocol):
+            def connectionMade(self):
+                case.client = self
+                self.__super.connectionMade()
+        
+        self.fake_client(TestingProtocol)
         self.manager.process()
-        self.failUnlessEqual(client.rep, rep)
+        self.failUnlessEqual(self.client.rep, rep)
     def test_full_connection(self):
-        ''' Seven fake players, polling if possible'''
+        ''' Seven fake players'''
         self.connect_server([self.Disconnector] * 7)
-    def test_without_poll(self):
-        ''' Seven fake players, selecting'''
-        self.connect_server([self.Disconnector] * 7, poll=False)
     def test_with_timer(self):
         ''' Seven fake players and an observer'''
         self.connect_server([Clock] + ([self.Disconnector] * 7))
