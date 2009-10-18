@@ -373,7 +373,7 @@ class DaideServerFactory(DaideFactory, Site):
     
     def buildProtocol(self, addr):
         p = self.__super.buildProtocol(addr)
-        p.addr = addr
+        p.addr = addr.host
         return p
     
     def openPort(self, reactor):

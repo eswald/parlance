@@ -318,7 +318,7 @@ class Network_Basics(NetworkTestCase):
         self.Fake_Master.admin = lazy_admin
         master = self.connect_player(self.Fake_Master)
         self.connect_player(self.Fake_Player)
-        master.admin('Server: become master')
+        manager.process()
         self.assertContains('Recruit more players first, or use your own bots.',
                 master.admin('Server: start holdbot'))
     def test_unpack_message(self):
