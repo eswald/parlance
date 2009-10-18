@@ -95,6 +95,7 @@ class Fake_Manager(ThreadManager):
     def create_connection(self, player):
         address = "10.2.3." + str(self.clients.next())
         return FakeSocket(self.server, player, address)
+    def process(self): pass
     def add_dynamic(self, client):
         self.log.warn('Blocking dynamic client: %s', client.prefix)
     def close(self):
@@ -199,6 +200,7 @@ class ServerTestCase(unittest.TestCase):
         def admin(self, line, *args):
             self.queue = []
             self.send(ADM(self.name)(str(line) % args))
+            self.manager.process()
             return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
         def get_time(self):
             self.queue = []

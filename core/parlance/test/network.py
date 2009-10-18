@@ -308,17 +308,10 @@ class Network_Basics(NetworkTestCase):
         self.assertEqual(success[0].__class__, Fake_Takeover)
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''
-        manager = self.manager
-        def lazy_admin(self, line, *args):
-            self.queue = []
-            self.send(ADM(self.name)(str(line) % args))
-            manager.process()
-            return [msg.fold()[2][0] for msg in self.queue if msg[0] is ADM]
         self.connect_server([])
-        self.Fake_Master.admin = lazy_admin
         master = self.connect_player(self.Fake_Master)
         self.connect_player(self.Fake_Player)
-        manager.process()
+        self.manager.process()
         self.assertContains('Recruit more players first, or use your own bots.',
                 master.admin('Server: start holdbot'))
     def test_unpack_message(self):
