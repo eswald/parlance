@@ -81,12 +81,12 @@ class ThreadManager(VerboseObject):
         from parlance.network import DaideServerFactory
         factory = DaideServerFactory(server, game)
         port = factory.openPort(self.reactor)
-        return port
+        return port and factory
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
         # a separate process or something.
         player = player_class(manager=self, **kwargs)
-        return player.connect()
+        return player.connect() and player
     def create_connection(self, player):
         # This import can't be done before the reactor is installed.
         from parlance.network import DaideClientFactory

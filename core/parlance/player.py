@@ -92,7 +92,10 @@ class Observer(ClientProgram):
         self.rep = representation
         if self.game_id is None: self.send_identity()
         else: self.send(SEL(self.game_id))
-    def close(self): self.closed = True
+    def close(self):
+        self.closed = True
+        if self.transport and not self.transport.closed:
+            self.transport.close()
     
     # Sending messages to the Server
     def send(self, message):

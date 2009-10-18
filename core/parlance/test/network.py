@@ -36,9 +36,14 @@ class FakeManager(ThreadManager):
     def install(self):
         import twisted.internet.reactor
         from twisted.python import log
-        def err(*args, **kwargs):
+        
+        self.__err = None
+        def err(_stuff=None, *args, **kwargs):
             # Let Nose know about any errors that occur.
-            raise
+            if _stuff is None:
+                raise
+            else:
+                self.__err = _stuff
         log.err = err
         return twisted.internet.reactor
     def process(self, time_limit=5, wait_time=1):
@@ -49,6 +54,8 @@ class FakeManager(ThreadManager):
         started = time()
         while time() - started < time_limit:
             self.reactor.iterate(wait_time)
+            if self.__err:
+                raise self.__err
     def close(self):
         # Don't stop the reactor; it shouldn't be running.
         self.closed = True
@@ -328,16 +335,36 @@ class Network_Basics(NetworkTestCase):
         self.set_option('game_port_min', game_port)
         self.set_option('game_port_max', game_port)
         middle = self.server.start_game()
+        self.failUnlessEqual(middle.port.port, game_port)
         
         self.set_option('game_port_min', None)
         self.set_option('game_port_max', None)
         default = self.server.start_game()
-        player = self.connect_player(self.Fake_Player)
-        self.failUnlessEqual(player.game_id, default.game_id)
+        default_player = self.connect_player(self.Fake_Player)
+        self.manager.process()
+        self.failUnlessEqual(default_player.game_id, default.game_id)
+        self.failUnlessEqual(default.port, None)
         
         self.set_option('port', game_port)
         player = self.connect_player(self.Fake_Player)
+        self.manager.process()
         self.failUnlessEqual(player.game_id, middle.game_id)
+        
+        # Closing a game leaves clients on its port open.
+        middle.close()
+        self.manager.process()
+        player.admin("Ping.")
+        self.manager.process()
+        self.failUnlessEqual(player.closed, False)
+        player.close()
+        self.manager.process()
+        self.failUnlessEqual(middle.port.closed, True)
+        
+        # But new clients can't connect to that port.
+        player = self.connect_player(self.Fake_Player)
+        self.manager.process()
+        self.failUnlessEqual(player.transport, None)
+        self.failUnlessEqual(player.failures, 1)
 
 class Network_Full_Games(NetworkTestCase):
     def test_holdbots(self):

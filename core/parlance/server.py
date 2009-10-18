@@ -923,7 +923,6 @@ class Game(Historian):
         # Todo: Will it kill connected clients to close self.port?
         if self.port:
             self.port.close()
-            self.port = None
     def reveal_passcodes(self, client):
         disconnected = {}
         robotic = {}

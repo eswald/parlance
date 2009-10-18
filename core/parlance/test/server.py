@@ -94,8 +94,7 @@ class Fake_Manager(ThreadManager):
         self.clients = count(1)
     def create_connection(self, player):
         address = "10.2.3." + str(self.clients.next())
-        connection = FakeSocket(self.server, player, address)
-        return player
+        return FakeSocket(self.server, player, address)
     def add_dynamic(self, client):
         self.log.warn('Blocking dynamic client: %s', client.prefix)
     def close(self):
@@ -155,6 +154,7 @@ class ServerTestCase(unittest.TestCase):
             self.pcode = passcode
             self.queue = []
             self.transport = None
+            self.failures = 0
             self.rep = None
             self.manager = manager
             self.game_id = game_id
@@ -162,6 +162,9 @@ class ServerTestCase(unittest.TestCase):
             else: self.player_type = NME
         def connect(self):
             return self.manager.create_connection(self)
+        def reconnect(self):
+            self.failures += 1
+            return False
         def register(self, transport, representation):
             self.transport = transport
             self.rep = representation

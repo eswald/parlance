@@ -361,6 +361,15 @@ class DaideServerFactory(DaideFactory, Site):
         Site.__init__(self, self.Nothing())
         self.game = game
         self.server = server
+        self.socket = None
+        self.port = None
+        self.closed = False
+    def close(self):
+        if self.socket:
+            return self.socket.loseConnection().addCallback(self._socketClosed)
+        else: self._socketClosed()
+    def _socketClosed(self, value):
+        self.closed = True
     
     def buildProtocol(self, addr):
         p = self.__super.buildProtocol(addr)
@@ -374,7 +383,10 @@ class DaideServerFactory(DaideFactory, Site):
                 self.options.game_port_max)
         else:
             port = self.openMainPort(reactor, self.options.port)
-            
+        
+        if port:
+            self.closed = False
+        self.port = port
         return port
     def openMainPort(self, reactor, port):
         wait_time = .125
@@ -393,15 +405,17 @@ class DaideServerFactory(DaideFactory, Site):
         if start and end:
             self.log_debug(11, "Checking ports %d-%d", start, end)
             for possible in random_cycle(start, end + 1):
-                port = self.tryPort(reactor, possible)
-                if port: break
+                if self.tryPort(reactor, possible):
+                    port = possible
+                    break
             else: port = None
         else: port = None
         return port
     def tryPort(self, reactor, port):
         try:
-            reactor.listenTCP(port, self)
+            self.socket = reactor.listenTCP(port, self)
         except CannotListenError:
+            self.socket = None
             return False
         return True
 
