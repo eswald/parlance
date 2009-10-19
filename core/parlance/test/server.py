@@ -109,8 +109,12 @@ class FakeSocket(VerboseObject):
     class FakeProtocol(object):
         def __init__(self, socket):
             self.socket = socket
+            self.closed = False
         def write(self, message):
             self.socket.send(message)
+        def close(self):
+            if not self.socket.closed:
+                self.socket.close()
     
     def __init__(self, server, player, address):
         self.__super.__init__()
@@ -128,7 +132,8 @@ class FakeSocket(VerboseObject):
         #    raise Exception("Invalid server message: " + str(message))
         self.log.debug("%3s << %s", self.service.power_name(), message)
         self.player.handle_message(message)
-        if self.player.closed: self.close()
+        if self.player.closed and not self.closed:
+            self.close()
     def send(self, message):
         r'''Takes a message from the player to the server.'''
         self.log.debug("%3s >> %s", self.service.power_name(), message)
