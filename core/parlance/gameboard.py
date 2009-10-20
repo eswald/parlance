@@ -822,6 +822,13 @@ class Turn(Comparable, Immutable):
         }
         season = names.get(self.season, self.season.text)
         return '%s %s' % (season, self.year)
+    def __repr__(self):
+        args = [repr(self.season), repr(self.year)]
+        if self.seasons:
+            args.append(repr(self.seasons))
+        if self.index is not None:
+            args.append(repr(self.index))
+        return "Turn(" + str.join(", ", args) + ")"
     def tokenize(self): return Message(self.season, self.year)
     
     def phase(self, season=None):
