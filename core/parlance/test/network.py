@@ -1,4 +1,4 @@
-r'''Test cases for Parlance network activity
+r'''Test cases for Parlance network and timing activity
     Copyright (C) 2004-2009  Eric Wald
     
     This module includes functional (end-to-end) test cases to verify that the
@@ -25,11 +25,12 @@ from parlance.gameboard import Variant
 from parlance.language  import Representation, Token, protocol
 from parlance.reactor   import ThreadManager
 from parlance.network   import DaideClientProtocol, DaideFactory, DaideProtocol
-from parlance.player    import Clock, HoldBot
+from parlance.player    import Clock, HoldBot, Player
 from parlance.server    import Server
-from parlance.tokens    import ADM, BRA, HLO, IAM, KET, NME, REJ, YES
+from parlance.tokens    import ADM, BRA, DRW, HLO, IAM, KET, NME, REJ, YES
 from parlance.xtended   import standard
 
+from parlance.test import fails
 from parlance.test.server import ServerTestCase, test_variants
 
 class FakeManager(ThreadManager):
@@ -54,6 +55,8 @@ class FakeManager(ThreadManager):
         started = time()
         while time() - started < time_limit:
             self.reactor.iterate(wait_time)
+            self.log.debug("%s seconds left in iteration",
+                max(0, time_limit - (time() - started)))
             if self.__err:
                 raise self.__err
     def close(self):
@@ -95,14 +98,17 @@ class NetworkTestCase(ServerTestCase):
         self.manager.options.wait_time = 10
         self.manager.options.block_exceptions = False
         self.set_option('port', self.port.next())
-    def connect_server(self, clients, games=1, **kwargs):
-        self.set_option('games', games)
-        
+    def connect_server(self):
         manager = self.manager
         self.server = server = Server(manager)
         sock = manager.add_server(server)
         if not sock:
             raise UserWarning("ServerSocket failed to open")
+        return server
+    def run_game(self, clients, games=1, **kwargs):
+        self.set_option('games', games)
+        server = self.connect_server()
+        manager = self.manager
         
         for dummy in range(games):
             if server.closed: raise UserWarning('Server closed early')
@@ -251,12 +257,6 @@ class Network_Basics(NetworkTestCase):
         self.fake_client(TestingProtocol)
         self.manager.process()
         self.failUnlessEqual(self.client.rep, variant.rep)
-    def test_full_connection(self):
-        ''' Seven fake players'''
-        self.connect_server([self.Disconnector] * 7)
-    def test_with_timer(self):
-        ''' Seven fake players and an observer'''
-        self.connect_server([Clock] + ([self.Disconnector] * 7))
     def test_takeover(self):
         ''' Takeover ability after game start'''
         success = []
@@ -303,12 +303,12 @@ class Network_Basics(NetworkTestCase):
                 self.log_debug(9, 'Closed')
                 self.closed = True
         self.set_option('takeovers', True)
-        self.connect_server([Fake_Restarter] + [self.Disconnector] * 6)
+        self.run_game([Fake_Restarter] + [self.Disconnector] * 6)
         self.assertEqual(len(success), 1)
         self.assertEqual(success[0].__class__, Fake_Takeover)
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''
-        self.connect_server([])
+        self.connect_server()
         master = self.connect_player(self.Fake_Master)
         self.connect_player(self.Fake_Player)
         self.manager.process()
@@ -322,17 +322,17 @@ class Network_Basics(NetworkTestCase):
             "Message([HLO, [Token('Sth', 0x4101)]])")
     def test_game_port(self):
         # Each game can be accessed on its own port, if so configured.
-        self.connect_server([])
+        server = self.connect_server()
         
         game_port = self.port.next()
         self.set_option('game_port_min', game_port)
         self.set_option('game_port_max', game_port)
-        middle = self.server.start_game()
+        middle = server.start_game()
         self.failUnlessEqual(middle.port.port, game_port)
         
         self.set_option('game_port_min', None)
         self.set_option('game_port_max', None)
-        default = self.server.start_game()
+        default = server.start_game()
         default_player = self.connect_player(self.Fake_Player)
         self.manager.process()
         self.failUnlessEqual(default_player.game_id, default.game_id)
@@ -359,13 +359,59 @@ class Network_Basics(NetworkTestCase):
         self.failUnlessEqual(player.transport, None)
         self.failUnlessEqual(player.failures, 1)
 
+class TimingCases(NetworkTestCase):
+    def start_game(self, time_limit):
+        # There are more precautions here than usual,
+        # because failure can lead to an infinite loop.
+        self.set_option('MTL', time_limit)
+        server = self.connect_server()
+        self.game = game = server.default_game()
+        players = []
+        while len(players) < 10 and not game.started:
+            player = self.connect_player(self.Fake_Player)
+            players.append(player)
+            self.manager.process(1)
+        self.assertEqual(game.started, True)
+        return players
+    
+    def test_turn_timeout(self):
+        # The turn runs when the time limit expires.
+        self.start_game(6)
+        start = self.game.judge.turn()
+        self.manager.process(4)
+        self.assertEqual(self.game.judge.turn(), start)
+        self.manager.process(4)
+        self.assertNotEqual(self.game.judge.turn(), start)
+    def test_turn_ready(self):
+        # The turn runs when all orders are in.
+        players = self.start_game(20)
+        start = self.game.judge.turn()
+        for player in players:
+            player.hold_all()
+        self.manager.process(2)
+        self.assertNotEqual(self.game.judge.turn(), start)
+    @fails
+    def test_drawn_early(self):
+        # The turn runs when all players agree on a draw.
+        players = self.start_game(20)
+        for player in players:
+            player.send(+DRW)
+        self.manager.process(2)
+        self.assertEqual(self.game.judge.game_result, +DRW)
+
 class Network_Full_Games(NetworkTestCase):
+    def test_full_connection(self):
+        ''' Seven fake players'''
+        self.run_game([self.Disconnector] * 7)
+    def test_with_timer(self):
+        ''' Seven fake players and an observer'''
+        self.run_game([Clock] + ([self.Disconnector] * 7))
     def test_holdbots(self):
         ''' Seven drawing holdbots'''
-        self.connect_server([HoldBot] * 7)
+        self.run_game([HoldBot] * 7)
     def test_two_games(self):
         ''' seven holdbots; two games'''
-        self.connect_server([HoldBot] * 7, 2)
+        self.run_game([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
 
 if __name__ == '__main__': unittest.main()

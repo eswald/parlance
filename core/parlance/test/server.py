@@ -95,9 +95,8 @@ class Fake_Manager(ThreadManager):
     def create_connection(self, player):
         address = "10.2.3." + str(self.clients.next())
         return FakeSocket(self.server, player, address)
-    def process(self): pass
-    def add_dynamic(self, client):
-        self.log.warn('Blocking dynamic client: %s', client.prefix)
+    def process(self, time_limit=0):
+        pass
     def close(self):
         self.closed = True
 
@@ -215,6 +214,7 @@ class ServerTestCase(unittest.TestCase):
             return times and int(times[0]) or None
         def hold_all(self, turn=None):
             self.send(+MIS)
+            self.manager.process(1)
             units = [msg.fold()[1:] for msg in self.queue if msg[0] is MIS][-1]
             message = SUB
             if turn: message = message (turn)
