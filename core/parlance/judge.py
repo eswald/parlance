@@ -530,7 +530,8 @@ class Judge(JudgeInterface):
     
     # Support functions for the above
     def missing_orders(self, country):
-        self.log_debug(14, 'Finding missing orders for %s from %s', country, self.next_orders)
+        self.log.debug("Finding missing orders for %s from %s",
+            country, str(self.next_orders))
         return self.next_orders.missing_orders(self.phase, self.map.powers[country])
     def get_draw_parties(self, message):
         if len(message) == 1: return frozenset(self.map.current_powers())
