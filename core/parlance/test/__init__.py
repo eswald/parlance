@@ -14,11 +14,15 @@ from parlance.fallbacks import wraps
 from parlance.gameboard import Variant
 
 def todo(test):
-    '''Makes a test always fail, with an appropriate note.'''
-    # Todo: Skip if possible, instead of failing.
+    r'''Makes a test always skip or fail, with an appropriate note.'''
     @wraps(test)
     def wrapper(self):
-        self.fail("Unwritten test")
+        try:
+            from nose import SkipTest
+        except ImportError:
+            self.fail("Unwritten test")
+        else:
+            raise SkipTest("Unwritten test")
     return wrapper
 
 def fails(test_function):
