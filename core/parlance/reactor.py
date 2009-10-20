@@ -58,15 +58,6 @@ class ThreadManager(VerboseObject):
         self.log.debug('New timed client: %s', client.prefix)
         assert not self.closed
         return self.reactor.callLater(delay, client.run)
-    def add_dynamic(self, client):
-        # Use add_timed() or something like TimeoutMixin instead.
-        # Call reset() on the result whenever the value changes.
-        self.log.debug("New dynamic client: %s", client.prefix)
-        #assert not self.closed
-        #now = time()
-        #delay = client.time_left(now)
-        #if delay is not None:
-        #    return self.add_timed(client, delay)
     
     def add_threaded(self, client):
         self.log.debug("New threaded client: %s", client.prefix)
