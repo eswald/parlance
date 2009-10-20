@@ -60,7 +60,7 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
         self.log.debug("Initializing State")
         return (self.read_header, 4)
     def dataReceived(self, data):
-        self.log.debug("Processing %r", data)
+        #self.log.debug("Processing %r", data)
         StatefulProtocol.dataReceived(self, data)
     
     def configure(self, proto):
@@ -82,13 +82,13 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
             msg_type must be an integer, one of the defined message types.
             data must be a packed binary string.
         '''#'''
-        self.log.debug("Sending %s: %r", msg_type, data)
+        #self.log.debug("Sending %s: %r", msg_type, data)
         msg = pack('!BxH', msg_type, len(data)) + data
         self.transport.write(msg)
     
     def read_header(self, data):
         msg_type, msg_len = unpack('!BxH', data)
-        self.log.debug("Header %d/%d: %r", msg_type, msg_len, data)
+        #self.log.debug("Header %d/%d: %r", msg_type, msg_len, data)
         error = None
         if self.first:
             first, err = self.first
@@ -114,7 +114,7 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
         return state
     def read_body(self, data):
         # Handles timeouts and state transitions for the handlers
-        self.log.debug("%s(%r)", self.__handler.__name__, data)
+        #self.log.debug("%s(%r)", self.__handler.__name__, data)
         self.setTimeout(None)
         self.__handler(data)
         if self.closed:
