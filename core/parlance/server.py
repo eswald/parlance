@@ -13,6 +13,8 @@ from os         import path
 from random     import randint, shuffle
 from time       import time
 
+from twisted.protocols.policies import TimeoutMixin
+
 from config     import GameOptions, VerboseObject, bots, variants, watchers
 from fallbacks  import defaultdict
 from gameboard  import Turn
@@ -153,7 +155,7 @@ class Server(ServerProgram):
             self.log_debug(7, '%s archived in %s', game.prefix, fname)
     
     def broadcast(self, message):
-        self.log_debug(2, 'ALL << %s', message)
+        self.log.info("ALL << %s", message)
         for client in self.clients.values():
             client.write(message)
         for watcher in self.watchers:
@@ -268,9 +270,6 @@ class Server(ServerProgram):
                 if result:
                     self.games[game_id] = new_game
                     game = new_game
-                    
-                    # Allow timed commands
-                    self.manager.add_dynamic(game)
         
         return game
     def join_game(self, client, game_id):
@@ -312,7 +311,6 @@ class Server(ServerProgram):
             game = Game(self, game_id, variant)
             self.games[game_id] = game
             self.default.append(game)
-            self.manager.add_dynamic(game)
             return game
         return None
     def select_game(self, client, match):
@@ -416,7 +414,7 @@ class Server(ServerProgram):
             '  powers - Displays the power assignments for this game'),
     ]
 
-class Historian(VerboseObject):
+class Historian(VerboseObject, TimeoutMixin):
     ''' A game-like object that simply handles clients and history.'''
     class HistoricalJudge(object):
         def __init__(self, historian, last_turn, result):
@@ -553,7 +551,7 @@ class Historian(VerboseObject):
     # Sending messages
     def broadcast(self, message):
         ''' Sends a message to each ready client, and notes it in the log.'''
-        self.log_debug(2, 'ALL << %s', message)
+        self.log.info("ALL << %s", message)
         for client in self.clients:
             client.write(message)
         for watcher in self.server.watchers:
@@ -624,7 +622,22 @@ class Historian(VerboseObject):
             client.send(self.messages[SMR])
         else: client.reject(message)
     
-    # History replay via admin command
+    # Dynamic timeouts, via TimeoutMixin
+    def callLater(self, period, func):
+        # This probably goes back to the same reactor,
+        # but I distrust singletons.
+        return self.server.manager.reactor.callLater(period, func)
+    def timeoutConnection(self):
+        self.run()
+        self.resetTimeout()
+    def resetTimeout(self):
+        now = time()
+        period = self.time_left(now)
+        if period is not None:
+            # Avoid checking at just the wrong time.
+            period = max(0, period + .001)
+        self.log.debug("Setting timeout to %r", period)
+        self.setTimeout(period)
     def time_left(self, now):
         ''' Returns the number of seconds before the next event.
             May return None if there is no next event scheduled.
@@ -642,6 +655,8 @@ class Historian(VerboseObject):
             if act.when <= now:
                 act.call()
                 self.actions.remove(act)
+    
+    # History replay via admin command
     def replay(self, client, match):
         r'''Replay each turn, at a rate of one second per turn.
             There's no way to stop it, but at least it doesn't block everyone else.
@@ -658,6 +673,7 @@ class Historian(VerboseObject):
         else:
             rate = 1
         self.replay_step(client, rate, turn)
+        self.resetTimeout()
     def replay_step(self, client, rate, turn):
         self.log.debug("Replaying %s for %s", turn, client.prefix)
         result = self.get_history(turn, False)
@@ -1016,6 +1032,7 @@ class Game(Historian):
                 if self.press_allowed and phase == Turn.move_phase:
                     self.press_deadline = self.limits['press']
                 self.broadcast(message)
+        self.resetTimeout()
     def time_left(self, now):
         ''' Returns the number of seconds before the next event.
             May return None if there is no next event scheduled.
@@ -1040,6 +1057,7 @@ class Game(Historian):
             running the judge and sending notifications when appropriate.
         '''#'''
         now = time()
+        self.log.debug("Checking game actions")
         for act in list(self.actions):
             if act.when <= now: act.call(); self.actions.remove(act)
         if self.ready(): self.run_judge()
@@ -1054,7 +1072,11 @@ class Game(Historian):
             if now > self.deadline: self.run_judge()
             elif remain < self.press_deadline:
                 self.press_allowed  = False
-    def ready(self): return not (self.paused or self.judge.unready or self.players_unready())
+    def ready(self):
+        self.log.debug("Paused: %r", self.paused)
+        self.log.debug("Judge unready: %s", repr(self.judge.unready))
+        self.log.debug("Players unready: %r", self.players_unready())
+        return not (self.paused or self.judge.unready or self.players_unready())
     def run_judge(self):
         ''' Runs the judge and handles turn transitions.'''
         if self.deadline: self.log_debug(10, 'Running the judge with %f seconds left', self.deadline - time())
@@ -1084,6 +1106,7 @@ class Game(Historian):
             self.actions.append(DelayedAction(action_callback, veto_callback,
                 veto_line, veto_terms, delay, *args))
             self.admin('(You may veto within %s seconds.)', num2name(delay))
+            self.resetTimeout()
         else: action_callback(*args)
     def full_name(self): return 'The server'
     
@@ -1146,6 +1169,7 @@ class Game(Historian):
             client.accept(message)
             missing = self.judge.missing_orders(country)
             if missing: client.send(missing)
+            self.resetTimeout()
         else: client.reject(message)
     def handle_SND(self, client, message):
         ''' Sends the press message to the recipients,
@@ -1210,7 +1234,11 @@ class Game(Historian):
                 # Add it to the list
                 self.timers.setdefault(request, []).append(client)
                 client.accept(message)
+                self.resetTimeout()
         else: client.reject(message)
+    def handle_SUB(self, client, message):
+        self.judge.handle_SUB(client, message)
+        self.resetTimeout()
     
     # Messages with standard prefixes
     def handle_NOT_TME(self, client, message):
@@ -1232,6 +1260,7 @@ class Game(Historian):
         if country and self.judge.phase and not self.judge.eliminated(country):
             self.players[country].ready = False
             client.accept(message)
+            self.resetTimeout()
         else: client.reject(message)
     def handle_YES_MAP(self, client, message):
         if message.fold()[1][1][0].lower() == self.judge.map_name:
