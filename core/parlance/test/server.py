@@ -782,7 +782,6 @@ class Server_Admin_Bots(Server_Admin):
         game = self.start_game()
         out = self.robot
         out.close()
-        self.master.admin('Ping.')
         name = game.judge.player_name(out.power)
         self.assertAdminVetoable(self.master,
                 'start holdbot as %s' % (out.power,),
@@ -817,7 +816,6 @@ class Server_Admin_Bots(Server_Admin):
         ''' Bots can only be started in games with enough players.'''
         self.backup.close()
         self.robot.close()
-        self.master.admin('Ping.')
         self.assertAdminResponse(self.master, 'start holdbots',
                 'Recruit more players first, or use your own bots.')
     def test_start_bot_same_address(self):
@@ -849,8 +847,6 @@ class Server_Admin_Local(Server_Admin):
         self.backup.close()
         self.robot.close()
         
-        # This shouldn't really be necessary, but the close doesn't work well.
-        self.server.broadcast(+PNG)
         self.failUnless(self.server.closed)
     def test_shutdown_now(self):
         # Local connections can shut down the server immediately.
@@ -1139,7 +1135,6 @@ class Server_Admin_Other(Server_Admin):
         game = self.start_game()
         self.master.close()
         self.backup.close()
-        self.robot.admin('Ping')
         new_master = self.connect_player(self.Fake_Master,
                 power=self.master.power, passcode=self.master.pcode)
         self.assertAdminVetoable(new_master, 'end game',
@@ -1408,7 +1403,6 @@ class Server_Bugfix(ServerTestCase):
         control = self.connect_player(self.Fake_Player)
         game = self.start_game()
         player.close()
-        control.admin('Ping.')
         self.wait_for_actions()
         self.failUnless(game.paused)
         self.connect_player(self.Fake_Player,
