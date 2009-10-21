@@ -11,11 +11,15 @@ r'''Non-DATC test cases for the Parlance judge
 import unittest
 from time import time
 
+try:
+    from threading import Thread
+except ImportError:
+    Thread = None
+
 from parlance.config    import variants, Configuration, GameOptions
 from parlance.judge     import Attack_Decision, Hold_Decision, \
         Move_Decision, Path_Decision, Prevent_Decision
 from parlance.language  import Token
-from parlance.main      import Thread
 from parlance.orders    import MoveOrder
 from parlance.tokens    import *
 from parlance.xtended   import *
