@@ -11,12 +11,13 @@ r'''Test cases for Parlance clients
 
 import unittest
 
-from parlance.config     import Configuration, GameOptions
+from parlance.config     import Configuration, GameOptions, VerboseObject
 from parlance.gameboard  import Map, Variant
 from parlance.judge      import DatcOptions
 from parlance.language   import Token
 from parlance.orders     import OrderSet, createUnitOrder
 from parlance.player     import AutoObserver, Player, HoldBot
+from parlance.reactor    import ThreadManager
 from parlance.tokens     import *
 from parlance.validation import Validator
 from parlance.xtended    import *
@@ -29,6 +30,17 @@ class NumberToken(object):
     def __repr__(self): return 'NumberToken'
     def __radd__(self, other): return other + ' #'
 Number = NumberToken()
+
+class Transport(VerboseObject):
+    def __init__(self, testcase):
+        self.__super.__init__()
+        self.testcase = testcase
+        self.closed = False
+    def close(self):
+        self.closed = True
+    def write(self, message):
+        self.log.debug(">> %s", message)
+        self.testcase.handle_message(message)
 
 class PlayerTestCase(unittest.TestCase):
     ''' Basic Player Functionality'''
@@ -46,6 +58,8 @@ class PlayerTestCase(unittest.TestCase):
     }
     def setUp(self):
         ''' Initializes class variables for test cases.'''
+        from twisted.internet import reactor
+        self.manager = ThreadManager(reactor)
         Configuration._cache.update(self.game_options)
         self.variant = standard
         opts = GameOptions()
@@ -55,7 +69,6 @@ class PlayerTestCase(unittest.TestCase):
         self.player = None
         self.replies = []
     def handle_message(self, message):
-        #print message
         reply = self.validator.validate_client_message(message)
         self.failIf(reply, reply)
         self.replies.append(message)
@@ -65,9 +78,8 @@ class PlayerTestCase(unittest.TestCase):
     def accept(self, message): self.send(YES(message))
     def reject(self, message): self.send(REJ(message))
     def connect_player(self, player_class, **kwargs):
-        self.player = player_class(**kwargs)
-        self.player.register(self.handle_message, self.variant.rep)
-        self.player.threaded = []
+        self.player = player_class(manager=self.manager, **kwargs)
+        self.player.register(Transport(self), self.variant.rep)
     def send_hello(self, country=None):
         self.send(HLO(country or ENG)(self.level)(self.params))
     def seek_reply(self, message, error=None):
@@ -161,9 +173,10 @@ class Player_Tests(PlayerTestCase):
             if msg[0] is ADM:
                 result.append(msg)
                 player.handle_ADM(msg)
+        self.handle_message = handle_message
         
-        player = AutoObserver()
-        player.register(handle_message, self.variant.rep)
+        player = AutoObserver(manager=self.manager)
+        player.register(Transport(self), self.variant.rep)
         player.handle_ADM(ADM('Server')('An Observer has connected. '
             'Have 5 players and 1 observers. Need 2 to start'))
         player.handle_ADM(ADM('Geoff')('Does the observer want to play?'))
