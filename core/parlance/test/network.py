@@ -18,6 +18,7 @@ from time            import time, sleep
 
 from mock import Mock
 from twisted.internet.protocol import ClientFactory
+from twisted.protocols.basic import LineOnlyReceiver
 
 from parlance.config    import VerboseObject
 from parlance.fallbacks import any
@@ -79,7 +80,7 @@ class NetworkTestCase(ServerTestCase):
             self.send(ADM(str(self.power))('Passcode: %d' % self.pcode))
             self.close()
     class FakeFactory(DaideFactory, ClientFactory):
-        r'''A fake ClientFactory to test the netowrk protocols.'''
+        r'''A fake ClientFactory to test the network protocols.'''
         
         def __init__(self, protocol):
             self.protocol = protocol
@@ -418,6 +419,28 @@ class TimingCases(NetworkTestCase):
             player.send(+DRW)
         self.manager.process(2)
         self.assertEqual(self.game.judge.game_result, +DRW)
+
+class DppTestCase(NetworkTestCase):
+    def connect(self):
+        class TestingProtocol(VerboseObject, LineOnlyReceiver):
+            def connectionMade(self):
+                self.__super.connectionMade()
+                self.lines = []
+                self.sendLine("DPP/0.17")
+            def lineReceived(self, line):
+                self.lines.append(line)
+        
+        self.set_option('squeeze_parens', False)
+        self.connect_server()
+        factory = self.fake_client(TestingProtocol)
+        self.manager.process(1)
+        return factory.client
+    
+    def test_observer(self):
+        client = self.connect()
+        client.sendLine("OBS")
+        self.manager.process(1)
+        self.assertEqual(client.lines, ["YES ( OBS )"])
 
 class Network_Full_Games(NetworkTestCase):
     def test_full_connection(self):
