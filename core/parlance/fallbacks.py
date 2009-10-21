@@ -21,6 +21,28 @@ except ImportError:
         return decorator
 
 try:
+    from functools import partial
+except ImportError:
+    def partial(function, *original_args, **original_kwargs):
+        r'''Apply some arguments to a function, returning a new function.
+            >>> def f(one, two):
+            ...     print one
+            ...     print two
+            ... 
+            >>> g = partial(f, 42)
+            >>> g(56)
+            42
+            56
+        '''#"""#'''
+        @wraps(function)
+        def curried(*more_args, **more_kwargs):
+            args = original_args + more_args
+            kwargs = dict(original_kwargs)
+            kwargs.update(more_kwargs)
+            return function(*args, **kwargs)
+        return curried
+
+try:
     any = any
 except NameError:
     def any(sequence):

@@ -10,7 +10,6 @@ r'''Parlance client/server communications
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
-from functools import partial
 from itertools import count
 from struct import pack, unpack
 from time import sleep
@@ -26,7 +25,7 @@ from twisted.web.resource import Resource
 from twisted.web.server import Site
 
 from parlance.config import VerboseObject
-from parlance.fallbacks import any
+from parlance.fallbacks import any, partial
 from parlance.language import Message, Representation, protocol
 from parlance.tokens import ADM, MDF, OFF, REJ, YES
 from parlance.util import random_cycle
