@@ -11,10 +11,7 @@ r'''Non-DATC test cases for the Parlance judge
 import unittest
 from time import time
 
-try:
-    from threading import Thread
-except ImportError:
-    Thread = None
+from nose.tools import timed
 
 from parlance.config    import variants, Configuration, GameOptions
 from parlance.judge     import Attack_Decision, Hold_Decision, \
@@ -1086,6 +1083,7 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''
     variant_name = 'americas4'
+    @timed(10)
     def test_convoy_problem(self):
         ''' This situation started chewing up memory and CPU like mad.'''
         rep = self.judge.map.variant.rep
@@ -1103,17 +1101,7 @@ class Judge_Americas(DiplomacyAdjudicatorTestCase):
         self.judge.map.handle_NOW(now)
         self.judge.init_turn()
         client = self.Fake_Service(rep['MXC'])
-        if Thread:
-            thread = Thread(target=self.judge.handle_SUB, args=(client, sub))
-            thread.setDaemon(True)
-            thread.start()
-            thread.join(10)
-            if thread.isAlive(): self.fail('Convoy took too long.')
-        else:
-            begin = time()
-            self.judge.handle_SUB(client, sub)
-            end = time()
-            self.failUnless(end - begin < 10)
+        self.judge.handle_SUB(client, sub)
 
 class Judge_Notes(DiplomacyAdjudicatorTestCase):
     ''' Order notes given for erroneous orders:
