@@ -257,6 +257,11 @@ class DppProtocol(LineReceiver):
     def connectionMade(self):
         self.configure(protocol)
         self.service = None
+        
+        # This detects both \n and \r\n for the first line.
+        # We can auto-detect from that what to send.
+        # Macintosh is just out of luck.
+        self.delimiter = "\n"
     
     def close(self):
         self.log.debug("Closing")
@@ -264,6 +269,8 @@ class DppProtocol(LineReceiver):
     
     def lineReceived(self, line):
         if line.startswith("DPP/") and not self.service:
+            if line.endswith("\r"):
+                self.delimiter = "\r\n"
             self.service = Service(self, self.addr,
                 self.factory.server, self.factory.game)
         else:

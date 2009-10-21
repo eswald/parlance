@@ -421,8 +421,9 @@ class TimingCases(NetworkTestCase):
         self.assertEqual(self.game.judge.game_result, +DRW)
 
 class DppTestCase(NetworkTestCase):
-    def connect(self):
+    def connect(self, delim="\r\n"):
         class TestingProtocol(VerboseObject, LineOnlyReceiver):
+            delimiter = delim
             def connectionMade(self):
                 self.__super.connectionMade()
                 self.lines = []
@@ -437,8 +438,16 @@ class DppTestCase(NetworkTestCase):
         self.manager.process(1)
         return factory.client
     
-    def test_observer(self):
-        client = self.connect()
+    def test_windows_endings(self):
+        # The server should detect and send Windows-style line endings
+        client = self.connect("\r\n")
+        client.sendLine("OBS")
+        self.manager.process(1)
+        self.assertEqual(client.lines, ['YES (OBS)', 'MAP ("standard")'])
+    
+    def test_posix_endings(self):
+        # The server should detect and send Unix-style line endings
+        client = self.connect("\n")
         client.sendLine("OBS")
         self.manager.process(1)
         self.assertEqual(client.lines, ['YES (OBS)', 'MAP ("standard")'])
