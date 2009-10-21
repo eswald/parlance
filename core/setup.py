@@ -76,6 +76,10 @@ setup(
     
     # Installation options
     zip_safe = True,
+    install_requires = [
+        "Twisted >= 8.1.0",
+        "setuptools >= 0.6c7",
+    ],
     test_suite = "parlance.test",
     tests_require = [
         "mock >= 0.6.0",
