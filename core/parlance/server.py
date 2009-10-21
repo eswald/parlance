@@ -13,8 +13,6 @@ from os         import path
 from random     import randint, shuffle
 from time       import time
 
-from twisted.protocols.policies import TimeoutMixin
-
 from config     import GameOptions, VerboseObject, bots, variants, watchers
 from fallbacks  import defaultdict
 from gameboard  import Turn
@@ -414,7 +412,46 @@ class Server(ServerProgram):
             '  powers - Displays the power assignments for this game'),
     ]
 
-class Historian(VerboseObject, TimeoutMixin):
+class Dynamic(VerboseObject):
+    r'''A dynamic deadline scheduler.
+        Useful when deadlines shift frequently.
+        
+        Based on twisted.protocols.policies.TimeoutMixin,
+        but without the automatic reactor installation.
+    '''#"""#'''
+    
+    # Todo: Distill the timer-related portions of Historian and Game.
+    __timeoutCall = None
+    
+    def callLater(self, period, func):
+        # This could be simpler, but I distrust singletons.
+        return self.server.manager.reactor.callLater(period, func)
+    
+    def resetTimeout(self):
+        now = time()
+        period = self.time_left(now)
+        if period is not None:
+            # Avoid checking at just the wrong time.
+            period = max(0, period + .001)
+        self.log.debug("Setting timeout to %r", period)
+        self.setTimeout(period)
+    
+    def setTimeout(self, period):
+        if self.__timeoutCall is not None:
+            if period is None:
+                self.__timeoutCall.cancel()
+                self.__timeoutCall = None
+            else:
+                self.__timeoutCall.reset(period)
+        elif period is not None:
+            self.__timeoutCall = self.callLater(period, self.__timedOut)
+    
+    def __timedOut(self):
+        self.__timeoutCall = None
+        self.run()
+        self.resetTimeout()
+
+class Historian(Dynamic):
     ''' A game-like object that simply handles clients and history.'''
     class HistoricalJudge(object):
         def __init__(self, historian, last_turn, result):
@@ -622,22 +659,7 @@ class Historian(VerboseObject, TimeoutMixin):
             client.send(self.messages[SMR])
         else: client.reject(message)
     
-    # Dynamic timeouts, via TimeoutMixin
-    def callLater(self, period, func):
-        # This probably goes back to the same reactor,
-        # but I distrust singletons.
-        return self.server.manager.reactor.callLater(period, func)
-    def timeoutConnection(self):
-        self.run()
-        self.resetTimeout()
-    def resetTimeout(self):
-        now = time()
-        period = self.time_left(now)
-        if period is not None:
-            # Avoid checking at just the wrong time.
-            period = max(0, period + .001)
-        self.log.debug("Setting timeout to %r", period)
-        self.setTimeout(period)
+    # Dynamic timeouts
     def time_left(self, now):
         ''' Returns the number of seconds before the next event.
             May return None if there is no next event scheduled.
