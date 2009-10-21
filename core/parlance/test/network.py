@@ -430,7 +430,8 @@ class DppTestCase(NetworkTestCase):
             def lineReceived(self, line):
                 self.lines.append(line)
         
-        self.set_option('squeeze_parens', False)
+        self.set_option("squeeze_parens", True)
+        self.set_option("variant", "standard")
         self.connect_server()
         factory = self.fake_client(TestingProtocol)
         self.manager.process(1)
@@ -440,7 +441,7 @@ class DppTestCase(NetworkTestCase):
         client = self.connect()
         client.sendLine("OBS")
         self.manager.process(1)
-        self.assertEqual(client.lines, ["YES ( OBS )"])
+        self.assertEqual(client.lines, ['YES (OBS)', 'MAP ("standard")'])
 
 class Network_Full_Games(NetworkTestCase):
     def test_full_connection(self):

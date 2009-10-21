@@ -10,12 +10,14 @@ r'''Parlance client/server communications
     the Artistic License 2.0, as published by the Perl Foundation.
 '''#'''
 
+from functools import partial
 from itertools import count
 from struct import pack, unpack
 from time import sleep
 
 from twisted.internet.protocol import ClientFactory, connectionDone
 from twisted.internet.error import CannotListenError
+from twisted.protocols.basic import LineReceiver
 from twisted.protocols.policies import TimeoutMixin
 from twisted.protocols.stateful import StatefulProtocol
 from twisted.web.error import NoResource
@@ -245,7 +247,48 @@ class DaideClientProtocol(DaideProtocol):
         if player.closed:
             self.close()
 
-class DaideServerProtocol(DaideProtocol, HTTPChannel):
+class DppProtocol(LineReceiver):
+    r'''Line-based Diplomacy Programming Protocol.
+        Like the Daide protocol, but using text instead of tokens.
+    '''#"""#'''
+    
+    # This protocol could use LineOnlyReceiver,
+    # but would then be incompatible with HTTPChannel.
+    
+    def connectionMade(self):
+        self.configure(protocol)
+        self.service = None
+    
+    def close(self):
+        self.log.debug("Closing")
+        self.closed = True
+    
+    def lineReceived(self, line):
+        if line.startswith("DPP/") and not self.service:
+            self.service = Service(self, self.addr,
+                self.factory.server, self.factory.game)
+        else:
+            self.translate(line)
+    
+    def translate(self, line):
+        try:
+            message = self.rep.translate(line)
+        except Exception, err:
+            response = str(err) or '??'
+            self.sendLine(response)
+        else:
+            self.handle_message(message)
+    
+    def send_RM(self, representation):
+        self.rep = representation
+    
+    def write(self, message):
+        self.sendLine(str(message))
+    
+    def handle_message(self, msg):
+        raise NotImplementedError
+
+class DaideServerProtocol(DaideProtocol, DppProtocol, HTTPChannel):
     # - DaideServerProtocol
     #   - DaideProtocol
     #     - VerboseObject
@@ -255,6 +298,10 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
     #       - Protocol
     #         - BaseProtocol
     #     - TimeoutMixin
+    #   - DppProtocol
+    #     - LineReceiver
+    #       - Protocol
+    #         - BaseProtocol
     #   - HTTPChannel
     #     - LineReceiver
     #       - Protocol
@@ -284,8 +331,19 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
         self.setTimeout(timeout)
         data = self.__buffer
         del self.__buffer
-        self.dataReceived = lambda msg: proto.dataReceived(self, msg)
-        self.timeoutConnection = lambda: proto.timeoutConnection(self)
+        switching = [
+            "dataReceived",
+            "timeoutConnection",
+            "lineReceived",
+            "send_RM",
+            "write",
+            "close",
+        ]
+        
+        for name in switching:
+            handler = getattr(proto, name, None)
+            setattr(self, name, handler and partial(handler, self))
+        
         proto.connectionMade(self)
         self.dataReceived(data)
     
@@ -300,6 +358,9 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
             if "\0" in data:
                 # Binary data; use DCSP
                 self.switchProtocol(DaideProtocol, None)
+                self.transport.setTcpKeepAlive(True)
+            elif data.startswith("DPP/"):
+                self.switchProtocol(DppProtocol, None)
                 self.transport.setTcpKeepAlive(True)
             else:
                 # Probably text; switch to HTTP
