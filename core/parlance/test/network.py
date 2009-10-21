@@ -27,7 +27,7 @@ from parlance.reactor   import ThreadManager
 from parlance.network   import DaideClientProtocol, DaideFactory, DaideProtocol
 from parlance.player    import Clock, HoldBot, Player
 from parlance.server    import Server
-from parlance.tokens    import ADM, BRA, DRW, HLO, IAM, KET, NME, REJ, YES
+from parlance.tokens    import ADM, BRA, CCD, DRW, HLO, IAM, KET, NME, REJ, YES
 from parlance.xtended   import standard
 
 from parlance.test import fails
@@ -61,6 +61,8 @@ class FakeManager(ThreadManager):
                 raise self.__err
     def close(self):
         # Don't stop the reactor; it shouldn't be running.
+        # However, do process it to flush out anything in the pipe.
+        self.process(1)
         self.closed = True
 
 class NetworkTestCase(ServerTestCase):
@@ -112,16 +114,17 @@ class NetworkTestCase(ServerTestCase):
         
         for dummy in range(games):
             if server.closed: raise UserWarning('Server closed early')
+            game = server.default_game()
             players = []
             for player_class in clients:
                 player = manager.add_client(player_class, **kwargs)
                 if not player:
                     raise UserWarning('Manager failed to start a client')
                 players.append(player)
-                manager.process()
+                manager.process(.2)
             while any(not p.closed for p in players):
-                manager.process(23)
-        return sock
+                manager.process(2)
+        return game
     def fake_client(self, protocol=DaideClientProtocol):
         self.factory = factory = self.FakeFactory(protocol)
         host = "localhost"
@@ -260,25 +263,26 @@ class Network_Basics(NetworkTestCase):
     def test_takeover(self):
         ''' Takeover ability after game start'''
         success = []
-        
         class Fake_Takeover(VerboseObject):
             ''' A false player, who takes over a position and then quits.'''
-            sleep_time = 7
             name = 'Impolite Finisher'
             def __init__(self, power, passcode, manager=None):
                 self.__super.__init__()
                 self.log_debug(9, 'Fake player started')
-                self.restarted = False
                 self.closed = False
                 self.power = power
                 self.passcode = passcode
                 self.manager = manager
             def connect(self):
                 return self.manager.create_connection(self)
+            def reconnect(self):
+                return False
             def register(self, transport, representation):
-                self.send = transport
+                self.transport = transport
                 self.rep = representation
                 self.send(NME(self.power.text)(str(self.passcode)))
+            def send(self, msg):
+                self.transport.write(msg)
             def close(self):
                 self.log_debug(9, 'Closed')
                 self.closed = True
@@ -287,7 +291,6 @@ class Network_Basics(NetworkTestCase):
                 if message[0] is YES and message[2] is IAM:
                     success.append(self)
                     self.send(ADM(self.power.text)('Takeover successful'))
-                    sleep(self.sleep_time)
                     self.close()
                 elif message[0] is REJ and message[2] is NME:
                     self.send(IAM(self.power)(self.passcode))
@@ -302,10 +305,12 @@ class Network_Basics(NetworkTestCase):
                     passcode=self.pcode)
                 self.log_debug(9, 'Closed')
                 self.closed = True
+        
         self.set_option('takeovers', True)
         self.run_game([Fake_Restarter] + [self.Disconnector] * 6)
         self.assertEqual(len(success), 1)
         self.assertEqual(success[0].__class__, Fake_Takeover)
+        # Todo: Check the name change on the server's side.
     def test_start_bot_blocking(self):
         ''' Bot-starting cares about the IP address someone connects from.'''
         self.connect_server()
@@ -358,6 +363,21 @@ class Network_Basics(NetworkTestCase):
         self.manager.process()
         self.failUnlessEqual(player.transport, None)
         self.failUnlessEqual(player.failures, 1)
+    def test_disconnection(self):
+        # The server should notice when a player disconnects.
+        self.set_option('quit', False)
+        server = self.connect_server()
+        game = server.default_game()
+        players = []
+        while len(players) < 10 and not game.started:
+            player = self.connect_player(self.Fake_Player)
+            players.append(player)
+            self.manager.process(1)
+        self.assertEqual(game.started, True)
+        players[2].queue = []
+        player.close()
+        self.manager.process(1)
+        self.assertContains(CCD (player.power), players[2].queue)
 
 class TimingCases(NetworkTestCase):
     def start_game(self, time_limit):
@@ -401,17 +421,19 @@ class TimingCases(NetworkTestCase):
 
 class Network_Full_Games(NetworkTestCase):
     def test_full_connection(self):
-        ''' Seven fake players'''
+        # Seven fake players
         self.run_game([self.Disconnector] * 7)
     def test_with_timer(self):
-        ''' Seven fake players and an observer'''
+        # Seven fake players and an observer
         self.run_game([Clock] + ([self.Disconnector] * 7))
     def test_holdbots(self):
-        ''' Seven drawing holdbots'''
-        self.run_game([HoldBot] * 7)
+        # Seven drawing holdbots
+        game = self.run_game([HoldBot] * 7)
+        self.assertEqual(game.judge.game_result, +DRW)
     def test_two_games(self):
-        ''' seven holdbots; two games'''
-        self.run_game([HoldBot] * 7, 2)
+        # seven holdbots; two games
+        game = self.run_game([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
+        self.assertEqual(game.judge.game_result, +DRW)
 
 if __name__ == '__main__': unittest.main()

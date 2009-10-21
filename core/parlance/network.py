@@ -14,7 +14,7 @@ from itertools import count
 from struct import pack, unpack
 from time import sleep
 
-from twisted.internet.protocol import ClientFactory
+from twisted.internet.protocol import ClientFactory, connectionDone
 from twisted.internet.error import CannotListenError
 from twisted.protocols.policies import TimeoutMixin
 from twisted.protocols.stateful import StatefulProtocol
@@ -273,6 +273,10 @@ class DaideServerProtocol(DaideProtocol, HTTPChannel):
         self.setTimeout(30)
         self.__buffer = ""
     
+    def connectionLost(self, reason=connectionDone):
+        if self.service and not self.service.closed:
+            self.service.close()
+    
     def switchProtocol(self, proto, timeout):
         self.log.debug("Switching to %s", proto)
         # Do not wait until after connectionMade to reset the timeout,
@@ -460,6 +464,7 @@ class Service(VerboseObject):
                 self.boot()
             else: self.admin("Please don't do that again, whatever it was.")
     def close(self):
+        self.log.debug("Closing.")
         if not self.closed:
             self.closed = True
             self.game.disconnect(self)

@@ -189,6 +189,8 @@ class ServerTestCase(unittest.TestCase):
         def close(self):
             self.log_debug(9, 'Closed')
             self.closed = True
+            if self.transport and not self.transport.closed:
+                self.transport.close()
         def handle_message(self, message):
             self.log_debug(5, '<< %s', message)
             self.queue.append(message)
