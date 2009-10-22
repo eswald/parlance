@@ -17,7 +17,7 @@ from parlance.config    import variants, Configuration, GameOptions
 from parlance.judge     import Attack_Decision, Hold_Decision, \
         Move_Decision, Path_Decision, Prevent_Decision
 from parlance.language  import Token
-from parlance.orders    import MoveOrder
+from parlance.orders    import MoveOrder, OrderSet, createUnitOrder
 from parlance.tokens    import *
 from parlance.xtended   import *
         
@@ -1079,6 +1079,12 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
             ([ENG, FLT, SKA], CVY, [ENG, AMY, YOR], CTO, SWE) (SUC))
         self.assertContains(self.results, ORD(SPR, 1902)
             ((ENG, AMY, YOR), CTO, SWE, VIA, [NTH, SKA]) (DSR))
+    def test_matches_support_missing_unit_move(self):
+        # A support to move from an empty province never matches an order set.
+        order = [(GER, AMY, KIE), SUP, (GER, AMY, RUH), MTO, HOL]
+        support = createUnitOrder(order, GER, standard_map, self.judge.datc)
+        result = support.matches(OrderSet())
+        self.assertEqual(result, False)
 
 class Judge_Americas(DiplomacyAdjudicatorTestCase):
     ''' Fixing bugs in the Americas4 map variant.'''
@@ -1226,6 +1232,9 @@ class Judge_Notes(DiplomacyAdjudicatorTestCase):
         ])
         self.assertOrderNote(TUR, [(TUR, AMY, ANK), CTO, RUM, VIA, [BLA]], MBV)
         self.assertOrderNote(TUR, [(TUR, FLT, BLA), SUP, (TUR, AMY, ANK), MTO, RUM], FAR)
+    def test_nsu_support_missing_unit_move(self):
+        # NSU for attempting to support a move from an empty province.
+        self.assertOrderNote(GER, [(GER, AMY, KIE), SUP, (GER, AMY, RUH), MTO, HOL], NSU)
     
     # ConvoyingOrder notes
     def test_far_convoy_impossible_convoy(self):

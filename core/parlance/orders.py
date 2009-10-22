@@ -361,7 +361,8 @@ class SupportMoveOrder(SupportOrder):
     def matches(self, order_set):
         ''' Whether the order is matched by the supported unit.'''
         counterpart = order_set.get_order(self.supported)
-        return (self.supported.nation and counterpart.is_moving()
+        return bool(self.supported.nation
+            and counterpart and counterpart.is_moving()
             and self.destination.matches(counterpart.destination.key))
     def order_note(self, power, phase, past_orders=None):
         # Note that the mover's destination need not exist: it could have
