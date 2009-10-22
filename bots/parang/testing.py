@@ -15,7 +15,7 @@ from parlance.tokens       import *
 from parlance.player       import HoldBot
 from parlance.util         import Infinity
 from parlance.xtended      import *
-from parlance.test.player  import BotTestCase
+from parlance.test.player  import BotTestCase, PlayerTestCase
 from parlance.test.network import NetworkTestCase
 
 from parang.blabberbot import BlabberBot
@@ -148,15 +148,15 @@ class TeddyBotTestCase(BotTestCase):
             [[AUS, AMY, BUD], BLD]]
         self.assertOrders(now, None, AUS, expected)
 
-class CentralityTestCase(unittest.TestCase):
+class CentralityTestCase(PlayerTestCase):
     r"""Low-level unit tests for TeddyBot's internal calculations.
         Currently tests its distance and centrality computations.
     """#'''#"""
     bot_class = TeddyBot
     
     def setUp(self):
-        player = self.bot_class(send_method=self.handle_message,
-            representation=standard.rep)
+        PlayerTestCase.setUp(self)
+        player = self.connect_player(self.bot_class)
         player.map = standard_map
         self.distance = player.calc_distances()
         self.centrality = player.calc_centrality(self.distance)
@@ -201,31 +201,29 @@ class HuffTestCase(BotTestCase):
 
 class FullBotGames(NetworkTestCase):
     "Functional tests, pitting bots against each other."
+    # Todo: Assert something.
+    
     def test_one_dumbbot(self):
         ''' Six drawing holdbots and a dumbbot'''
-        self.set_verbosity(1)
-        self.connect_server([DumbBot, HoldBot, HoldBot,
+        self.run_game([DumbBot, HoldBot, HoldBot,
                 HoldBot, HoldBot, HoldBot, HoldBot])
     def test_dumbbots(self):
         ''' seven dumbbots, quick game'''
-        self.set_verbosity(5)
-        self.connect_server([DumbBot] * 7)
+        self.run_game([DumbBot] * 7)
     def test_evilbots(self):
         ''' Six drawing evilbots and a holdbot'''
-        self.set_verbosity(4)
         #self.set_option('MTL', 10)
         #self.set_option('validate', False)
         #self.set_option('send_ORD', True)
         EvilBot.games.clear()
-        self.connect_server([HoldBot, EvilBot, EvilBot,
+        self.run_game([HoldBot, EvilBot, EvilBot,
                 EvilBot, EvilBot, EvilBot, EvilBot])
     def test_neurotic(self):
         ''' One Neurotic against two EvilBots.'''
-        self.set_verbosity(14)
         self.set_option('send_ORD', True)
         self.set_option('variant', 'hundred3')
         self.set_option('quit', True)
         EvilBot.games.clear()
-        self.connect_server([Neurotic, EvilBot, EvilBot])
+        self.run_game([Neurotic, EvilBot, EvilBot])
 
 if __name__ == '__main__': unittest.main()

@@ -80,6 +80,7 @@ class PlayerTestCase(unittest.TestCase):
     def connect_player(self, player_class, **kwargs):
         self.player = player_class(manager=self.manager, **kwargs)
         self.player.register(Transport(self), self.variant.rep)
+        return self.player
     def send_hello(self, country=None):
         self.send(HLO(country or ENG)(self.level)(self.params))
     def seek_reply(self, message, error=None):
