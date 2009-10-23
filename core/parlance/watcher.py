@@ -57,7 +57,7 @@ class Watcher(VerboseObject):
         parts = [prefix, message[0].text]
         
         # Special handling for common prefixes
-        if message[0] in (YES, REJ, NOT, HUH):
+        if message[0] in (YES, REJ, NOT, HUH) and len(message) > 2:
             parts.append(message[2].text)
         
         method_name = str.join("_", parts)

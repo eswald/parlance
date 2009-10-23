@@ -451,6 +451,13 @@ class DppTestCase(NetworkTestCase):
         client.sendLine("OBS")
         self.manager.process(1)
         self.assertEqual(client.lines, ['YES (OBS)', 'MAP ("standard")'])
+    
+    def test_bad_message(self):
+        # This message caused a significant problem.
+        client = self.connect()
+        client.sendLine("REJ")
+        self.manager.process(1)
+        self.assertEqual(client.lines, ["HUH (REJ ERR)"])
 
 class Network_Full_Games(NetworkTestCase):
     def test_full_connection(self):

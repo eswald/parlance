@@ -168,7 +168,7 @@ class Server(ServerProgram):
         else:
             method_name = 'handle_'+message[0].text
             # Special handling for common prefixes
-            if message[0] in (YES, REJ, NOT):
+            if message[0] in (YES, REJ, NOT) and len(message) > 2:
                 method_name += '_' + message[2].text
             
             handlers = [self, client.game, client.game.judge]
@@ -179,8 +179,12 @@ class Server(ServerProgram):
                 self.log_debug(7, 'Missing message handler: %s', method_name)
                 client.send(HUH(ERR + message))
         for watcher in self.watchers:
-            watcher.handle_client_message(message,
-                client.game.game_id, client.client_id)
+            try:
+                watcher.handle_client_message(message,
+                    client.game.game_id, client.client_id)
+            except Exception:
+                self.log.exception("Exception in watcher handler for %s",
+                    watcher.prefix)
     
     def handle_HUH(self, client, message):
         self.log_debug(7, 'Client #%d complained about message: %s',
