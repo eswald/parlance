@@ -114,6 +114,7 @@ class ClientProgram(Program):
     
     def reconnect(self):
         r'''Whether to reconnect automatically.'''
+        self.manager.check()
         return False
 
 class ServerProgram(Program):
@@ -175,11 +176,6 @@ class RawClient(ClientProgram):
     def send(self, message):
         if self.transport and not self.closed:
             self.transport.write(message)
-    
-    def reconnect(self):
-        r'''Whether to reconnect automatically.'''
-        self.manager.close()
-        return False
 
 class RawServer(ServerProgram):
     r'''Simple server to translate DM to and from text.
@@ -207,9 +203,8 @@ class RawServer(ServerProgram):
         ''' Process a new message from the client.'''
         print '#%d >> %s' % (client.client_id, message)
     def close(self):
-        ''' Informs the user that the connection has closed.'''
         self.closed = True
-        if not self.manager.closed: self.manager.close()
+        self.manager.check()
     def add_client(self, client):
         self.clients[client.client_id] = client
     def disconnect(self, client):

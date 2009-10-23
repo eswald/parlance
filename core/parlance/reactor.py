@@ -34,6 +34,7 @@ class ThreadManager(VerboseObject):
         self.closed = False
         self.__super.__init__()
         self.reactor = reactor or self.install()
+        self.running = []
     def install(self):
         installReactor(self.options.reactor)
         import twisted.internet.reactor
@@ -46,6 +47,11 @@ class ThreadManager(VerboseObject):
     def close(self):
         self.closed = True
         self.reactor.stop()
+    def check(self):
+        self.log.debug("Checking for stopped clients")
+        self.running = [p for p in self.running if not p.closed]
+        if not (self.running or self.closed):
+            self.close()
     
     def add_input(self, input_handler, close_handler):
         r'''Adds a client listening to standard input.
@@ -72,11 +78,13 @@ class ThreadManager(VerboseObject):
         from parlance.network import DaideServerFactory
         factory = DaideServerFactory(server, game)
         port = factory.openPort(self.reactor)
+        self.running.append(server)
         return port and factory
     def add_client(self, player_class, **kwargs):
         # Now calls player.connect(), in case the player wants to use
         # a separate process or something.
         player = player_class(manager=self, **kwargs)
+        self.running.append(player)
         return player.connect() and player
     def create_connection(self, player):
         # This import can't be done before the reactor is installed.

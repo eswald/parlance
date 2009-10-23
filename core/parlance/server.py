@@ -378,7 +378,7 @@ class Server(ServerProgram):
                     self.archive(game)
                 if not game.closed: game.close()
             self.broadcast(+OFF)
-            if not self.manager.closed: self.manager.close()
+            self.manager.check()
             self.log_debug(11, 'Done closing')
         else: self.log_debug(11, 'Duplicate close() call')
     def shutdown(self, client, match):
