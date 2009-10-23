@@ -431,12 +431,12 @@ class DaideServerFactory(DaideFactory, Site):
         r'''Combines Parlance and Twisted logging facilities.
         '''#"""#'''
         def __init__(self, site):
-            self.log = site.log
+            self.logger = site.log
             self.site = site
         def __call__(self, request):
             Site.log(self.site, request)
         def __getattr__(self, name):
-            return getattr(self.log, name)
+            return getattr(self.logger, name)
     
     def __init__(self, server, game=None):
         DaideFactory.__init__(self)
