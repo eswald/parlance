@@ -543,11 +543,11 @@ class Historian(Dynamic):
             message = rep.translate(line)
             self.log_debug(13, 'Loading "%s" from game log.', message)
             first = message[0]
-            if first in (ORD, SET):
+            if first in (ORD, SUB):
                 offset = first is ORD and 2 or 5
                 turn = Turn(message[offset], message[offset + 1]).key
                 history.setdefault(turn, {
-                        SET: [],
+                        SUB: [],
                         ORD: [],
                         SCO: sco,
                         'new_SCO': False,
@@ -651,7 +651,7 @@ class Historian(Dynamic):
         result = []
         turn = self.history.get(key)
         if turn:
-            for message in sorted(turn[SET]): result.append(message)
+            for message in sorted(turn[SUB]): result.append(message)
             for message in sorted(turn[ORD]): result.append(message)
             if always_sco or turn['new_SCO']:
                 result.append(turn[SCO])
@@ -1110,11 +1110,11 @@ class Game(Historian):
         
         key = self.judge.turn().key
         self.history[key] = turn = {
-            SET: [], ORD: [], SCO: None, NOW: None, 'new_SCO': False
+            SUB: [], ORD: [], SCO: None, NOW: None, 'new_SCO': False
         }
         for message in self.judge.run():
             self.broadcast(message)
-            if message[0] in (ORD, SET): turn[message[0]].append(message)
+            if message[0] in (ORD, SUB): turn[message[0]].append(message)
             elif message[0] in (SCO, NOW): turn[message[0]] = message
         if not turn[SCO]: turn[SCO] = self.judge.map.create_SCO()
         else: turn['new_SCO'] = True

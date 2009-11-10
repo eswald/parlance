@@ -406,8 +406,8 @@ class Judge(JudgeInterface):
         ('full_DRW', bool, False, 'list draw parties in DIAS',
             'Whether to list the countries participating in a draw even in non-PDA games.',
             'Doing so technically violates the syntax, but makes some clients easier.'),
-        ('send_SET', bool, False, 'publish order sets',
-            'Whether to send SET messages, listing orders actually given by each power.',
+        ('send_SUB', bool, False, 'publish order sets',
+            'Whether to send SUB messages, listing orders actually given by each power.',
             'This message was rejected by the DAIDE community, after it was implemented.',
             'Advantage over ORD messages: It can represent *any* order,',
             'even those to non-existent or foreign units.',
@@ -578,8 +578,8 @@ class Judge(JudgeInterface):
             results = [CCD(country)(turn) for country in self.unready]
             
             # Report submitted orders
-            if self.options.send_SET:
-                results.extend(self.create_SETs(turn))
+            if self.options.send_SUB:
+                results.extend(self.create_SUBs(turn))
             
             # Execute and report orders
             if self.phase == turn.move_phase:
@@ -615,8 +615,8 @@ class Judge(JudgeInterface):
                         results.append(self.map.create_NOW())
                         break
         return results
-    def create_SETs(self, turn):
-        return [SET(nation)(turn) % [([order], [order.__note])
+    def create_SUBs(self, turn):
+        return [SUB(nation)(turn) % [([order], [order.__note])
                 for order in self.next_orders.order_list(nation)]
                 for nation in self.map.powers.values()
                 if not nation.eliminated]

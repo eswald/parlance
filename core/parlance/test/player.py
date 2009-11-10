@@ -51,7 +51,7 @@ class PlayerTestCase(unittest.TestCase):
         'variant' : 'standard',
         'quit' : True,
         'host' : '',
-        'send_SET': False,
+        'send_SUB': False,
         'send_ORD': False,
         'draw': 3,
         'response': 'die',

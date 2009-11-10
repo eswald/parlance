@@ -847,18 +847,18 @@ turn.)</p>
 <h3>(iv) Results</h3>
 
 <!--
-<h4><a name="SET">server_message = SET</a> (power) (turn) [((order) (note)) ((order) (note)) ...]</h4>
-<!- - <h4>server_message = SET (power) (turn) ((loose_order) (note)) ((loose_order) (note)) ...</h4> - ->
+<h4><a name="SUB">server_message = SUB</a> (power) (turn) [((order) (note)) ((order) (note)) ...]</h4>
+<!- - <h4>server_message = SUB (power) (turn) ((loose_order) (note)) ((loose_order) (note)) ...</h4> - ->
 
 <p>This is sent by the server when the turn has processed.  One
-<b>SET</b> message is sent for each non-eliminated power, before the
+<b>SUB</b> message is sent for each non-eliminated power, before the
 <b>ORD</b> messages.  <b>turn</b> is the turn which has just processed,
 with the same format as in <a href="#NOW">the <b>NOW</b>
 command</a>.</p>
 
-<p><b>order</b> is an order submitted by <b>power</b>, with exactly the
-same format as in the <a href="#SUB"><b>SUB</b></a> and
-<a href=#THX><b>THX</b></a> messages.  Each order submitted by the power
+<p><b>order</b> is an order submitted by <b>power</b>, exactly as listed
+in the <a href="#SUB"><b>SUB</b></a> message sent by that player.
+Each order submitted by the power
 during the turn is listed, except those cancelled by <b>NOT (SUB
 [(order)])</b>.  <b>note</b> is the note returned in the <b>THX</b>
 message.</p>
@@ -2146,7 +2146,6 @@ various reasons.</p>
 <tr><td>SEC</td><td>0x4606</td><td>Coast</td><td></td><td>Southeast Coast</td></tr>
 <tr><td>SEL</td><td>0x4821 / 0x4E03 *</td><td>Command</td><td>Client to Server</td><td>Select Game (<em>Not yet accepted</em>)</td></tr>
 <tr><td>SER</td><td>0x510B</td><td>Province</td><td>Inland Supply Centre</td><td>Serbia</td></tr>
-<!--<tr><td>SET</td><td>0x481F / 0x4E01 *</td><td>Command</td><td>Server to Client</td><td>Orders as Given (<em>Not yet accepted</em>)</td></tr>-->
 <tr><td>SEV</td><td>0x5542</td><td>Province</td><td>Coastal Supply Centre</td><td>Sevastopol</td></tr>
 <tr><td>SIL</td><td>0x5004</td><td>Province</td><td>Inland</td><td>Silesia</td></tr>
 <tr><td>SKA</td><td>0x521E</td><td>Province</td><td>Sea</td><td>Skagerrak</td></tr>

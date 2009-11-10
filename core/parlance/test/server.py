@@ -242,7 +242,7 @@ class ServerTestCase(unittest.TestCase):
             'host' : '',
             'port' : 16720,
             'wait_time' : 5,
-            'send_SET': False,
+            'send_SUB': False,
             'send_ORD': False,
             'draw': 3,
             'response': 'croak',
