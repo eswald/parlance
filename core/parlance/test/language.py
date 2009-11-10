@@ -50,6 +50,12 @@ class ValidatorTestCase(unittest.TestCase):
         message = IAM (ENG) (bignum)
         reply = self.validator.validate_client_message(message)
         self.failUnlessEqual(reply, HUH (IAM (ENG) (bignum, ERR)))
+    def test_press_reply_reply(self):
+        # The standard press replies cannot be used to reply to replies.
+        message = SND (FRA) (REJ (YES (PCE (ENG, FRA))))
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply,
+            HUH (SND (FRA) (REJ (ERR, YES (PCE (ENG, FRA))))))
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"
