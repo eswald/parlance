@@ -75,6 +75,12 @@ class ValidatorTestCase(unittest.TestCase):
         message = SND (FRA) (HUH (press))
         reply = self.validator.validate_client_message(message)
         self.failIfEqual(reply, False)
+    def test_missing_err_reply_press(self):
+        # HUH press replies to a reply should be allowed to not contain an ERR.
+        press = PRP (AND (PCE (ENG, FRA)) (PCE (FRA, ENG)))
+        message = SND (FRA) (HUH (YES (press)))
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, False)
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"
