@@ -56,6 +56,13 @@ class ValidatorTestCase(unittest.TestCase):
         message = SND (FRA) (REJ (response))
         reply = self.validator.validate_client_message(message)
         self.failUnlessEqual(reply, HUH (SND (FRA) (REJ (ERR, response))))
+    @fails
+    def test_double_err_press(self):
+        # HUH press messages should be allowed to contain multiple ERR tokens.
+        press = PRP (AND (PCE (ENG, ERR, FRA)) (PCE (FRA, ERR, ENG)))
+        message = SND (FRA) (HUH (press))
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, False)
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"
