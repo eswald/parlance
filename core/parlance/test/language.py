@@ -63,6 +63,18 @@ class ValidatorTestCase(unittest.TestCase):
         message = SND (FRA) (HUH (press))
         reply = self.validator.validate_client_message(message)
         self.failUnlessEqual(reply, False)
+    def test_missing_err_press(self):
+        # HUH press messages should be allowed to not contain an ERR token.
+        press = PRP (AND (PCE (ENG, FRA)) (PCE (FRA, ENG)))
+        message = SND (FRA) (HUH (press))
+        reply = self.validator.validate_client_message(message)
+        self.failUnlessEqual(reply, False)
+    def test_missing_err_invalid_press(self):
+        # HUH press messages should not contain invalid press without an ERR.
+        press = PRP (PCE (ENG, LON))
+        message = SND (FRA) (HUH (press))
+        reply = self.validator.validate_client_message(message)
+        self.failIfEqual(reply, False)
 
 class LanguageTestCase(unittest.TestCase):
     greek = u"Καλημέρα κόσμε"
