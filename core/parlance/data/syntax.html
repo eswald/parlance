@@ -1341,6 +1341,12 @@ that causes one to occur.</p>
 <p>All of the available arrangements can have <b>NOT</b> placed in front of
 them to mean the opposite. Double negatives should not be used!</p>
 
+<h4><a name="NAR">arrangement = NAR (arrangement)</a><sup><a href="#repeal_note">*</a></sup></h4>
+
+<p>This has the effect of removing the arrangement, without arranging
+the opposite of it.  For example, once two powers have agreed Peace,
+they can use <b>NAR</b> to unarrange it, without arranging war.</p>
+
 <h3>(v) Responding to a message</h3>
 
 <p>To respond to a message, one of the following can be sent:</p>
@@ -1394,13 +1400,14 @@ send a second message informing the other player as to what it
 <!-- <h4>press_token = DRW</h4> -->
 <!-- <h4>press_token = SLO</h4> -->
 <!-- <h4>press_token = NOT</h4> -->
+<!-- <h4>press_token = NAR</h4> -->
 <!-- <h4>press_token = YES</h4> -->
 <!-- <h4>press_token = REJ</h4> -->
 <!-- <h4>press_token = BWX</h4> -->
 
 <p>List all of the tokens which the player can process when received in the
 <b>press_message</b> part of a <b>FRM</b> message. <b>Tokens</b> should be a
-subset of <b>PRP PCE ALY VSS DRW SLO NOT YES REJ BWX</b>. In addition,
+subset of <b>PRP PCE ALY VSS DRW SLO NOT NAR YES REJ BWX</b>. In addition,
 the following tokens from higher levels may also be included if they can
 be processed by the player: <b>XDO DMZ AND ORR SCD OCC CHO INS
 	QRY THK FCT IDK SUG WHT HOW EXP SRY FOR IFF THN ELS <!-- IOU UOM -->
@@ -1568,7 +1575,7 @@ following extra responses are also available for <b>QRY</b>:</p>
 
 <p>I think that <b>arrangement</b> is true.</p>
 
-<h4>reply = THK (NOT (QRY (arrangement)))</b></h4>
+<h4>reply = THK (NAR (QRY (arrangement)))</b></h4>
 
 <p>I think that <b>arrangement</b> is not true.</p>
 
@@ -1576,7 +1583,7 @@ following extra responses are also available for <b>QRY</b>:</p>
 
 <p><b>arrangement</b> is true.</p>
 
-<h4>reply = FCT (NOT (QRY (arrangement)))</b></h4>
+<h4>reply = FCT (NAR (QRY (arrangement)))</b></h4>
 
 <p><b>arrangement</b> is not true.</p>
 
@@ -1860,8 +1867,8 @@ receiving powers are now the first and third parameters. This is an
 arrangement to forward everything sent, rather than everything
 received.</p>
 
-<h4>arrangement = NOT (FWD (power power ...) (power) (power))</h4>
-<h4>arrangement = NOT (BCC (power) (power power ...) (power))</h4>
+<h4>arrangement = NAR (FWD (power power ...) (power) (power))</h4>
+<h4>arrangement = NAR (BCC (power) (power power ...) (power))</h4>
 
 <p>This is an arrangement to cancel a previously agreed <b>FWD</b> or
 <b>BCC</b> arrangement.</p>
@@ -2084,6 +2091,7 @@ various reasons.</p>
 <tr><td>NAF</td><td>0x5428</td><td>Province</td><td>Coastal</td><td>North Africa</td></tr>
 <tr><td>NAO</td><td>0x521B</td><td>Province</td><td>Sea</td><td>North Atlantic Ocean</td></tr>
 <tr><td>NAP</td><td>0x553D</td><td>Province</td><td>Coastal Supply Centre</td><td>Naples</td></tr>
+<tr><td>NAR</td><td>0x4E08 *</td><td>Press</td><td>Offer</td><td>No Arrangement</td></tr>
 <tr><td>NAS</td><td>0x4406</td><td>Order Note</td><td>THX</td><td>Not At Sea</td></tr>
 <tr><td>NCS</td><td>0x4600</td><td>Coast</td><td></td><td>North Coast</td></tr>
 <tr><td>NEC</td><td>0x4602</td><td>Coast</td><td></td><td>Northeast Coast</td></tr>
@@ -2320,6 +2328,9 @@ official DAIDE syntax document</a>:
 	default, for listing clients that have taken over positions from
 	clients of a different name and/or version; however, that behavior
 	has not yet been included in this syntax document.</li>
+
+	<li>The recently proposed <a href="#NAR" name="repeal_note"><b>NAR</b>
+	press token</a> has been added to this document.</li>
 
 	<li><a href="#appA" name="token_note">Appendix A</a> is more
 	complete, including obsolete tokens and token numbers.</li>
