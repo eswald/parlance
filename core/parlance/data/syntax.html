@@ -1216,13 +1216,12 @@ cancels a <b>DRW</b> sent with no parameters, but does not cancel a
 <h3>(iii) Sending and Receiving Press</h3>
 
 <h4><a name="SND">client_command = SND</a> (power power ...) (press_message)</h4>
-<h4>client_command = SND (power power ...) (reply)</h4>
 <h4>client_command = SND (turn) (power power ...) (press_message)</h4>
-<h4>client_command = SND (turn) (power power ...) (reply)</h4>
-<!-- Obsolete commands, kept for compatibility with Mapper 0.34
+<!-- Obsolete form, kept for compatibility with Mapper 0.34
 <h4>client_command = SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...]</h4>
-<h4>client_command = SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...</h4>
 <h4>message_id = number</h4>
+<h4>press_message = statement</h4>
+<h4>press_message = reply</h4>
 -->
 
 <p>These are sent by the player to the server, to send
@@ -1242,9 +1241,7 @@ otherwise specified by its contents.</p>
 
 <h4>server_message = CCD (power) (SND (power power ...) (press_message))<sup><a href="#disorder_note">*</a></sup></h4>
 <h4>server_message = CCD (power) (SND (turn) (power power ...) (press_message))</h4>
-<!-- <h4>server_message = CCD (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
-<!-- <h4>server_message = CCD (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
 <p><b>power</b> is in civil disorder, and so can not receive press. If
 multiple powers are listed in the <b>SND</b> command, and the server sends
@@ -1253,9 +1250,7 @@ a <b>CCD</b> reply, then the message has not been sent to anybody
 
 <h4><a name="OUT">server_message = OUT</a> (power) (SND (power power ...) (press_message))<sup><a href="#elimination_note">*</a></sup></h4>
 <h4><a name="OUT">server_message = OUT</a> (power) (SND (turn) (power power ...) (press_message))</h4>
-<!-- <h4>server_message = OUT (power) (SND [(turn)] (power power ...) (reply))</h4> -->
 <!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (press_message) [WRT (power [message_id]) (power [message_id]) ...])</h4> -->
-<!-- <h4>server_message = OUT (power) (SND (message_id) (power power ...) (reply) WRT (power [message_id]) (power [message_id]) ...)</h4> -->
 
 <p><b>power</b> has been eliminated from the game. If multiple
 powers are listed in the <b>SND</b> command, and the server sends a
@@ -1288,7 +1283,6 @@ specified is not the current turn.</p>
 receive the message in one of the following forms:</p>
 
 <h4><a name="FRM">server_message = FRM</a> (power) (power power ...) (press_message)</h4>
-<h4>server_message = FRM (power) (power power ...) (reply)</h4>
 
 <p>The first <b>power</b> is the power which sent the message. The
 <b>power</b> list and the <b>press_message</b> are as in the
@@ -1298,11 +1292,12 @@ message.</p>
 
 <p>We have now covered every command in the Diplomacy AI Development
 Environment syntax. The remainder of this document covers the contents
-of <b>press_message</b> and <b>reply</b>.</p>
+of <b>press_message</b>, which can be either <b>statement</b>
+or <b>reply</b>.</p>
 
 <h3>(iv) Proposing an Offer</h3>
 
-<h4><a name="PRP">press_message = PRP</a> (arrangement)</h4>
+<h4><a name="PRP">statement = PRP</a> (arrangement)</h4>
 
 <p>This indicates that the sending power is proposing an arrangement.
 Some arrangements represent specific actions, while others (like <b>PCE</b>)
@@ -1351,21 +1346,20 @@ they can use <b>NAR</b> to unarrange it, without arranging war.</p>
 
 <p>To respond to a message, one of the following can be sent:</p>
 
-<h4><a name="YES_press">reply = YES</a> (press_message)</h4>
+<h4><a name="YES_press">reply = YES</a> (statement)</h4>
 
 <p>Accept the arrangement</p>
 
-<h4><a name="REJ_press">reply = REJ</a> (press_message)</h4>
+<h4><a name="REJ_press">reply = REJ</a> (statement)</h4>
 
 <p>Reject the arrangement</p>
 
-<h4><a name="BWX">reply = BWX</a> (press_message)</h4>
+<h4><a name="BWX">reply = BWX</a> (statement)</h4>
 
 <p>Refuse to answer. None of the sending power's business.</p>
 
 <h4><a name="HUH_press">reply = HUH</a> (press_message)</h4>
 <!-- <h4>reply = HUH (error_sequence)</h4> -->
-<!-- <h4>reply = HUH (reply)</h4> -->
 
 <p>The message proposal contains a token sequence too complicated for
 this player to understand &mdash; usually because the player is not able
@@ -1463,7 +1457,7 @@ This arrangement is continuous.</p>
 <!-- <h4>press_token += AND</h4> -->
 <!-- <h4>press_token += ORR</h4> -->
 
-<!-- <h4>press_message = PRP (multipart_arrangement)</h4> -->
+<!-- <h4>statement = PRP (multipart_arrangement)</h4> -->
 <p>Level 30 adds the ability to combine multiple arrangements.</p>
 
 <h4><a name="AND">multipart_arrangement = AND</a> (arrangement) (arrangement) (arrangement) ...</h4>
@@ -1551,7 +1545,7 @@ means to choose exactly that many.  For example:</p>
 <p>In Level 60, we add the ability to insist on an arrangement, and to ask
 questions.</p>
 
-<h4><a name="INS">press_message = INS</a> (arrangement)</h4>
+<h4><a name="INS">statement = INS</a> (arrangement)</h4>
 
 <p>The syntax for <b>INS</b> is exactly the same as for <b>PRP</b>, and
 the available replies are also exactly the same. The only difference is
@@ -1562,7 +1556,7 @@ something that the sending power can enforce on the board (for
 example, an order for one of its own units), then the receiving power
 should expect it to happen whether it likes it or not.</p>
 
-<h4><a name="QRY">press_message = QRY</a> (arrangement)</h4>
+<h4><a name="QRY">statement = QRY</a> (arrangement)</h4>
 
 <p>The syntax for <b>QRY</b> is the same as for <b>PRP</b> and
 <b>INS</b>.
@@ -1592,7 +1586,7 @@ following extra responses are also available for <b>QRY</b>:</p>
 
 <p>I don't know.</p>
 
-<h4><a name="SUG">press_message = SUG</a> (arrangement)</h4>
+<h4><a name="SUG">statement = SUG</a> (arrangement)</h4>
 
 <p>The syntax for <b>SUG</b> is the same as for <b>QRY</b>.
 <b>SUG</b> is suggesting
@@ -1607,11 +1601,11 @@ whether <b>arrangement</b> will actually happen.</p>
 <p><b>THK</b> and <b>FCT</b> can also be used as a message in their own
 right, to pass information without first being queried for it.</p>
 
-<h4>press_message = THK (arrangement)</h4>
+<h4>statement = THK (arrangement)</h4>
 
 <p>I think <b>arrangement</b> is true.</p>
 
-<h4>press_message = FCT (arrangement)</h4>
+<h4>statement = FCT (arrangement)</h4>
 
 <p><b>arrangement</b> is true.</p>
 
@@ -1630,7 +1624,7 @@ applies to <b>FCT (QRY (arrangement))</b> and <b>FCT (arrangement)</b>.</p>
 <p>In Level 70, we add the ability to ask for suggestions.
 Requests for suggestions come in two forms:</p>
 
-<h4><a name="WHT">press_message = WHT</a> (unit)</h4>
+<h4><a name="WHT">statement = WHT</a> (unit)</h4>
 
 <p>What should <b>unit</b> be ordered to do?  This can either be for a
 unit of either the sender or a recipient.  In the former case, it is a
@@ -1645,7 +1639,7 @@ proposal/insistence, rather than a response to a <b>WHT</b>),
 or with <b>BWX (WHT (unit))</b> if the receiving power doesn't want to
 tell.</p>
 
-<h4><a name="HOW">press_message = HOW</a> (province)</h4>
+<h4><a name="HOW">statement = HOW</a> (province)</h4>
 <!-- <h4>reply = IDK (HOW (province))</h4> -->
 
 <p>How do you think we should attack <b>province</b>? This should be
@@ -1655,7 +1649,7 @@ should not be attacked, <b>IDK (HOW (province))</b> if the receiving
 power doesn't have a suggestion, or <b>BWX (HOW (province))</b> if
 the receiving power doesn't want to tell.</p>
 
-<h4>press_message = HOW (power)</h4>
+<h4>statement = HOW (power)</h4>
 <!-- <h4>reply = IDK (HOW (power))</h4> -->
 
 <p>How do you think we should attack <b>power</b>? Responses are the
@@ -1669,25 +1663,21 @@ eliminated power.</p>
 
 <p>Level 80 adds the ability to accuse another power of going back on its word.</p>
 
-<h4><a name="EXP">press_message = EXP</a> (turn) (press_message)</h4>
-<h4>press_message = EXP (turn) (reply)</h4>
+<h4><a name="EXP">statement = EXP</a> (turn) (press_message)</h4>
 
 <p>Explain your moves in <b>turn</b> given <b>press_message</b> that you previously sent.</p>
 
 <p>The standard replies can be used, including:</p>
 
 <h4>reply = YES (EXP (turn) (press_message))</h4>
-<h4>reply = YES (EXP (turn) (reply))</h4>
 
 <p>Yes, I know.  (No explanation given.)</p>
 
 <h4>reply = REJ (EXP (turn) (press_message))</h4>
-<h4>reply = REJ (EXP (turn) (reply))</h4>
 
 <p>I didn't send <b>press_message</b>.</p>
 
 <h4>reply = IDK (EXP (turn) (press_message))</h4>
-<h4>reply = IDK (EXP (turn) (reply))</h4>
 
 <p>There is nothing to explain &mdash; they don't conflict.</p>
 
@@ -1698,7 +1688,6 @@ eliminated power.</p>
 <p>In addition, the following is available.</p>
 
 <h4><a name="SRY">reply = SRY</a> (EXP (turn) (press_message))</h4>
-<h4>reply = SRY (EXP (turn) (reply))</h4>
 
 <p>I'm sorry.</p>
 
@@ -1723,9 +1712,9 @@ command is added:</p>
 <b>FOR</b> overrides any timing indicated by <b>arrangement</b>.</p>
 
 <p>The <b>arrangement</b> parameter of the <b>FOR</b> must not include a further
-<b>FOR</b>, unless the arrangement contains a <b>press_message</b> (for
+<b>FOR</b>, unless the arrangement contains a <b>statement</b> (for
 example, in <b>SND</b>), and the further <b>FOR</b> is inside that
-<b>press_message</b>.</p>
+<b>statement</b>.</p>
 
 <p>Note that <b>FOR</b> and <b>NOT</b> must be ordered correctly to get
 the right meaning. <b>FOR ((start_turn) (end_turn)) (NOT
@@ -1741,8 +1730,8 @@ of the turns indicated.</p>
 
 <p>Level 100 adds the ability to use conditional operators.</p>
 
-<h4><a name="IFF">press_message = IFF</a> (condition) THN (press_message) [ELS (press_message)]</h4>
-<!-- <h4>reply = IFF (condition) THN (reply) [ELS (reply)]</h4> -->
+<h4><a name="IFF">statement = IFF</a> (condition) THN (statement) [ELS (statement)]</h4>
+<h4>reply = IFF (condition) THN (reply) [ELS (reply)]</h4>
 <!-- <h4>arrangement != IFF (condition) THN (arrangement) [ELS (arrangement)]</h4> -->
 
 <p>If the <b>condition</b> is met, then the <b>THN</b> applies;
@@ -1846,7 +1835,6 @@ power.</p>
 another. This adds three extra commands to the message syntax:</p>
 
 <h4><a name="SND_press">arrangement = SND</a> (power) (power power ...) (press_message)</h4>
-<h4>arrangement = SND (power) (power power ...) (reply)</h4>
 
 <p>This is a request for the first <b>power</b> to send the message
 given. Eliminated powers must not
@@ -1875,7 +1863,6 @@ received.</p>
 <b>BCC</b> arrangement.</p>
 
 <h4><a name="FRM_press">press_message = FRM</a> (power) (power power ...) (press_message)</h4>
-<h4>press_message = FRM (power) (power power ...) (reply)</h4>
 
 <p>This is a message to inform a power of a message that has been sent
 or received.  No response is required. Eliminated powers must not be
@@ -1937,7 +1924,7 @@ make it worthwhile.</p>
 <p>Level 140 adds the ability to estimate the probability of a
 situation.  In response to a <a href="#QRY"><b>QRY</b></a> message,
 the player can reply with:</p>
-<h4><a name="PRB">press_message != PRB</a> (percentage) (QRY (arrangement))</h4>
+<h4><a name="PRB">statement != PRB</a> (percentage) (QRY (arrangement))</h4>
 <!- - <h4>percentage != number</h4> - ->
 
 <p><b>percentage</b> is an integer indicating the percentage chance that
@@ -1946,7 +1933,7 @@ the player can reply with:</p>
 <p><b>PRB</b> can also be used as a message in its own right, to pass
 information without first being queried for it.</p>
 
-<h4>press_message != PRB (percentage) (arrangement)</h4>
+<h4>statement != PRB (percentage) (arrangement)</h4>
 <p>I think <b>arrangement</b> has a <b>percentage</b> chance of being true.</p>
 
 <p>As for a <b>THK</b> or <b>FCT</b> message, no reply is expected, but
@@ -1959,9 +1946,8 @@ information without first being queried for it.</p>
 <h2><a name="level8000">Level 8000</a> : Free Text</h2>
 
 <!-- <h4>press_message = 'string'</h4> -->
-<!-- <h4>reply = 'string'</h4> -->
-<p>This level allows natural language press.  Both <b>press_message</b> and
-<b>reply</b> can be any string of printable Unicode characters.</p>
+<p>This level allows natural language press: <b>press_message</b>
+can be any string of printable Unicode characters.</p>
 
 
 <h2><a name="appA">Appendix A</a> : Complete List of Tokens<sup><a
