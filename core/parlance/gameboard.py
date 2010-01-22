@@ -16,7 +16,7 @@ from config import Configuration, VerboseObject, judges, parse_file, variants
 from fallbacks import all, any, defaultdict
 from language import Message, Representation, Token, protocol
 from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
-from util import Comparable, Immutable, Infinity
+from util import bit, Comparable, Immutable, Infinity
 
 def location_key(unit_type, loc):
     if isinstance(loc, Token): return (unit_type, loc,    None)
@@ -702,12 +702,11 @@ class Turn(Comparable, Immutable):
             ('build_phases', list, ('WIN',), 'build phases',
                 'Tokens that indicate build phases'),
             
-            # Todo: Check that these are powers of two
-            ('move_phase_bit', int, 0x20, 'move order mask',
+            ('move_phase_bit', bit, 0x20, 'move order mask',
                 'Bit that indicates movement phase in order token numbers.'),
-            ('retreat_phase_bit', int, 0x40, 'retreat order mask',
+            ('retreat_phase_bit', bit, 0x40, 'retreat order mask',
                 'Bit that indicates retreat phase in order token numbers.'),
-            ('build_phase_bit', int, 0x80, 'build order mask',
+            ('build_phase_bit', bit, 0x80, 'build order mask',
                 'Bit that indicates build phase in order token numbers.'),
         )
         

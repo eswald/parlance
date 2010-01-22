@@ -333,3 +333,39 @@ def timestamp(seconds=None):
         timestamp.appendix = 0
     return '%s%02d' % (result, timestamp.appendix)
 
+def bit(value):
+    r'''Verifies that the value is an integer with a single bit set.
+        Meant for use as a configuration option parser.
+        
+        >>> bit(0x40)
+        64
+        >>> bit("0x10")
+        16
+        >>> bit(True)
+        1
+        >>> bit(0)
+        Traceback (most recent call last):
+            ...
+        ValueError: Invalid bit value 0
+        >>> bit("0x11")
+        Traceback (most recent call last):
+            ...
+        ValueError: Invalid bit value '0x11'
+        >>> bit("on")
+        Traceback (most recent call last):
+            ...
+        ValueError: invalid literal for int() with base 0: 'on'
+    '''#"""#'''
+    try:
+        n = int(value)
+    except ValueError:
+        # Possibly a hexadecimal string
+        # If the value is really wrong, this will fail again.
+        n = int(value, 0)
+    
+    if (n & (n - 1)) or not n:
+        # There's more than one set bit in the number
+        raise ValueError("Invalid bit value %r" % (value,))
+    
+    return n
+
