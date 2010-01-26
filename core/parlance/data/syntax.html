@@ -601,7 +601,7 @@ arguments at any time. The server will reply by sending another copy of
 the latest <b>SCO</b> message, or the starting supply center ownership if the
 game hasn't started.</p>
 
-<h4><a name="NOW">server_message = NOW</a> (turn) (unit) (unit) ...</h4>
+<h4><a name="NOW">server_message = NOW</a> (turn) [(unit) (unit) ...]<sup><a href="#unitless_note">*</a></sup></h4>
 <!-- <h4>turn = season number</h4> -->
 <!-- <h4>unit = army</h4> -->
 <!-- <h4>unit = fleet</h4> -->
@@ -2281,6 +2281,10 @@ official DAIDE syntax document</a>:
 	<b>HLO</b> message contains variant rule information, as well as
 	power and passcode assignments, observers might desire an extra
 	copy.</li>
+
+	<li>This document allows a <a href="#NOW" name="unitless_note"><b>NOW</b></a>
+	message to have an empty unit list.  This is used for the starting
+	situation of certain variants, like Chaos.</li>
 
 	<li>This document specifies a new interpretation of
 	<a href="#HST" name="history_note"><b>HST</b></a> without an argument.
