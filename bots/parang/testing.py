@@ -22,6 +22,7 @@ from parang.blabberbot import BlabberBot
 from parang.combobot   import ComboBot
 from parang.dumbbot    import DumbBot
 from parang.evilbot    import EvilBot
+from parang.holland    import weighted_choice
 from parang.neurotic   import Neurotic
 from parang.peacebot   import PeaceBot
 from parang.project20m import Project20M
@@ -195,6 +196,22 @@ class CentralityTestCase(PlayerTestCase):
     
     def test_land_centrality(self):
         self.failUnless(self.centrality[MUN] > self.centrality[SYR])
+
+class HollandTestCase(unittest.TestCase):
+    r'''Implementation tests for the Holland Classifier System implementation.
+        Might in the future include tests for a bot based on it.
+    '''#"""#'''
+    
+    def test_weighted_choice(self):
+        # After a large number of trials,
+        # each one should be hit in this approximate ratio.
+        choices = {"A": 200, "B": 500, "C": 900}
+        results = dict.fromkeys(choices, 0)
+        for iteration in xrange(sum(choices.itervalues())):
+            results[weighted_choice(choices)] += 1
+        
+        for key in choices:
+            self.failUnlessAlmostEqual(choices[key], results[key], -2)
 
 class HuffTestCase(BotTestCase):
     bot_class = Project20M
