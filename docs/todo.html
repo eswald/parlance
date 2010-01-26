@@ -71,6 +71,8 @@
       of logging to files or relying on memory.</p>
     <p>Re-instate threading on generate_orders.  Twisted complicates this,
       because the thread shouldn't send messages directly; use a deferred.</p>
+    <p>Try to use the new <code>(turn)</code> parameter for
+      <code>submit_set()</code> and/or <code>send_press()</code>.</p>
     
     <h3>PeaceBot</h3>
     <p>PeaceBot is excessively limited at the moment.  Ideally, it should
