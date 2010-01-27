@@ -42,6 +42,9 @@ setup(
     packages = ["parterre"],
     entry_points = {
         "parlance.variants": variant_list(),
+        "parlance.judges": [
+            "chaos = parterre.chaos:ChaosJudge",
+        ],
     },
     
     # Project metadata

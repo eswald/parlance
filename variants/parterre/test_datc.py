@@ -11,9 +11,8 @@ r'''DATC rule variant test cases for Parlance
 
 import unittest
 
-from parlance.test import fails
 from parlance.test.datc import DiplomacyAdjudicatorTestCase
-from parlance.tokens import AMY, WIN
+from parlance.tokens import AMY, UNO, WIN
 
 # 7.  COLONIAL VARIANT
 class DATC_7_A(DiplomacyAdjudicatorTestCase):
@@ -223,7 +222,6 @@ class DATC_11(DiplomacyAdjudicatorTestCase):
     ''' 11.  BUILD IN ANY SUPPLY CENTER VARIANT''' 
     variant_name = 'chaos'
     
-    @fails
     def test_11A(self):
         # 11.A.  CIVIL DISORDER
         # Since players can build in any owned center, automatic removals
@@ -236,10 +234,14 @@ class DATC_11(DiplomacyAdjudicatorTestCase):
         # The provinces might be the same as standard, but don't count on it.
         rep = self.variant.rep
         Berlin = rep["BRL"]
+        Kiel = rep["KEL"]
+        BER = rep["BER"]
         NAP = rep["NAP"]
         PRU = rep["PRU"]
         APU = rep["APU"]
         
+        self.chown_sc(Berlin, [NAP])
+        self.chown_sc(Kiel, [BER])
         self.init_state(WIN, 1905, [
             [Berlin, AMY, PRU],
             [Berlin, AMY, APU],
