@@ -93,13 +93,19 @@ class UnitOrder(Comparable):
             - NRS: Not the right season
         '''#'''
         note = MBV
-        if not (self.order_type.value() & phase):   note = NRS
-        elif self.unit.nation != power:             note = NYU
-        elif not self.unit.coast.province.exists(): note = NSP
-        elif not self.unit.exists():                note = NSU
+        if not (self.order_type.value() & phase):
+            note = NRS
+        elif self.unit.nation != power:
+            note = NYU
+        elif not self.unit.location.province.exists():
+            note = NSP
+        elif not self.unit.exists():
+            note = NSU
         elif self.destination:
-            if not self.destination.province.exists(): note = NSP
-            elif not self.unit.exists(): note = NSU
+            if not self.destination.province.exists():
+                note = NSP
+            elif not self.unit.exists():
+                note = NSU
         return note
     @property
     def strict(self): return Message(self.key)
@@ -114,7 +120,7 @@ class MovementPhaseOrder(UnitOrder):
         elif not convoyed.can_be_convoyed():
             # This might be an army on an inland province.
             # Shortcut to the default FAR in that case.
-            if convoyed.coast.unit_type != AMY:
+            if convoyed.location.unit_type != AMY:
                 result = NSA
         elif not destination.exists(): result = CST
         elif destination.province.is_coastal():
@@ -124,7 +130,7 @@ class MovementPhaseOrder(UnitOrder):
     def get_routes(self, convoyers, ignore_foreign):
         if self.unit.can_be_convoyed():
             if self.path:
-                path_list = [[fleet.coast.province for fleet in self.path]]
+                path_list = [[fleet.location.province for fleet in self.path]]
             else: path_list = self.routes
             if path_list:
                 key = self.unit.key
@@ -144,7 +150,7 @@ class MovementPhaseOrder(UnitOrder):
                 return (solo_routes or all_routes)
         return []
     def supported_name(self):
-        name = self.supported.coast.prefix
+        name = self.supported.location.prefix
         power = self.supported.nation
         if self.unit.nation == power: return name
         else: return '%s %s' % (power.adjective, name)
@@ -153,9 +159,9 @@ class HoldOrder(MovementPhaseOrder):
     def __init__(self, unit):
         self.key = (unit.key, HLD)
         self.unit = unit
-        self.destination = unit.coast
+        self.destination = unit.location
     def __repr__(self): return 'HoldOrder(%r)' % self.unit
-    def __str__(self): return self.unit.coast.prefix + ' HOLD'
+    def __str__(self): return self.unit.location.prefix + ' HOLD'
 class MoveOrder(MovementPhaseOrder):
     order_type = MTO
     path = None
@@ -165,7 +171,7 @@ class MoveOrder(MovementPhaseOrder):
         self.destination = destination_coast
         self.maybe_convoy = maybe_convoy
     def __str__(self):
-        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name)
+        return '%s -> %s' % (self.unit.location.prefix, self.destination.name)
     def is_convoyed(self):    return self.maybe_convoy
     def maybe_overland(self): return self.maybe_convoy
     def order_note(self, power, phase, past_orders=None):
@@ -180,7 +186,7 @@ class MoveOrder(MovementPhaseOrder):
         dest = board.ordered_coast(unit, order[2], datc)
         if unit.can_be_convoyed() and datc.datc_4a3 != 'f':
             # Implicit convoys are allowed; check for them
-            routes = unit.coast.convoy_routes(dest.province, board)
+            routes = unit.location.convoy_routes(dest.province, board)
             if not routes: result = klass(unit, dest)
             elif not unit.can_move_to(dest):
                 # Can't move directly; attempt to convoy
@@ -198,7 +204,7 @@ class MoveOrder(MovementPhaseOrder):
         # Allows the server to send path specifications
         # even on orders that didn't originally have any.
         self.path = path
-        self.path_key = tuple([fleet.coast.province.key for fleet in path])
+        self.path_key = tuple([fleet.location.province.key for fleet in path])
         self.key = (self.unit.key, CTO, self.destination.province.key, VIA, self.path_key)
 class ConvoyingOrder(MovementPhaseOrder):
     order_type = CVY
@@ -208,7 +214,7 @@ class ConvoyingOrder(MovementPhaseOrder):
         self.supported = mover
         self.destination = destination
     def __str__(self):
-        return '%s CONVOY %s -> %s' % (self.unit.coast.prefix,
+        return '%s CONVOY %s -> %s' % (self.unit.location.prefix,
                 self.supported_name(), self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the convoyed unit. '''
@@ -218,12 +224,16 @@ class ConvoyingOrder(MovementPhaseOrder):
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV:
-            if not self.unit.coast.province.can_convoy(): note = NAS
-            elif not self.unit.can_convoy():              note = NSF
+            if not self.unit.location.province.can_convoy():
+                note = NAS
+            elif not self.unit.can_convoy():
+                note = NSF
             else:
-                def has_this_fleet(route, fleet=self.unit.coast.province.key):
+                fleet = self.unit.location.province.key
+                def has_this_fleet(route):
                     return fleet in route
-                note = self.convoy_note(self.supported, self.destination, self.routes, has_this_fleet)
+                note = self.convoy_note(self.supported,
+                    self.destination, self.routes, has_this_fleet)
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
@@ -231,7 +241,7 @@ class ConvoyingOrder(MovementPhaseOrder):
         mover = board.ordered_unit(nation, order[2], datc)
         dest = board.ordered_coast(mover, order[4], datc)
         result = klass(unit, mover, dest)
-        result.routes = mover.coast.convoy_routes(dest.province, board)
+        result.routes = mover.location.convoy_routes(dest.province, board)
         result.order = order
         return result
 class ConvoyedOrder(MovementPhaseOrder):
@@ -249,12 +259,12 @@ class ConvoyedOrder(MovementPhaseOrder):
         # Allows the server to send path specifications
         # even on orders that didn't originally have any.
         self.path = path
-        self.path_key = tuple([fleet.coast.province.key for fleet in path])
+        self.path_key = tuple([fleet.location.province.key for fleet in path])
         self.key = (self.unit.key, CTO, self.destination.province.key, VIA, self.path_key)
     def __str__(self):
-        return '%s -> %s -> %s' % (self.unit.coast.prefix,
-                self.path and ' -> '.join([str(u.coast.province) for u in self.path]) or '...',
-                self.destination.name)
+        return '%s -> %s -> %s' % (self.unit.location.prefix,
+            self.path and ' -> '.join(str(u.location.province) for u in self.path) or '...',
+            self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the convoying unit(s). '''
         def matching(fleet):
@@ -271,8 +281,8 @@ class ConvoyedOrder(MovementPhaseOrder):
         if note == MBV:
             note = self.convoy_note(self.unit, self.destination, self.routes)
             if note == MBV and self.path:
-                def real_prov(fleet): return fleet.coast.province.exists()
-                def at_sea(fleet): return fleet.coast.province.can_convoy()
+                def real_prov(fleet): return fleet.location.province.exists()
+                def at_sea(fleet): return fleet.location.province.can_convoy()
                 def check(f): return not all(f(unit) for unit in self.path)
                 if   check(real_prov):                 note = NSP
                 elif check(Unit.exists):               note = NSF
@@ -292,7 +302,7 @@ class ConvoyedOrder(MovementPhaseOrder):
         result = klass(unit, dest, path)
         if datc.datc_4a6 == 'c' and path is None:
             result.routes = []
-        else: result.routes = unit.coast.convoy_routes(dest.province, board)
+        else: result.routes = unit.location.convoy_routes(dest.province, board)
         result.order = order
         return result
 
@@ -302,8 +312,10 @@ class SupportOrder(MovementPhaseOrder):
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV:
-            if not self.supported.coast.province.exists():    note = NSP
-            elif not self.supported.exists():                 note = NSU
+            if not self.supported.location.province.exists():
+                note = NSP
+            elif not self.supported.exists():
+                note = NSU
             elif not self.unit.can_move_to(self.destination.province):
                 note = FAR
         return note
@@ -327,7 +339,8 @@ class SupportOrder(MovementPhaseOrder):
                         # Coastline specifications are ignored
                         dest = Location(dest.unit_type, dest.province, None, [])
                 routes = []
-            else: routes = supported.coast.convoy_routes(dest.province, board)
+            else:
+                routes = supported.location.convoy_routes(dest.province, board)
             result = SupportMoveOrder(unit, supported, dest, legal_dest)
             result.routes = routes
         else: result = SupportHoldOrder(unit, supported)
@@ -338,14 +351,14 @@ class SupportHoldOrder(SupportOrder):
         self.key = (unit.key, SUP, holder.key)
         self.unit = unit
         self.supported = holder
-        self.destination = holder.coast
+        self.destination = holder.location
     def __str__(self):
-        return '%s SUPPORT %s' % (self.unit.coast.prefix, self.supported_name())
+        return '%s SUPPORT %s' % (self.unit.location.prefix, self.supported_name())
     def matches(self, order_set):
         ''' Whether the order is matched by the supported unit.'''
         return (self.supported.exists()
-                and not order_set.is_moving(self.supported)
-                and self.supported.coast.province != self.unit.coast.province)
+            and not order_set.is_moving(self.supported)
+            and self.supported.location.province != self.unit.location.province)
 class SupportMoveOrder(SupportOrder):
     def __init__(self, unit, mover, destination, legal_coast=True):
         # Note: destination.maybe_coast would be better,
@@ -356,7 +369,7 @@ class SupportMoveOrder(SupportOrder):
         self.destination = destination
         self.legal = legal_coast
     def __str__(self):
-        return '%s SUPPORT %s -> %s' % (self.unit.coast.prefix,
+        return '%s SUPPORT %s -> %s' % (self.unit.location.prefix,
                 self.supported_name(), self.destination.name)
     def matches(self, order_set):
         ''' Whether the order is matched by the supported unit.'''
@@ -371,12 +384,16 @@ class SupportMoveOrder(SupportOrder):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV:
             if self.supported.can_move_to(self.destination):
-                if not self.legal: note = CST
+                if not self.legal:
+                    note = CST
             else:
-                def has_not(route, prov=self.unit.coast.province.key):
+                prov = self.unit.location.province.key
+                def has_not(route):
                     return prov not in route
-                result = self.convoy_note(self.supported, self.destination, self.routes, has_not)
-                if result != MBV: note = FAR
+                result = self.convoy_note(self.supported,
+                    self.destination, self.routes, has_not)
+                if result != MBV:
+                    note = FAR
         return note
 
 class RetreatPhaseOrder(UnitOrder):
@@ -390,7 +407,8 @@ class DisbandOrder(RetreatPhaseOrder):
         self.key = (unit.key, DSB)
         self.unit = unit
         self.destination = None
-    def __str__(self): return self.unit.coast.prefix + ' DISBAND'
+    def __str__(self):
+        return self.unit.location.prefix + ' DISBAND'
 class RetreatOrder(RetreatPhaseOrder):
     order_type = RTO
     def __init__(self, unit, destination_coast):
@@ -398,7 +416,7 @@ class RetreatOrder(RetreatPhaseOrder):
         self.unit = unit
         self.destination = destination_coast
     def __str__(self):
-        return '%s -> %s' % (self.unit.coast.prefix, self.destination.name)
+        return '%s -> %s' % (self.unit.location.prefix, self.destination.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV and self.destination.maybe_coast not in self.unit.retreats:
@@ -448,18 +466,18 @@ class BuildOrder(BuildPhaseOrder):
     def __init__(self, unit):
         self.key = (unit.key, BLD)
         self.unit = unit
-        self.destination = unit.coast
+        self.destination = unit.location
     def __str__(self):
         # Todo: This should specify the unit's nation, if different.
         def an(text):
             if text[0] in 'aeiouAEIOU': return 'an %s' % text
             else: return 'a %s' % text
-        coast = self.unit.coast
+        coast = self.unit.location
         return 'Builds %s in %s' % (an(coast.type_name().lower()), coast.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == NSU:
-            coast = self.unit.coast
+            coast = self.unit.location
             old_order = past_orders and past_orders.has_order(coast.province)
             if not coast.exists():                                 note = CST
             elif not coast.province.is_supply():                   note = NSC
@@ -479,7 +497,7 @@ class RemoveOrder(BuildPhaseOrder):
         self.unit = unit
     def __str__(self):
         # Todo: This should specify the unit's nation, if different.
-        coast = self.unit.coast
+        coast = self.unit.location
         return 'Removes the %s in %s' % (coast.type_name().lower(), coast.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
@@ -513,7 +531,7 @@ def createUnitOrder(order, nation, board, datc):
 class OrderSet(defaultdict):
     ''' A mapping of Unit key -> UnitOrder, with special provisions for Waives.
         >>> Moscow = standard_map.spaces[MOS].unit
-        >>> Warsaw = standard_map.spaces[WAR].unit.coast
+        >>> Warsaw = standard_map.spaces[WAR].unit.location
         >>> Russia = standard_map.powers[RUS]
         >>> France = standard_map.powers[FRA]
         >>> russian = OrderSet(Russia)
@@ -610,7 +628,7 @@ class OrderSet(defaultdict):
         return result and result.is_moving()
     def has_order(self, province):
         for order in self:
-            if order.unit and order.unit.coast.province == province:
+            if order.unit and order.unit.location.province == province:
                 return True
         else: return False
     def get_order(self, unit):
@@ -673,7 +691,7 @@ class OrderSet(defaultdict):
         for order in self.order_list(power):
             if order.order_type is WVE: waives += 1
             elif order.order_type is BLD:
-                builds.add(order.unit.coast.province.key)
+                builds.add(order.unit.location.province.key)
             elif order.order_type is REM:
                 removes.add(order.unit.key)
         if   surplus > 0: return -max(0, surplus - len(removes))
@@ -746,6 +764,6 @@ class OrderSet(defaultdict):
         units = power.farthest_units(board.distance)
         while surplus > 0 and units:
             unit = units.pop(0)
-            if not self.has_key(unit.coast.key):
+            if not self.has_key(unit.location.key):
                 self.add(RemoveOrder(unit), power)
                 surplus -= 1

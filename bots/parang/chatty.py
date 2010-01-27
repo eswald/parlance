@@ -202,7 +202,7 @@ else:
                 new_units = {}
                 old_units = self.units
                 for unit in self.map.units:
-                    coast = unit.coast
+                    coast = unit.location
                     fg = unit.nation.__color
                     char = coast.unit_type.text[0].lower()
                     

@@ -105,7 +105,7 @@ class Brain(VerboseObject):
             units = board.locs[coast].province.units
             for power in self.powers:
                 inputs[index] = len([unit for unit in units
-                            if unit.coast.key == coast
+                            if unit.location.key == coast
                             and unit.nation == power])
                 index += 1
         for center in self.centers:
@@ -135,7 +135,7 @@ class Brain(VerboseObject):
                 for coast in self.coastlines[token]:
                     hold_value = unit_value + outputs[index]
                     order_values.extend((hold_value, HoldOrder(unit))
-                        for unit in units if coast == unit.coast.key)
+                        for unit in units if coast == unit.location.key)
                     index += 1
                 
                 for prov in self.borders[token]:
@@ -209,7 +209,7 @@ class Brain(VerboseObject):
         prov_orders = {}
         for order in orders:
             if order.unit:
-                prov_orders[order.unit.coast.province.key] = order
+                prov_orders[order.unit.location.province.key] = order
         for token in self.provinces:
             if prov_orders.has_key(token):
                 order = prov_orders[token]
@@ -220,13 +220,13 @@ class Brain(VerboseObject):
                             outputs[index] = 1
                     elif board.spaces[prov].unit:
                         if (isinstance(order, (SupportOrder, ConvoyingOrder))
-                                and order.supported.coast.province == token):
+                                and order.supported.location.province == token):
                             outputs[index] = 1
                     index += 1
                 
                 for coast in self.coastlines[token]:
                     if (isinstance(order, HoldOrder)
-                            and coast == order.unit.coast.key):
+                            and coast == order.unit.location.key):
                         outputs[index] = 1
                     index += 1
                 
@@ -347,9 +347,9 @@ class Neurotic(Player):
                 value, order = values.pop()
                 self.log_debug(11, 'Considering %s, worth %s', order, value)
                 note = order.order_note(self.power, phase, orders)
-                if order.unit and orders.has_order(order.unit.coast.province):
+                if order.unit and orders.has_order(order.unit.location.province):
                     self.log_debug(11, 'Already has an order for %s',
-                            order.unit.coast.province)
+                        order.unit.location.province)
                     continue
                 elif note != MBV:
                     self.log_debug(11, 'Bad order: %s', note)

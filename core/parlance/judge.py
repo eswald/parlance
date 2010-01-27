@@ -769,7 +769,7 @@ class Judge(JudgeInterface):
                 self.add_movement_decisions(order, unit, decisions)
             elif order.is_convoying():
                 if order.matches(self.next_orders) and not self.illegal(order):
-                    convoyers[unit.coast.province.key] = (order.supported.key, unit.nation.key)
+                    convoyers[unit.location.province.key] = (order.supported.key, unit.nation.key)
                 elif not order.__result: order.__result = NSO
             elif order.is_supporting() and not order.__result:
                 if order.matches(self.next_orders):
@@ -835,7 +835,7 @@ class Judge(JudgeInterface):
         into.entering.append(unit)
     def add_path_decisions(self, order, convoyers, decisions):
         # Is anyone moving in the opposite direction?
-        unit_list = order.unit.coast.province.entering
+        unit_list = order.unit.location.province.entering
         heads = any(u in unit_list for u in order.destination.province.units)
         if heads:
             decisions.add(Head_Decision(order))
@@ -1079,8 +1079,8 @@ class Judge(JudgeInterface):
     def collect_retreats(self, unit):
         self.log_debug(8, 'Collecting retreats for %s, dislodged by %s', unit, unit.dislodger)
         return [coast.maybe_coast for coast in
-                [self.map.locs[key] for key in unit.coast.borders_out]
-                if self.valid_retreat(coast, unit.dislodger)]
+            [self.map.locs[key] for key in unit.location.borders_out]
+            if self.valid_retreat(coast, unit.dislodger)]
     def valid_retreat(self, retreat, dislodger):
         prov, path = dislodger
         if retreat.province == prov:
@@ -1159,7 +1159,7 @@ class Decision(object):
     def __repr__(self): return str(self)   # To make lists look nice
     def state(self): raise NotImplementedError
     def battles(self):
-        unit_list = self.order.unit.coast.province.entering
+        unit_list = self.order.unit.location.province.entering
         return [unit for unit in self.into.units if unit in unit_list]
 
 class Tristate_Decision(Decision):
@@ -1213,7 +1213,7 @@ class Move_Decision(Tristate_Decision):
         self.failed = attack.max_value <= min_oppose
         if self.passed:
             for unit in self.order.destination.province.units:
-                unit.dislodger = self.order.unit.coast.province, self.order.path
+                unit.dislodger = self.order.unit.location.province, self.order.path
         return self.decided()
 class Support_Decision(Tristate_Decision):
     __slots__ = ()
@@ -1221,8 +1221,8 @@ class Support_Decision(Tristate_Decision):
     def init_deps(self):
         self.depends = [self.order.unit.decisions[Decision.DISLODGE]] + [
             u.decisions[Decision.ATTACK]
-            for u in self.order.unit.coast.province.entering
-            if u.coast.province != self.into
+            for u in self.order.unit.location.province.entering
+            if u.location.province != self.into
         ]
     def calculate(self):
         dislodge = self.depends[0]
@@ -1238,8 +1238,8 @@ class Support_Decision_Cuttable(Tristate_Decision):
     def init_deps(self):
         self.attacks = attacks = []
         self.paths = paths = {}
-        for u in self.order.unit.coast.province.entering:
-            if u.coast.province != self.into:
+        for u in self.order.unit.location.province.entering:
+            if u.location.province != self.into:
                 attacks.append(u.decisions[Decision.ATTACK])
             elif u.decisions[Decision.PATH].routes:
                 paths[u.decisions[Decision.PATH]] = u.decisions[Decision.ATTACK]
@@ -1268,7 +1268,7 @@ class Dislodge_Decision(Tristate_Decision):
             my_move = self.order.unit.decisions[Decision.MOVE]
         else: my_move = None
         self.depends = [my_move] + [unit.decisions[Decision.MOVE]
-            for unit in self.order.unit.coast.province.entering]
+            for unit in self.order.unit.location.province.entering]
     def calculate(self):
         my_move = self.depends[0]
         self.passed = (not my_move or my_move.failed) and any(d.passed for d in self.depends[1:])

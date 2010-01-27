@@ -53,7 +53,7 @@ class ComboBot(DumbBot):
     def generate_move_combos(self):
         adj_provs = defaultdict(list)
         for unit in self.power.units:
-            for key in unit.coast.borders_out:
+            for key in unit.location.borders_out:
                 dest = self.map.locs[key]
                 if not any(other.nation == self.power
                         for other in dest.province.units):
@@ -72,7 +72,7 @@ class ComboBot(DumbBot):
         fleets = []
         beaches = []
         coasts = self.map.locs
-        for border in fleet.coast.borders_out:
+        for border in fleet.location.borders_out:
             prov = coasts[border].province
             key = prov.is_coastal()
             for unit in prov.units:
@@ -90,11 +90,11 @@ class ComboBot(DumbBot):
                 for next in fleets], []))
     def get_multi_convoys(self, fleet, path, armies):
         self.log_debug(11, "Considering convoys through %s.",
-                '-'.join([unit.coast.province.key.text for unit in path]))
+                '-'.join([unit.location.province.key.text for unit in path]))
         fleets = []
         beaches = []
         coasts = self.map.locs
-        for border in fleet.coast.borders_out:
+        for border in fleet.location.borders_out:
             prov = coasts[border].province
             key = prov.is_coastal()
             for unit in prov.units:
@@ -232,27 +232,27 @@ class OrderCombo(object):
                         for u in unordered + holding
                         if u.can_move_to(order.destination.province)])
                 # Try to enter the vacated space
-                enter_provs.append(order.unit.coast.province.key)
+                enter_provs.append(order.unit.location.province.key)
             else:
-                enemies = attackers(order.unit.coast.province)
+                enemies = attackers(order.unit.location.province)
                 if (len(enemies) > 1):
                     # Try to support the stationary unit
                     sub_orders.extend([SupportHoldOrder(u, order.unit)
                         for u in unordered + holding
-                        if u.can_move_to(order.unit.coast.province)])
+                        if u.can_move_to(order.unit.location.province)])
                     # Try to cut support for attacks
-                    enter_provs.extend([u.coast.province.key for u in enemies])
+                    enter_provs.extend([u.location.province.key for u in enemies])
                 if (order.is_supporting()
-                        and order.supported.coast != order.destination
+                        and order.supported.location != order.destination
                         and occupied(order.destination.province)):
                     # Try to cut support to the attacked unit
-                    enter_provs.extend([u.coast.province.key
+                    enter_provs.extend([u.location.province.key
                             for u in attackers(order.destination.province)])
                     # Todo: Try to block retreats
         
         # Try to enter indicated provinces
         sub_orders.extend([MoveOrder(u, self.player.map.locs[key])
-                for u in unordered for key in u.coast.borders_out
+                for u in unordered for key in u.location.borders_out
                 if key[1] in enter_provs])
         # Try to convoy to the indicated provinces
         sub_orders.extend(self.convoys_to(enter_provs, unordered, holding))
@@ -271,7 +271,7 @@ class OrderCombo(object):
             fleets = all_fleets[fleet.key] = []
             armies = all_armies[fleet.key] = []
             beaches = all_beaches[fleet.key] = []
-            for coast in [coasts[key] for key in fleet.coast.borders_out]:
+            for coast in [coasts[key] for key in fleet.location.borders_out]:
                 key = coast.province.is_coastal()
                 if key:
                     army = coasts[key]
@@ -352,7 +352,7 @@ class ComboSet(object):
             if order:
                 unit = order.unit
                 # calc held for order.unit
-                unit_value = values.destination_value[unit.coast.key]
+                unit_value = values.destination_value[unit.location.key]
                 result += unit_value * self.stay_prob(unit, False, values.adjacent_units)
                 if order.is_moving():
                     # calc gained for order.destination
@@ -366,7 +366,7 @@ class ComboSet(object):
                 unit_worth = unit_value
                 result -= unit_worth * self.destroy_prob(order.unit, True, values.adjacent_units)
                 # save adjacent provinces for later
-                adj_provinces.update([key[1] for key in unit.coast.borders_out])
+                adj_provinces.update([key[1] for key in unit.location.borders_out])
             else: return 0
         # calc lost for any adjacent province an enemy can move to
         for prov in adj_provinces:
@@ -388,10 +388,10 @@ class ComboSet(object):
                 for power, unit_list in adjacent_units[province.key].iteritems()
                 if power.key not in (nation.key, self.power.key)
                 for unit in unit_list
-                if unit.coast.province.key != province.key]
+                if unit.location.province.key != province.key]
     def friends(self, province, adjacent_units):
         return [unit for unit in adjacent_units[province.key][self.power.key]
-                if unit.coast.province.key != province.key]
+                if unit.location.province.key != province.key]
     
     # For the following functions, bias indicates whether to guess aggressively
     # or conservatively, such that foo_prob(x,True) >= foo_prob(x,False).
@@ -415,7 +415,7 @@ class ComboSet(object):
                         entering = True
                 elif (order.is_supporting()
                         and order.destination.province.key == province.key
-                        and order.supported.coast.province.key != province.key):
+                        and order.supported.location.province.key != province.key):
                     supports.append(1 - self.success_prob(order, bias, adjacent_units))
             if force == 1: result = entering and 1 or 0
             elif len(supports) >= force - 1:
@@ -433,16 +433,16 @@ class ComboSet(object):
         ''' How likely the indicated unit is to be dislodged unless it moves.
             Assumes that no enemy units are in the indicated unit's province.
         '''#'''
-        enemies = self.enemies(unit.coast.province, unit.nation, adjacent_units)
+        enemies = self.enemies(unit.location.province, unit.nation, adjacent_units)
         # if no more than one enemy unit nearby, 0
         if len(enemies) <= 1: return 0
         # if all nearby enemy units are attacked, 0
-        if all(self.attacked_prob(enemy.coast.province, enemy.nation, 1,
+        if all(self.attacked_prob(enemy.location.province, enemy.nation, 1,
                 not bias, adjacent_units) == 1 for enemy in enemies):
             return 0
         # Todo: Guess better than this
         strength = 1
-        return self.attacked_prob(unit.coast.province, unit.nation,
+        return self.attacked_prob(unit.location.province, unit.nation,
                 strength, bias, adjacent_units)
     def move_prob(self, unit, bias, adjacent_units):
         ''' How likely a unit is to move out of the province indicated.'''
@@ -476,7 +476,7 @@ class ComboSet(object):
                     probs.append(1 - self.dislodge_prob(fleet, not bias, adjacent_units))
             result = min(probs)
         elif order.is_supporting():
-            result = 1 - self.attacked_prob(order.unit.coast.province,
+            result = 1 - self.attacked_prob(order.unit.location.province,
                     order.unit.nation, 1, not bias, adjacent_units)
         else: result = bias and 1 or 0
         return result

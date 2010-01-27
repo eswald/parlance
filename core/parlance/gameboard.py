@@ -440,7 +440,7 @@ class Map(VerboseObject):
             >>> print standard_map.ordered_unit(Russia, [BLA])
             RUS FLT BLA
             >>> unit = standard_map.ordered_unit(Russia, [ARM])
-            >>> print unit.coast.unit_type
+            >>> print unit.location.unit_type
             None
             >>> unit.exists()
             False
@@ -475,9 +475,10 @@ class Map(VerboseObject):
         # Try to match all specs, but without ambiguity
         unit = None
         for item in province.units:
-            if unit_type and item.coast.unit_type != unit_type: continue
+            if unit_type and item.location.unit_type != unit_type:
+                continue
             if country and item.nation != country: continue
-            if (coastline and item.coast.coastline != coastline
+            if (coastline and item.location.coastline != coastline
                     and not (datc and datc.datc_4b5 == 'b')):
                 continue
             
@@ -515,7 +516,7 @@ class Map(VerboseObject):
             its location to disambiguate bicoastal destinations.
         '''#'''
         # Collect specifications
-        unit_type = unit.coast.unit_type
+        unit_type = unit.location.unit_type
         coastline = province = None
         for token in Message(coast_spec):
             if token.is_province():
@@ -531,7 +532,7 @@ class Map(VerboseObject):
             if datc.datc_4b3 == 'a' and not unit.can_move_to(coast):
                 # Wrong coast specified; change it to the right one.
                 possible = [c for c in province.locations
-                        if c.key in unit.coast.borders_out
+                        if c.key in unit.location.borders_out
                         and c.unit_type == unit_type]
                 if len(possible) == 1: coast = possible[0]
         else:
@@ -549,7 +550,8 @@ class Map(VerboseObject):
             elif possible:
                 # Multiple coasts; see whether our location disambiguates.
                 # Note that my 4.B.2 "default" coast is the possible one.
-                nearby = [c for c in possible if c.key in unit.coast.borders_out]
+                nearby = [c for c in possible
+                    if c.key in unit.location.borders_out]
                 if len(nearby) == 1 and datc.datc_4b2 != 'c': coast = nearby[0]
                 elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
             if not coast:
@@ -926,9 +928,9 @@ class Power(Comparable):
         '''#'''
         # Todo: the Chaos variant should use self.centers instead of self.homes
         dist_list = [(
-            -distance(unit.coast, self.homes), # Farthest unit
-            -unit.coast.unit_type.number,      # Fleets before armies
-            unit.coast.province.key.text,      # First alphabetically
+            -distance(unit.location, self.homes),   # Farthest unit
+            -unit.location.unit_type.number,        # Fleets before armies
+            unit.location.province.key.text,        # First alphabetically
             unit
         ) for unit in self.units]
         dist_list.sort()
@@ -1116,10 +1118,17 @@ class Location(Comparable, VerboseObject):
 class Unit(Comparable):
     ''' A unit on the board.
         Technically, units don't track past state, but these can.
+        
+        Variables:
+            - location      The Location where this unit is positioned
+            - nation        The Power that owns this unit
+            - dislodged     Whether the unit needs to retreat
+            - retreats      When dislodged is True, a list of sites
+        
+        Warning: If the unit does not exist, its nation might be None.
     '''#'''
-    def __init__(self, nation, coast):
-        # Warning: a fake Unit can have a nation of None.
-        self.coast       = coast
+    def __init__(self, nation, location):
+        self.location    = location
         self.nation      = nation
         self.dislodged   = False
         self.retreats    = None
@@ -1130,26 +1139,26 @@ class Unit(Comparable):
         if self.dislodged: result.extend(MRT(self.retreats))
         return result
     def __str__(self): return str(Message(self))
-    def __repr__(self): return 'Unit(%s, %r)' % (self.nation, self.coast)
+    def __repr__(self): return 'Unit(%s, %r)' % (self.nation, self.location)
     def __cmp__(self, other):
         if isinstance(other, Unit):
             return (cmp(self.nation, other.nation)
-                    or cmp(self.coast, other.coast))
+                or cmp(self.location, other.location))
         else: return NotImplemented
     @property
     def key(self):
         return (self.nation and self.nation.key,
-                self.coast and self.coast.unit_type,
-                self.coast and self.coast.maybe_coast)
+            self.location and self.location.unit_type,
+            self.location and self.location.maybe_coast)
     
     # Actions
-    def move_to(self, coast):
+    def move_to(self, location):
         # Update the Provinces
-        self.coast.province.units.remove(self)
-        coast.province.units.append(self)
+        self.location.province.units.remove(self)
+        location.province.units.append(self)
         
         # Update the Unit
-        self.coast     = coast
+        self.location  = location
         self.dislodged = False
         self.retreats  = None
     def retreat(self, retreats):
@@ -1157,16 +1166,16 @@ class Unit(Comparable):
         self.retreats    = retreats
     def build(self):
         self.nation.units.append(self)
-        self.coast.province.units.append(self)
+        self.location.province.units.append(self)
     def die(self):
         self.nation.units.remove(self)
-        self.coast.province.units.remove(self)
+        self.location.province.units.remove(self)
     def takeover(self):
         ''' Takes control of the current space.
             If control of a supply center changes,
             returns the former controller.
         '''#'''
-        prov = self.coast.province
+        prov = self.location.province
         if prov.is_supply():
             former = prov.owner
             if former != self.nation:
@@ -1181,14 +1190,18 @@ class Unit(Comparable):
         #print '\tQuery: %s -> %s' % (self, place)
         if isinstance(place, Location):
             # Check whether it can move to any coastline
-            return any(place.matches(prov) for prov in self.coast.borders_out)
+            return any(place.matches(prov)
+                for prov in self.location.borders_out)
         else:
             # Assume a Province or province token
-            return place.key in [key[1] for key in self.coast.borders_out]
+            return place.key in [key[1] for key in self.location.borders_out]
         return False
     def can_convoy(self):
-        return self.coast.unit_type == FLT and self.coast.province.can_convoy()
+        return (self.location.unit_type == FLT
+            and self.location.province.can_convoy())
     def can_be_convoyed(self):
-        return self.coast.unit_type == AMY and self.coast.province.is_coastal()
-    def exists(self): return self in self.coast.province.units
+        return (self.location.unit_type == AMY
+            and self.location.province.is_coastal())
+    def exists(self):
+        return self in self.location.province.units
 

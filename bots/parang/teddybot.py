@@ -24,7 +24,7 @@ class TeddyBot(Player):
             for unit in self.power.units:
                 values = {}
                 self.log_debug(9, unit)
-                for site in unit.coast.borders_out:
+                for site in unit.location.borders_out:
                     space = self.map.spaces[site[1]]
                     supply = 0
                     if space.is_supply():

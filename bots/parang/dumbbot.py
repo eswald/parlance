@@ -335,8 +335,8 @@ class DumbBot(Player):
         
         # Find the units each power has in or next to each province
         for unit_iterator in self.map.units:
-            values.adjacent_units[unit_iterator.coast.province.key][ unit_iterator.nation.key ].append(unit_iterator)
-            for coast_iterator in unit_iterator.coast.borders_out:
+            values.adjacent_units[unit_iterator.location.province.key][ unit_iterator.nation.key ].append(unit_iterator)
+            for coast_iterator in unit_iterator.location.borders_out:
                 values.adjacent_units[ coast_iterator[1] ][ unit_iterator.nation.key ].append(unit_iterator)
         
         for province in self.map.spaces:
@@ -467,9 +467,9 @@ class DumbBot(Player):
                     values.destination_value[order.destination.key] *
                     values.competition_value[order.destination.province.key])
             else:
-                destination_map[order.unit.coast.province.key] = (order,
-                    values.destination_value[order.unit.coast.key] *
-                    (values.competition_value[order.unit.coast.province.key] - 1))
+                destination_map[order.unit.location.province.key] = (order,
+                    values.destination_value[order.unit.location.key] *
+                    (values.competition_value[order.unit.location.province.key] - 1))
                 if order.is_holding(): holding.append(order)
         
         for order in holding:
@@ -479,7 +479,7 @@ class DumbBot(Player):
             source = None
             max_destination_value = 0
             for adjacent_province in [self.map.locs[coast].province
-                    for coast in unit.coast.borders_out]:
+                    for coast in unit.location.borders_out]:
                 this_source = destination_map.get(adjacent_province.key, None)
                 if this_source:
                     # Unit is moving or holding there
@@ -492,7 +492,7 @@ class DumbBot(Player):
             if source:
                 # Found something worth supporting
                 self.log_debug(11, "  Overriding hold order in %s with support to %s",
-                    unit.coast.province, source.unit)
+                    unit.location.province, source.unit)
                 self.log_debug(14, "   Trying to remove '%s' from %s", order, orders)
                 orders.remove(order)
                 if source.is_moving():
@@ -503,12 +503,12 @@ class DumbBot(Player):
         self.log_debug(11, " Selecting destination for %s", unit)
         
         # Determine whether another unit is waiting on this one
-        waiters = waiting[unit.coast.province.key]
+        waiters = waiting[unit.location.province.key]
         
         # Put all the adjacent coasts into the destination map,
         # and the current location (we can hold rather than move)
-        destination_map = [unit.coast.key] + [key
-            for key in unit.coast.borders_out
+        destination_map = [unit.location.key] + [key
+            for key in unit.location.borders_out
             if key[1] not in waiters]
         
         while True:
@@ -517,7 +517,7 @@ class DumbBot(Player):
             self.log_debug(11, "  Destination selected: %s" % dest)
             
             # If this is a hold order
-            if dest.province == unit.coast.province:
+            if dest.province == unit.location.province:
                 convoy_order = self.consider_convoy(unit, orders, values)
                 if convoy_order: return convoy_order
                 else:
@@ -557,7 +557,7 @@ class DumbBot(Player):
                             # so give up on this unit for now,
                             # but signal the other unit not to try moving here.
                             self.log_debug(13, "   Occupying unit unordered")
-                            waiting[dest.province.key].append(unit.coast.province.key)
+                            waiting[dest.province.key].append(unit.location.province.key)
                             return None
                 
                 # Check for units moving there
@@ -594,7 +594,7 @@ class DumbBot(Player):
             else:
                 coasts = self.map.locs
                 possible = []
-                for border in fleet.coast.borders_out:
+                for border in fleet.location.borders_out:
                     prov = coasts[border].province
                     if not orders.moving_into(prov):
                         for unit in prov.units:
@@ -615,10 +615,10 @@ class DumbBot(Player):
                 # inconsistent order set.  If it can move there anyway,
                 # a support is usually better than a convoy.
                 # (Granted, that could be the solution to BUL/CON...)
-                armies = [unit.coast.key for unit in self.map.units
+                armies = [unit.location.key for unit in self.map.units
                     if unit.can_be_convoyed()
                     and self.friendly(unit.nation)
-                    and fleet.can_move_to(unit.coast.province)
+                    and fleet.can_move_to(unit.location.province)
                     and not orders.get_order(unit)
                     and not unit.can_move_to(beach.province.key)]
                 if armies:
@@ -626,7 +626,7 @@ class DumbBot(Player):
                     army = self.random_source(armies, values)
                     self.log_debug(13, '   %s chosen (from among %s).' % (army,
                         expand_list([key[1] for key in armies])))
-                    if dest: alternate = fleet.coast
+                    if dest: alternate = fleet.location
                     else: alternate = beach
                     convoy_value = values.destination_value[alternate.key] * self.vals.convoy_weight
                     army_value = values.destination_value[army.key]
@@ -636,7 +636,7 @@ class DumbBot(Player):
                     
                     if convoy_best != self.weighted_choice(first, second):
                         self.log_debug(11, "   Ordered to convoy")
-                        unit = [u for u in self.map.units if u.coast.key == army.key][0]
+                        unit = [u for u in self.map.units if u.location.key == army.key][0]
                         orders.add(ConvoyedOrder(unit, beach, [fleet]), unit.nation)
                         return ConvoyingOrder(fleet, unit, beach)
                     else: self.log_debug(13, "   Convoy rejected")
@@ -657,7 +657,7 @@ class DumbBot(Player):
             # if the next phase is winter
             
             # Put all the possible retreats into the destination map
-            destination_map = [key for key in unit.coast.borders_out
+            destination_map = [key for key in unit.location.borders_out
                     if key[1] in unit.retreats]
             
             while destination_map:
@@ -693,7 +693,7 @@ class DumbBot(Player):
         # For each required removal
         while remove_count and remove_map:
             unit = remove_map.pop(self.random_selection([
-                    -values.destination_value[u.coast.key]
+                    -values.destination_value[u.location.key]
                     for u in remove_map]))
             self.log_debug(11, " Removal selected: %s", unit)
             orders.add(RemoveOrder(unit))

@@ -170,12 +170,12 @@ class Holland(Player):
             # Notify any units without an order.
             for unit in self.power.units:
                 if not orders.get_order(unit):
-                    yield (unit.coast.key, msg, [])
+                    yield (unit.location.key, msg, [])
         elif phase == Turn.retreat_phase:
             # Notify any dislodged units without an order.
             for unit in self.power.units:
                 if unit.dislodged and not orders.get_order(unit):
-                    yield (unit.coast.key, msg, [])
+                    yield (unit.location.key, msg, [])
         elif phase == Turn.build_phase:
             if surplus < 0:
                 # Notify any open home centers we might have.
@@ -188,7 +188,7 @@ class Holland(Player):
                 # Notify any units without an order.
                 for unit in self.power.units:
                     if not orders.get_order(unit):
-                        yield (unit.coast.key, msg, [])
+                        yield (unit.location.key, msg, [])
 
 class Agent(object):
     class Adaptive(object):

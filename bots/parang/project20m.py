@@ -74,9 +74,9 @@ class Project20M(Player):
                     len(self.power.centers))
     def getRetreat(self, thisUnit):
         self.log_debug(7, "PrimeMinister: suggesting retreat for unit in %s",
-                thisUnit.coast.province.name)
+                thisUnit.location.province.name)
         retreatTos = [self.map.locs[key]
-                for key in thisUnit.coast.borders_out
+                for key in thisUnit.location.borders_out
                 if key[1] in thisUnit.retreats]
         return self.t.getBestRetreat(thisUnit, retreatTos)
     def sendOrders(self, orders):
@@ -424,14 +424,14 @@ class Tactics(VerboseObject):
             surroundingUnits = getSurroundingUnits(target(bestOrder), self.map)
             if len(surroundingUnits) == 1:
                 # if there's just one enemy unit around us
-                location = surroundingUnits[0].coast
+                location = surroundingUnits[0].location
                 if location in canMoveTo(u):
                     # if we can move into where he is
                     self.log_debug(7, "%s IS HOLDING ON A SUPPLY CENTRE "
                             "ONLY THREATENED BY %s", u, surroundingUnits[0])
                     self.log_debug(7, "SO IT IS MOVING INTO %s",
-                            surroundingUnits[0].coast)
-                    bestOrder = MoveOrder(u, surroundingUnits[0].coast)
+                            surroundingUnits[0].location)
+                    bestOrder = MoveOrder(u, surroundingUnits[0].location)
         
         return bestOrder
     
@@ -560,12 +560,12 @@ class Tactics(VerboseObject):
     def getValidOrders(self, unit):
         validOrders = []
         validOrders.append(HoldOrder(unit))
-        for key in unit.coast.borders_out:
+        for key in unit.location.borders_out:
             validOrders.append(MoveOrder(unit, self.map.locs[key]))
         if unit.can_be_convoyed():
             # now add all the MoveByConvoys it could do :-o
             # BUG: only adds convoys through 1 sea province
-            for key in unit.coast.province.borders_out:
+            for key in unit.location.province.borders_out:
                 seaConnection = self.map.spaces[key]
                 if seaConnection.units and seaConnection.unit.can_convoy():
                     # this Fleet could convoy us somewhere
@@ -1017,7 +1017,7 @@ def strongestAdjacentOpponentStrength(province, board):
                 strongest = thisStrength
     return strongest
 
-def canMoveTo(unit): return unit.coast.connections
+def canMoveTo(unit): return unit.location.connections
 
 # Functions that Project20M expects to be in the order classes
 UnitOrder.helping = None
@@ -1034,7 +1034,7 @@ def couldBeSupportedBy(order, board):
         return aroundTarget
     else:
         # get the list of units surrounding this one
-        return getALLSurroundingUnits(order.unit.coast.province, board)
+        return getALLSurroundingUnits(order.unit.location.province, board)
 
 def doStrengthCompetition(order, value, board):
     # adjusts the value given, according to the strength (people who could
@@ -1045,21 +1045,21 @@ def doStrengthCompetition(order, value, board):
 
 def evaluate(order, board):
     if isinstance(order, BuildOrder):
-        return order.unit.coast.Value
+        return order.unit.location.Value
 
     elif isinstance(order, (DisbandOrder, RemoveOrder)):
-        return -(order.unit.coast.Value)
+        return -(order.unit.location.Value)
 
     elif isinstance(order, MoveOrder):
         # for working out possible resistance, add in all the possible resistance
         # of the place we're moving into
         if order.unit.nation == board.us:
-            if order.unit.coast == order.destination:
+            if order.unit.location == order.destination:
                 # this /should/ never happen - you're moving into a place you're
                 # already at
                 return 0
             
-            value = order.destination.Value - order.unit.coast.Value
+            value = order.destination.Value - order.unit.location.Value
             conflict = getResistance(order, 100, board) + 1
             
             if getSupportsNeeded(order, board) > 1:
@@ -1075,14 +1075,14 @@ def evaluate(order, board):
         else: return 0
 
     elif isinstance(order, RetreatOrder):
-        return order.destination.Value - order.unit.coast.Value
+        return order.destination.Value - order.unit.location.Value
 
     elif isinstance(order, WaiveOrder):
         return 0
     
     else:
         if order.unit.nation == board.us:
-            value = 0.001 * order.unit.coast.Value
+            value = 0.001 * order.unit.location.Value
             value = doStrengthCompetition(order, value, board)
             return value
         else: return 0
@@ -1114,7 +1114,7 @@ def getSupportsNeeded(order, board):
             supportsNeeded += 1
         return supportsNeeded
     elif isinstance(order, (ConvoyingOrder, HoldOrder, SupportOrder)):
-        where = order.unit.coast.province
+        where = order.unit.location.province
         supportsNeeded = len(getSurroundingUnits(where, board))
         if supportsNeeded > 0:
             supportsNeeded -= 1
@@ -1138,5 +1138,5 @@ def getSupportsNeeded(order, board):
 
 def target(order):
     if isinstance(order, (ConvoyingOrder, SupportOrder)):
-        return order.supported.coast.province
+        return order.supported.location.province
     return order.destination.province
