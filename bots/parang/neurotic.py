@@ -36,7 +36,7 @@ class Brain(VerboseObject):
         # All this sorting is probably unnecessary, but maintains consistency.
         self.seasons = board.current_turn.seasons[:]
         self.powers = sorted(board.powers.iterkeys())
-        self.coasts = sorted(board.locs.iterkeys())
+        self.locs = sorted(board.locs.iterkeys())
         self.provinces = sorted(board.spaces.iterkeys())
         self.centers = [token for token in self.provinces if token.is_supply()]
         self.coastals = [board.spaces[token].is_coastal()
@@ -52,7 +52,7 @@ class Brain(VerboseObject):
         # Consider: Player*(Player-1)
         
         self.input_headers = map(str, self.seasons)
-        for coast in self.coasts:
+        for coast in self.locs:
             if coast[2]:
                 self.input_headers.extend(
                         "%s %s %s: %s" % (coast[0], coast[1], coast[2], power)
@@ -101,7 +101,7 @@ class Brain(VerboseObject):
         inputs = [0] * len(self.input_headers)
         inputs[board.current_turn.index] = 1
         index = len(self.seasons)
-        for coast in self.coasts:
+        for coast in self.locs:
             units = board.locs[coast].province.units
             for power in self.powers:
                 inputs[index] = len([unit for unit in units
@@ -267,7 +267,7 @@ class Brain(VerboseObject):
                 wo = pickler.load()
                 #self.seasons = pickler.load()
                 #self.powers = pickler.load()
-                #self.coasts = pickler.load()
+                #self.locs = pickler.load()
                 #self.provinces = pickler.load()
                 #self.centers = pickler.load()
                 #self.coastals = pickler.load()
@@ -299,7 +299,7 @@ class Brain(VerboseObject):
                 pickler.dump(self.net.wo)
                 #pickler.dump(self.seasons)
                 #pickler.dump(self.powers)
-                #pickler.dump(self.coasts)
+                #pickler.dump(self.locs)
                 #pickler.dump(self.provinces)
                 #pickler.dump(self.centers)
                 #pickler.dump(self.coastals)
