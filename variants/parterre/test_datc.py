@@ -11,7 +11,9 @@ r'''DATC rule variant test cases for Parlance
 
 import unittest
 
+from parlance.test import fails
 from parlance.test.datc import DiplomacyAdjudicatorTestCase
+from parlance.tokens import AMY, WIN
 
 # 7.  COLONIAL VARIANT
 class DATC_7_A(DiplomacyAdjudicatorTestCase):
@@ -221,8 +223,30 @@ class DATC_11(DiplomacyAdjudicatorTestCase):
     ''' 11.  BUILD IN ANY SUPPLY CENTER VARIANT''' 
     variant_name = 'chaos'
     
-    def _test_11A(self):
-        ''' 11.A.  CIVIL DISORDER''' 
+    @fails
+    def test_11A(self):
+        # 11.A.  CIVIL DISORDER
+        # Since players can build in any owned center, automatic removals
+        # for players in civil disorder should be based on distance from
+        # the nearest owned center, not the nearest home center.
+        
+        # A true test would verify a space that isn't next to a supply center,
+        # but there isn't such a space on the Standard/Chaos board.
+        
+        # The provinces might be the same as standard, but don't count on it.
+        rep = self.variant.rep
+        Berlin = rep["BRL"]
+        NAP = rep["NAP"]
+        PRU = rep["PRU"]
+        APU = rep["APU"]
+        
+        self.init_state(WIN, 1905, [
+            [Berlin, AMY, PRU],
+            [Berlin, AMY, APU],
+        ])
+        self.assertMapState([
+            [Berlin, AMY, APU],
+        ])
 
 class DATC_12(DiplomacyAdjudicatorTestCase):
     ''' 12.  1898 VARIANT''' 
