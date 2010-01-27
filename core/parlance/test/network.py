@@ -380,52 +380,6 @@ class Network_Basics(NetworkTestCase):
         self.manager.process(1)
         self.assertContains(CCD (player.power), players[2].queue)
 
-class TelnetTestCase(NetworkTestCase):
-    def setUp(self):
-        NetworkTestCase.setUp(self)
-        self.socket = None
-    def tearDown(self):
-        if self.socket:
-            self.socket.loseConnection()
-    @patch("warnings.warn", Mock())
-    def start_telnet(self):
-        # Todo: Figure out the insanity of twisted.conch.telnet
-        from twisted.protocols.telnet import Telnet
-        
-        class FakePsycProtocol(Telnet):
-            def loginPrompt(self):
-                return "Name: "
-            def telnet_User(self, user):
-                # Don't require a password for this test
-                self.loggedIn()
-                return "Command"
-        class FakeServerFactory(ServerFactory):
-            protocol = FakePsycProtocol
-        
-        port = self.port.next()
-        factory = FakeServerFactory()
-        self.socket = self.manager.reactor.listenTCP(port, factory)
-        
-        return port
-    
-    def test_nochat(self):
-        # The server should complain if the chat interface is not implemented.
-        self.set_option("telnet", "")
-        self.connect_server()
-        player = self.connect_player(self.Fake_Master)
-        self.manager.process()
-        result = player.admin("Server: chat")
-        self.assertContains('Unrecognized command: "chat"', result)
-    def test_nopass(self):
-        # The register command should open a telnet connection if configured.
-        port = self.start_telnet()
-        self.set_option("telnet", "localhost:%d" % port)
-        self.connect_server()
-        player = self.connect_player(self.Fake_Master)
-        self.manager.process()
-        player.admin("Server: chat")
-        self.assertContains(ADM("Hall")("Welcome to the Hall."), player.queue)
-
 class TimingCases(NetworkTestCase):
     def start_game(self, time_limit):
         # There are more precautions here than usual,
