@@ -36,13 +36,13 @@ class Brain(VerboseObject):
         # All this sorting is probably unnecessary, but maintains consistency.
         self.seasons = board.current_turn.seasons[:]
         self.powers = sorted(board.powers.iterkeys())
-        self.coasts = sorted(board.coasts.iterkeys())
+        self.coasts = sorted(board.locs.iterkeys())
         self.provinces = sorted(board.spaces.iterkeys())
         self.centers = [token for token in self.provinces if token.is_supply()]
         self.coastals = [board.spaces[token].is_coastal()
                 for token in self.provinces if token.is_coastal()]
         self.coastlines = dict((token,
-                    [coast.key for coast in sorted(province.coasts)])
+                    [coast.key for coast in sorted(province.locations)])
                 for token, province in board.spaces.iteritems())
         self.borders = dict((token, sorted(province.borders_out))
                 for token, province in board.spaces.iteritems())
@@ -102,7 +102,7 @@ class Brain(VerboseObject):
         inputs[board.current_turn.index] = 1
         index = len(self.seasons)
         for coast in self.coasts:
-            units = board.coasts[coast].province.units
+            units = board.locs[coast].province.units
             for power in self.powers:
                 inputs[index] = len([unit for unit in units
                             if unit.coast.key == coast
@@ -140,7 +140,7 @@ class Brain(VerboseObject):
                 
                 for prov in self.borders[token]:
                     for key in self.coastlines[prov]:
-                        dest = board.coasts[key]
+                        dest = board.locs[key]
                         value = unit_value + outputs[index]
                         order_values.extend((value, (unit.dislodged
                                     and RetreatOrder or MoveOrder)(unit, dest))
@@ -156,7 +156,7 @@ class Brain(VerboseObject):
                         index += 1
                 
                 for key in self.coastals:
-                    dest = board.coasts[key]
+                    dest = board.locs[key]
                     for unit in units:
                         if unit.can_be_convoyed():
                             order_values.append((unit_value + outputs[index],
@@ -175,7 +175,7 @@ class Brain(VerboseObject):
                 space = board.spaces[token]
                 if space.owner:
                     for key in self.coastlines[token]:
-                        coast = board.coasts[key]
+                        coast = board.locs[key]
                         value = outputs[index]
                         order_values.append((value,
                                     BuildOrder(Unit(space.owner, coast))))

@@ -54,7 +54,7 @@ class ComboBot(DumbBot):
         adj_provs = defaultdict(list)
         for unit in self.power.units:
             for key in unit.coast.borders_out:
-                dest = self.map.coasts[key]
+                dest = self.map.locs[key]
                 if not any(other.nation == self.power
                         for other in dest.province.units):
                     adj_provs[key[1]].append(MoveOrder(unit, dest))
@@ -71,7 +71,7 @@ class ComboBot(DumbBot):
         armies = []
         fleets = []
         beaches = []
-        coasts = self.map.coasts
+        coasts = self.map.locs
         for border in fleet.coast.borders_out:
             prov = coasts[border].province
             key = prov.is_coastal()
@@ -93,7 +93,7 @@ class ComboBot(DumbBot):
                 '-'.join([unit.coast.province.key.text for unit in path]))
         fleets = []
         beaches = []
-        coasts = self.map.coasts
+        coasts = self.map.locs
         for border in fleet.coast.borders_out:
             prov = coasts[border].province
             key = prov.is_coastal()
@@ -251,7 +251,7 @@ class OrderCombo(object):
                     # Todo: Try to block retreats
         
         # Try to enter indicated provinces
-        sub_orders.extend([MoveOrder(u, self.player.map.coasts[key])
+        sub_orders.extend([MoveOrder(u, self.player.map.locs[key])
                 for u in unordered for key in u.coast.borders_out
                 if key[1] in enter_provs])
         # Try to convoy to the indicated provinces
@@ -262,7 +262,7 @@ class OrderCombo(object):
             for order_list in sublists(sub_orders)
             if valid(order_list)]
     def convoys_to(self, prov_list, unordered, holding):
-        coasts = self.player.map.coasts
+        coasts = self.player.map.locs
         convoyers = [fleet for fleet in unordered + holding if fleet.can_convoy()]
         all_fleets = {}
         all_armies = {}
@@ -371,12 +371,14 @@ class ComboSet(object):
         # calc lost for any adjacent province an enemy can move to
         for prov in adj_provinces:
             province = board.spaces[prov]
-            prov_value = max([values.destination_value[coast.key] for coast in province.coasts])
+            prov_value = max(values.destination_value[coast.key]
+                for coast in province.locations)
             result -= prov_value * self.lost_prob(province, True, values.adjacent_units)
         # calc lost for my SCs that could have an enemy closer than a friend.
         for sc in self.power.centers:
             province = board.spaces[sc]
-            sc_value = max([values.destination_value[coast.key] for coast in province.coasts])
+            sc_value = max(values.destination_value[coast.key]
+                for coast in province.locations)
             result -= sc_value * self.threat_prob(province, True, values.adjacent_units)
         return result
     

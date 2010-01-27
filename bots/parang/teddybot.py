@@ -33,7 +33,7 @@ class TeddyBot(Player):
                     value = (supply, self.centrality[site])
                     values[value] = site
                     self.log_debug(9, '%s: %s', site, value)
-                destination = self.map.coasts[values[max(values)]]
+                destination = self.map.locs[values[max(values)]]
                 order = MoveOrder(unit, destination)
                 orders.add(order, unit.nation)
         elif phase == turn.build_phase:
@@ -43,7 +43,7 @@ class TeddyBot(Player):
                 for prov in self.power.homes:
                     space = self.map.spaces[prov]
                     if not space.units:
-                        for site in space.coasts:
+                        for site in space.locations:
                             val = self.centrality[site.key]
                             values.append((val, site))
                 for value, site in sorted(values)[-builds:]:
@@ -68,7 +68,7 @@ class TeddyBot(Player):
     def calc_distances(self):
         distance = {}
         
-        coasts = self.map.coasts
+        coasts = self.map.locs
         for source in coasts:
             for sink in coasts:
                 distance[(source, sink)] = Infinity
@@ -100,7 +100,7 @@ class TeddyBot(Player):
     
     def calc_centrality(self, distance):
         closeness = {}
-        coasts = self.map.coasts
+        coasts = self.map.locs
         for source in coasts:
             closeness[source] = sum(2 ** -distance[source, sink]
                 for sink in coasts if sink != source)

@@ -172,7 +172,7 @@ else:
                             # Label multi-coast provinces
                             win.addstr(loc[1], loc[2], coastline.text[0].lower(), color)
                         coords[(unit_type, coastline)] = loc[1:5]
-                    for coast in province.coasts:
+                    for coast in province.locations:
                         loc = coords[(coast.unit_type, coast.coastline)]
                         coast.__y, coast.__x, coast.__ry, coast.__rx = loc
                 win.refresh()

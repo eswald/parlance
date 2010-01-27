@@ -35,8 +35,8 @@ class Holland(Player):
         self.agent = Agent([])
         self.orders = None
         self.static = {}
-        self.memory = dict.fromkeys(self.map.coasts, 0)
-        for loc in self.map.coasts:
+        self.memory = dict.fromkeys(self.map.locs, 0)
+        for loc in self.map.locs:
             
         return True
     
@@ -149,7 +149,7 @@ class Holland(Player):
                         msgs[unit.nation] |= ORDER_FLAG
             
             messages = msgs.values()
-            for location in province.coasts:
+            for location in province.locations:
                 for msg in msgs:
                     yield (location.key, msg, [])
     
@@ -182,7 +182,7 @@ class Holland(Player):
                 for prov in self.power.homes:
                     province = self.map.spaces[prov]
                     if not province.units:
-                        for location in province.coasts:
+                        for location in province.locations:
                             yield (location.key, msg, [])
             elif surplus > 0:
                 # Notify any units without an order.
