@@ -562,8 +562,8 @@ class OrderSet(defaultdict):
             >>> english = OrderSet(); print english
             {  }
             >>> London = standard_map.spaces[LON].units[0]
-            >>> NorthSea = standard_map.coasts[(FLT, NTH, None)]
-            >>> EngChannel = standard_map.coasts[(FLT, ECH, None)]
+            >>> NorthSea = standard_map.locs[(FLT, NTH, None)]
+            >>> EngChannel = standard_map.locs[(FLT, ECH, None)]
             >>> english.add(MoveOrder(London, NorthSea), ENG); print english
             { ENG: Fleet London -> North Sea }
             >>> english.add(MoveOrder(London, EngChannel), ENG); print english
@@ -640,7 +640,7 @@ class OrderSet(defaultdict):
             >>> orders.builds_remaining(germany)
             0
             >>> orders.add(BuildOrder(Unit(germany,
-            ...     standard_map.coasts[(FLT, DEN, None)])))
+            ...     standard_map.locs[(FLT, DEN, None)])))
             >>> orders.builds_remaining(germany)
             0
             >>> orders.remove(WaiveOrder(germany)) and None

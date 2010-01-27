@@ -272,7 +272,7 @@ class Map(VerboseObject):
             - valid:    Whether the map has been correctly loaded
             - powers:   A map of Powers in the game (Token -> Power)
             - spaces:   A map of Provinces (Token -> Province)
-            - coasts:   A map of Locations ((unit,province,coast) -> Location)
+            - locs:     A map of Locations ((unit,province,coast) -> Location)
             - neutral:  A Power representing the neutral supply centers
     '''#'''
     
@@ -325,7 +325,7 @@ class Map(VerboseObject):
             *power_names.get("UNO", ("Nobody", "Neutral")))
         
         provs = {}
-        coasts = {}
+        locations = {}
         for adj in adjacencies:
             prov = adj.pop(0)
             is_sc = prov_homes.has_key(prov)
@@ -337,13 +337,14 @@ class Map(VerboseObject):
             
             province = Province(prov, adj, home, province_names.get(prov.text))
             provs[prov] = province
-            for coast in province.coasts: coasts[coast.key] = coast
-        for key,coast in coasts.iteritems():
+            for location in province.coasts:
+                locations[location.key] = location
+        for key,coast in locations.iteritems():
             for other in coast.borders_out:
-                coasts[other].borders_in.add(key)
+                locations[other].borders_in.add(key)
                 provs[other[1]].borders_in.add(key[1])
         self.spaces = provs
-        self.coasts = coasts
+        self.locs = locations
         
         for prov in provs.itervalues():
             if not prov.is_valid(): return 'Invalid province: ' + str(prov)
@@ -391,7 +392,7 @@ class Map(VerboseObject):
             ...     if item not in then: print Message(item)
             ... 
             >>> france = standard_map.powers[FRA]
-            >>> kiel = standard_map.coasts[(AMY, KIE, None)]
+            >>> kiel = standard_map.locs[(AMY, KIE, None)]
             >>> fk = Unit(france, kiel)
             >>> fk.build()
             >>> fk.retreat([])
@@ -492,7 +493,7 @@ class Map(VerboseObject):
                 elif item.dislodged: unit = item
             else: unit = item
         if not unit:
-            coast = self.coasts.get((unit_type, province.key, coastline))
+            coast = self.locs.get((unit_type, province.key, coastline))
             if not coast:
                 for item in province.coasts:
                     if unit_type and item.unit_type != unit_type: continue
@@ -525,7 +526,7 @@ class Map(VerboseObject):
                 % Message(coast_spec))
         
         # Try to match all specs, but without ambiguity
-        coast = self.coasts.get((unit_type, province.key, coastline))
+        coast = self.locs.get((unit_type, province.key, coastline))
         if coast:
             if datc.datc_4b3 == 'a' and not unit.can_move_to(coast):
                 # Wrong coast specified; change it to the right one.
@@ -642,7 +643,7 @@ class Map(VerboseObject):
             for unit_spec in folded[2:]:
                 (nation,unit_type,loc) = unit_spec[0:3]
                 key = location_key(unit_type,loc)
-                coast = self.coasts[key]
+                coast = self.locs[key]
                 power = self.powers[nation]
                 unit = Unit(power, coast)
                 unit.build()

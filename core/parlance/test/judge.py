@@ -812,9 +812,9 @@ class Judge_Doctests(unittest.TestCase):
         self.failUnlessEqual([msg[0] for msg in messages], [SCO, NOW])
         self.failUnlessEqual(judge.phase, 0x20)
     def test_attack_calculation(self):
-        Rome = standard_map.coasts[(AMY, ROM, None)]
-        Venice = standard_map.coasts[(AMY, VEN, None)]
-        Trieste = standard_map.coasts[(AMY, TRI, None)]
+        Rome = standard_map.locs[(AMY, ROM, None)]
+        Venice = standard_map.locs[(AMY, VEN, None)]
+        Trieste = standard_map.locs[(AMY, TRI, None)]
         Rome.province.entering = []
         
         Rome_unit = Rome.province.units[0]
@@ -837,9 +837,9 @@ class Judge_Doctests(unittest.TestCase):
         self.failUnlessEqual(choice.min_value, 1)
         self.failUnlessEqual(choice.max_value, 1)
     def test_move_calculation(self):
-        Vienna = standard_map.coasts[(AMY, VIE, None)]
-        Galicia = standard_map.coasts[(AMY, GAL, None)]
-        Warsaw = standard_map.coasts[(AMY, WAR, None)]
+        Vienna = standard_map.locs[(AMY, VIE, None)]
+        Galicia = standard_map.locs[(AMY, GAL, None)]
+        Warsaw = standard_map.locs[(AMY, WAR, None)]
         Vienna.province.entering = []
         
         Vienna_unit = Vienna.province.units[0]

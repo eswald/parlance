@@ -1079,7 +1079,7 @@ class Judge(JudgeInterface):
     def collect_retreats(self, unit):
         self.log_debug(8, 'Collecting retreats for %s, dislodged by %s', unit, unit.dislodger)
         return [coast.maybe_coast for coast in
-                [self.map.coasts[key] for key in unit.coast.borders_out]
+                [self.map.locs[key] for key in unit.coast.borders_out]
                 if self.valid_retreat(coast, unit.dislodger)]
     def valid_retreat(self, retreat, dislodger):
         prov, path = dislodger

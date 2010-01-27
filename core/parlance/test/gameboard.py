@@ -1234,7 +1234,7 @@ class MapTestCase(TestCase):
         game_map = Map(variant)
         prov = variant.rep['ONE']
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
-        coast = game_map.coasts[(AMY, prov, None)]
+        coast = game_map.locs[(AMY, prov, None)]
         self.failUnless(coast.is_valid())
         self.failUnless(coast.province.is_valid())
     def test_island_province(self):
@@ -1342,7 +1342,7 @@ class LocationBugfix(TestCase):
         ''')
         board = Map(variant)
         Alaska = board.spaces[variant.rep['ALA']]
-        Oregon = board.coasts[(AMY, variant.rep['ORE'], None)]
+        Oregon = board.locs[(AMY, variant.rep['ORE'], None)]
         start = time.time()
         results = Oregon.convoy_routes(Alaska, board)
         finish = time.time()
