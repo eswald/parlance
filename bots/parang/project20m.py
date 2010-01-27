@@ -75,7 +75,7 @@ class Project20M(Player):
     def getRetreat(self, thisUnit):
         self.log_debug(7, "PrimeMinister: suggesting retreat for unit in %s",
                 thisUnit.coast.province.name)
-        retreatTos = [self.map.coasts[key]
+        retreatTos = [self.map.locs[key]
                 for key in thisUnit.coast.borders_out
                 if key[1] in thisUnit.retreats]
         return self.t.getBestRetreat(thisUnit, retreatTos)
@@ -98,15 +98,17 @@ class Tactics(VerboseObject):
         self.map = board
         # the independent orders we generated last turn
         self.lastTurnsOrders = []
-        for coast in board.coasts.values():
+        for coast in board.locs.values():
             coast.basicValue = [0] * Constants.numberIterations
-            coast.connections = [board.coasts[key]
+            coast.connections = [board.locs[key]
                 for key in coast.borders_out]
-        for coast in board.coasts.values():
+        for coast in board.locs.values():
             coast.landConnections = sum([c.connections
-                    for c in coast.province.coasts if c.unit_type is AMY], [])
+                    for c in coast.province.locations
+                    if c.unit_type is AMY], [])
             coast.seaConnections = sum([c.connections
-                    for c in coast.province.coasts if c.unit_type is FLT], [])
+                    for c in coast.province.locations
+                    if c.unit_type is FLT], [])
     
     def valueProvinces(self):
         # sets overall value for each province
@@ -244,7 +246,7 @@ class Tactics(VerboseObject):
     def setFinalValues(self, iteration_weight,
             strength_weight, competition_weight):
         # this function finds final Value for each Place
-        for thePlace in self.map.coasts.values():
+        for thePlace in self.map.locs.values():
             thePlace.Value = 0
             for j in range(Constants.numberIterations):
                 thePlace.Value += thePlace.basicValue[j] * iteration_weight[j]
@@ -275,7 +277,7 @@ class Tactics(VerboseObject):
             
             # finally, if the province has any coasts, set their values to the
             # values of the province
-            for thisCoast in theProvince.coasts:
+            for thisCoast in theProvince.locations:
                 thisCoast.basicValue[0] = theProvince.basicValue
     
     def getAveragePower(self):
@@ -296,7 +298,7 @@ class Tactics(VerboseObject):
     
     def iterateValues(self, n):
         # this function iterates up to basicValue[n] for each place
-        allPlaces = self.map.coasts.values()
+        allPlaces = self.map.locs.values()
         for i in range(1, n):
             # for each iteration
             for thePlace in allPlaces:
@@ -319,7 +321,7 @@ class Tactics(VerboseObject):
                                     canGetToByConvoy.append(beach)
                     canGetToByConvoy = self.removeDuplicates(canGetToByConvoy)
                     for thisConnection in canGetToByConvoy:
-                        thePlace.basicValue[i] += self.map.coasts[
+                        thePlace.basicValue[i] += self.map.locs[
                             thisConnection].basicValue[i-1] * 0.05; # constant!
                 
                 for thisConnection in landConnections:
@@ -451,9 +453,9 @@ class Tactics(VerboseObject):
                 canBuild.append(thisProvince)
         if not canBuild:
             return WaiveOrder(self.map.us)
-        bestSoFar = BuildOrder(Unit(self.map.us, canBuild[0].coasts[0]))
+        bestSoFar = BuildOrder(Unit(self.map.us, canBuild[0].locations[0]))
         for thisProvince in canBuild:
-            for thisCoast in thisProvince.coasts:
+            for thisCoast in thisProvince.locations:
                 newArmy = BuildOrder(Unit(self.map.us, thisCoast))
                 if evaluate(newArmy, self.map) > evaluate(bestSoFar, self.map):
                     bestSoFar = newArmy
@@ -532,10 +534,10 @@ class Tactics(VerboseObject):
         if self.map.current_turn.season is WIN:
             # a winter retreat, so consider disbanding and building elsewhere
             highestValuedBuild = BuildOrder(Unit(self.map.us,
-                    canBuildAts[0].coasts[0]))
+                    canBuildAts[0].locations[0]))
             # 0 as have to check fleet in first location
             for canBuildAt in canBuildAts:
-                for thisCoast in canBuildAt.coasts:
+                for thisCoast in canBuildAt.locations:
                     possibleBuild = BuildOrder(Unit(self.map.us, thisCoast))
                     if (evaluate(possibleBuild, self.map) >
                             evaluate(highestValuedBuild, self.map)):
@@ -559,7 +561,7 @@ class Tactics(VerboseObject):
         validOrders = []
         validOrders.append(HoldOrder(unit))
         for key in unit.coast.borders_out:
-            validOrders.append(MoveOrder(unit, self.map.coasts[key]))
+            validOrders.append(MoveOrder(unit, self.map.locs[key]))
         if unit.can_be_convoyed():
             # now add all the MoveByConvoys it could do :-o
             # BUG: only adds convoys through 1 sea province
@@ -573,7 +575,7 @@ class Tactics(VerboseObject):
                         if couldConvoyTo:
                             seaProvinces = [seaConnection.unit]
                             validOrders.append(ConvoyedOrder(unit,
-                                self.map.coasts[couldConvoyTo], seaProvinces))
+                                self.map.locs[couldConvoyTo], seaProvinces))
         return validOrders
     
     def getOwnedBuildCentres(self):
