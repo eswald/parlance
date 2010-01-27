@@ -18,9 +18,10 @@ from language import Message, Representation, Token, protocol
 from tokens import AMY, AUT, FAL, FLT, MDF, MRT, NOW, SCO, SPR, SUM, UNO, WIN
 from util import bit, Comparable, Immutable, Infinity
 
-def location_key(unit_type, loc):
-    if isinstance(loc, Token): return (unit_type, loc,    None)
-    else:                      return (unit_type, loc[0], loc[1])
+def location_key(unit_type, site):
+    if isinstance(site, Token):
+        return (unit_type, site, None)
+    else: return (unit_type, site[0], site[1])
 
 class Variant(object):
     r'''Representation of a map or rule variant
@@ -271,7 +272,7 @@ class Map(VerboseObject):
             - valid:    Whether the map has been correctly loaded
             - powers:   A map of Powers in the game (Token -> Power)
             - spaces:   A map of Provinces (Token -> Province)
-            - coasts:   A map of Coasts ((unit,province,coast) -> Coast)
+            - coasts:   A map of Locations ((unit,province,coast) -> Location)
             - neutral:  A Power representing the neutral supply centers
     '''#'''
     
@@ -497,10 +498,11 @@ class Map(VerboseObject):
                     if unit_type and item.unit_type != unit_type: continue
                     if item.coastline != coastline: continue
                     if coast:
-                        coast = Coast(None, province, coastline, [])
+                        coast = Location(None, province, coastline, [])
                         break
                     coast = item
-                if not coast: coast = Coast(unit_type, province, coastline, [])
+                if not coast:
+                    coast = Location(unit_type, province, coastline, [])
             unit = Unit(country or nation, coast)
         self.log_debug(20, 'ordered_unit(%s, %s) -> %s',
             nation, unit_spec, unit)
@@ -550,7 +552,7 @@ class Map(VerboseObject):
                 if len(nearby) == 1 and datc.datc_4b2 != 'c': coast = nearby[0]
                 elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
             if not coast:
-                coast = Coast(None, province, coastline, [])
+                coast = Location(None, province, coastline, [])
         self.log_debug(20, 'ordered_coast(%s, %s) -> %s (%s, %s, %s, %s)',
             unit, coast_spec, coast, datc.datc_4b1,
             datc.datc_4b2, datc.datc_4b3, datc.datc_4b6)
@@ -865,6 +867,10 @@ class Power(Comparable):
             - centers    list of Tokens for supply centers controlled
             - units      list of Units owned
             - eliminated year of elimination, or False if still on the board
+        
+        Prefered variable names:
+            - power     A Power instance
+            - nation    A Power key (single token)
     '''#'''
     def __init__(self, token, home_scs, name=None, adjective=None):
         self.key        = token
@@ -933,11 +939,15 @@ class Province(Comparable):
         Variables:
             - key          The Token representing this province
             - homes        A list of powers for which this is a Home Supply Center
-            - coasts       A list of Coasts
+            - coasts       A list of Locations
             - owner        The power that controls this supply center
             - borders_in   The provinces that can reach this one
             - borders_out  The provinces that can be reached from here
             - units        A list of Units here
+        
+        Prefered variable names:
+            - province  A Province instance
+            - prov      A Province key (single token)
     '''#'''
     def __init__(self, token, adjacencies, owners, name=None):
         self.key         = token
@@ -956,7 +966,7 @@ class Province(Comparable):
             else:
                 coast = None
                 unit_type = unit
-            new_coast = Coast(unit_type, self, coast, unit_adjacency)
+            new_coast = Location(unit_type, self, coast, unit_adjacency)
             self.coasts.append(new_coast)
             self.borders_out.update([key[1] for key in new_coast.borders_out])
     
@@ -986,11 +996,10 @@ class Province(Comparable):
     def unit(self): return self.units and self.units[0] or None
 
 
-# Todo: Consider "Site" for this.
-class Coast(Comparable, VerboseObject):
+class Location(Comparable, VerboseObject):
     ''' A place where a unit can be.
         Each Province has one per unit type allowed there,
-        with extra fleet Coasts for multi-coastal provinces.
+        with extra fleet Locations for multi-coastal provinces.
         
         Variables:
             - unit_type    The type of unit (AMY or FLT)
@@ -1000,9 +1009,14 @@ class Coast(Comparable, VerboseObject):
             - borders_out  A list of keys for coasts to which this unit could move
             - key          A tuple that uniquely specifies this coast
             - maybe_coast  (province, coast) for bicoastal provinces, province for others
+        
+        Prefered variable names:
+            - location  A Location instance
+            - loc       A Location key (a tuple of type, prov, coast)
+            - site      Part of a Unit key (either nation or (nation, coast))
     '''#'''
     def __init__(self, unit_type, province, coastline, adjacencies):
-        # Warning: a fake Coast can have a unit_type of None.
+        # Warning: a fake Location can have a unit_type of None.
         self.__super.__init__()
         self.unit_type   = unit_type
         self.coastline   = coastline
@@ -1023,10 +1037,11 @@ class Coast(Comparable, VerboseObject):
     def tokenize(self):
         return Message([self.unit_type, self.maybe_coast])
     def __cmp__(self, other):
-        if isinstance(other, Coast): return cmp(self.key, other.key)
+        if isinstance(other, Location):
+            return cmp(self.key, other.key)
         else: return NotImplemented
     def __str__(self): return self.text
-    def __repr__(self): return 'Coast(%s, %s, %s)' % self.key
+    def __repr__(self): return 'Location(%s, %s, %s)' % self.key
     
     def coast_suffix(self):
         if self.coastline:
@@ -1162,7 +1177,7 @@ class Unit(Comparable):
     # Confirmation queries
     def can_move_to(self, place):
         #print '\tQuery: %s -> %s' % (self, place)
-        if isinstance(place, Coast):
+        if isinstance(place, Location):
             # Check whether it can move to any coastline
             return any(place.matches(prov) for prov in self.coast.borders_out)
         else:

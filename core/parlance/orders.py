@@ -13,7 +13,7 @@ from itertools   import chain
 from operator    import lt, gt
 
 from fallbacks   import all, any, defaultdict
-from gameboard   import Coast, Power, Turn, Unit
+from gameboard   import Location, Power, Turn, Unit
 from language    import Message
 from tokens      import *
 from util        import Comparable, autosuper
@@ -43,7 +43,7 @@ class UnitOrder(Comparable):
     ''' Abstract base class for all types of orders.'''
     __metaclass__ = autosuper
     order_type = None
-    destination = None   # Coast where the unit expects to end up
+    destination = None   # Location where the unit expects to end up
     order = None         # The order as originally issued
     unit = None          # The Unit being ordered
     key = None           # The order's essential parts
@@ -325,7 +325,7 @@ class SupportOrder(MovementPhaseOrder):
                         legal_dest = datc.datc_4b4 != 'a'
                     elif datc.datc_4b4 == 'e':
                         # Coastline specifications are ignored
-                        dest = Coast(dest.unit_type, dest.province, None, [])
+                        dest = Location(dest.unit_type, dest.province, None, [])
                 routes = []
             else: routes = supported.coast.convoy_routes(dest.province, board)
             result = SupportMoveOrder(unit, supported, dest, legal_dest)
@@ -511,7 +511,7 @@ def createUnitOrder(order, nation, board, datc):
     return _class_types[order[key]].create(order, nation, board, datc)
 
 class OrderSet(defaultdict):
-    ''' A mapping of Coast key -> UnitOrder, with special provisions for Waives.
+    ''' A mapping of Unit key -> UnitOrder, with special provisions for Waives.
         >>> Moscow = standard_map.spaces[MOS].unit
         >>> Warsaw = standard_map.spaces[WAR].unit.coast
         >>> Russia = standard_map.powers[RUS]

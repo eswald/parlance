@@ -1274,10 +1274,10 @@ class MapTestCase(TestCase):
         province = board.spaces[variant.rep["TWO"]]
         self.failUnlessEqual(province.name, "Somewhere")
 
-class Coast_Bugfix(TestCase):
-    ''' Tests to reproduce bugs related to the Coast class'''
+class LocationBugfix(TestCase):
+    r'''Tests to reproduce bugs related to the Location class'''
     def test_infinite_convoy(self):
-        # Originally notices in the Americas4 variant.
+        # Originally noticed in the Americas4 variant.
         variant = load_variant('''
             [borders]
             ALA=AMY NCA NWT, FLT BEA BER GOA NCA NPO NWT
