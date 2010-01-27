@@ -509,22 +509,22 @@ class Map(VerboseObject):
         self.log_debug(20, 'ordered_unit(%s, %s) -> %s',
             nation, unit_spec, unit)
         return unit
-    def ordered_coast(self, unit, coast_spec, datc):
-        ''' Finds a coast from its maybe_coast representation.
-            If the specified coast doesn't exist, returns a fake one.
+    def ordered_location(self, unit, site, datc):
+        ''' Finds a location from its site representation.
+            If the specified location doesn't exist, returns a fake one.
             Uses the unit's unit_type, and (depending on options)
-            its location to disambiguate bicoastal destinations.
+            its current location to disambiguate bicoastal destinations.
         '''#'''
         # Collect specifications
         unit_type = unit.location.unit_type
         coastline = province = None
-        for token in Message(coast_spec):
+        for token in Message(site):
             if token.is_province():
                 province = self.spaces.get(token) or Province(token, [], None)
             elif token.is_coastline(): coastline = token
         if not province:
-            raise ValueError('Missing province in coast spec: %s'
-                % Message(coast_spec))
+            raise ValueError('Missing province in location spec: %s'
+                % Message(site))
         
         # Try to match all specs, but without ambiguity
         coast = self.locs.get((unit_type, province.key, coastline))
@@ -556,8 +556,8 @@ class Map(VerboseObject):
                 elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
             if not coast:
                 coast = Location(None, province, coastline, [])
-        self.log_debug(20, 'ordered_coast(%s, %s) -> %s (%s, %s, %s, %s)',
-            unit, coast_spec, coast, datc.datc_4b1,
+        self.log_debug(20, 'ordered_location(%s, %s) -> %s (%s, %s, %s, %s)',
+            unit, site, coast, datc.datc_4b1,
             datc.datc_4b2, datc.datc_4b3, datc.datc_4b6)
         return coast
     #@Memoize  # Cache results; doesn't work for list args
@@ -1011,12 +1011,11 @@ class Location(Comparable, VerboseObject):
             - borders_in   A list of keys for coasts which could move to this one
             - borders_out  A list of keys for coasts to which this unit could move
             - key          A tuple that uniquely specifies this coast
-            - maybe_coast  (province, coast) for bicoastal provinces, province for others
+            - site         (province, coast) for bicoastal provinces, province for others
         
         Prefered variable names:
             - location  A Location instance
             - loc       A Location key (a tuple of type, prov, coast)
-            - site      Part of a Unit key (either nation or (nation, coast))
     '''#'''
     def __init__(self, unit_type, province, coastline, adjacencies):
         # Warning: a fake Location can have a unit_type of None.
@@ -1028,17 +1027,17 @@ class Location(Comparable, VerboseObject):
         self.borders_in  = set()
         self.borders_out = [location_key(unit_type, adj) for adj in adjacencies]
         if coastline:
-            self.maybe_coast = (province.key, coastline)
+            self.site = (province.key, coastline)
             self.text = '(%s (%s %s))' % (unit_type, province.key, coastline)
             self.name = province.name + self.coast_suffix()
         else:
-            self.maybe_coast = province.key
+            self.site = province.key
             self.text = '(%s %s)' % (unit_type, province.key)
             self.name = province.name
         self.prefix = '%s %s' % (self.type_name(), self.name)
     
     def tokenize(self):
-        return Message([self.unit_type, self.maybe_coast])
+        return Message([self.unit_type, self.site])
     def __cmp__(self, other):
         if isinstance(other, Location):
             return cmp(self.key, other.key)
@@ -1149,7 +1148,7 @@ class Unit(Comparable):
     def key(self):
         return (self.nation and self.nation.key,
             self.location and self.location.unit_type,
-            self.location and self.location.maybe_coast)
+            self.location and self.location.site)
     
     # Actions
     def move_to(self, location):

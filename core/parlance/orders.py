@@ -166,7 +166,7 @@ class MoveOrder(MovementPhaseOrder):
     order_type = MTO
     path = None
     def __init__(self, unit, destination_coast, maybe_convoy=False):
-        self.key = (unit.key, MTO, destination_coast.maybe_coast)
+        self.key = (unit.key, MTO, destination_coast.site)
         self.unit = unit
         self.destination = destination_coast
         self.maybe_convoy = maybe_convoy
@@ -183,7 +183,7 @@ class MoveOrder(MovementPhaseOrder):
     @classmethod
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0], datc)
-        dest = board.ordered_coast(unit, order[2], datc)
+        dest = board.ordered_location(unit, order[2], datc)
         if unit.can_be_convoyed() and datc.datc_4a3 != 'f':
             # Implicit convoys are allowed; check for them
             routes = unit.location.convoy_routes(dest.province, board)
@@ -239,7 +239,7 @@ class ConvoyingOrder(MovementPhaseOrder):
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0], datc)
         mover = board.ordered_unit(nation, order[2], datc)
-        dest = board.ordered_coast(mover, order[4], datc)
+        dest = board.ordered_location(mover, order[4], datc)
         result = klass(unit, mover, dest)
         result.routes = mover.location.convoy_routes(dest.province, board)
         result.order = order
@@ -293,7 +293,7 @@ class ConvoyedOrder(MovementPhaseOrder):
     @classmethod
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0], datc)
-        dest = board.ordered_coast(unit, order[2], datc)
+        dest = board.ordered_location(unit, order[2], datc)
         if len(order) > 4 and datc.datc_4a6 != 'a':
             path = [board.ordered_unit(nation, prov, datc)
                 for prov in order[4]]
@@ -325,7 +325,7 @@ class SupportOrder(MovementPhaseOrder):
         unit = board.ordered_unit(nation, order[0], datc)
         supported = board.ordered_unit(nation, order[2], datc)
         if len(order) > 4:
-            dest = board.ordered_coast(supported, order[4], datc)
+            dest = board.ordered_location(supported, order[4], datc)
             legal_dest = True
             if supported.can_move_to(dest):
                 if datc.datc_4b4 in 'abc' and not dest.exists():
@@ -361,7 +361,7 @@ class SupportHoldOrder(SupportOrder):
             and self.supported.location.province != self.unit.location.province)
 class SupportMoveOrder(SupportOrder):
     def __init__(self, unit, mover, destination, legal_coast=True):
-        # Note: destination.maybe_coast would be better,
+        # Note: destination.site would be better,
         # but is disallowed by the language.
         self.key = (unit.key, SUP, mover.key, MTO, destination.province.key)
         self.unit = unit
@@ -412,20 +412,20 @@ class DisbandOrder(RetreatPhaseOrder):
 class RetreatOrder(RetreatPhaseOrder):
     order_type = RTO
     def __init__(self, unit, destination_coast):
-        self.key = (unit.key, RTO, destination_coast.maybe_coast)
+        self.key = (unit.key, RTO, destination_coast.site)
         self.unit = unit
         self.destination = destination_coast
     def __str__(self):
         return '%s -> %s' % (self.unit.location.prefix, self.destination.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
-        if note == MBV and self.destination.maybe_coast not in self.unit.retreats:
+        if note == MBV and self.destination.site not in self.unit.retreats:
             note = NVR
         return note
     @classmethod
     def create(klass, order, nation, board, datc):
         unit = board.ordered_unit(nation, order[0], datc)
-        dest = board.ordered_coast(unit, order[2], datc)
+        dest = board.ordered_location(unit, order[2], datc)
         result = klass(unit, dest)
         result.order = order
         return result
