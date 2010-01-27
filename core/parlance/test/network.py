@@ -472,6 +472,8 @@ class Network_Full_Games(NetworkTestCase):
         self.assertEqual(game.judge.game_result, +DRW)
     def test_two_games(self):
         # seven holdbots; two games
+        # Todo: Eliminate the race condition causing one bot to sometimes get
+        # REJ (NME) from the server.
         game = self.run_game([HoldBot] * 7, 2)
         self.failUnlessEqual(len(self.server.games), 2)
         self.assertEqual(game.judge.game_result, +DRW)
