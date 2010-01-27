@@ -337,7 +337,7 @@ class Map(VerboseObject):
             
             province = Province(prov, adj, home, province_names.get(prov.text))
             provs[prov] = province
-            for location in province.coasts:
+            for location in province.locations:
                 locations[location.key] = location
         for key,coast in locations.iteritems():
             for other in coast.borders_out:
@@ -495,7 +495,7 @@ class Map(VerboseObject):
         if not unit:
             coast = self.locs.get((unit_type, province.key, coastline))
             if not coast:
-                for item in province.coasts:
+                for item in province.locations:
                     if unit_type and item.unit_type != unit_type: continue
                     if item.coastline != coastline: continue
                     if coast:
@@ -530,21 +530,21 @@ class Map(VerboseObject):
         if coast:
             if datc.datc_4b3 == 'a' and not unit.can_move_to(coast):
                 # Wrong coast specified; change it to the right one.
-                possible = [c for c in province.coasts
+                possible = [c for c in province.locations
                         if c.key in unit.coast.borders_out
                         and c.unit_type == unit_type]
                 if len(possible) == 1: coast = possible[0]
         else:
             possible = []
-            for item in province.coasts:
+            for item in province.locations:
                 if unit_type and item.unit_type != unit_type: continue
                 if coastline and item.coastline != coastline: continue
                 possible.append(item)
             if unit_type and datc.datc_4b6 == 'b' and not possible:
-                possible = [place for place in province.coasts
+                possible = [place for place in province.locations
                     if place.unit_type == unit_type]
             self.log_debug(20, 'Possible coasts for %s: %r of %r',
-                unit_type, possible, province.coasts)
+                unit_type, possible, province.locations)
             if len(possible) == 1: coast = possible[0]
             elif possible:
                 # Multiple coasts; see whether our location disambiguates.
@@ -940,7 +940,7 @@ class Province(Comparable):
         Variables:
             - key          The Token representing this province
             - homes        A list of powers for which this is a Home Supply Center
-            - coasts       A list of Locations
+            - locations    A list of Locations
             - owner        The power that controls this supply center
             - borders_in   The provinces that can reach this one
             - borders_out  The provinces that can be reached from here
@@ -954,7 +954,7 @@ class Province(Comparable):
         self.key         = token
         self.name        = name or token.text
         self.homes       = owners
-        self.coasts      = []
+        self.locations   = []
         self.units       = []
         self.owner       = None
         self.borders_in  = set()
@@ -968,14 +968,14 @@ class Province(Comparable):
                 coast = None
                 unit_type = unit
             new_coast = Location(unit_type, self, coast, unit_adjacency)
-            self.coasts.append(new_coast)
+            self.locations.append(new_coast)
             self.borders_out.update([key[1] for key in new_coast.borders_out])
     
     def is_supply(self): return self.homes is not None
     def is_valid(self):
         if self.homes and not self.key.is_supply(): return False
-        if not self.coasts: return False
-        return all(coast.is_valid() for coast in self.coasts)
+        if not self.locations: return False
+        return all(coast.is_valid() for coast in self.locations)
     def is_coastal(self):
         if self.key.is_coastal(): return location_key(AMY, self.key)
         else: return None
@@ -991,7 +991,7 @@ class Province(Comparable):
         if isinstance(other, Token):      return cmp(self.key, other)
         elif isinstance(other, Province): return cmp(self.key, other.key)
         else: return NotImplemented 
-    def exists(self): return bool(self.coasts)
+    def exists(self): return bool(self.locations)
     
     @property
     def unit(self): return self.units and self.units[0] or None
@@ -1075,7 +1075,8 @@ class Location(Comparable, VerboseObject):
         elif category == 'Bicoastal': return self.unit_type == AMY
         elif category == 'Coastal':   return self.unit_type in (AMY, FLT)
         else:                         return False
-    def exists(self): return self.unit_type and self in self.province.coasts
+    def exists(self):
+        return self.unit_type and self in self.province.locations
     def convoy_routes(self, dest, board):
         ''' Collects possible convoy routes.
             dest must be a Province.
