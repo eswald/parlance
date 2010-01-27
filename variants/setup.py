@@ -65,7 +65,7 @@ setup(
     
     # Installation options
     zip_safe = True,
-    test_suite = "parterre.testing",
+    test_suite = "parterre.test_basics",
     #install_requires = ["Parlance == " + __version__],
     package_data = {
         "parterre": ["data/*.cfg"],

@@ -29,6 +29,10 @@ class AmericasVariantTests(StandardVariantTests):
     "Tests for the americas4 map variant"
     variant = "americas4"
 
+class ChaosVariantTests(StandardVariantTests):
+    "Tests for the chaos map variant"
+    variant = "chaos"
+
 class ChromaticVariantTests(StandardVariantTests):
     "Tests for the chromatic map variant"
     variant = "chromatic"
