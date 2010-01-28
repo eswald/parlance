@@ -1016,8 +1016,8 @@ class Location(Comparable, VerboseObject):
             - unit_type    The type of unit (AMY or FLT)
             - province     The Province
             - coastline    The coast represented (SCS, etc.), or None
-            - borders_in   A list of keys for coasts which could move to this one
-            - borders_out  A list of keys for coasts to which this unit could move
+            - borders_in   A list of keys for locations which could move to this one
+            - borders_out  A list of keys for locations to which this unit could move
             - key          A tuple that uniquely specifies this location
             - site         (province, coast) for bicoastal provinces, province for others
         
