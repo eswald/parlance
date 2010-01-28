@@ -166,7 +166,7 @@ class DumbBot(Player):
          * How it works.
          *
          * DumbBot works in two stages. In the first stage it calculates a value
-         * for each province and each coast. Then in the second stage, it works
+         * for each province and each location. Then in the second stage, it works
          * out an order for each unit, based on those values.
          *
          * For each province, it calculates the following:
@@ -177,12 +177,12 @@ class DumbBot(Player):
          *
          * Then
          *
-         * Proximity[0] for each coast is the above value, multiplied by a weighting.
+         * Proximity[0] for each location is the above value, multiplied by a weighting.
          *
          * Then
          *
-         * Proximity[n] for each coast = ( sum( proximity[ n-1 ] for all adjacent coasts
-         *                                 * proximity[ n-1 ] for this coast )
+         * Proximity[n] for each location = ( sum( proximity[ n-1 ] for all adjacent locations
+         *                                 * proximity[ n-1 ] for this location )
          *                               / 5
          *
          * Also for each province, it works out the strength of attack we have
@@ -190,11 +190,11 @@ class DumbBot(Player):
          * competition for that province - the number of adjacent units any one
          * other power has.
          *
-         * Finally it works out an overall value for each coast, based on all
-         * the proximity values for that coast, and the strength and competition
+         * Finally it works out an overall value for each location, based on all
+         * the proximity values for that location, and the strength and competition
          * for that province, each of which is multiplied by a weighting
          *
-         * Then for move orders, it tries to move to the best adjacent coast,
+         * Then for move orders, it tries to move to the best adjacent location,
          * with a random chance of it moving to the second best, third best, etc
          * (with that chance varying depending how close to first the second
          * place is, etc). If the best place is where it already is, it holds.
@@ -302,29 +302,29 @@ class DumbBot(Player):
             for unit in province.units:
                 values.attack_value[province.key] += self.power_size[unit.nation.key] * self.vals.base_unit_weight // 100
             
-            # Calculate proximity[0] for each coast.
+            # Calculate proximity[0] for each location.
             # Proximity[0] is calculated based on the attack value and defence value of the province,
             # modified by the weightings for the current season.
-            for province_coast_iterator in province.locations:
-                values.proximity_map[province_coast_iterator.key] = [
+            for province_location_iterator in province.locations:
+                values.proximity_map[province_location_iterator.key] = [
                     values.attack_value[province.key] * proximity_attack_weight +
                     values.defence_value[province.key] * proximity_defence_weight
                 ]
         
         # Calculate proximities [ 1... ]
-        # proximity[n] = ( sum of proximity[n-1] for this coast plus all coasts
-        # which this coast is adjacent to ) / 5
+        # proximity[n] = ( sum of proximity[n-1] for this location plus all locations
+        # which this location is adjacent to ) / 5
         # The divide by 5 is just to keep all values of proximity[ n ] in the same range.
-        # The average coast has 4 adjacent coasts, plus itself.
+        # The average location has 4 adjacent locations, plus itself.
         for proximity_counter in range(PROXIMITY_DEPTH - 1):
             for proximity_iterator in self.map.locs.itervalues():
                 provs_seen = {}
-                # Collect the weight of each adjacent coast,
+                # Collect the weight of each adjacent location,
                 # but only the highest from a single province
-                for coast_iterator in proximity_iterator.borders_out:
-                    coast = self.map.locs[coast_iterator]
-                    weight = values.proximity_map[coast.key][proximity_counter]
-                    key = coast.province.key
+                for location_iterator in proximity_iterator.borders_out:
+                    location = self.map.locs[location_iterator]
+                    weight = values.proximity_map[location.key][proximity_counter]
+                    key = location.province.key
                     if provs_seen.has_key(key):
                         if weight > provs_seen[key]: provs_seen[key] = weight
                     else: provs_seen[key] = weight
@@ -336,8 +336,8 @@ class DumbBot(Player):
         # Find the units each power has in or next to each province
         for unit_iterator in self.map.units:
             values.adjacent_units[unit_iterator.location.province.key][ unit_iterator.nation.key ].append(unit_iterator)
-            for coast_iterator in unit_iterator.location.borders_out:
-                values.adjacent_units[ coast_iterator[1] ][ unit_iterator.nation.key ].append(unit_iterator)
+            for location_iterator in unit_iterator.location.borders_out:
+                values.adjacent_units[ location_iterator[1] ][ unit_iterator.nation.key ].append(unit_iterator)
         
         for province in self.map.spaces:
             for power_counter in self.map.powers:
@@ -370,30 +370,30 @@ class DumbBot(Player):
             else: defence_value = -self.vals.home_vacation_weight
         return defence_value
     def calculate_destination_value(self, values, proximity_weight, strength_weight, competition_weight):
-        ''' Given the province and coast calculated values, and the
-            weighting for this turn, calculate the value of each coast.
+        ''' Given the province and location calculated values, and the
+            weighting for this turn, calculate the value of each location.
         '''#'''
         destination_value = {}
-        for coast_id in self.map.locs.itervalues():
+        for location_id in self.map.locs.itervalues():
             destination_weight = 0
             for proximity_counter in range(PROXIMITY_DEPTH):
-                destination_weight += values.proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
-            destination_weight += strength_weight    * values.strength_value[coast_id.province.key]
-            destination_weight -= competition_weight * values.competition_value[coast_id.province.key]
-            destination_value[coast_id.key] = destination_weight
+                destination_weight += values.proximity_map[location_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
+            destination_weight += strength_weight    * values.strength_value[location_id.province.key]
+            destination_weight -= competition_weight * values.competition_value[location_id.province.key]
+            destination_value[location_id.key] = destination_weight
         values.destination_value = destination_value
     def calculate_winter_destination_value(self, values, proximity_weight, defence_weight):
-        ''' Given the province and coast calculated values, and the
-            weighting for this turn, calculate the value of each coast
+        ''' Given the province and location calculated values, and the
+            weighting for this turn, calculate the value of each location
             for winter builds and removals.
         '''#'''
         destination_value = {}
-        for coast_id in self.map.locs.itervalues():
+        for location_id in self.map.locs.itervalues():
             destination_weight = 0
             for proximity_counter in range(PROXIMITY_DEPTH):
-                destination_weight += values.proximity_map[coast_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
-            destination_weight += defence_weight * max(0, values.defence_value[coast_id.province.key])
-            destination_value[coast_id.key] = destination_weight
+                destination_weight += values.proximity_map[location_id.key][ proximity_counter ] * proximity_weight[ proximity_counter ]
+            destination_weight += defence_weight * max(0, values.defence_value[location_id.province.key])
+            destination_value[location_id.key] = destination_weight
         values.destination_value = destination_value
     def generate_csv(self, values):
         ''' Generate a .csv file (readable by Excel and most other
@@ -410,25 +410,25 @@ class DumbBot(Player):
         except IOError: self.log_debug(1, "Couldn't open csv file " + filename)
         else:
             max_proximity = PROXIMITY_DEPTH
-            fp.write("Province,Coast,Attack,Defence,Strength,Competition,")
+            fp.write("Province,Location,Attack,Defence,Strength,Competition,")
             for proximity_counter in range(max_proximity):
                 fp.write("Proximity[%d]," % proximity_counter)
             fp.write("Value\n")
-            for coast_id in self.map.locs.itervalues():
-                if values.strength_value[coast_id.province.key] > 0:
-                    fp.write("%s,%s, " % (coast_id.province, coast_id))
+            for location_id in self.map.locs.itervalues():
+                if values.strength_value[location_id.province.key] > 0:
+                    fp.write("%s,%s, " % (location_id.province, location_id))
                     fp.write("%2f,%2f,%f,%f, " % (
-                        values.attack_value[coast_id.province.key],
-                        values.defence_value[coast_id.province.key],
-                        values.strength_value[coast_id.province.key],
-                        values.competition_value[coast_id.province.key]
+                        values.attack_value[location_id.province.key],
+                        values.defence_value[location_id.province.key],
+                        values.strength_value[location_id.province.key],
+                        values.competition_value[location_id.province.key]
                     ))
                     
                     for proximity_counter in range(max_proximity):
-                        if len(values.proximity_map[coast_id.key]) > proximity_counter:
-                            fp.write("%5f," % values.proximity_map[coast_id.key][ proximity_counter ])
+                        if len(values.proximity_map[location_id.key]) > proximity_counter:
+                            fp.write("%5f," % values.proximity_map[location_id.key][ proximity_counter ])
                         else: fp.write("oops,")
-                    fp.write(" %8f" % values.destination_value[coast_id.key])
+                    fp.write(" %8f" % values.destination_value[location_id.key])
                     fp.write("\n")
             fp.close()
     
@@ -478,8 +478,8 @@ class DumbBot(Player):
             # Consider every province we can move to
             source = None
             max_destination_value = 0
-            for adjacent_province in [self.map.locs[coast].province
-                    for coast in unit.location.borders_out]:
+            for adjacent_province in [self.map.locs[loc].province
+                    for loc in unit.location.borders_out]:
                 this_source = destination_map.get(adjacent_province.key, None)
                 if this_source:
                     # Unit is moving or holding there
@@ -505,7 +505,7 @@ class DumbBot(Player):
         # Determine whether another unit is waiting on this one
         waiters = waiting[unit.location.province.key]
         
-        # Put all the adjacent coasts into the destination map,
+        # Put all the adjacent locations into the destination map,
         # and the current location (we can hold rather than move)
         destination_map = [unit.location.key] + [key
             for key in unit.location.borders_out
@@ -592,10 +592,10 @@ class DumbBot(Player):
                 if key: beach = self.map.locs[key]
                 else: self.log_debug(13, "   Selected location not coastal.")
             else:
-                coasts = self.map.locs
+                locations = self.map.locs
                 possible = []
                 for border in fleet.location.borders_out:
-                    prov = coasts[border].province
+                    prov = locations[border].province
                     if not orders.moving_into(prov):
                         for unit in prov.units:
                             # Don't land on our holding or unsure unit.
@@ -670,7 +670,7 @@ class DumbBot(Player):
                     self.log_debug(13, "   Unit already moving here")
                     # Todo: Compare retreat values between units
                     
-                    # Avoid choosing this coast again
+                    # Avoid choosing this location again
                     destination_map.remove(dest.key)
                 else:
                     # Order the retreat
@@ -704,12 +704,12 @@ class DumbBot(Player):
         self.log_debug(10, "Build orders for %s", self.map.current_turn)
         orders = OrderSet(self.power)
         
-        # Put all the coasts of our open home centres into a map
-        self.log_debug(11, ' Choosing from coasts of %s.', expand_list(self.power.homes))
-        build_map = [coast.key
+        # Put all the locations of our open home centres into a map
+        self.log_debug(11, ' Choosing from locations of %s.', expand_list(self.power.homes))
+        build_map = [location.key
             for prov in [self.map.spaces[p] for p in self.power.homes]
             if prov.owner == self.power and not prov.units
-            for coast in prov.locations]
+            for location in prov.locations]
         
         # For each build, while we have a vacant home centre
         builds_remaining = build_count
@@ -732,20 +732,20 @@ class DumbBot(Player):
             orders.waive(builds_remaining)
         return orders
     
-    def random_source(self, coast_keys, values):
-        ''' Chooses randomly among the coasts,
+    def random_source(self, location_keys, values):
+        ''' Chooses randomly among the locations,
             with preference to lower values of values.destination_value.
         '''#'''
-        keys = [values.destination_value[key] for key in coast_keys]
+        keys = [values.destination_value[key] for key in location_keys]
         best = 2 * max(keys)
         vals = [best - key for key in keys]
-        return self.map.locs[coast_keys[self.random_selection(vals)]]
-    def random_destination(self, coast_keys, values):
-        ''' Chooses randomly among the coasts,
+        return self.map.locs[location_keys[self.random_selection(vals)]]
+    def random_destination(self, location_keys, values):
+        ''' Chooses randomly among the locations,
             with preference to higher values of values.destination_value.
         '''#'''
-        return self.map.locs[coast_keys[self.random_selection(
-                [values.destination_value[key] for key in coast_keys])]]
+        return self.map.locs[location_keys[self.random_selection(
+                [values.destination_value[key] for key in location_keys])]]
     def random_selection(self, choice_values):
         ''' Chooses randomly among the choices,
             using the first most of the time, particularly if much better.
