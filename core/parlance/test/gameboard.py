@@ -1234,9 +1234,9 @@ class MapTestCase(TestCase):
         game_map = Map(variant)
         prov = variant.rep['ONE']
         self.failUnless(prov.category_name().split()[0] == 'Coastal')
-        coast = game_map.locs[(AMY, prov, None)]
-        self.failUnless(coast.is_valid())
-        self.failUnless(coast.province.is_valid())
+        location = game_map.locs[(AMY, prov, None)]
+        self.failUnless(location.is_valid())
+        self.failUnless(location.province.is_valid())
     def test_island_province(self):
         ''' Test whether Province can define island spaces.'''
         island = Province(NAF, [[AMY], [FLT, MAO, WES]], None)

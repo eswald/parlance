@@ -165,10 +165,11 @@ class HoldOrder(MovementPhaseOrder):
 class MoveOrder(MovementPhaseOrder):
     order_type = MTO
     path = None
-    def __init__(self, unit, destination_coast, maybe_convoy=False):
-        self.key = (unit.key, MTO, destination_coast.site)
+    def __init__(self, unit, destination, maybe_convoy=False):
+        # Destination should be a Location instance.
+        self.key = (unit.key, MTO, destination.site)
         self.unit = unit
-        self.destination = destination_coast
+        self.destination = destination
         self.maybe_convoy = maybe_convoy
     def __str__(self):
         return '%s -> %s' % (self.unit.location.prefix, self.destination.name)
@@ -411,10 +412,11 @@ class DisbandOrder(RetreatPhaseOrder):
         return self.unit.location.prefix + ' DISBAND'
 class RetreatOrder(RetreatPhaseOrder):
     order_type = RTO
-    def __init__(self, unit, destination_coast):
-        self.key = (unit.key, RTO, destination_coast.site)
+    def __init__(self, unit, destination):
+        # Destination should be a Location instance.
+        self.key = (unit.key, RTO, destination.site)
         self.unit = unit
-        self.destination = destination_coast
+        self.destination = destination
     def __str__(self):
         return '%s -> %s' % (self.unit.location.prefix, self.destination.name)
     def order_note(self, power, phase, past_orders=None):
@@ -472,22 +474,33 @@ class BuildOrder(BuildPhaseOrder):
         def an(text):
             if text[0] in 'aeiouAEIOU': return 'an %s' % text
             else: return 'a %s' % text
-        coast = self.unit.location
-        return 'Builds %s in %s' % (an(coast.type_name().lower()), coast.name)
+        location = self.unit.location
+        unit_type = an(location.type_name().lower())
+        return 'Builds %s in %s' % (unit_type, location.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == NSU:
-            coast = self.unit.location
-            old_order = past_orders and past_orders.has_order(coast.province)
-            if not coast.exists():                                 note = CST
-            elif not coast.province.is_supply():                   note = NSC
-            elif self.unit.nation != coast.province.owner:         note = YSC
-            elif self.unit.nation.key not in coast.province.homes: note = HSC
-            elif coast.province.units:                             note = ESC
-            elif old_order:                                        note = ESC
-            elif not self.required(power, past_orders):            note = NMB
-            else:                                                  note = MBV
-        elif note == MBV:                                          note = ESC
+            location = self.unit.location
+            province = location.province
+            old_order = past_orders and past_orders.has_order(province)
+            if not location.exists():
+                note = CST
+            elif not province.is_supply():
+                note = NSC
+            elif self.unit.nation != province.owner:
+                note = YSC
+            elif self.unit.nation.key not in province.homes:
+                note = HSC
+            elif province.units:
+                note = ESC
+            elif old_order:
+                note = ESC
+            elif not self.required(power, past_orders):
+                note = NMB
+            else:
+                note = MBV
+        elif note == MBV:
+            note = ESC
         return note
 class RemoveOrder(BuildPhaseOrder):
     order_type = REM
@@ -497,8 +510,9 @@ class RemoveOrder(BuildPhaseOrder):
         self.unit = unit
     def __str__(self):
         # Todo: This should specify the unit's nation, if different.
-        coast = self.unit.location
-        return 'Removes the %s in %s' % (coast.type_name().lower(), coast.name)
+        location = self.unit.location
+        unit_type = location.type_name().lower()
+        return 'Removes the %s in %s' % (unit_type, location.name)
     def order_note(self, power, phase, past_orders=None):
         note = self.__super.order_note(power, phase, past_orders)
         if note == MBV and not self.required(power, past_orders): note = NMR

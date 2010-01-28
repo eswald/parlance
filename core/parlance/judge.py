@@ -1078,9 +1078,9 @@ class Judge(JudgeInterface):
         else: return result or SUC
     def collect_retreats(self, unit):
         self.log_debug(8, 'Collecting retreats for %s, dislodged by %s', unit, unit.dislodger)
-        return [coast.site for coast in
+        return [location.site for location in
             [self.map.locs[key] for key in unit.location.borders_out]
-            if self.valid_retreat(coast, unit.dislodger)]
+            if self.valid_retreat(location, unit.dislodger)]
     def valid_retreat(self, retreat, dislodger):
         prov, path = dislodger
         if retreat.province == prov:

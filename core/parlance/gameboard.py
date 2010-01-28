@@ -339,8 +339,8 @@ class Map(VerboseObject):
             provs[prov] = province
             for location in province.locations:
                 locations[location.key] = location
-        for key,coast in locations.iteritems():
-            for other in coast.borders_out:
+        for key, location in locations.iteritems():
+            for other in location.borders_out:
                 locations[other].borders_in.add(key)
                 provs[other[1]].borders_in.add(key[1])
         self.spaces = provs
@@ -494,18 +494,20 @@ class Map(VerboseObject):
                 elif item.dislodged: unit = item
             else: unit = item
         if not unit:
-            coast = self.locs.get((unit_type, province.key, coastline))
-            if not coast:
+            location = self.locs.get((unit_type, province.key, coastline))
+            if not location:
                 for item in province.locations:
                     if unit_type and item.unit_type != unit_type: continue
                     if item.coastline != coastline: continue
-                    if coast:
-                        coast = Location(None, province, coastline, [])
+                    if location:
+                        # More than one location matches, unfortunately.
+                        # Create a completely fake one instead.
+                        location = Location(None, province, coastline, [])
                         break
-                    coast = item
-                if not coast:
-                    coast = Location(unit_type, province, coastline, [])
-            unit = Unit(country or nation, coast)
+                    location = item
+                if not location:
+                    location = Location(unit_type, province, coastline, [])
+            unit = Unit(country or nation, location)
         self.log_debug(20, 'ordered_unit(%s, %s) -> %s',
             nation, unit_spec, unit)
         return unit
@@ -513,7 +515,7 @@ class Map(VerboseObject):
         ''' Finds a location from its site representation.
             If the specified location doesn't exist, returns a fake one.
             Uses the unit's unit_type, and (depending on options)
-            its current location to disambiguate bicoastal destinations.
+            its current position to disambiguate bicoastal destinations.
         '''#'''
         # Collect specifications
         unit_type = unit.location.unit_type
@@ -527,14 +529,15 @@ class Map(VerboseObject):
                 % Message(site))
         
         # Try to match all specs, but without ambiguity
-        coast = self.locs.get((unit_type, province.key, coastline))
-        if coast:
-            if datc.datc_4b3 == 'a' and not unit.can_move_to(coast):
+        location = self.locs.get((unit_type, province.key, coastline))
+        if location:
+            if datc.datc_4b3 == 'a' and not unit.can_move_to(location):
                 # Wrong coast specified; change it to the right one.
                 possible = [c for c in province.locations
                         if c.key in unit.location.borders_out
                         and c.unit_type == unit_type]
-                if len(possible) == 1: coast = possible[0]
+                if len(possible) == 1:
+                    location = possible[0]
         else:
             possible = []
             for item in province.locations:
@@ -544,30 +547,35 @@ class Map(VerboseObject):
             if unit_type and datc.datc_4b6 == 'b' and not possible:
                 possible = [place for place in province.locations
                     if place.unit_type == unit_type]
-            self.log_debug(20, 'Possible coasts for %s: %r of %r',
+            self.log_debug(20, 'Possible locations for %s: %r of %r',
                 unit_type, possible, province.locations)
-            if len(possible) == 1: coast = possible[0]
+            if len(possible) == 1:
+                location = possible[0]
             elif possible:
-                # Multiple coasts; see whether our location disambiguates.
+                # Multiple coasts; see whether our position disambiguates.
                 # Note that my 4.B.2 "default" coast is the possible one.
                 nearby = [c for c in possible
                     if c.key in unit.location.borders_out]
-                if len(nearby) == 1 and datc.datc_4b2 != 'c': coast = nearby[0]
-                elif nearby and datc.datc_4b1 == 'b': coast = nearby[0]
-            if not coast:
-                coast = Location(None, province, coastline, [])
+                if len(nearby) == 1 and datc.datc_4b2 != 'c':
+                    # Go to the only one we can.
+                    location = nearby[0]
+                elif nearby and datc.datc_4b1 == 'b':
+                    # Pick one arbitrarily.
+                    location = nearby[0]
+            if not location:
+                location = Location(None, province, coastline, [])
         self.log_debug(20, 'ordered_location(%s, %s) -> %s (%s, %s, %s, %s)',
-            unit, site, coast, datc.datc_4b1,
+            unit, site, location, datc.datc_4b1,
             datc.datc_4b2, datc.datc_4b3, datc.datc_4b6)
-        return coast
+        return location
     #@Memoize  # Cache results; doesn't work for list args
-    def distance(self, coast, provs):
-        ''' Returns the coast's distance from the nearest of the provinces,
+    def distance(self, location, provs):
+        ''' Returns the location's distance from the nearest of the provinces,
             particularly for use in determining civil disorder retreats.
         '''#'''
         # Todo: Count army and fleet movements differently?
         result = 0
-        rank = seen = [coast.province.key]
+        rank = seen = [location.province.key]
         while rank:
             if any(place in provs for place in rank): return result
             new_rank = []
@@ -645,9 +653,9 @@ class Map(VerboseObject):
             for unit_spec in folded[2:]:
                 (nation,unit_type,loc) = unit_spec[0:3]
                 key = location_key(unit_type,loc)
-                coast = self.locs[key]
+                location = self.locs[key]
                 power = self.powers[nation]
-                unit = Unit(power, coast)
+                unit = Unit(power, location)
                 unit.build()
                 if len(unit_spec) > 3: unit.retreat(unit_spec[4])
     def advance(self):
@@ -969,15 +977,15 @@ class Province(Comparable):
             else:
                 coast = None
                 unit_type = unit
-            new_coast = Location(unit_type, self, coast, unit_adjacency)
-            self.locations.append(new_coast)
-            self.borders_out.update([key[1] for key in new_coast.borders_out])
+            new_loc = Location(unit_type, self, coast, unit_adjacency)
+            self.locations.append(new_loc)
+            self.borders_out.update([key[1] for key in new_loc.borders_out])
     
     def is_supply(self): return self.homes is not None
     def is_valid(self):
         if self.homes and not self.key.is_supply(): return False
         if not self.locations: return False
-        return all(coast.is_valid() for coast in self.locations)
+        return all(location.is_valid() for location in self.locations)
     def is_coastal(self):
         if self.key.is_coastal(): return location_key(AMY, self.key)
         else: return None
@@ -1010,7 +1018,7 @@ class Location(Comparable, VerboseObject):
             - coastline    The coast represented (SCS, etc.), or None
             - borders_in   A list of keys for coasts which could move to this one
             - borders_out  A list of keys for coasts to which this unit could move
-            - key          A tuple that uniquely specifies this coast
+            - key          A tuple that uniquely specifies this location
             - site         (province, coast) for bicoastal provinces, province for others
         
         Prefered variable names:
