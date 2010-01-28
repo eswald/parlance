@@ -76,7 +76,7 @@ class NeuroticTestCase(BotTestCase):
                 for message in self.replies if message[0] == SUB]
         
         self.replies = []
-        self.send(self.variant.start_now)
+        self.send(self.variant.now())
         second_result = [message
                 for message in self.replies if message[0] == SUB]
         self.failUnlessEqual(first_result, second_result)
