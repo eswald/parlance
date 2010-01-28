@@ -80,6 +80,9 @@ setup(
     # Installation options
     zip_safe = True,
     test_suite = "parang.testing",
+    tests_require = [
+        "mock >= 0.6.0",
+    ],
     #install_requires = ["Parlance == " + __version__],
     package_data = {
         "parang": ["maps/*.tty"],
