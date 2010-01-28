@@ -31,7 +31,6 @@ bots = {
     "ComboBot": "combobot",
     "DumbBot": "dumbbot",
     "EvilBot": "evilbot",
-    "Neurotic": "neurotic",
     "PeaceBot": "peacebot",
     "Project20M": "project20m",
     "TeddyBot": "teddybot",

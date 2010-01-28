@@ -63,24 +63,6 @@ class ComboBotTestCase(BotTestCase):
 class EvilBotTestCase(BotTestCase):
     bot_class = EvilBot
 
-class NeuroticTestCase(BotTestCase):
-    bot_class = Neurotic
-    def setUp(self):
-        BotTestCase.setUp(self)
-        self.variant = variants['hundred3']
-    
-    def test_neurotic_duplication(self):
-        self.connect_player(Neurotic)
-        self.start_game()
-        first_result = [message
-                for message in self.replies if message[0] == SUB]
-        
-        self.replies = []
-        self.send(self.variant.now())
-        second_result = [message
-                for message in self.replies if message[0] == SUB]
-        self.failUnlessEqual(first_result, second_result)
-
 class PeaceBotTestCase(BotTestCase):
     bot_class = PeaceBot
 
