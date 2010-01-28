@@ -29,23 +29,81 @@ def weighted_choice(choices):
     index = bisect(sums, n)
     return keys[index]
 
+class UnusableMapException(Exception):
+    pass
+
 class Holland(Player):
     def process_map(self):
         # Todo: Collect the rules from more permanent storage.
         self.agent = Agent([])
         self.orders = None
-        self.static = {}
         self.memory = dict.fromkeys(self.map.locs, 0)
-        for loc in self.map.locs:
-            
+        self.actions = dict.fromkeys(self.map.locs, [])
+        self.routes = {}
+        
+        try:
+            self.process_messages(self.route_messages())
+        except UnusableMapException:
+            return False
+        
         return True
     
-    def map_messages(self):
+    def route_messages(self):
+        # Route messages, sent to each location at game start:
+        # mmmmmmmm 000010xx aaaaaaaa bbbbbbbb
+        # m: Memory (from previous outputs; not generated here)
+        # 00 a: Province category
+        # 00 b: Number of locations in the province
+        # 01 a: Number of outbound-only borders for the province
+        # 01 b: Number of outbound-only routes for the location
+        # 10 a: Number of inbound-only borders for the province
+        # 10 b: Number of inbound-only routes for the location
+        # 11 a: Number of two-way borders for the province
+        # 11 b: Number of two-way routes for the location
+        
+        ROUTE_FLAG = 0x080000
+        INBOUND_FLAG = 0x020000
+        OUTBOUND_FLAG = 0x010000
+        
         spaces = self.map.spaces
         for prov in spaces:
             province = spaces[prov]
-            if False:
-                yield (location.key, msg, [])
+            category = province.key.category
+            pmsg = ROUTE_FLAG | (category << 8) | len(province.locations)
+            
+            inbound = province.borders_in
+            outbound = province.borders_out
+            twoway = province.borders_in & province.borders_out
+            prov_routes = {
+                INBOUND_FLAG: len(inbound - twoway) << 8,
+                OUTBOUND_FLAG: len(outbound - twoway) << 8,
+                INBOUND_FLAG | OUTBOUND_FLAG: len(twoway) << 8,
+            }
+            
+            if any(num > 0xFF for num in prov_routes.values()):
+                # Too large to fit in a single byte.
+                raise UnusableMapException
+            
+            for location in province.locations:
+                yield (location.key, pmsg, [])
+                
+                inbound = set(location.routes_in)
+                outbound = set(location.routes_out)
+                twoway = inbound & outbound
+                self.routes[location.key] = routes = {
+                    INBOUND_FLAG: sorted(inbound - twoway),
+                    OUTBOUND_FLAG: sorted(outbound - twoway),
+                    INBOUND_FLAG | OUTBOUND_FLAG: sorted(twoway),
+                }
+                
+                for key in routes:
+                    num = count(routes[key])
+                    if num > 0xFF:
+                        # Too large to fit in a single byte.
+                        raise UnusableMapException
+                    
+                    msg = ROUTE_FLAG | key | prov_routes[key] | num
+                    yield (location.key, msg, [])
     
     def generate_orders(self):
         self.process_messages(self.power_messages())
