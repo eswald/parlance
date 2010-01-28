@@ -128,7 +128,7 @@ class Holland(Player):
             # Todo: Interpret the result
     
     def power_messages(self):
-        # Power messages, sent to each coast every turn:
+        # Power messages, sent to each location every turn:
         # mmmmmmmm 1abcdefg ssssssss nnnnnnnn
         # m: Memory (from previous outputs; not generated here)
         # s: Strength (Units or Centers, whichever is greater)

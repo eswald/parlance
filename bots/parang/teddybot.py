@@ -68,16 +68,16 @@ class TeddyBot(Player):
     def calc_distances(self):
         distance = {}
         
-        coasts = self.map.locs
-        for source in coasts:
-            for sink in coasts:
+        locations = self.map.locs
+        for source in locations:
+            for sink in locations:
                 distance[(source, sink)] = Infinity
             distance[source, source] = 0
-            for border in coasts[source].borders_out:
+            for border in locations[source].borders_out:
                 distance[(source, border)] = 1
-        for mid in coasts:
-            for source in coasts:
-                for sink in coasts:
+        for mid in locations:
+            for source in locations:
+                for sink in locations:
                     dist = distance[(source, mid)] + distance[(mid, sink)]
                     if dist < distance[(source, sink)]:
                         distance[(source, sink)] = dist
@@ -100,10 +100,10 @@ class TeddyBot(Player):
     
     def calc_centrality(self, distance):
         closeness = {}
-        coasts = self.map.locs
-        for source in coasts:
+        locations = self.map.locs
+        for source in locations:
             closeness[source] = sum(2 ** -distance[source, sink]
-                for sink in coasts if sink != source)
+                for sink in locations if sink != source)
         spaces = self.map.spaces
         for source in spaces:
             closeness[source] = sum(2 ** -distance[source, sink]

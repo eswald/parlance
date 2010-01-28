@@ -172,9 +172,9 @@ else:
                             # Label multi-coast provinces
                             win.addstr(loc[1], loc[2], coastline.text[0].lower(), color)
                         coords[(unit_type, coastline)] = loc[1:5]
-                    for coast in province.locations:
-                        loc = coords[(coast.unit_type, coast.coastline)]
-                        coast.__y, coast.__x, coast.__ry, coast.__rx = loc
+                    for location in province.locations:
+                        pos = coords[(location.unit_type, location.coastline)]
+                        location.__y, location.__x, location.__ry, location.__rx = pos
                 win.refresh()
                 self.mapwin = win
                 self.output('Map: %s', self.map.name)
@@ -202,24 +202,24 @@ else:
                 new_units = {}
                 old_units = self.units
                 for unit in self.map.units:
-                    coast = unit.location
+                    location = unit.location
                     fg = unit.nation.__color
-                    char = coast.unit_type.text[0].lower()
+                    char = location.unit_type.text[0].lower()
                     
                     if unit.dislodged:
-                        x = coast.__rx
-                        y = coast.__ry
+                        x = location.__rx
+                        y = location.__ry
                         bg = 0
                     else:
-                        x = coast.__x
-                        y = coast.__y
-                        bg = coast.province.__color
+                        x = location.__x
+                        y = location.__y
+                        bg = location.province.__color
                     win.addstr(y, x, char, self.get_color(fg, bg, True))
                     
-                    if coast.coastline and not unit.dislodged:
-                        char = coast.coastline.text[0].lower()
+                    if location.coastline and not unit.dislodged:
+                        char = location.coastline.text[0].lower()
                     else: char = ' '
-                    color = self.get_color(0, coast.province.__color, False)
+                    color = self.get_color(0, location.province.__color, False)
                     new_units[(y,x)] = (y, x, char, color)
                     try: del old_units[(y,x)]
                     except KeyError: pass

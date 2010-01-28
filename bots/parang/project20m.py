@@ -98,16 +98,16 @@ class Tactics(VerboseObject):
         self.map = board
         # the independent orders we generated last turn
         self.lastTurnsOrders = []
-        for coast in board.locs.values():
-            coast.basicValue = [0] * Constants.numberIterations
-            coast.connections = [board.locs[key]
-                for key in coast.borders_out]
-        for coast in board.locs.values():
-            coast.landConnections = sum([c.connections
-                    for c in coast.province.locations
+        for location in board.locs.values():
+            location.basicValue = [0] * Constants.numberIterations
+            location.connections = [board.locs[key]
+                for key in location.borders_out]
+        for location in board.locs.values():
+            location.landConnections = sum([c.connections
+                    for c in location.province.locations
                     if c.unit_type is AMY], [])
-            coast.seaConnections = sum([c.connections
-                    for c in coast.province.locations
+            location.seaConnections = sum([c.connections
+                    for c in location.province.locations
                     if c.unit_type is FLT], [])
     
     def valueProvinces(self):
@@ -275,10 +275,10 @@ class Tactics(VerboseObject):
                 # set value to 0
                 theProvince.basicValue =  0
             
-            # finally, if the province has any coasts, set their values to the
+            # finally, if the province has any locations, set their values to the
             # values of the province
-            for thisCoast in theProvince.locations:
-                thisCoast.basicValue[0] = theProvince.basicValue
+            for location in theProvince.locations:
+                location.basicValue[0] = theProvince.basicValue
     
     def getAveragePower(self):
         averagePower = 0
@@ -455,8 +455,8 @@ class Tactics(VerboseObject):
             return WaiveOrder(self.map.us)
         bestSoFar = BuildOrder(Unit(self.map.us, canBuild[0].locations[0]))
         for thisProvince in canBuild:
-            for thisCoast in thisProvince.locations:
-                newArmy = BuildOrder(Unit(self.map.us, thisCoast))
+            for location in thisProvince.locations:
+                newArmy = BuildOrder(Unit(self.map.us, location))
                 if evaluate(newArmy, self.map) > evaluate(bestSoFar, self.map):
                     bestSoFar = newArmy
         return bestSoFar
@@ -464,10 +464,9 @@ class Tactics(VerboseObject):
     def suggestBuilds(self, numberBuilds):
          builds = []
          for i in range(numberBuilds):
-             # probably don't have to check if its coastal before building
-             # a fleet, as if it isn't coastal
-             # fleet score should be less than army score because it has no
-             # connections
+             # probably don't have to check if it's coastal before building
+             # a fleet, as if it isn't coastal fleet score should be less than
+             # army score because it has no connections
              self.valueProvinces()
              bestBuild = self.getBestBuild()
              if isinstance(bestBuild, BuildOrder):
@@ -537,8 +536,8 @@ class Tactics(VerboseObject):
                     canBuildAts[0].locations[0]))
             # 0 as have to check fleet in first location
             for canBuildAt in canBuildAts:
-                for thisCoast in canBuildAt.locations:
-                    possibleBuild = BuildOrder(Unit(self.map.us, thisCoast))
+                for location in canBuildAt.locations:
+                    possibleBuild = BuildOrder(Unit(self.map.us, location))
                     if (evaluate(possibleBuild, self.map) >
                             evaluate(highestValuedBuild, self.map)):
                         highestValuedBuild = possibleBuild

@@ -71,16 +71,16 @@ class ComboBot(DumbBot):
         armies = []
         fleets = []
         beaches = []
-        coasts = self.map.locs
+        locations = self.map.locs
         for border in fleet.location.borders_out:
-            prov = coasts[border].province
+            prov = locations[border].province
             key = prov.is_coastal()
             for unit in prov.units:
                 if unit.nation == self.power:
                     if unit.can_be_convoyed(): armies.append(unit)
                     elif unit.can_convoy():    fleets.append(unit)
                     key = None
-            if key: beaches.append(coasts[key])
+            if key: beaches.append(locations[key])
         if not armies: return []
         return ([OrderCombo(self,
                 [ConvoyingOrder(fleet, army, beach),
@@ -93,15 +93,15 @@ class ComboBot(DumbBot):
                 '-'.join([unit.location.province.key.text for unit in path]))
         fleets = []
         beaches = []
-        coasts = self.map.locs
+        locations = self.map.locs
         for border in fleet.location.borders_out:
-            prov = coasts[border].province
+            prov = locations[border].province
             key = prov.is_coastal()
             for unit in prov.units:
                 if unit.nation == self.power:
                     if unit.can_convoy(): fleets.append(unit)
                     key = None
-            if key: beaches.append(coasts[key])
+            if key: beaches.append(locations[key])
         return ([OrderCombo(self,
                 [ConvoyingOrder(fleet, army, beach),
                     ConvoyedOrder(army, beach, path)])
@@ -262,7 +262,7 @@ class OrderCombo(object):
             for order_list in sublists(sub_orders)
             if valid(order_list)]
     def convoys_to(self, prov_list, unordered, holding):
-        coasts = self.player.map.locs
+        locations = self.player.map.locs
         convoyers = [fleet for fleet in unordered + holding if fleet.can_convoy()]
         all_fleets = {}
         all_armies = {}
@@ -271,13 +271,13 @@ class OrderCombo(object):
             fleets = all_fleets[fleet.key] = []
             armies = all_armies[fleet.key] = []
             beaches = all_beaches[fleet.key] = []
-            for coast in [coasts[key] for key in fleet.location.borders_out]:
-                key = coast.province.is_coastal()
+            for location in [locations[key] for key in fleet.location.borders_out]:
+                key = location.province.is_coastal()
                 if key:
-                    army = coasts[key]
-                    if coast.province in prov_list: beaches.append(army)
+                    army = locations[key]
+                    if location.province in prov_list: beaches.append(army)
                     elif army in unordered: armies.append(army)
-                elif coast in convoyers: fleets.append(coast)
+                elif location in convoyers: fleets.append(location)
         paths = []
         new_paths = [[fleet] for fleet in convoyers]
         while new_paths:
@@ -371,14 +371,14 @@ class ComboSet(object):
         # calc lost for any adjacent province an enemy can move to
         for prov in adj_provinces:
             province = board.spaces[prov]
-            prov_value = max(values.destination_value[coast.key]
-                for coast in province.locations)
+            prov_value = max(values.destination_value[location.key]
+                for location in province.locations)
             result -= prov_value * self.lost_prob(province, True, values.adjacent_units)
         # calc lost for my SCs that could have an enemy closer than a friend.
         for sc in self.power.centers:
             province = board.spaces[sc]
-            sc_value = max(values.destination_value[coast.key]
-                for coast in province.locations)
+            sc_value = max(values.destination_value[location.key]
+                for location in province.locations)
             result -= sc_value * self.threat_prob(province, True, values.adjacent_units)
         return result
     
