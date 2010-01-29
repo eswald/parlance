@@ -335,7 +335,7 @@ class ProtocolSwitcher(VerboseObject, Protocol, TimeoutMixin):
     
     def timeoutConnection(self):
         # Simulate a DCSP timeout
-        self.switchProtocol(DaideServerProtocol)
+        self.switchProtocol(DaideServerProtocol())
         self.protocol.setTimeout(None)
         self.protocol.timeoutConnection()
     
