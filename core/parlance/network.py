@@ -433,10 +433,13 @@ class DaideServerFactory(DaideFactory, ServerFactory):
         def __init__(self, parent, site):
             self.logger = parent.log
             self.site = site
+            site.logFile = self
         def __call__(self, request):
-            Site.log(self.site, request)
+            self.site.log(request)
         def __getattr__(self, name):
             return getattr(self.logger, name)
+        def write(self, line):
+            self.logger.info("HTTP Request: %s", line.strip())
     
     def __init__(self, server, game=None):
         DaideFactory.__init__(self)
