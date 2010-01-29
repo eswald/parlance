@@ -14,18 +14,17 @@ from itertools import count
 from struct import pack, unpack
 from time import sleep
 
-from twisted.internet.protocol import ClientFactory, Protocol, connectionDone
+from twisted.internet.protocol import ClientFactory, Protocol, ServerFactory, connectionDone
 from twisted.internet.error import CannotListenError
 from twisted.protocols.basic import LineOnlyReceiver
 from twisted.protocols.policies import TimeoutMixin
 from twisted.protocols.stateful import StatefulProtocol
-from twisted.web.error import NoResource
 from twisted.web.http import HTTPChannel
-from twisted.web.resource import Resource
 from twisted.web.server import Site
 
 from parlance.config import VerboseObject
 from parlance.fallbacks import any, partial
+from parlance.html import Website
 from parlance.language import Message, Representation, protocol
 from parlance.tokens import ADM, MDF, OFF, REJ, YES
 from parlance.util import random_cycle
@@ -354,26 +353,34 @@ class ProtocolSwitcher(VerboseObject, Protocol, TimeoutMixin):
         if len(data) >= 4:
             if "\0" in data:
                 # Binary data; use DCSP
-                self.switchProtocol(DaideServerProtocol)
+                self.switchProtocol(DaideServerProtocol())
                 self.transport.setTcpKeepAlive(True)
             elif data.startswith("DPP/"):
-                self.switchProtocol(DppProtocol)
+                self.switchProtocol(DppProtocol())
                 self.transport.setTcpKeepAlive(True)
             else:
                 # Probably text; switch to HTTP
-                self.switchProtocol(HTTPChannel)
+                proto = HTTPChannel()
+                
+                # Simulate Site.buildProtocol()
+                site = self.factory.site
+                proto.site = site
+                proto.requestFactory = site.requestFactory
+                proto.timeOut = site.timeOut
+                
+                self.switchProtocol(proto)
     
     def switchProtocol(self, proto):
-        self.log.debug("Switching to %s", proto)
+        self.log.debug("Switching to %s", proto.__class__)
         
         self.setTimeout(None)
         data = self.data
         del self.data
         
-        self.protocol = child = proto()
-        child.factory = self.factory
-        child.makeConnection(self.transport)
-        child.dataReceived(data)
+        self.protocol = proto
+        proto.factory = self.factory
+        proto.makeConnection(self.transport)
+        proto.dataReceived(data)
     
     def connectionLost(self, reason=connectionDone):
         if self.protocol:
@@ -408,7 +415,7 @@ class DaideClientFactory(DaideFactory, ClientFactory):
         if self.player.reconnect():
             connector.connect()
 
-class DaideServerFactory(DaideFactory, Site):
+class DaideServerFactory(DaideFactory, ServerFactory):
     protocol = ProtocolSwitcher
     
     __options__ = (
@@ -420,15 +427,11 @@ class DaideServerFactory(DaideFactory, Site):
             'If blank, no game-specific ports will be opened.'),
     )
     
-    class Nothing(Resource):
-        def getChild(self, name, request):
-            return NoResource()
-    
     class LogMixer(object):
         r'''Combines Parlance and Twisted logging facilities.
         '''#"""#'''
-        def __init__(self, site):
-            self.logger = site.log
+        def __init__(self, parent, site):
+            self.logger = parent.log
             self.site = site
         def __call__(self, request):
             Site.log(self.site, request)
@@ -437,8 +440,8 @@ class DaideServerFactory(DaideFactory, Site):
     
     def __init__(self, server, game=None):
         DaideFactory.__init__(self)
-        Site.__init__(self, self.Nothing())
-        self.log = self.LogMixer(self)
+        self.site = Site(Website())
+        self.log = self.LogMixer(self, self.site)
         self.game = game
         self.server = server
         self.socket = None
