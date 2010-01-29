@@ -16,9 +16,9 @@ class ChaosJudge(Judge):
     def farthest_units(self, power):
         distance = self.map.distance
         dist_list = [(
-            -distance(unit.coast, power.centers),   # Farthest unit
-            -unit.coast.unit_type.number,           # Fleets before armies
-            unit.coast.province.key.text,           # First alphabetically
+            -distance(unit.location, power.centers),    # Farthest unit
+            -unit.location.unit_type.number,            # Fleets before armies
+            unit.location.province.key.text,            # First alphabetically
             unit
         ) for unit in power.units]
         
