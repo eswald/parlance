@@ -10,13 +10,11 @@ r'''Test cases for the Parlance internal web server
 import unittest
 from itertools import islice
 
-from pkg_resources import resource_stream
 from twisted.web.http import HTTPClient
 
-from parlance.test import fails
 from parlance.test.network import NetworkTestCase
 
-class DataPageTestCase(NetworkTestCase):
+class WebpageTestCase(NetworkTestCase):
     def setUp(self):
         NetworkTestCase.setUp(self)
         self.connect_server()
@@ -41,19 +39,25 @@ class DataPageTestCase(NetworkTestCase):
         self.manager.process(self.time_limit)
         self.assertContains(fragment, self.factory.client.data)
         self.assertEqual(self.factory.client.status, str(status))
-    
+
+class DataPageTestCase(WebpageTestCase):
     def test_dummy_page(self):
         # /docs/dummy.html should return a 404 error
         self.assertPageContains("/docs/dummy.html", "No Such Resource", 404)
     
-    @fails
     def test_syntax_page(self):
         # /docs/syntax.html should load the syntax page
-        resource = resource_stream("parlance", "data/syntax.html")
-        for line in resource:
-            if "version" in line:
-                break
+        line = "<h1>Parlance Message Syntax</h1>"
         self.assertPageContains("/docs/syntax.html", line)
+
+class RootPageTestCase(WebpageTestCase):
+    def test_dummy_page(self):
+        # /dummy.html should return a 404 error
+        self.assertPageContains("/dummy.html", "No Such Resource", 404)
+    
+    def test_root_page(self):
+        # Todo: / should return something useful
+        self.assertPageContains("/", "No Such Resource", 404)
 
 if __name__ == "__main__":
     unittest.main()

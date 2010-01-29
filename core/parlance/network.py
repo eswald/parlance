@@ -24,7 +24,7 @@ from twisted.web.server import Site
 
 from parlance.config import VerboseObject
 from parlance.fallbacks import any, partial
-from parlance.html import Website
+from parlance.html import website
 from parlance.language import Message, Representation, protocol
 from parlance.tokens import ADM, MDF, OFF, REJ, YES
 from parlance.util import random_cycle
@@ -440,7 +440,7 @@ class DaideServerFactory(DaideFactory, ServerFactory):
     
     def __init__(self, server, game=None):
         DaideFactory.__init__(self)
-        self.site = Site(Website())
+        self.site = Site(website(server))
         self.log = self.LogMixer(self, self.site)
         self.game = game
         self.server = server
