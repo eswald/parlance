@@ -14,9 +14,9 @@ from itertools import count
 from struct import pack, unpack
 from time import sleep
 
-from twisted.internet.protocol import ClientFactory, connectionDone
+from twisted.internet.protocol import ClientFactory, Protocol, connectionDone
 from twisted.internet.error import CannotListenError
-from twisted.protocols.basic import LineReceiver
+from twisted.protocols.basic import LineOnlyReceiver
 from twisted.protocols.policies import TimeoutMixin
 from twisted.protocols.stateful import StatefulProtocol
 from twisted.web.error import NoResource
@@ -133,7 +133,8 @@ class DaideProtocol(VerboseObject, StatefulProtocol, TimeoutMixin):
             if magic == self.proto.magic:
                 if version == self.proto.version:
                     # Success!
-                    self.service = Service(self, self.addr,
+                    address = self.transport.getPeer().host
+                    self.service = Service(self, address,
                         self.factory.server, self.factory.game)
                 else: self.send_error(self.proto.VersionError)
             elif unpack('<HH', data)[1] == self.proto.magic:
@@ -246,16 +247,12 @@ class DaideClientProtocol(DaideProtocol):
         if player.closed:
             self.close()
 
-class DppProtocol(LineReceiver):
+class DppProtocol(VerboseObject, LineOnlyReceiver):
     r'''Line-based Diplomacy Programming Protocol.
         Like the Daide protocol, but using text instead of tokens.
     '''#"""#'''
     
-    # This protocol could use LineOnlyReceiver,
-    # but would then be incompatible with HTTPChannel.
-    
     def connectionMade(self):
-        self.configure(protocol)
         self.service = None
         
         # This detects both \n and \r\n for the first line.
@@ -271,7 +268,8 @@ class DppProtocol(LineReceiver):
         if line.startswith("DPP/") and not self.service:
             if line.endswith("\r"):
                 self.delimiter = "\r\n"
-            self.service = Service(self, self.addr,
+            address = self.transport.getPeer().host
+            self.service = Service(self, address,
                 self.factory.server, self.factory.game)
         else:
             self.translate(line)
@@ -291,86 +289,24 @@ class DppProtocol(LineReceiver):
     def write(self, message):
         self.sendLine(str(message))
     
-    def handle_message(self, msg):
-        raise NotImplementedError
-
-class DaideServerProtocol(DaideProtocol, DppProtocol, HTTPChannel):
-    # - DaideServerProtocol
-    #   - DaideProtocol
-    #     - VerboseObject
-    #       - Configurable
-    #         - object
-    #     - StatefulProtocol
-    #       - Protocol
-    #         - BaseProtocol
-    #     - TimeoutMixin
-    #   - DppProtocol
-    #     - LineReceiver
-    #       - Protocol
-    #         - BaseProtocol
-    #   - HTTPChannel
-    #     - LineReceiver
-    #       - Protocol
-    #         - BaseProtocol
-    #       - _PauseableMixin
-    #     - TimeoutMixin
-    
-    def __init__(self):
-        DaideProtocol.__init__(self)
-        HTTPChannel.__init__(self)
-        self.service = None
-    
-    def connectionMade(self):
-        DaideProtocol.connectionMade(self)
-        self.first = (self.IM, self.proto.NotIMError)
-        self.setTimeout(30)
-        self.__buffer = ""
-    
     def connectionLost(self, reason=connectionDone):
         if self.service and not self.service.closed:
             self.service.close()
     
-    def switchProtocol(self, proto, timeout):
-        self.log.debug("Switching to %s", proto)
-        # Do not wait until after connectionMade to reset the timeout,
-        # because it might set a timeout of its own.
-        self.setTimeout(timeout)
-        data = self.__buffer
-        del self.__buffer
-        switching = [
-            "dataReceived",
-            "timeoutConnection",
-            "lineReceived",
-            "send_RM",
-            "write",
-            "close",
-        ]
-        
-        for name in switching:
-            handler = getattr(proto, name, None)
-            setattr(self, name, handler and partial(handler, self))
-        
-        proto.connectionMade(self)
-        self.dataReceived(data)
+    def handle_message(self, msg):
+        self.log.debug("Handling %s", msg)
+        self.service.handle_message(msg)
+
+class DaideServerProtocol(DaideProtocol):
+    def connectionMade(self):
+        DaideProtocol.connectionMade(self)
+        self.first = (self.IM, self.proto.NotIMError)
+        self.service = None
+        self.setTimeout(30)
     
-    def dataReceived(self, data):
-        r'''Switch to a new protocol as soon as possible.'''
-        if self.__buffer:
-            data = self.__buffer + data
-        self.__buffer = data
-        self.log.debug("Received %r", data)
-        
-        if len(data) >= 4:
-            if "\0" in data:
-                # Binary data; use DCSP
-                self.switchProtocol(DaideProtocol, None)
-                self.transport.setTcpKeepAlive(True)
-            elif data.startswith("DPP/"):
-                self.switchProtocol(DppProtocol, None)
-                self.transport.setTcpKeepAlive(True)
-            else:
-                # Probably text; switch to HTTP
-                self.switchProtocol(HTTPChannel, self.site.timeOut)
+    def connectionLost(self, reason=connectionDone):
+        if self.service and not self.service.closed:
+            self.service.close()
     
     def read_RM(self, data):
         self.send_error(self.proto.ClientRMError)
@@ -380,7 +316,68 @@ class DaideServerProtocol(DaideProtocol, DppProtocol, HTTPChannel):
         self.service.handle_message(msg)
     
     def timeoutConnection(self):
-        self.send_error(self.proto.Timeout)
+        if self.first:
+            # We haven't yet received the complete IM
+            self.send_error(self.proto.Timeout)
+        else:
+            DaideProtocol.timeoutConnection(self)
+
+class ProtocolSwitcher(VerboseObject, Protocol, TimeoutMixin):
+    r'''Port multiplexer for a Twisted connection.
+        Determines which protocol is being requested as soon as possible,
+        then passes control to a new instance of that protocol.
+    '''#"""#'''
+    
+    def connectionMade(self):
+        # Todo: Perhaps StringIO would be a better buffer.
+        self.protocol = None
+        self.setTimeout(30)
+        self.data = ""
+    
+    def timeoutConnection(self):
+        # Simulate a DCSP timeout
+        self.switchProtocol(DaideServerProtocol)
+        self.protocol.setTimeout(None)
+        self.protocol.timeoutConnection()
+    
+    def dataReceived(self, data):
+        if self.protocol:
+            # Pass the data off to the real protocol
+            return self.protocol.dataReceived(data)
+        
+        # Try to determine the protocol requested
+        if self.data:
+            data = self.data + data
+        self.data = data
+        self.log.debug("Received %r", data)
+        
+        if len(data) >= 4:
+            if "\0" in data:
+                # Binary data; use DCSP
+                self.switchProtocol(DaideServerProtocol)
+                self.transport.setTcpKeepAlive(True)
+            elif data.startswith("DPP/"):
+                self.switchProtocol(DppProtocol)
+                self.transport.setTcpKeepAlive(True)
+            else:
+                # Probably text; switch to HTTP
+                self.switchProtocol(HTTPChannel)
+    
+    def switchProtocol(self, proto):
+        self.log.debug("Switching to %s", proto)
+        
+        self.setTimeout(None)
+        data = self.data
+        del self.data
+        
+        self.protocol = child = proto()
+        child.factory = self.factory
+        child.makeConnection(self.transport)
+        child.dataReceived(data)
+    
+    def connectionLost(self, reason=connectionDone):
+        if self.protocol:
+            self.protocol.connectionLost(reason)
 
 class DaideFactory(VerboseObject):
     __options__ = (
@@ -412,7 +409,7 @@ class DaideClientFactory(DaideFactory, ClientFactory):
             connector.connect()
 
 class DaideServerFactory(DaideFactory, Site):
-    protocol = DaideServerProtocol
+    protocol = ProtocolSwitcher
     
     __options__ = (
         ('game_port_min', int, None, None,
@@ -453,11 +450,6 @@ class DaideServerFactory(DaideFactory, Site):
         else: self._socketClosed()
     def _socketClosed(self, value):
         self.closed = True
-    
-    def buildProtocol(self, addr):
-        p = self.__super.buildProtocol(addr)
-        p.addr = addr.host
-        return p
     
     def openPort(self, reactor):
         if self.game:
