@@ -12,6 +12,7 @@ from itertools import islice
 
 from twisted.web.http import HTTPClient
 
+from parlance.fallbacks import defaultdict
 from parlance.test.network import NetworkTestCase
 
 class WebpageTestCase(NetworkTestCase):
@@ -26,12 +27,15 @@ class WebpageTestCase(NetworkTestCase):
                 HTTPClient.connectionMade(self)
                 self.data = None
                 self.make_request()
+                self.headers = defaultdict(list)
             def make_request(self):
                 self.sendCommand("GET", path)
                 self.sendHeader("Host", "parlance.example.org")
                 self.endHeaders()
             def handleStatus(self, version, status, message):
                 self.status = status
+            def handleHeader(self, key, val):
+                self.headers[key].append(val)
             def handleResponse(self, data):
                 self.data = data
         
@@ -49,6 +53,14 @@ class DataPageTestCase(WebpageTestCase):
         # /docs/syntax.html should load the syntax page
         line = "<h1>Parlance Message Syntax</h1>"
         self.assertPageContains("/docs/syntax.html", line)
+    
+    def test_standard_page(self):
+        # /docs/standard.cfg should load the standard variant file,
+        # with a text/plain mimetype and UTF-8 charset.
+        line = "Standard Map"
+        self.assertPageContains("/docs/standard.cfg", line)
+        self.assertEqual(self.factory.client.headers["Content-Type"],
+            ["text/plain; charset=UTF-8"])
 
 class RootPageTestCase(WebpageTestCase):
     def test_dummy_page(self):
