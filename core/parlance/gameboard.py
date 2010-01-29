@@ -934,7 +934,6 @@ class Power(Comparable):
         ''' Returns a list of units in order of removal preference,
             for a power that hasn't ordered enough removals.
         '''#'''
-        # Todo: the Chaos variant should use self.centers instead of self.homes
         dist_list = [(
             -distance(unit.location, self.homes),   # Farthest unit
             -unit.location.unit_type.number,        # Fleets before armies

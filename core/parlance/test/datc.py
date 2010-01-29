@@ -32,8 +32,8 @@ class DiplomacyAdjudicatorTestCase(unittest.TestCase):
     def setUp(self):
         ''' Initializes class variables for test cases.'''
         Configuration._cache.update(self.game_options)
-        variant = variants[self.variant_name]
-        self.judge = variant.new_judge(GameOptions())
+        self.variant = variants[self.variant_name]
+        self.judge = self.variant.new_judge(GameOptions())
         self.judge.start()
     def init_state(self, season, year, unit_list):
         self.judge.map.handle_NOW(NOW(season, year) % unit_list)

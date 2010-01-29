@@ -699,7 +699,7 @@ class Judge(JudgeInterface):
             
             # Handle missing orders
             if surplus > 0:
-                units = power.farthest_units(self.map.distance)
+                units = self.farthest_units(power)
                 while surplus > 0:
                     unit = units.pop(0)
                     self.log_debug(8, 'Removing %s on behalf of %s', unit, power)
@@ -822,6 +822,9 @@ class Judge(JudgeInterface):
         # 7) Return the ORD messages
         return orders
     
+    def farthest_units(self, power):
+        # Defined separately to give ChaosJudge a place to hook.
+        return power.farthest_units(self.map.distance)
     def add_movement_decisions(self, order, unit, decisions):
         decisions.add(Move_Decision(order))
         decisions.add(Attack_Decision(order))
