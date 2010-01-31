@@ -129,7 +129,7 @@ class Holland(Player):
     
     def power_messages(self):
         # Power messages, sent to each location every turn:
-        # mmmmmmmm 1abcdefg ssssssss nnnnnnnn
+        # mmmmmmmm 01abcdef ssssssss nnnnnnnn
         # m: Memory (from previous outputs; not generated here)
         # s: Strength (Units or Centers, whichever is greater)
         # n: Power number (0-N)
@@ -139,35 +139,35 @@ class Holland(Player):
         # d: Has a non-dislodged unit here
         # e: Has a dislodged unit here
         # f: Order required
-        # g: Winning
-        POWER_FLAG = 0x800000
-        PLAYED_FLAG = 0x400000
-        OWNER_FLAG = 0x200000
-        HOME_FLAG = 0x100000
-        UNIT_FLAG = 0x080000
-        DISLODGED_FLAG = 0x040000
-        ORDER_FLAG = 0x020000
-        WINNING_FLAG = 0x010000
+        POWER_FLAG = 0x400000
+        PLAYED_FLAG = 0x200000
+        OWNER_FLAG = 0x100000
+        HOME_FLAG = 0x080000
+        UNIT_FLAG = 0x040000
+        DISLODGED_FLAG = 0x020000
+        ORDER_FLAG = 0x010000
         
+        # Report each power's strength squared over the sum of the squares.
+        # This is an approximate measure of how close it is to winning,
+        # which should be easier on the agent than a flat number.
         powers = self.map.powers
-        power_messages = {}
-        unit_max = (0, [])
+        strengths = {}
         for nation in powers:
             power = powers[nation]
-            units = max(len(power.units), len(power.centers))
-            msg = POWER_FLAG | (units << 8) | nation.value()
+            strength = max(len(power.units), len(power.centers))
+            strengths[nation] = strengths ** 2
+        
+        # Compute the common factor outside the loop for efficiency.
+        # The 0xFF lets it use a full byte, with the top bit being critical.
+        factor = 0xFF / sum(strengths.values())
+        
+        power_messages = {}
+        for nation in strengths:
+            strength = int(strengths[nation] * factor) << 8
+            msg = POWER_FLAG | strength | nation.value()
             if nation == self.power:
                 msg |= PLAYED_FLAG
-            
             power_messages[nation] = msg
-            if units > unit_max[0]:
-                unit_max = (units, [nation])
-            elif units == unit_max[0]:
-                unit_max[1].append(nation)
-        
-        # Mark the winning players
-        for nation in unit_max[1]:
-            power_messages[nation] |= WINNING_FLAG
         
         phase = self.phase()
         if phase == Turn.build_phase:
@@ -250,17 +250,27 @@ class Holland(Player):
 
 class Agent(object):
     class Adaptive(object):
-        # See the ZCS paper for details
-        population_size = 200
-        mask_prob = .80
-        initial_strength = 50
-        learning_rate = .05
-        discount_factor = .001
-        strength_deduction = .03
-        crossover_probability = .05
-        mutation_probability = .001
-        new_rule_average = 2
-        coverage_minimum = 1
+        # See the XCS paper for details
+        population_size = 200       # N
+        learning_rate = .05         # beta
+        discount_factor = .001      # gamma
+        matchset_stability = 5      # theta
+        epsilon = .01               # epsilon-nought
+        alpha = .01                 # alpha
+        crossover_prob = .05        # chi
+        mutation_prob = .001        # mu
+        deletion_threshold = .1     # delta
+        coverage_minimum = 10       # phi
+        mask_prob = .80             # P-#
+        initial_prediction = 100    # p-1
+        initial_error = .5          # epsilon-1
+        initial_fitness = 50        # F-1
+        
+        valid_order_bonus = 50      # Issuing an acceptable order
+        cooperation_bonus = 60      # Divided among participating orders
+        takeover_bonus = 500        # Taking a new center
+        destruction_bonus = 300     # Leaving an opposing unit without retreat
+        winner_bonus = 10000        # Winning the game; deducted for draws
     
     def __init__(self, rules):
         self.values = self.Adaptive()
