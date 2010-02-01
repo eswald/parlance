@@ -70,14 +70,14 @@
 <g id="edge8" class="edge"><title>A4&#45;&#45;A5</title>
 <path style="fill:none;stroke:black;stroke-width:2;" d="M248,-209C239,-206 228,-203 219,-201"/>
 </g>
-<!-- C6 -->
-<g id="node18" class="node"><title>C6</title>
+<!-- C4 -->
+<g id="node18" class="node"><title>C4</title>
 <ellipse style="fill:lightgrey;stroke:black;" cx="558" cy="-445" rx="23.8245" ry="18"/>
-<text text-anchor="middle" x="558" y="-440.9" style="font-family:Times New Roman;font-size:14.00;">C6</text>
+<text text-anchor="middle" x="558" y="-440.9" style="font-family:Times New Roman;font-size:14.00;">C4</text>
 </g>
 <!-- A4&#45;&#45;C6 -->
 <g id="edge72" class="edge"><title>A4&#45;&#45;C6</title>
-<path style="fill:none;stroke:black;" d="M287,-229C338,-270 490,-391 541,-432"/>
+<path style="fill:none;stroke:black;" d="M287,-229L550,-352"/>
 </g>
 <!-- A6 -->
 <g id="node6" class="node"><title>A6</title>
@@ -88,14 +88,14 @@
 <g id="edge10" class="edge"><title>A5&#45;&#45;A6</title>
 <path style="fill:none;stroke:black;stroke-width:2;" d="M196,-212C195,-224 195,-239 194,-251"/>
 </g>
-<!-- C4 -->
-<g id="node16" class="node"><title>C4</title>
+<!-- C6 -->
+<g id="node16" class="node"><title>C6</title>
 <ellipse style="fill:lightgrey;stroke:black;" cx="573" cy="-357" rx="23.8245" ry="18"/>
-<text text-anchor="middle" x="573" y="-352.9" style="font-family:Times New Roman;font-size:14.00;">C4</text>
+<text text-anchor="middle" x="573" y="-352.9" style="font-family:Times New Roman;font-size:14.00;">C6</text>
 </g>
 <!-- A6&#45;&#45;C4 -->
 <g id="edge82" class="edge"><title>A6&#45;&#45;C4</title>
-<path style="fill:none;stroke:black;" d="M216,-274C284,-290 482,-336 550,-352"/>
+<path style="fill:none;stroke:black;" d="M216,-274L541,-432"/>
 </g>
 <!-- B2 -->
 <g id="node8" class="node"><title>B2</title>
@@ -213,8 +213,8 @@
 <g id="edge56" class="edge"><title>C3&#45;&#45;D1</title>
 <path style="fill:none;stroke:black;" d="M702,-519C664,-558 562,-661 524,-699"/>
 </g>
-<!-- C4&#45;&#45;C5 -->
-<g id="edge28" class="edge"><title>C4&#45;&#45;C5</title>
+<!-- C6&#45;&#45;C5 -->
+<g id="edge28" class="edge"><title>C6&#45;&#45;C5</title>
 <path style="fill:none;stroke:black;stroke-width:2;" d="M587,-372C595,-380 604,-389 612,-397"/>
 </g>
 <!-- E6 -->
@@ -224,10 +224,10 @@
 </g>
 <!-- C4&#45;&#45;E6 -->
 <g id="edge76" class="edge"><title>C4&#45;&#45;E6</title>
-<path style="fill:none;stroke:black;" d="M552,-366C489,-391 310,-463 249,-488"/>
+<path style="fill:none;stroke:black;" d="M534,-443L249,-488"/>
 </g>
-<!-- C5&#45;&#45;C6 -->
-<g id="edge30" class="edge"><title>C5&#45;&#45;C6</title>
+<!-- C5&#45;&#45;C4 -->
+<g id="edge30" class="edge"><title>C5&#45;&#45;C4</title>
 <path style="fill:none;stroke:black;stroke-width:2;" d="M606,-422C597,-426 587,-431 579,-435"/>
 </g>
 <!-- E4 -->
@@ -237,7 +237,7 @@
 </g>
 <!-- C6&#45;&#45;E4 -->
 <g id="edge86" class="edge"><title>C6&#45;&#45;E4</title>
-<path style="fill:none;stroke:black;" d="M534,-443C465,-439 268,-425 200,-421"/>
+<path style="fill:none;stroke:black;" d="M552,-366L200,-421"/>
 </g>
 <!-- D2 -->
 <g id="node20" class="node"><title>D2</title>
