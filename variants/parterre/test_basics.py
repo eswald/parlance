@@ -85,6 +85,10 @@ class ShiftAroundVariantTests(StandardVariantTests):
     "Tests for the shift_around map variant"
     variant = "shift_around"
 
+class SnarkVariantTests(StandardVariantTests):
+    "Tests for the snark map variant"
+    variant = "snark"
+
 class SouthAmerica32VariantTests(StandardVariantTests):
     "Tests for the south_america32 map variant"
     variant = "south_america32"
