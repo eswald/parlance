@@ -3,6 +3,7 @@ r'''Alternative games for the Holland adaptive agents.
 '''#"""#'''
 
 import curses
+import sys
 from parang.holland import Agent
 from parlance.fallbacks import all, wraps
 
@@ -23,7 +24,11 @@ class TicTacToe(object):
     def __init__(self):
         self.agent = Agent
         self.collect_handlers()
+        self.err = None
         curses.wrapper(self.run)
+        if self.err:
+            e,x,c = self.err
+            raise e,x,c
     
     def collect_handlers(self):
         self.handlers = handlers = {}
@@ -38,20 +43,24 @@ class TicTacToe(object):
                     handlers[key] = f
     
     def run(self, win):
-        self.win = win
-        self.start()
-        
-        self.goto(1, 1)
-        done = False
-        while not done:
-            self.goto(*self.pos)
+        try:
+            self.win = win
+            self.start()
+            
+            self.goto(1, 1)
+            done = False
+            while not done:
+                self.goto(*self.pos)
+                win.refresh()
+                key = win.getkey()
+                #self.output("%r", key)
+                handler = self.handlers.get(key)
+                if handler:
+                    done = handler()
             win.refresh()
-            key = win.getkey()
-            self.output("%r", key)
-            handler = self.handlers.get(key)
-            if handler:
-                done = handler()
-        win.refresh()
+        except:
+            # Re-raise, but outside of the curses wrapper.
+            self.err = sys.exc_info()
     
     def start(self):
         cx = curses.COLS // 2
@@ -87,7 +96,8 @@ class TicTacToe(object):
         if args:
             line %= args
         y, x = self.outpos
-        self.win.addstr(y, x, line + "     ")
+        self.win.addstr(y, x, line)
+        self.win.clrtoeol()
     
     def goto(self, row, col):
         self.win.move(self.rows[row], self.cols[col])
@@ -124,28 +134,45 @@ class TicTacToe(object):
     @movement
     def move_right(): return 0, 1
     
-    @handler("\n", " ")
+    @handler("\n", " ", "x", "X", "o", "O")
     def select(self):
         player = self.player
-        self.player ^= 3
         pos = self.square.index(self.pos)
-        return self.fill(pos, player)
+        self.fill(pos, 1)
+        done, winner = self.check()
+        if not done:
+            self.generate()
+            done, winner = self.check()
+        return done
+    
+    def generate(self):
+        "Generate a move for the computer player."
+        pos = self.board.index(0)
+        self.fill(pos, 2)
+        self.goto(*self.square[pos])
     
     def fill(self, pos, player):
+        if player != self.player:
+            # No cheating!
+            return False
+        
+        self.player ^= 3
         self.board[pos] = player
         r, c = self.square[pos]
         y = self.rows[r]
         x = self.cols[c]
         self.win.addch(y, x, self.symbols[player])
-        
-        result = self.winner()
-        if result:
-            self.output("Winner: %s", self.symbols[result])
-            return True
+    
+    def check(self):
+        winner = self.winner()
+        done = False
+        if winner:
+            self.output("Winner: %s", self.symbols[winner])
+            done = True
         elif all(self.board):
             self.output("Tie!")
-            return True
-        return False
+            done = True
+        return done, winner
     
     def winner(self):
         b = self.board
