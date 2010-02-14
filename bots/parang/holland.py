@@ -247,6 +247,25 @@ class Holland(Player):
                 for unit in self.power.units:
                     if not orders.get_order(unit):
                         yield (unit.location.key, msg, [])
+    
+    def handle_THX(self, message):
+        r'''Rewards rules that submit valid orders.'''
+        folded = message.fold()
+        result = folded[2][0]
+        if result is MBV:
+            sent = folded[1]
+            for order in self.orders:
+                if order.order == sent:
+                    self.log.debug("Rewarding rules for valid order: %s", order)
+                    self.agent.reward(order.action_set, self.values.valid_order_bonus)
+                    
+                    # Don't reward the same order twice
+                    # (Waives, for example)
+                    order.order = None
+                    break
+        else:
+            # Pass it up to the default handler
+            Player.handle_THX(self, message)
 
 class Agent(object):
     class Adaptive(object):
