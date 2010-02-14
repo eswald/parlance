@@ -4,11 +4,14 @@ r'''Alternative games for the Holland adaptive agents.
 
 import curses
 import sys
+from itertools import count
 from parang.holland import Agent
 from parlance.fallbacks import all, wraps
+from parlance.util import s
 
 class TicTacToe(object):
     symbols = [" ", "X", "O"]
+    rewards = [400, 50, 900]
     square = [
         (0, 1),
         (2, 0),
@@ -22,7 +25,7 @@ class TicTacToe(object):
     ]
     
     def __init__(self):
-        self.agent = Agent
+        self.agent = Agent([])
         self.collect_handlers()
         self.err = None
         curses.wrapper(self.run)
@@ -139,15 +142,21 @@ class TicTacToe(object):
         player = self.player
         pos = self.square.index(self.pos)
         self.fill(pos, 1)
-        done, winner = self.check()
+        done = self.check()
         if not done:
             self.generate()
-            done, winner = self.check()
+            done = self.check()
         return done
     
     def generate(self):
         "Generate a move for the computer player."
-        pos = self.board.index(0)
+        msg = sum(x << (n*2) for n, x in enumerate(self.board))
+        for n in count(1):
+            msg = self.agent.process(msg)
+            pos = msg % 9
+            if not self.board[pos]:
+                self.output("%d round%s", n, s(n))
+                break
         self.fill(pos, 2)
         self.goto(*self.square[pos])
     
@@ -172,7 +181,10 @@ class TicTacToe(object):
         elif all(self.board):
             self.output("Tie!")
             done = True
-        return done, winner
+        if done:
+            bonus = self.rewards[winner]
+            self.agent.reward(bonus)
+        return done
     
     def winner(self):
         b = self.board

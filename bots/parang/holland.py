@@ -7,7 +7,8 @@ r'''Holland - A bot based on JH Holland's classifier systems
 '''#'''
 
 from bisect import bisect
-from random import uniform
+from math import exp, log
+from random import random, uniform, randrange
 from struct import pack, unpack
 
 from parlance.fallbacks import defaultdict
@@ -19,6 +20,9 @@ def weighted_choice(choices):
         Expects `choices` to be a mapping of key => weight.
     '''#"""#'''
     keys = list(choices)
+    if not keys:
+        raise ValueError("No values to choose from: " + repr(keys))
+    
     sums = []
     total = 0
     for key in keys:
@@ -33,9 +37,17 @@ class UnusableMapException(Exception):
     pass
 
 class Holland(Player):
+    class Adaptive(object):
+        valid_order_bonus = 50      # Issuing an acceptable order
+        cooperation_bonus = 60      # Divided among participating orders
+        takeover_bonus = 500        # Taking a new center
+        destruction_bonus = 300     # Leaving an opposing unit without retreat
+        winner_bonus = 27720        # Winning the game; deducted for draws
+    
     def process_map(self):
         # Todo: Collect the rules from more permanent storage.
         self.agent = Agent([])
+        self.values = Adaptive()
         self.orders = None
         self.memory = dict.fromkeys(self.map.locs, 0)
         self.actions = dict.fromkeys(self.map.locs, [])
@@ -269,34 +281,53 @@ class Holland(Player):
 
 class Agent(object):
     class Adaptive(object):
-        # See the XCS paper for details
-        population_size = 200       # N
-        learning_rate = .05         # beta
-        discount_factor = .001      # gamma
-        matchset_stability = 5      # theta
-        epsilon = .01               # epsilon-nought
-        alpha = .01                 # alpha
-        crossover_prob = .05        # chi
-        mutation_prob = .001        # mu
-        deletion_threshold = .1     # delta
-        coverage_minimum = 10       # phi
-        mask_prob = .80             # P-#
-        initial_prediction = 100    # p-1
-        initial_error = .5          # epsilon-1
-        initial_fitness = 50        # F-1
+        # See the XCS paper for details: Butz and Wilson, 2001
+        # http://citeseer.ist.psu.edu/old/700101.html
+        N = population_size = 1000
+        B = learning_rate = .1
+        a = accuracy_slope = .1
+        e0 = error_minimum = 10
+        v = power_parameter = -5
+        g = discount_factor = .8
+        OGA = ga_threshold = 40
+        X = crossover_prob = .75
+        u = mutation_prob = .002
+        Odel = experience_threshold = 20
+        d = fitness_threshold = .1
+        Osub = subsumption_threshold = 50
+        P = mask_probability = .3
+        p1 = initial_prediction = 1
+        e1 = initial_error = .1
+        F1 = initial_fitness = .1
+        pexplr = exploration_probability = .25
+        Omna = coverage_threshold = 10
         
-        valid_order_bonus = 50      # Issuing an acceptable order
-        cooperation_bonus = 60      # Divided among participating orders
-        takeover_bonus = 500        # Taking a new center
-        destruction_bonus = 300     # Leaving an opposing unit without retreat
-        winner_bonus = 10000        # Winning the game; deducted for draws
+        # Subsumption is probably not useful here.
+        doGASubsumption = False
+        doActionSetSubsumption = False
     
     def __init__(self, rules):
         self.values = self.Adaptive()
-        self.last_action = []
+        self.last_action = None
         self.rules = rules
+        self.timestamp = 0
     
-    def process(self, msg):
+    def process(self, msg, bonus=0):
+        action, action_set, brigade = self.generate(msg)
+        if self.last_action:
+            bonus += brigade
+            self.update(self.last_action, bonus, self.last_message)
+        self.last_action = action_set
+        self.last_message = msg
+        return action
+    
+    def reward(self, bonus):
+        r"Final reward, for when the next action does not depend on the last."
+        self.update(self.last_action, bonus, self.last_message)
+        self.last_action = None
+    
+    def generate(self, msg):
+        self.timestamp += 1
         results = defaultdict(list)
         
         for rule in self.rules:
@@ -304,31 +335,125 @@ class Agent(object):
             if output is not None:
                 results[output].append(rule)
         
-        actions = dict((key, sum(r.strength for r in results[key]))
+        while sum(r.n for s in results for r in results[s]) < self.values.Omna:
+            rule = self.coverage(msg, results)
+            output = rule.matches(msg)
+            results[output].append(rule)
+            
+            # Delete any rules no longer in the population
+            for rule in self.delete(1):
+                if rule.n < 1:
+                    output = rule.matches(msg)
+                    results[output].remove(rule)
+        
+        actions = dict((key, sum(r.p * r.F for r in results[key]) /
+                sum(r.F for r in results[key]))
             for key in results)
         action = weighted_choice(actions)
-        action_set = results.pop(action)
+        action_set = results[action]
         
-        return action, action_set
+        brigade = self.values.g * max(actions.values())
+        return action, action_set, brigade
     
-    def reward(self, action_set, precedents, bonus):
-        pass
+    def coverage(self, msg, actions):
+        r"Creates a new classifier to fit the under-represented message."
+        
+        # Mask only P% of the pattern bits.
+        mask = 0
+        for n in range(Classifier.bits):
+            if random() < self.values.P:
+                mask |= 1 << n
+        
+        while True:
+            # Generate an action not in the match set.
+            # This also guarantees that the new classifier is unique.
+            action = randrange(1 << Classifier.bits)
+            if action not in actions:
+                break
+        
+        values = {
+            "pattern": msg,
+            "pattern_mask": mask,
+            "output": action,
+            "output_mask": 0,
+            "prediction": self.values.p1,
+            "error": self.values.e1,
+            "fitness": self.values.F1,
+            "experience": 0,
+            "timestamp": self.timestamp,
+            "setsize": 1,
+            "numerosity": 1,
+        }
+        
+        return Classifier(values)
+    
+    def update(self, action_set, bonus, msg):
+        # Update the action set
+        set_size = sum(rule.n for rule in action_set)
+        accuracy = 0
+        for rule in action_set:
+            rule.exp += 1
+            factor = max(1. / rule.exp, self.values.B)
+            
+            # Switching these two updates may help for more complex problems.
+            diff = bonus - rule.p
+            rule.p += diff * factor
+            rule.e += (abs(diff) - rule.e) * factor
+            
+            rule.s += (set_size - rule.s) * factor
+            
+            if rule.e < self.values.e0:
+                rule.k = 1
+            else:
+                rule.k = self.values.a * (rule.e / self.values.e0) ** self.values.v
+            accuracy += rule.k * rule.n
+        
+        # Update the fitness separately, using the total accuracy.
+        for rule in action_set:
+            rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
+        
+        # Run the genetic algorithm
+    
+    def delete(self, num):
+        return []
 
 class Classifier(object):
-    format = "=LLLL"
+    r'''A prediction about the value of an action under certain conditions.
+        This is technically a macroclassifier, because it can represent many.
+    '''#"""#'''
     
-    def __init__(self, chromosome, strength, accuracy, fitness):
-        pattern, pattern_mask, output, output_mask = unpack(self.format, chromosome)
-        self.pattern = pattern & pattern_mask
+    format = "=LLLL"
+    bits = 32
+    
+    def __init__(self, values):
+        chromosome = values.get("chromosome")
+        if chromosome:
+            self.chromosome = chromosome
+            pattern, pattern_mask, output, output_mask = unpack(self.format, chromosome)
+        else:
+            pattern = values["pattern"]
+            pattern_mask = values["pattern_mask"]
+            output = values["output"]
+            output_mask = values["output_mask"]
+            self.chromosome = pack(self.format, pattern, pattern_mask, output, output_mask)
+        
         self.pattern_mask = pattern_mask
-        self.output = output & ~output_mask
+        self.pattern = pattern & pattern_mask
         self.output_mask = output_mask
-        self.strength = strength
-        self.accuracy = accuracy
-        self.fitness = fitness
+        self.output = output & ~output_mask
+        
+        # These names come from Butz and Wilson, 2001
+        self.p = values["prediction"]
+        self.e = values["error"]
+        self.F = values["fitness"]
+        self.exp = values["experience"]
+        self.ts = values["timestamp"]
+        self.s = values["setsize"]
+        self.n = values["numerosity"]
     
     def matches(self, msg):
         if (msg & self.pattern_mask) == self.pattern:
             return self.output | (msg & self.output_mask)
         else:
             return None
+
