@@ -5,6 +5,8 @@ r'''Alternative games for the Holland adaptive agents.
 import curses
 import sys
 from itertools import count
+from time import sleep
+
 from parang.holland import Agent
 from parlance.fallbacks import all, wraps
 from parlance.util import s
@@ -76,7 +78,6 @@ class TicTacToe(object):
         left, right = cx - 5, cx + 5
         
         self.outpos = bottom + 3, left
-        self.player = 1
         
         win = self.win
         for y in hlines:
@@ -89,11 +90,16 @@ class TicTacToe(object):
             for y in hlines:
                 win.addch(y, x, curses.ACS_PLUS)
         
+        self.reset()
+    
+    def reset(self):
+        self.player = 1
         self.board = [0] * 9
+        
         blank = self.symbols[0]
         for x in self.cols:
             for y in self.rows:
-                win.addch(y, x, blank)
+                self.win.addch(y, x, blank)
     
     def output(self, line, *args):
         if args:
@@ -146,7 +152,7 @@ class TicTacToe(object):
         if not done:
             self.generate()
             done = self.check()
-        return done
+        return False
     
     def generate(self):
         "Generate a move for the computer player."
@@ -184,6 +190,9 @@ class TicTacToe(object):
         if done:
             bonus = self.rewards[winner]
             self.agent.reward(bonus)
+            self.win.refresh()
+            sleep(1)
+            self.reset()
         return done
     
     def winner(self):
