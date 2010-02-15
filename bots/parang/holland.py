@@ -309,7 +309,7 @@ class Agent(object):
     def __init__(self, rules):
         self.values = self.Adaptive()
         self.last_action = None
-        self.rules = rules
+        self.rules = list(rules)
         self.timestamp = 0
     
     def process(self, msg, bonus=0):
@@ -341,10 +341,9 @@ class Agent(object):
             results[output].append(rule)
             
             # Delete any rules no longer in the population
-            for rule in self.delete(1):
-                if rule.n < 1:
-                    output = rule.matches(msg)
-                    results[output].remove(rule)
+            for rule in self.delete():
+                output = rule.matches(msg)
+                results[output].remove(rule)
         
         actions = dict((key, sum(r.p * r.F for r in results[key]) /
                 sum(r.F for r in results[key]))
@@ -385,7 +384,9 @@ class Agent(object):
             "numerosity": 1,
         }
         
-        return Classifier(values)
+        rule = Classifier(values)
+        self.rules.append(rule)
+        return rule
     
     def update(self, action_set, bonus, msg):
         # Update the action set
@@ -414,8 +415,32 @@ class Agent(object):
         
         # Run the genetic algorithm
     
-    def delete(self, num):
-        return []
+    def delete(self):
+        total = sum(rule.n for rule in self.rules)
+        excess = total - self.values.N
+        if excess < 1:
+            return []
+        
+        fitness = sum(rule.F for rule in self.rules) / total
+        scores = dict((rule, self.unfitness(rule, fitness))
+            for rule in self.rules)
+        
+        deleted = []
+        while excess > 0:
+            rule = weighted_choice(scores)
+            rule.n -= 1
+            if rule.n <= 0:
+                self.rules.remove(rule)
+                del scores[rule]
+                deleted.append(rule)
+            excess -= 1
+        return deleted
+    
+    def unfitness(self, rule, average):
+        result = rule.n * rule.s
+        if rule.exp > self.values.Odel and rule.F < average * self.values.d * rule.n:
+            vote *= average * rule.n / rule.F
+        return result
 
 class Classifier(object):
     r'''A prediction about the value of an action under certain conditions.
