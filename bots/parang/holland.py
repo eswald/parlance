@@ -343,11 +343,13 @@ class Agent(object):
             # Delete any rules no longer in the population
             for rule in self.delete():
                 output = rule.matches(msg)
-                results[output].remove(rule)
+                if output is not None:
+                    results[output].remove(rule)
         
         actions = dict((key, sum(r.p * r.F for r in results[key]) /
                 sum(r.F for r in results[key]))
-            for key in results)
+            for key in results
+            if results[key])
         action = weighted_choice(actions)
         action_set = results[action]
         
@@ -409,9 +411,10 @@ class Agent(object):
                 rule.k = self.values.a * (rule.e / self.values.e0) ** self.values.v
             accuracy += rule.k * rule.n
         
-        # Update the fitness separately, using the total accuracy.
-        for rule in action_set:
-            rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
+        if accuracy:
+            # Update the fitness separately, using the total accuracy.
+            for rule in action_set:
+                rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
         
         # Run the genetic algorithm
     

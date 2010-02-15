@@ -42,7 +42,6 @@ class TicTacToe(object):
             done = False
             player = 1
             while not done:
-                win.refresh()
                 self.turn(player)
                 player ^= 3
             win.refresh()
@@ -114,6 +113,8 @@ class TicTacToe(object):
         done = False
         if winner:
             self.output("Winner: %s", self.symbols[winner])
+            self.win.refresh()
+            sleep(.2)
             done = True
             for n, player in enumerate(self.players):
                 if winner == n + 1:
@@ -123,6 +124,8 @@ class TicTacToe(object):
                 player.result(points)
         elif all(self.board):
             self.output("Tie!")
+            self.win.refresh()
+            sleep(.2)
             done = True
             for player in self.players:
                 player.result(0)
@@ -167,8 +170,7 @@ class HumanPlayer(object):
         return pos
     
     def result(self, points):
-        self.game.win.refresh()
-        sleep(1)
+        sleep(.2)
     
     def collect_handlers(self):
         self.handlers = handlers = {}
@@ -250,7 +252,7 @@ class ComputerPlayer(object):
             rules = [Classifier(row) for row in self.table.find()]
         return rules
     
-    def save(self, rule):
+    def save(self):
         # Todo: Make this more incremental
         if self.table:
             current = []
@@ -272,4 +274,4 @@ class BasicPlayer(object):
         pass
 
 if __name__ == "__main__":
-    TicTacToe([HumanPlayer, ComputerPlayer])
+    TicTacToe([ComputerPlayer, ComputerPlayer])
