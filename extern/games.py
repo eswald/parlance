@@ -7,7 +7,7 @@ import sys
 from itertools import count
 from time import sleep
 
-from parang.holland import Agent
+from parang.holland import Agent, Classifier
 from parlance.fallbacks import all, wraps
 from parlance.util import s
 
@@ -216,9 +216,12 @@ class HumanPlayer(object):
 class ComputerPlayer(object):
     # Loss, Tie, Win
     rewards = [50, 400, 900]
+    agent = None
+    table = None
     
     def __init__(self, game):
-        self.agent = Agent([])
+        if not self.agent:
+            self.agent = Agent(self.rules())
         self.game = game
     
     def generate(self):
@@ -235,6 +238,28 @@ class ComputerPlayer(object):
     def result(self, points):
         bonus = self.rewards[points + 1]
         self.agent.reward(bonus)
+        self.save()
+    
+    def rules(self):
+        try:
+            from pymongo import Connection
+        except ImportError:
+            rules = []
+        else:
+            self.table = Connection().parang.tictactoe
+            rules = [Classifier(row) for row in self.table.find()]
+        return rules
+    
+    def save(self, rule):
+        # Todo: Make this more incremental
+        if self.table:
+            current = []
+            for rule in self.agent.rules:
+                uid = self.table.save(rule.values())
+                current.append(uid)
+            
+            # Remove any deleted classifiers.
+            self.table.remove({"_id": {"$nin": current}})
 
 class BasicPlayer(object):
     def __init__(self, game):
@@ -247,4 +272,4 @@ class BasicPlayer(object):
         pass
 
 if __name__ == "__main__":
-    TicTacToe([HumanPlayer, HumanPlayer])
+    TicTacToe([HumanPlayer, ComputerPlayer])

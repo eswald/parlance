@@ -475,10 +475,34 @@ class Classifier(object):
         self.ts = values["timestamp"]
         self.s = values["setsize"]
         self.n = values["numerosity"]
+        
+        # For saving in MongoDB
+        self._id = values.get("_id")
     
     def matches(self, msg):
         if (msg & self.pattern_mask) == self.pattern:
             return self.output | (msg & self.output_mask)
         else:
             return None
+    
+    def values(self):
+        try:
+            from pymongo.binary import Binary
+        except ImportError:
+            Binary = str
+        
+        values = {
+            "chromosome": Binary(self.chromosome),
+            "prediction": self.p,
+            "error": self.e,
+            "fitness": self.F,
+            "experience": self.exp,
+            "timestamp": self.ts,
+            "setsize": self.s,
+            "numerosity": self.n,
+        }
+        
+        if self._id is not None:
+            values["_id"] = self._id
+        return values
 
