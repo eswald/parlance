@@ -519,9 +519,11 @@ class Collective(object):
         for r in self.rules:
             if r.chromosome == rule.chromosome:
                 r.n += rule.n
+                self.save(r)
                 break
         else:
             self.rules.append(rule)
+            self.save(rule)
     
     def delete(self):
         total = sum(rule.n for rule in self.rules)
