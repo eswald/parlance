@@ -227,13 +227,17 @@ class ComputerPlayer(object):
     def generate(self):
         "Generate a move for the computer player."
         msg = sum(x << (n*2) for n, x in enumerate(self.game.board))
+        message = msg
         for n in count(1):
-            msg = self.agent.process(msg)
-            pos = msg % 9
+            action = self.agent.process(message)
+            pos = action % 9
             if self.game.board[pos]:
                 self.game.output("%d round%s", n, s(n))
                 self.game.goto(*self.game.square[pos])
                 self.game.win.refresh()
+                
+                # Keep part of the failure around.
+                message = ((action << 18) & 0xFFFFFFFF) | msg
             else:
                 break
         return pos
