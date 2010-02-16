@@ -6,6 +6,8 @@ r'''Holland - A bot based on JH Holland's classifier systems
     commercial purposes without permission from the authors is prohibited.
 '''#'''
 
+from __future__ import division
+
 from bisect import bisect
 from math import exp, log
 from random import random, uniform, randrange
@@ -291,7 +293,7 @@ class Agent(object):
         g = discount_factor = .8
         OGA = ga_threshold = 40
         X = crossover_prob = .75
-        u = mutation_prob = .002
+        u = mutation_prob = .01
         Odel = experience_threshold = 20
         d = fitness_threshold = .1
         Osub = subsumption_threshold = 50
@@ -395,6 +397,9 @@ class Agent(object):
     def update(self, action_set, bonus, msg):
         # Update the action set
         set_size = sum(rule.n for rule in action_set)
+        if not set_size:
+            return
+        
         accuracy = 0
         for rule in action_set:
             rule.exp += 1
@@ -413,15 +418,99 @@ class Agent(object):
                 rule.k = self.values.a * (rule.e / self.values.e0) ** self.values.v
             accuracy += rule.k * rule.n
         
-        if accuracy:
-            # Update the fitness separately, using the total accuracy.
-            for rule in action_set:
-                rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
+        # Update the fitness separately, using the total accuracy.
+        for rule in action_set:
+            rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
         
         for rule in action_set:
             self.save(rule)
         
-        # Run the genetic algorithm
+        # Run the genetic algorithm every so often
+        avetime = sum(r.ts * r.n for r in action_set) / set_size
+        if self.timestamp - avetime > self.values.OGA:
+            self.genetic(action_set, msg)
+    
+    def genetic(self, action_set, msg):
+        # Set timestamps for future use
+        for rule in action_set:
+            rule.ts = self.timestamp
+        
+        # Choose two, based on their fitness values
+        fitness = dict((rule, rule.F) for rule in action_set)
+        first = weighted_choice(fitness).copy()
+        second = weighted_choice(fitness).copy()
+        
+        if random() < self.values.X:
+            self.crossover(first, second)
+        
+        self.mutate(first, msg)
+        self.mutate(second, msg)
+        self.insert(first)
+        self.insert(second)
+        self.delete()
+    
+    def crossover(self, first, second):
+        x = randrange(Classifier.bits)
+        y = randrange(Classifier.bits)
+        if x > y:
+            x, y = y, x
+        
+        mask = 0
+        for n in range(x, y + 1):
+            mask |= 1 << n
+        
+        fp, fpm, fo, fom = first.unpack()
+        sp, spm, so, som = second.unpack()
+        
+        # Swap the pattern, using the bitwise trick
+        fp ^= sp & mask
+        sp ^= fp & mask
+        fp ^= sp & mask
+        
+        # Swap the pattern mask
+        fpm ^= spm & mask
+        spm ^= fpm & mask
+        fpm ^= spm & mask
+        
+        first.pack(fp, fpm, fo, fom)
+        second.pack(sp, spm, so, som)
+        
+        # Average out the performance measurements
+        first.p = second.p = (first.p + second.p) / 2
+        first.e = second.e = (first.e + second.e) / 2
+        first.F = second.F = (first.F + second.F) / 2
+    
+    def mutate(self, rule, msg):
+        prob = self.values.u
+        pattern, pattern_mask, output, output_mask = rule.unpack()
+        
+        for n in range(Classifier.bits):
+            bit = 1 << n
+            if random() < prob:
+                # Mutate only within the matching niche
+                pattern_mask ^= bit
+                if msg & bit:
+                    pattern |= bit
+                else:
+                    pattern &= ~bit
+            if random() < prob:
+                output ^= bit
+            if random() < prob:
+                output_mask ^= bit
+        
+        # Save the new values
+        rule.pack(pattern, pattern_mask, output, output_mask)
+        
+        # Temporarily decrease fitness
+        rule.F *= 0.1
+    
+    def insert(self, rule):
+        for r in self.rules:
+            if r.chromosome == rule.chromosome:
+                r.n += rule.n
+                break
+        else:
+            self.rules.append(rule)
     
     def delete(self):
         total = sum(rule.n for rule in self.rules)
@@ -463,18 +552,13 @@ class Classifier(object):
         chromosome = values.get("chromosome")
         if chromosome:
             self.chromosome = chromosome
-            pattern, pattern_mask, output, output_mask = unpack(self.format, chromosome)
+            self.set(*self.unpack())
         else:
             pattern = values["pattern"]
             pattern_mask = values["pattern_mask"]
             output = values["output"]
             output_mask = values["output_mask"]
-            self.chromosome = pack(self.format, pattern, pattern_mask, output, output_mask)
-        
-        self.pattern_mask = pattern_mask
-        self.pattern = pattern & pattern_mask
-        self.output_mask = output_mask
-        self.output = output & ~output_mask
+            self.pack(pattern, pattern_mask, output, output_mask)
         
         # These names come from Butz and Wilson, 2001
         self.p = values["prediction"]
@@ -487,6 +571,19 @@ class Classifier(object):
         
         # For saving in MongoDB
         self._id = values.get("_id")
+    
+    def unpack(self):
+        return unpack(self.format, self.chromosome)
+    def pack(self, pattern, pattern_mask, output, output_mask):
+        self.chromosome = pack(self.format,
+            pattern, pattern_mask, output, output_mask)
+        self.set(pattern, pattern_mask, output, output_mask)
+    def set(self, pattern, pattern_mask, output, output_mask):
+        # Save not the real values, but the ones we need to use.
+        self.pattern_mask = pattern_mask
+        self.pattern = pattern & pattern_mask
+        self.output_mask = output_mask
+        self.output = output & ~output_mask
     
     def matches(self, msg):
         if (msg & self.pattern_mask) == self.pattern:
@@ -514,4 +611,10 @@ class Classifier(object):
         if self._id is not None:
             values["_id"] = self._id
         return values
+    
+    def copy(self):
+        vals = self.values()
+        vals["numerosity"] = 1
+        vals["experience"] = 0
+        return Classifier(vals)
 
