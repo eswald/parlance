@@ -281,7 +281,7 @@ class Holland(Player):
             # Pass it up to the default handler
             Player.handle_THX(self, message)
 
-class Agent(object):
+class Collective(object):
     class Adaptive(object):
         # See the XCS paper for details: Butz and Wilson, 2001
         # http://citeseer.ist.psu.edu/old/700101.html
@@ -308,31 +308,42 @@ class Agent(object):
         doGASubsumption = False
         doActionSetSubsumption = False
     
-    def __init__(self, rules, save=None):
+    # Todo: Consider weak refs for this
+    singletons = {}
+    
+    def __new__(cls, table):
+        try:
+            result = cls.singletons[table]
+        except KeyError:
+            result = object.__new__(cls)
+            cls.singletons[table] = result
+            result.init(table)
+        return result
+    
+    def init(self, table):
+        # Not __init__, because that gets run too often.
         self.values = self.Adaptive()
-        self.last_action = None
-        self.rules = list(rules)
+        self.rules = self.retrieve(table)
         self.timestamp = 0
-        if save:
-            self.save = save
+    
+    def retrieve(self, table):
+        try:
+            from pymongo import Connection
+        except ImportError:
+            rules = []
+        else:
+            self.table = Connection().parang[table]
+            rules = [Classifier(row) for row in self.table.find()]
+        return rules
     
     def save(self, rule):
         # Called whenever a classifier is created or changed.
-        pass
-    
-    def process(self, msg, bonus=0):
-        action, action_set, brigade = self.generate(msg)
-        if self.last_action:
-            bonus += brigade
-            self.update(self.last_action, bonus, self.last_message)
-        self.last_action = action_set
-        self.last_message = msg
-        return action
-    
-    def reward(self, bonus):
-        r"Final reward, for when the next action does not depend on the last."
-        self.update(self.last_action, bonus, self.last_message)
-        self.last_action = None
+        if self.table:
+            if rule.n > 0:
+                uid = self.table.save(rule.values())
+                rule._id = uid
+            elif rule._id:
+                self.table.remove(rule._id)
     
     def generate(self, msg):
         self.timestamp += 1
@@ -539,6 +550,25 @@ class Agent(object):
         if rule.exp > self.values.Odel and rule.F < average * self.values.d * rule.n:
             vote *= average * rule.n / rule.F
         return result
+
+class Agent(object):
+    def __init__(self, table):
+        self.parent = Collective(table)
+        self.last_action = None
+    
+    def process(self, msg, bonus=0):
+        action, action_set, brigade = self.parent.generate(msg)
+        if self.last_action:
+            bonus += brigade
+            self.parent.update(self.last_action, bonus, self.last_message)
+        self.last_action = action_set
+        self.last_message = msg
+        return action
+    
+    def reward(self, bonus):
+        r"Final reward, for when the next action does not depend on the last."
+        self.parent.update(self.last_action, bonus, self.last_message)
+        self.last_action = None
 
 class Classifier(object):
     r'''A prediction about the value of an action under certain conditions.
