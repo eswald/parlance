@@ -360,10 +360,10 @@ class Agent(object):
     def coverage(self, msg, actions):
         r"Creates a new classifier to fit the under-represented message."
         
-        # Mask only P% of the pattern bits.
+        # Ignore only P% of the pattern bits.
         mask = 0
         for n in range(Classifier.bits):
-            if random() < self.values.P:
+            if random() > self.values.P:
                 mask |= 1 << n
         
         while True:
