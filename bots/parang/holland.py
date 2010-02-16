@@ -306,11 +306,17 @@ class Agent(object):
         doGASubsumption = False
         doActionSetSubsumption = False
     
-    def __init__(self, rules):
+    def __init__(self, rules, save=None):
         self.values = self.Adaptive()
         self.last_action = None
         self.rules = list(rules)
         self.timestamp = 0
+        if save:
+            self.save = save
+    
+    def save(self, rule):
+        # Called whenever a classifier is created or changed.
+        pass
     
     def process(self, msg, bonus=0):
         action, action_set, brigade = self.generate(msg)
@@ -339,12 +345,7 @@ class Agent(object):
             rule = self.coverage(msg, results)
             output = rule.matches(msg)
             results[output].append(rule)
-            
-            # Delete any rules no longer in the population
-            for rule in self.delete():
-                output = rule.matches(msg)
-                if output is not None:
-                    results[output].remove(rule)
+            self.delete()
         
         actions = dict((key, sum(r.p * r.F for r in results[key]) /
                 sum(r.F for r in results[key]))
@@ -388,6 +389,7 @@ class Agent(object):
         
         rule = Classifier(values)
         self.rules.append(rule)
+        self.save(rule)
         return rule
     
     def update(self, action_set, bonus, msg):
@@ -416,6 +418,9 @@ class Agent(object):
             for rule in action_set:
                 rule.F += (rule.k * rule.n / accuracy - rule.F) * self.values.B
         
+        for rule in action_set:
+            self.save(rule)
+        
         # Run the genetic algorithm
     
     def delete(self):
@@ -436,6 +441,7 @@ class Agent(object):
                 self.rules.remove(rule)
                 del scores[rule]
                 deleted.append(rule)
+            self.save(rule)
             excess -= 1
         return deleted
     

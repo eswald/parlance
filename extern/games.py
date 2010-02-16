@@ -223,7 +223,7 @@ class ComputerPlayer(object):
     
     def __init__(self, game):
         if not self.agent:
-            self.agent = Agent(self.rules())
+            self.agent = Agent(self.rules(), self.save)
         self.game = game
     
     def generate(self):
@@ -232,15 +232,17 @@ class ComputerPlayer(object):
         for n in count(1):
             msg = self.agent.process(msg)
             pos = msg % 9
-            if not self.game.board[pos]:
+            if self.game.board[pos]:
                 self.game.output("%d round%s", n, s(n))
+                self.game.goto(*self.game.square[pos])
+                self.game.win.refresh()
+            else:
                 break
         return pos
     
     def result(self, points):
         bonus = self.rewards[points + 1]
         self.agent.reward(bonus)
-        self.save()
     
     def rules(self):
         try:
@@ -252,16 +254,13 @@ class ComputerPlayer(object):
             rules = [Classifier(row) for row in self.table.find()]
         return rules
     
-    def save(self):
-        # Todo: Make this more incremental
+    def save(self, rule):
         if self.table:
-            current = []
-            for rule in self.agent.rules:
+            if rule.n > 0:
                 uid = self.table.save(rule.values())
-                current.append(uid)
-            
-            # Remove any deleted classifiers.
-            self.table.remove({"_id": {"$nin": current}})
+                rule._id = uid
+            elif rule._id:
+                self.table.remove(rule._id)
 
 class BasicPlayer(object):
     def __init__(self, game):
