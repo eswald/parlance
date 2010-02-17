@@ -304,6 +304,9 @@ class Collective(object):
         pexplr = exploration_probability = .25
         Omna = coverage_threshold = 10
         
+        # Reduced learning rate for the environmental error
+        Be = variance_learning_rate = .05
+        
         # Subsumption is probably not useful here.
         doGASubsumption = False
         doActionSetSubsumption = False
@@ -409,17 +412,25 @@ class Collective(object):
         # Update the action set
         set_size = sum(rule.n for rule in action_set)
         if not set_size:
+            # All classifiers have been deleted.
+            # Continuing would cause division by zero errors.
             return
+        
+        # Factor out the error due to environmental changes
+        ubar = min(bonus - rule.p for rule in action_set)
         
         accuracy = 0
         for rule in action_set:
             rule.exp += 1
             factor = max(1. / rule.exp, self.values.B)
             
-            # Switching these two updates may help for more complex problems.
+            # Reordering these updates may help for more complex problems.
+            rule.u += (ubar - rule.u) * self.values.Be
             diff = bonus - rule.p
             rule.p += diff * factor
-            rule.e += (abs(diff) - rule.e) * factor
+            err = abs(diff) - rule.u
+            if err < 0: err = self.values.e0
+            rule.e += (err - rule.e) * factor
             
             rule.s += (set_size - rule.s) * factor
             
@@ -601,6 +612,10 @@ class Classifier(object):
         self.s = values["setsize"]
         self.n = values["numerosity"]
         
+        # For better handling of stochastic environments
+        # Lanzi and Colombetti, 1999(c)
+        self.u = values.get("variance", 0)
+        
         # For saving in MongoDB
         self._id = values.get("_id")
     
@@ -638,6 +653,7 @@ class Classifier(object):
             "timestamp": self.ts,
             "setsize": self.s,
             "numerosity": self.n,
+            "variance": self.u,
         }
         
         if self._id is not None:
