@@ -561,7 +561,7 @@ class Collective(object):
     def unfitness(self, rule, average):
         result = rule.n * rule.s
         if rule.exp > self.values.Odel and rule.F < average * self.values.d * rule.n:
-            vote *= average * rule.n / rule.F
+            result *= average * rule.n / rule.F
         return result
 
 class Agent(object):
