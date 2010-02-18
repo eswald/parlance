@@ -26,7 +26,7 @@ class TicTacToe(object):
     ]
     
     def __init__(self, players):
-        self.players = [cls(self) for cls in players]
+        self.players = [cls(self, n+1) for n, cls in enumerate(players)]
         self.err = None
         curses.wrapper(self.run)
         if self.err:
@@ -155,7 +155,8 @@ class TicTacToe(object):
         self.goto(y, x)
 
 class HumanPlayer(object):
-    def __init__(self, game):
+    def __init__(self, game, player):
+        self.player = player
         self.game = game
         self.collect_handlers()
     
@@ -220,13 +221,15 @@ class ComputerPlayer(object):
     rewards = [50, 400, 900]
     table = None
     
-    def __init__(self, game):
+    def __init__(self, game, player):
+        self.player = player
         self.agent = Agent("tictactoe")
         self.game = game
     
     def generate(self):
         "Generate a move for the computer player."
         msg = sum(x << (n*2) for n, x in enumerate(self.game.board))
+        msg |= self.player << 18
         message = msg
         for n in count(1):
             action = self.agent.process(message)
@@ -237,7 +240,7 @@ class ComputerPlayer(object):
                 self.game.win.refresh()
                 
                 # Keep part of the failure around.
-                message = ((action << 18) & 0xFFFFFFFF) | msg
+                message = ((action << 20) & 0xFFFF0000) | msg
             else:
                 break
         return pos
@@ -247,7 +250,8 @@ class ComputerPlayer(object):
         self.agent.reward(bonus)
 
 class BasicPlayer(object):
-    def __init__(self, game):
+    def __init__(self, game, player):
+        self.player = player
         self.game = game
     
     def generate(self):
