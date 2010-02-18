@@ -7,8 +7,8 @@ import sys
 from itertools import count
 from time import sleep
 
-from parang.holland import Agent
-from parlance.fallbacks import all, wraps
+from parang.holland import Agent, weighted_choice
+from parlance.fallbacks import all, defaultdict, wraps
 from parlance.util import s
 
 class TicTacToe(object):
@@ -260,10 +260,62 @@ class BasicPlayer(object):
     def result(self, points):
         pass
 
+class HeuristicPlayer(object):
+    def __init__(self, game, player):
+        self.player = player
+        self.game = game
+    
+    def generate(self):
+        moves = defaultdict(int)
+        board = self.game.board
+        for x in range(9):
+            if board[x]:
+                # Only look at blank spaces
+                continue
+            
+            for y in range(9):
+                if y == x:
+                    continue
+                
+                for z in range(9):
+                    if z in (x, y):
+                        continue
+                    if x + y + z != 12:
+                        # Only look at rows
+                        continue
+                    
+                    # Count the number of rows x participates in,
+                    # to make the center worth more.
+                    moves[x] += 1
+                    
+                    if board[y] == board[z]:
+                        if board[z] == self.player:
+                            moves[x] += 1000
+                        elif board[z] == 0:
+                            moves[x] += 5
+                        else:
+                            moves[x] += 500
+                    elif board[y] == self.player and board[z] == 0:
+                        # Make this better than a blank-blank-blank row
+                        moves[x] += 20
+        
+        self.game.output("%r", moves)
+        return weighted_choice(moves)
+    
+    def result(self, points):
+        pass
+
 def run(name, nplayers=1):
-    n = max(min(int(nplayers), 2), 0)
-    players = ([HumanPlayer] * n) + ([ComputerPlayer] * (2-n))
-    TicTacToe(players)
+    players = [
+        [ComputerPlayer, ComputerPlayer],
+        [HumanPlayer, ComputerPlayer],
+        [HumanPlayer, HumanPlayer],
+        [HumanPlayer, HeuristicPlayer],
+        [HeuristicPlayer, ComputerPlayer],
+        [ComputerPlayer, HeuristicPlayer],
+    ]
+    
+    TicTacToe(players[int(nplayers)])
 
 if __name__ == "__main__":
     run(*sys.argv)
