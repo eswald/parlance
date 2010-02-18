@@ -256,5 +256,10 @@ class BasicPlayer(object):
     def result(self, points):
         pass
 
+def run(name, nplayers=1):
+    n = max(min(int(nplayers), 2), 0)
+    players = ([HumanPlayer] * n) + ([ComputerPlayer] * (2-n))
+    TicTacToe(players)
+
 if __name__ == "__main__":
-    TicTacToe([ComputerPlayer, ComputerPlayer])
+    run(*sys.argv)
