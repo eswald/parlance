@@ -361,7 +361,7 @@ class Collective(object):
             rule = self.coverage(msg, results)
             output = rule.matches(msg)
             results[output].append(rule)
-            self.delete()
+        self.delete()
         
         actions = dict((key, sum(r.p * r.F for r in results[key]) /
                 sum(r.F for r in results[key]))
