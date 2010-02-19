@@ -58,6 +58,7 @@ class TicTacToe(object):
         vlines = [cx - 2, cx + 2]
         top, bottom = cy - 2, cy + 2
         left, right = cx - 5, cx + 5
+        figure = 25
         
         win = self.win
         win.idlok(True)
@@ -68,12 +69,19 @@ class TicTacToe(object):
         for y in hlines:
             for x in xrange(left, right + 1):
                 win.addch(y, x, curses.ACS_HLINE)
+                win.addch(y, x + figure, curses.ACS_HLINE)
         for x in vlines:
             for y in xrange(top, bottom + 1):
                 win.addch(y, x, curses.ACS_VLINE)
+                win.addch(y, x + figure, curses.ACS_VLINE)
         for x in vlines:
             for y in hlines:
                 win.addch(y, x, curses.ACS_PLUS)
+                win.addch(y, x + figure, curses.ACS_PLUS)
+        
+        for n in range(9):
+            y, x = self.square[n]
+            win.addch(self.rows[y], self.cols[x] + figure, str(n))
         
         self.reset()
     
