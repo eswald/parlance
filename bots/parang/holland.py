@@ -399,7 +399,7 @@ class Collective(object):
             "fitness": self.values.F1,
             "experience": 0,
             "timestamp": self.timestamp,
-            "setsize": 1,
+            "setsize": len(actions),
             "numerosity": 1,
         }
         
