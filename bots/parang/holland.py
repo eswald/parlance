@@ -426,9 +426,8 @@ class Collective(object):
             
             # Reordering these updates may help for more complex problems.
             rule.u += (ubar - rule.u) * self.values.Be
-            diff = bonus - rule.p
-            rule.p += diff * factor
-            err = abs(diff) - rule.u
+            rule.p += (bonus - rule.p) * factor
+            err = abs(bonus - rule.p) - rule.u
             if err < 0: err = self.values.e0
             rule.e += (err - rule.e) * factor
             
