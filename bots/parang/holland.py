@@ -288,19 +288,19 @@ class Collective(object):
         N = population_size = 1000
         B = learning_rate = .1
         a = accuracy_slope = .1
-        e0 = error_minimum = 10
+        e0 = error_minimum = 1
         v = power_parameter = -5
         g = discount_factor = .8
         OGA = ga_threshold = 40
         X = crossover_prob = .75
         u = mutation_prob = .01
         Odel = experience_threshold = 20
-        d = fitness_threshold = .1
+        d = fitness_threshold = .01
         Osub = subsumption_threshold = 50
         P = mask_probability = .3
         p1 = initial_prediction = 1
         e1 = initial_error = .1
-        F1 = initial_fitness = .1
+        F1 = initial_fitness = .01
         pexplr = exploration_probability = .25
         Omna = coverage_threshold = 10
         
