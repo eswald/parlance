@@ -50,8 +50,8 @@ class TicTacToe(object):
             self.err = sys.exc_info()
     
     def start(self):
-        cx = curses.COLS // 2
-        cy = curses.LINES // 2
+        cx = 8
+        cy = 4
         self.rows = [cy - 2, cy, cy + 2]
         self.cols = [cx - 4, cx, cx + 4]
         hlines = [cy - 1, cy + 1]
@@ -59,9 +59,12 @@ class TicTacToe(object):
         top, bottom = cy - 2, cy + 2
         left, right = cx - 5, cx + 5
         
-        self.outpos = bottom + 3, left
-        
         win = self.win
+        win.idlok(True)
+        win.scrollok(True)
+        win.setscrreg(bottom + 2, curses.LINES - 2)
+        self.outpos = curses.LINES - 2, 1
+        
         for y in hlines:
             for x in xrange(left, right + 1):
                 win.addch(y, x, curses.ACS_HLINE)
@@ -101,8 +104,7 @@ class TicTacToe(object):
         if args:
             line %= args
         y, x = self.outpos
-        self.win.addstr(y, x, line)
-        self.win.clrtoeol()
+        self.win.addstr(y, x, line + "\n")
     
     def goto(self, row, col):
         self.win.move(self.rows[row], self.cols[col])
