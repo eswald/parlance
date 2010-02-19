@@ -302,7 +302,7 @@ class Collective(object):
         e1 = initial_error = .1
         F1 = initial_fitness = .01
         pexplr = exploration_probability = .25
-        Omna = coverage_threshold = 10
+        Omna = coverage_threshold = 4
         
         # Reduced learning rate for the environmental error
         Be = variance_learning_rate = .05
