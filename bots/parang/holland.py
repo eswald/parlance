@@ -608,7 +608,7 @@ class Classifier(object):
         self.e = values["error"]
         self.F = values["fitness"]
         self.exp = values["experience"]
-        self.ts = values["timestamp"]
+        self.ts = 0     # values["timestamp"], if we can store the timestamp.
         self.s = values["setsize"]
         self.n = values["numerosity"]
         
