@@ -5,7 +5,7 @@
 	<meta name="keywords" content="Diplomacy artificial intelligence DAIDE Parlance DPP message syntax">
 	<title>Parlance Message Syntax</title>
 	<!--
-	Copyright (C) 2003-2009  David Norman and Eric Wald
+	Copyright (C) 2003-2010  David Norman and Eric Wald
 	
 	Parlance may be used, modified, and/or redistributed under the terms of
 	the Artistic License 2.0, as published by the Perl Foundation.
@@ -14,10 +14,10 @@
 <body>
 <h1>Parlance Message Syntax</h1>
 
-<p><a href="#appC">Modified</a> from version 0.17 of the
+<p><a href="#appC">Modified</a> from version 0.18 of the
 <a href="http://www.ellought.demon.co.uk/dipai/dpp_syntax.pdf">Diplomacy
 AI Development Environment Message Syntax</a>, which was last updated on
-11 September 2009.</p>
+7 March 2010.</p>
 
 <p>The following document defines the language which will be used for
 communications between a client and server, and for negotiation between
@@ -732,7 +732,9 @@ with multiple coasts (Spain, St. Petersburg, or Bulgaria on the Standard
 map), it must be of the form <b>(province coast)</b>.</p>
 <!-- <h4>prov_no_coast = province</h4> -->
 <p><b>prov_no_coast</b> is a province with no coast specification.</p>
-<p><b>sea_province</b> is a province where a fleet may be to convoy.</p>
+<p><b>sea_province</b> is a province where a fleet may be to convoy.
+The provinces should<sup><a name="sea_province" href="#via_note">*</a></sup>
+be listed in the order that the army will pass through them.</p>
 
 <p>Examples:</p>
 <ul>
@@ -1295,7 +1297,39 @@ Environment syntax. The remainder of this document covers the contents
 of <b>press_message</b>, which can be either <b>statement</b>
 or <b>reply</b>.</p>
 
-<h3>(iv) Proposing an Offer</h3>
+<h3>(iv) Press Fundamentals</h3>
+
+<p>Sequences of press messages can be split into two categories. They
+can be attempting to form an agreement between a number of powers, or
+they can be providing or requesting information.</p>
+
+<p>Agreements are formed by one power proposing an arrangement to a
+number of other powers, either using the <a href="#PRP"><b>PRP</b> (level 10)</a>
+or the <a href="#INS"><b>INS</b> (level 60)</a> tokens. For the
+arrangement to be agreed, each of the receiving powers must reply to the
+sending power plus all of the other receiving powers, accepting the
+proposal with the <a href="#YES_press"><b>YES</b> (level 10)</a> token.</p>
+
+<p>Most arrangements apply to a single turn. Where this is not the case,
+it is indicated in the description of the arrangement. If a proposal is
+made in one turn, but accepted in a subsequent turn, then the turn or
+turns it applies to are calculated based on the time at which the
+original proposal was sent, not the time at which it was agreed. Powers
+should not attempt to form an agreement over a proposal which is wholly
+in the past, or which has already been breached.</p>
+
+<p>In some cases, the order in which a number of press messages occurred
+is important. Where this is the case, each power should consider the
+order in which it received the confirmations of its own messages, and
+the messages from the other powers, from the server. It is guaranteed
+that this order will be the same for all powers.</p>
+
+<p>Where a number of agreements are made which conflict with each other,
+the latter agreement takes precedence. This has a number of effects,
+including the ability to unmake an agreement by making a conflicting
+agreement.</p>
+
+<h3>(v) Proposing an Arrangement</h3>
 
 <h4><a name="PRP">statement = PRP</a> (arrangement)</h4>
 
@@ -1338,11 +1372,17 @@ them to mean the opposite. Double negatives should not be used!</p>
 
 <h4><a name="NAR">arrangement = NAR (arrangement)</a><sup><a href="#repeal_note">*</a></sup></h4>
 
-<p>This has the effect of removing the arrangement, without arranging
-the opposite of it.  For example, once two powers have agreed Peace,
-they can use <b>NAR</b> to unarrange it, without arranging war.</p>
+<p>All of the available arrangements can also have <b>NAR</b> placed in
+front of them. This represents the lack of an arrangement. To use the
+level 20 token, <b>XDO</b>, as an example, <b>XDO (order)</b> is an
+arrangement that order will be ordered. <b>NOT (XDO (order))</b> is an
+arrangement that order will not be ordered. <b>NAR (XDO (order))</b> is
+an arrangement that allows order to be ordered, or not.</p>
 
-<h3>(v) Responding to a message</h3>
+<p><b>NAR</b> is most commonly used in order to undo a previous
+arrangement.</p>
+
+<h3>(vi) Responding to a message</h3>
 
 <p>To respond to a message, one of the following can be sent:</p>
 
@@ -1380,7 +1420,32 @@ David's explanation of the ERR positioning:
 <p>The above responses should only be sent as a response to a received
 message.  <b>press_message</b> should be identical to the received message.</p>
 
-<h3>(vi) Reporting your abilities</h3>
+<h3>(vii) Cancelling a proposal</h3>
+
+<h4><a name="CCL">press_message = CCL</a> (press_message)</h4>
+<!-- Technically, only CCL (PRP (...)), CCL (INS (...)), or CCL (YES (...)) -->
+
+<p>A press message which proposes an arrangement can be cancelled before
+the arrangement has been agreed, using a <b>CCL</b> message.  This can
+also be used to cancel a <b>YES</b> response to a proposed arrangement,
+before all parties involved in the proposal have replied.</p>
+
+<p>A <b>CCL</b> message which is sent after the arrangement has been
+agreed has no effect, and <b>CCL</b> may not be used to cancel a message
+which is not attempting to form an agreement.</p>
+
+<h3>(vii) Making a statement</h3>
+
+<h4><a name="FCT">press_message = FCT</a> (arrangement)</h4>
+
+<p><b>arrangement</b> is true.</p>
+
+<p>This is generally used either to pass information, or to unilaterally
+override a previously made agreement. There are no defined replies to
+<b>FCT</b>, although of course, a <b>FCT</b> message may cause other
+statements or proposals to follow.</p>
+
+<h3>(ix) Reporting your abilities</h3>
 
 <p>If the player sends a response of <b>HUH</b>, it should immediately
 send a second message informing the other player as to what it
@@ -1399,13 +1464,14 @@ send a second message informing the other player as to what it
 <!-- <h4>press_token = YES</h4> -->
 <!-- <h4>press_token = REJ</h4> -->
 <!-- <h4>press_token = BWX</h4> -->
+<!-- <h4>press_token = FCT</h4> -->
 
 <p>List all of the tokens which the player can process when received in the
 <b>press_message</b> part of a <b>FRM</b> message. <b>Tokens</b> should be a
-subset of <b>PRP PCE ALY VSS DRW SLO NOT NAR YES REJ BWX</b>. In addition,
+subset of <b>PRP PCE ALY VSS DRW SLO NOT NAR YES REJ BWX CCL FCT</b>. In addition,
 the following tokens from higher levels may also be included if they can
 be processed by the player: <b>XDO DMZ AND ORR SCD OCC CHO INS
-	QRY THK FCT IDK SUG WHT HOW EXP SRY FOR IFF THN ELS <!-- IOU UOM -->
+	QRY THK IDK SUG WHT HOW EXP SRY FOR IFF THN ELS
 	XOY YDO FRM FWD BCC SND POB WHY</b></p>
 
 <p>The player does not need to list <b>TRY</b> or <b>HUH</b> in <b>tokens</b>,
@@ -1443,6 +1509,12 @@ may also reorder the tokens.</p>
 <b>order</b> uses the same format as in <a href="#SUB">the <b>SUB</b>
 command</a>.</p>
 
+<p>An <b>XDO</b> arrangement applies to the next turn in which the order
+type is valid &mdash; so the next movement turn for a <b>HLD</b>,
+<b>MTO</b>, <b>SUP</b>, <b>CVY</b>, or <b>CTO</b> order, the next retreat
+turn for a <b>RTO</b> or <b>DSB</b> order, and the next adjustment turn
+for a <b>BLD</b>, <b>REM</b>, or <b>WVE</b> order.</p>
+
 <h4><a name="DMZ">arrangement = DMZ</a> (power power ...) (province province ...)</h4>
 
 <p>This is an arrangement for the listed powers to remove all units from,
@@ -1472,6 +1544,9 @@ support you and you support me.&rdquo;</p>
 a group, and then use further press (if necessary) to decide which part
 of the arrangement is to actually occur. This is usually used for offers such
 as &ldquo;I will make one of the following moves.&rdquo;</p>
+
+<p><b>ORR</b> is logical inclusive-or. That is, doing more than one of
+the arrangements is not against the overall arrangement.</p>
 
 <p>At level 30, <b>AND</b> and <b>ORR</b> must not be nested; that is,
 they must not both appear in the same message, and neither is allowed to
@@ -1538,7 +1613,6 @@ means to choose exactly that many.  For example:</p>
 <!-- <h4>press_token += INS</h4> -->
 <!-- <h4>press_token += QRY</h4> -->
 <!-- <h4>press_token += THK</h4> -->
-<!-- <h4>press_token += FCT</h4> -->
 <!-- <h4>press_token += IDK</h4> -->
 <!-- <h4>press_token += SUG</h4> -->
 
@@ -1574,7 +1648,7 @@ following extra responses are also available for <b>QRY</b>:</p>
 
 <p>I think that <b>arrangement</b> is not true.</p>
 
-<h4><a name="FCT">reply = FCT</a> (QRY (arrangement))</b></h4>
+<h4>reply = FCT (QRY (arrangement))</b></h4>
 
 <p><b>arrangement</b> is true.</p>
 
@@ -1599,17 +1673,14 @@ indication of agreement or disagreement, rather than an indication as to
 whether <b>arrangement</b> will actually happen.</p>
 
 <p><b>THK</b> and <b>FCT</b> can also be used as a message in their own
-right, to pass information without first being queried for it.</p>
+right, to pass information without first being queried for it.
+<a href="#FCT"><b>FCT</b></a> has already been introduced in level 10.</p>
 
-<h4>statement = THK (arrangement)</h4>
+<h4>press_message = THK (arrangement)</h4>
 
 <p>I think <b>arrangement</b> is true.</p>
 
-<h4>statement = FCT (arrangement)</h4>
-
-<p><b>arrangement</b> is true.</p>
-
-<p>No reply is expected to either of these.</p>
+<p>No reply is expected to these.</p>
 
 <p>Note that <b>THK (QRY (arrangement))</b> and <b>THK (arrangement)</b> have
 exactly the same meaning, except that the former is the response to a
@@ -2000,7 +2071,7 @@ various reasons.</p>
 <tr><td>BUR</td><td>0x5001</td><td>Province</td><td>Inland</td><td>Burgundy</td></tr>
 <tr><td>BWX</td><td>0x4A02</td><td>Press</td><td>Reply</td><td>None of Your Business</td></tr>
 <tr><td>CCD</td><td>0x4800</td><td>Command</td><td>Server to Client</td><td>Power in Civil Disorder</td></tr>
-<tr><td>CCL</td><td>0x4A25</td><td>Press</td><td>Reply</td><td>Cancel</td></tr>
+<tr><td>CCL</td><td>0x4A25</td><td>Press</td><td>Message</td><td>Cancel</td></tr>
 <tr><td>CHO</td><td>0x4A23 / 0x4A22 *</td><td>Press</td><td>Offer</td><td>Choose</td></tr>
 <tr><td>CLY</td><td>0x5424</td><td>Province</td><td>Coastal</td><td>Clyde</td></tr>
 <tr><td>CON</td><td>0x5534</td><td>Province</td><td>Coastal Supply Centre</td><td>Constantinople</td></tr>
@@ -2293,6 +2364,10 @@ official DAIDE syntax document</a>:
 	<b>SCO</b> messages if you don't already know them for the variant,
 	and that the previous interpretation of a bare <b>HST</b> has been
 	removed, the change seems warranted.</li>
+
+	<li>This document leaves open the possibility for the
+	<a href="#sea_province" name="via_note"><b>VIA</b></a> argument to
+	be a set of valid fleets, instead of an explicit path.</li>
 
 	<li><a href="#CCD" name="disorder_note">The <b>CCD</b> message</a> has
 	been divided into three distinct message types:  One for a
