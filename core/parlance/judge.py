@@ -801,11 +801,16 @@ class Judge(JudgeInterface):
         # 4) Run through the decisions until they are all made.
         while decision_list:
             self.log_debug(11, '%d decisions to make...', len(decision_list))
+            remaining = []
             for choice in decision_list:
-                self.log_debug(14, choice)
-                for dep in choice.depends: self.log_debug(15, '- ' + str(dep))
-            remaining = [choice for choice in decision_list
-                    if not choice.calculate()]
+                self.log_debug(14, str(choice))
+                for dep in choice.depends:
+                    self.log_debug(16, " - " + str(dep))
+                
+                if not choice.calculate():
+                    remaining.append(choice)
+                self.log_debug(16, " => " + choice.state())
+            
             if len(remaining) == len(decision_list):
                 decision_list = self.resolve_paradox(remaining)
             else: decision_list = remaining
