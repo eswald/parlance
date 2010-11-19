@@ -1085,10 +1085,13 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
         support = createUnitOrder(order, GER, standard_map, self.judge.datc)
         result = support.matches(OrderSet())
         self.assertEqual(result, False)
+    
     def test_unconvoyed_support_cut(self):
-        # Denmark's support should be marked as cut in this situation.
-        # A certain algorithm has been known to mark it as successful.
-        # It doesn't affect the adjudication, though.
+        # Denmark's support should be marked as uncut in this situation,
+        # according to page 16 of the 2000 rules.
+        # Unfortunately, Parlance still reports it as cut,
+        # because it doesn't affect the adjudication.
+        self.judge.datc.datc_4a2 = 'd'
         orders = [
             ([(FRA, AMY, BRE), MTO, GAS], SUC),
             ([(FRA, AMY, BUR), MTO, RUH], SUC),
@@ -1106,6 +1109,92 @@ class Judge_Bugfix(DiplomacyAdjudicatorTestCase):
             ([(GER, AMY, MUN), MTO, BUR], BNC),
             ([(GER, AMY, UKR), MTO, GAL], SUC),
             ([(GER, FLT, DEN), SUP, (GER, FLT, HEL), MTO, NTH], CUT),
+            ([(GER, FLT, HEL), MTO, NTH], BNC),
+            ([(GER, FLT, KIE), MTO, HOL], BNC),
+            ([(GER, FLT, NWG), SUP, (GER, FLT, HEL), MTO, NTH], SUC),
+            ([(GER, FLT, NWY), MTO, SWE], BNC),
+            ([(ITA, AMY, NAP), SUP, (ITA, AMY, VEN), MTO, ROM], SUC),
+            ([(ITA, AMY, VEN), MTO, ROM], SUC),
+            ([(ITA, FLT, ION), MTO, AEG], BNC),
+            ([(TUR, AMY, ALB), MTO, TRI], SUC),
+            ([(TUR, AMY, BUL), MTO, SER], SUC),
+            ([(TUR, AMY, GRE), SUP, (TUR, AMY, SER), MTO, ALB], SUC),
+            ([(TUR, AMY, SER), MTO, ALB], SUC),
+            ([(TUR, AMY, SMY), MTO, SYR], SUC),
+            ([(TUR, AMY, TRI), MTO, VEN], SUC),
+            ([(TUR, AMY, TYR), SUP, (TUR, AMY, TRI), MTO, VEN], SUC),
+            ([(TUR, FLT, AEG), MTO, ION], BNC),
+            ([(TUR, FLT, ANK), HLD], SUC),
+            ([(TUR, FLT, CON), MTO, AEG], BNC),
+            ([(TUR, FLT, ROM), MTO, NAP], [BNC, RET]),
+        ]
+        
+        self.init_state(SPR, 1917, [order[0][0] for order in orders])
+        
+        for order, result in orders:
+            self.legalOrder(order[0][0], order)
+        
+        self.assertMapState([
+            [FRA, AMY, BUR],
+            [FRA, AMY, GAS],
+            [FRA, AMY, HOL],
+            [FRA, AMY, PIC],
+            [FRA, AMY, RUH],
+            [FRA, AMY, YOR],
+            [FRA, FLT, BEL],
+            [FRA, FLT, EDI],
+            [FRA, FLT, NTH],
+            [FRA, FLT, SWE],
+            [GER, AMY, BOH],
+            [GER, AMY, GAL],
+            [GER, AMY, MUN],
+            [GER, AMY, SIL],
+            [GER, AMY, SPA],
+            [GER, FLT, DEN],
+            [GER, FLT, HEL],
+            [GER, FLT, KIE],
+            [GER, FLT, NWG],
+            [GER, FLT, NWY],
+            [ITA, AMY, NAP],
+            [ITA, AMY, ROM],
+            [ITA, FLT, ION],
+            [TUR, AMY, ALB],
+            [TUR, AMY, GRE],
+            [TUR, AMY, SER],
+            [TUR, AMY, SYR],
+            [TUR, AMY, TRI],
+            [TUR, AMY, TYR],
+            [TUR, AMY, VEN],
+            [TUR, FLT, AEG],
+            [TUR, FLT, ANK],
+            [TUR, FLT, CON],
+            [TUR, FLT, ROM, MRT],
+        ])
+        
+        for order, result in orders:
+            self.assertContains(self.results, ORD (SPR, 1917) (order) (result))
+    def test_unconvoyed_support_uncut(self):
+        # Denmark's support should be marked as uncut in this situation,
+        # due to the 1982 paradox-resolution rule.
+        # It doesn't affect the adjudication here, though.
+        self.judge.datc.datc_4a2 = 'b'
+        orders = [
+            ([(FRA, AMY, BRE), MTO, GAS], SUC),
+            ([(FRA, AMY, BUR), MTO, RUH], SUC),
+            ([(FRA, AMY, HOL), SUP, (FRA, AMY, BUR), MTO, RUH], CUT),
+            ([(FRA, AMY, PAR), MTO, BUR], SUC),
+            ([(FRA, AMY, PIC), SUP, (FRA, AMY, PAR), MTO, BUR], SUC),
+            ([(FRA, AMY, YOR), CTO, DEN, VIA, [NTH]], BNC),
+            ([(FRA, FLT, BEL), SUP, (FRA, FLT, NTH)], SUC),
+            ([(FRA, FLT, EDI), SUP, (FRA, FLT, NTH)], SUC),
+            ([(FRA, FLT, NTH), CVY, (FRA, AMY, YOR), CTO, DEN], SUC),
+            ([(FRA, FLT, SWE), SUP, (FRA, AMY, YOR), MTO, DEN], CUT),
+            ([(GER, AMY, BOH), MTO, MUN], BNC),
+            ([(GER, AMY, GAL), MTO, SIL], SUC),
+            ([(GER, AMY, MAR), MTO, SPA], SUC),
+            ([(GER, AMY, MUN), MTO, BUR], BNC),
+            ([(GER, AMY, UKR), MTO, GAL], SUC),
+            ([(GER, FLT, DEN), SUP, (GER, FLT, HEL), MTO, NTH], SUC),
             ([(GER, FLT, HEL), MTO, NTH], BNC),
             ([(GER, FLT, KIE), MTO, HOL], BNC),
             ([(GER, FLT, NWG), SUP, (GER, FLT, HEL), MTO, NTH], SUC),
